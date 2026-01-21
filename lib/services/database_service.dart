@@ -22,7 +22,21 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+    );
+  }
+
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add sort_order column to texts table for chapter ordering
+      await db.execute(
+        'ALTER TABLE texts ADD COLUMN sort_order INTEGER DEFAULT 0',
+      );
+    }
   }
 
   Future _createDB(Database db, int version) async {
@@ -51,6 +65,7 @@ class DatabaseService {
         created_at TEXT NOT NULL,
         last_read TEXT NOT NULL,
         position INTEGER DEFAULT 0,
+        sort_order INTEGER DEFAULT 0,
         FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE,
         FOREIGN KEY (collection_id) REFERENCES collections (id) ON DELETE SET NULL
       )
@@ -525,5 +540,28 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [textId],
     );
+  }
+
+  // Batch operations for EPUB import
+  Future<void> batchCreateTexts(List<TextDocument> texts) async {
+    final db = await database;
+    final batch = db.batch();
+
+    for (final text in texts) {
+      batch.insert('texts', text.toMap());
+    }
+
+    await batch.commit(noResult: true);
+  }
+
+  Future<List<TextDocument>> getTextsInCollection(int collectionId) async {
+    final db = await database;
+    final maps = await db.query(
+      'texts',
+      where: 'collection_id = ?',
+      whereArgs: [collectionId],
+      orderBy: 'sort_order ASC, title ASC',
+    );
+    return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 }

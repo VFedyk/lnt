@@ -8,6 +8,7 @@ class TextDocument {
   final DateTime createdAt;
   final DateTime lastRead;
   final int position;
+  final int sortOrder; // For ordering chapters within a collection
 
   TextDocument({
     this.id,
@@ -19,6 +20,7 @@ class TextDocument {
     DateTime? createdAt,
     DateTime? lastRead,
     this.position = 0,
+    this.sortOrder = 0,
   }) : createdAt = createdAt ?? DateTime.now(),
        lastRead = lastRead ?? DateTime.now();
 
@@ -33,6 +35,7 @@ class TextDocument {
       'created_at': createdAt.toIso8601String(),
       'last_read': lastRead.toIso8601String(),
       'position': position,
+      'sort_order': sortOrder,
     };
   }
 
@@ -47,6 +50,7 @@ class TextDocument {
       createdAt: DateTime.parse(map['created_at']),
       lastRead: DateTime.parse(map['last_read']),
       position: map['position'] ?? 0,
+      sortOrder: map['sort_order'] ?? 0,
     );
   }
 
@@ -60,6 +64,7 @@ class TextDocument {
     DateTime? createdAt,
     DateTime? lastRead,
     int? position,
+    int? sortOrder,
   }) {
     return TextDocument(
       id: id ?? this.id,
@@ -71,6 +76,7 @@ class TextDocument {
       createdAt: createdAt ?? this.createdAt,
       lastRead: lastRead ?? this.lastRead,
       position: position ?? this.position,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 

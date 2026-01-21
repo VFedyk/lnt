@@ -6,6 +6,7 @@ import '../models/text_document.dart';
 import '../models/collection.dart';
 import '../services/database_service.dart';
 import '../services/import_export_service.dart';
+import '../services/epub_import_service.dart';
 import 'reader_screen.dart';
 
 class TextsScreen extends StatefulWidget {
@@ -126,6 +127,102 @@ class _TextsScreenState extends State<TextsScreen> {
     }
   }
 
+  Future<void> _importFromEpub() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['epub'],
+      withData: true,
+    );
+
+    if (result == null || result.files.single.bytes == null) return;
+
+    final file = result.files.single;
+
+    // Show loading dialog
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Expanded(child: Text('Importing EPUB...')),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final epubService = EpubImportService();
+      final importResult = await epubService.importEpub(
+        epubBytes: file.bytes!,
+        languageId: widget.language.id!,
+        parentCollectionId: _currentCollection?.id,
+      );
+
+      // Close loading dialog
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      // Show success dialog
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Import Complete'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Book: ${importResult.bookTitle}'),
+              if (importResult.author != null)
+                Text('Author: ${importResult.author}'),
+              Text('Chapters: ${importResult.totalChapters}'),
+              if (importResult.totalParts > importResult.totalChapters)
+                Text('Total parts: ${importResult.totalParts}'),
+              Text('Characters: ${importResult.totalCharacters}'),
+              if (importResult.warnings.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                const Text('Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                ...importResult.warnings.take(3).map((w) => Text('• $w')),
+                if (importResult.warnings.length > 3)
+                  Text('... and ${importResult.warnings.length - 3} more'),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+
+      _loadData();
+    } catch (e) {
+      // Close loading dialog
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      // Show error dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Import Failed'),
+          content: Text('Could not import EPUB: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   Future<void> _deleteText(TextDocument text) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -209,10 +306,41 @@ class _TextsScreenState extends State<TextsScreen> {
             tooltip: 'New Collection',
             onPressed: _addCollection,
           ),
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.file_upload),
-            tooltip: 'Import from File',
-            onPressed: _importFromFile,
+            tooltip: 'Import',
+            onSelected: (value) {
+              switch (value) {
+                case 'txt':
+                  _importFromFile();
+                  break;
+                case 'epub':
+                  _importFromEpub();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'txt',
+                child: Row(
+                  children: [
+                    Icon(Icons.text_snippet),
+                    SizedBox(width: 8),
+                    Text('Import TXT'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'epub',
+                child: Row(
+                  children: [
+                    Icon(Icons.book),
+                    SizedBox(width: 8),
+                    Text('Import EPUB'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
