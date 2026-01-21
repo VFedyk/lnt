@@ -43,6 +43,8 @@ class _TermsScreenState extends State<TermsScreen> {
     });
   }
 
+  Map<int, int> _statusCounts = {};
+
   void _applyFilters() {
     var filtered = _terms;
 
@@ -62,6 +64,14 @@ class _TermsScreenState extends State<TermsScreen> {
     }
 
     _filteredTerms = filtered;
+    _updateStatusCounts();
+  }
+
+  void _updateStatusCounts() {
+    _statusCounts = {};
+    for (final term in _terms) {
+      _statusCounts[term.status] = (_statusCounts[term.status] ?? 0) + 1;
+    }
   }
 
   Future<void> _exportTerms(String format) async {
@@ -218,7 +228,7 @@ class _TermsScreenState extends State<TermsScreen> {
                   child: Row(
                     children: [
                       FilterChip(
-                        label: const Text('All'),
+                        label: Text('All (${_terms.length})'),
                         selected: _statusFilter == null,
                         onSelected: (_) {
                           setState(() {
@@ -231,10 +241,11 @@ class _TermsScreenState extends State<TermsScreen> {
                       ...List.generate(7, (i) {
                         final status = i == 6 ? 99 : i;
                         final statusName = _getStatusName(status);
+                        final count = _statusCounts[status] ?? 0;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: FilterChip(
-                            label: Text(statusName),
+                            label: Text('$statusName ($count)'),
                             selected: _statusFilter == status,
                             onSelected: (_) {
                               setState(() {
