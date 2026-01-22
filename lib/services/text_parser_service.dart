@@ -20,9 +20,10 @@ class TextParserService {
     }
 
     // Use language-specific word character pattern
+    // Default pattern includes apostrophes for contractions (we're, don't) and possessives (winter's)
     final pattern = language.regexpWordCharacters.isNotEmpty
         ? language.regexpWordCharacters
-        : r'[\p{L}\p{M}]+';
+        : r"[\p{L}\p{M}]+(?:['''][\p{L}\p{M}]+)*";
 
     final regex = RegExp(pattern, unicode: true);
     final matches = regex.allMatches(processedText);
