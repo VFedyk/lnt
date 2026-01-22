@@ -257,10 +257,8 @@ class _DashboardTabState extends State<_DashboardTab> {
         widget.language.id!,
         limit: 5,
       );
-      final recentlyAdded = await DatabaseService.instance.getRecentlyAddedTexts(
-        widget.language.id!,
-        limit: 5,
-      );
+      final recentlyAdded = await DatabaseService.instance
+          .getRecentlyAddedTexts(widget.language.id!, limit: 5);
       final counts = await DatabaseService.instance.getTermCountsByStatus(
         widget.language.id!,
       );
@@ -363,7 +361,11 @@ class _DashboardTabState extends State<_DashboardTab> {
       children: [
         _buildStatItem('Total Terms', totalTerms.toString(), Icons.book),
         _buildStatItem('Known', knownTerms.toString(), Icons.check_circle),
-        _buildStatItem('Texts', _recentlyAddedTexts.length.toString(), Icons.article),
+        _buildStatItem(
+          'Texts',
+          _recentlyAddedTexts.length.toString(),
+          Icons.article,
+        ),
       ],
     );
   }
@@ -440,7 +442,7 @@ class _DashboardTabState extends State<_DashboardTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Recently read texts',
+              'Recently read',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -483,7 +485,7 @@ class _DashboardTabState extends State<_DashboardTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Recently added texts',
+              'Recently added',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
