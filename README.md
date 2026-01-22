@@ -63,4 +63,7 @@ flutter build web
 - Support for character-based languages (Chinese, Japanese)
 - Export vocabulary to CSV or Anki format
 
-## Gratitude
+## Gratitude and recognition
+
+- FLTR
+- LingQ
