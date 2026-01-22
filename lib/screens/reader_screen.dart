@@ -53,6 +53,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Update last_read timestamp
+      await DatabaseService.instance.updateText(
+        widget.text.copyWith(lastRead: DateTime.now()),
+      );
+
       // Load all terms for this language
       _termsMap = await DatabaseService.instance.getTermsMap(
         widget.language.id!,

@@ -103,4 +103,28 @@ class TextRepository extends BaseRepository {
     );
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
+
+  Future<List<TextDocument>> getRecentlyAdded(int languageId, {int limit = 5}) async {
+    final db = await getDatabase();
+    final maps = await db.query(
+      'texts',
+      where: 'language_id = ?',
+      whereArgs: [languageId],
+      orderBy: 'created_at DESC',
+      limit: limit,
+    );
+    return maps.map((map) => TextDocument.fromMap(map)).toList();
+  }
+
+  Future<List<TextDocument>> getRecentlyRead(int languageId, {int limit = 5}) async {
+    final db = await getDatabase();
+    final maps = await db.query(
+      'texts',
+      where: 'language_id = ?',
+      whereArgs: [languageId],
+      orderBy: 'last_read DESC',
+      limit: limit,
+    );
+    return maps.map((map) => TextDocument.fromMap(map)).toList();
+  }
 }

@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import '../models/language.dart';
 import '../models/text_document.dart';
+import '../models/term.dart';
 import '../services/database_service.dart';
+import '../services/text_parser_service.dart';
 import 'languages_screen.dart';
 import 'texts_screen.dart';
 import 'reader_screen.dart';
@@ -227,9 +229,12 @@ class _DashboardTab extends StatefulWidget {
 }
 
 class _DashboardTabState extends State<_DashboardTab> {
-  List<TextDocument> _recentTexts = [];
+  List<TextDocument> _recentlyReadTexts = [];
+  List<TextDocument> _recentlyAddedTexts = [];
   Map<int, int> _termCounts = {};
+  Map<int, int> _unknownCounts = {};
   bool _isLoading = true;
+  final _textParser = TextParserService();
 
   @override
   void initState() {
@@ -248,21 +253,58 @@ class _DashboardTabState extends State<_DashboardTab> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final texts = await DatabaseService.instance.getTexts(
-        languageId: widget.language.id!,
+      final recentlyRead = await DatabaseService.instance.getRecentlyReadTexts(
+        widget.language.id!,
+        limit: 5,
+      );
+      final recentlyAdded = await DatabaseService.instance.getRecentlyAddedTexts(
+        widget.language.id!,
+        limit: 5,
       );
       final counts = await DatabaseService.instance.getTermCountsByStatus(
         widget.language.id!,
       );
 
+      // Load terms map and calculate unknown counts
+      final termsMap = await DatabaseService.instance.getTermsMap(
+        widget.language.id!,
+      );
+
+      final unknownCounts = <int, int>{};
+      final allTexts = {...recentlyRead, ...recentlyAdded};
+      for (final text in allTexts) {
+        unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
+      }
+
       setState(() {
-        _recentTexts = texts.take(5).toList();
+        _recentlyReadTexts = recentlyRead;
+        _recentlyAddedTexts = recentlyAdded;
         _termCounts = counts;
+        _unknownCounts = unknownCounts;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
     }
+  }
+
+  int _calculateUnknownCount(TextDocument text, Map<String, Term> termsMap) {
+    final words = _textParser.splitIntoWords(text.content, widget.language);
+    int unknownCount = 0;
+
+    final seenWords = <String>{};
+    for (final word in words) {
+      final normalized = word.toLowerCase();
+      if (seenWords.contains(normalized)) continue;
+      seenWords.add(normalized);
+
+      final term = termsMap[normalized];
+      if (term == null || term.status == 1) {
+        unknownCount++;
+      }
+    }
+
+    return unknownCount;
   }
 
   @override
@@ -304,7 +346,9 @@ class _DashboardTabState extends State<_DashboardTab> {
           const SizedBox(height: 16),
           _buildQuickActions(),
           const SizedBox(height: 16),
-          _buildRecentTexts(),
+          _buildRecentlyReadTexts(),
+          const SizedBox(height: 16),
+          _buildRecentlyAddedTexts(),
         ],
       ),
     );
@@ -319,7 +363,7 @@ class _DashboardTabState extends State<_DashboardTab> {
       children: [
         _buildStatItem('Total Terms', totalTerms.toString(), Icons.book),
         _buildStatItem('Known', knownTerms.toString(), Icons.check_circle),
-        _buildStatItem('Texts', _recentTexts.length.toString(), Icons.article),
+        _buildStatItem('Texts', _recentlyAddedTexts.length.toString(), Icons.article),
       ],
     );
   }
@@ -388,7 +432,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     );
   }
 
-  Widget _buildRecentTexts() {
+  Widget _buildRecentlyReadTexts() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -396,22 +440,65 @@ class _DashboardTabState extends State<_DashboardTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Recent Texts',
+              'Recently read texts',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
-            if (_recentTexts.isEmpty)
+            if (_recentlyReadTexts.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('No texts read yet.'),
+              )
+            else
+              ..._recentlyReadTexts.map(
+                (text) => ListTile(
+                  leading: const Icon(Icons.history),
+                  title: Text(text.title),
+                  subtitle: Text(
+                    '${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ReaderScreen(text: text, language: widget.language),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentlyAddedTexts() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Recently added texts',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            if (_recentlyAddedTexts.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: Text('No texts yet. Add one to get started!'),
               )
             else
-              ..._recentTexts.map(
+              ..._recentlyAddedTexts.map(
                 (text) => ListTile(
                   leading: const Icon(Icons.article),
                   title: Text(text.title),
                   subtitle: Text(
-                    text.getCountLabel(widget.language.splitByCharacter),
+                    '${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {

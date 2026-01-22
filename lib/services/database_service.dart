@@ -177,6 +177,10 @@ class DatabaseService {
       texts.batchCreate(textList);
   Future<List<TextDocument>> getTextsInCollection(int collectionId) =>
       texts.getByCollection(collectionId);
+  Future<List<TextDocument>> getRecentlyAddedTexts(int languageId, {int limit = 5}) =>
+      texts.getRecentlyAdded(languageId, limit: limit);
+  Future<List<TextDocument>> getRecentlyReadTexts(int languageId, {int limit = 5}) =>
+      texts.getRecentlyRead(languageId, limit: limit);
 
   // Term
   Future<int> createTerm(Term term) => terms.create(term);
