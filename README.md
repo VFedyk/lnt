@@ -10,17 +10,20 @@ A Flutter implementation of the Foreign Language Text Reader application for lea
 ## Getting Started
 
 1. Clone the repository:
+
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/VFedyk/fltr-exp-1
    cd fltr_flutter
    ```
 
 2. Install dependencies:
+
    ```bash
    flutter pub get
    ```
 
 3. Run the application:
+
    ```bash
    # For macOS
    flutter run -d macos
@@ -59,3 +62,5 @@ flutter build web
 - Statistics and progress tracking
 - Support for character-based languages (Chinese, Japanese)
 - Export vocabulary to CSV or Anki format
+
+## Gratitude
