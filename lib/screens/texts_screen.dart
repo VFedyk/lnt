@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/language.dart';
 import '../models/text_document.dart';
 import '../models/collection.dart';
@@ -10,6 +11,17 @@ import '../services/import_export_service.dart';
 import '../services/epub_import_service.dart';
 import '../services/text_parser_service.dart';
 import 'reader_screen.dart';
+
+/// Sorting options for texts
+enum TextSortOption {
+  name('Name', Icons.sort_by_alpha),
+  dateAdded('Date Added', Icons.calendar_today),
+  lastRead('Last Read', Icons.history);
+
+  final String label;
+  final IconData icon;
+  const TextSortOption(this.label, this.icon);
+}
 
 class TextsScreen extends StatefulWidget {
   final Language language;
@@ -29,6 +41,16 @@ class _TextsScreenState extends State<TextsScreen> {
   final _importService = ImportExportService();
   final _textParser = TextParserService();
 
+  // Sorting and filtering state
+  TextSortOption _sortOption = TextSortOption.lastRead;
+  bool _sortAscending = false;
+  bool _hideCompleted = false; // Hide texts with 0 unknown words
+
+  // Preference keys
+  static const String _sortOptionKey = 'texts_sort_option';
+  static const String _sortAscendingKey = 'texts_sort_ascending';
+  static const String _hideCompletedKey = 'texts_hide_completed';
+
   // Static cache for unknown counts - persists across folder navigations
   // Key: languageId -> (textId -> unknownCount)
   static final Map<int, Map<int, int>> _unknownCountsCache = {};
@@ -36,11 +58,92 @@ class _TextsScreenState extends State<TextsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadPreferences().then((_) => _loadData());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Map<int, int> get _unknownCounts {
     return _unknownCountsCache[widget.language.id!] ??= {};
+  }
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      final sortIndex =
+          prefs.getInt(_sortOptionKey) ?? TextSortOption.lastRead.index;
+      _sortOption = TextSortOption
+          .values[sortIndex.clamp(0, TextSortOption.values.length - 1)];
+      _sortAscending = prefs.getBool(_sortAscendingKey) ?? false;
+      _hideCompleted = prefs.getBool(_hideCompletedKey) ?? false;
+    });
+  }
+
+  Future<void> _savePreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_sortOptionKey, _sortOption.index);
+    await prefs.setBool(_sortAscendingKey, _sortAscending);
+    await prefs.setBool(_hideCompletedKey, _hideCompleted);
+  }
+
+  void _setSortOption(TextSortOption option) {
+    setState(() {
+      if (_sortOption == option) {
+        // Toggle direction if same option selected
+        _sortAscending = !_sortAscending;
+      } else {
+        _sortOption = option;
+        // Default direction based on sort type
+        _sortAscending = option == TextSortOption.name;
+      }
+    });
+    _savePreferences();
+  }
+
+  void _toggleHideCompleted() {
+    setState(() {
+      _hideCompleted = !_hideCompleted;
+    });
+    _savePreferences();
+  }
+
+  List<TextDocument> _getSortedAndFilteredTexts(List<TextDocument> texts) {
+    // First filter by search query
+    final query = _searchController.text.toLowerCase();
+    var filtered = query.isEmpty
+        ? texts
+        : texts.where((t) => t.title.toLowerCase().contains(query)).toList();
+
+    // Then filter by completion status
+    if (_hideCompleted) {
+      filtered = filtered.where((t) {
+        final unknownCount = _unknownCounts[t.id] ?? 0;
+        return unknownCount > 0;
+      }).toList();
+    }
+
+    // Finally sort
+    filtered.sort((a, b) {
+      int comparison;
+      switch (_sortOption) {
+        case TextSortOption.name:
+          comparison = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+          break;
+        case TextSortOption.dateAdded:
+          comparison = a.createdAt.compareTo(b.createdAt);
+          break;
+        case TextSortOption.lastRead:
+          comparison = a.lastRead.compareTo(b.lastRead);
+          break;
+      }
+      return _sortAscending ? comparison : -comparison;
+    });
+
+    return filtered;
   }
 
   Future<void> _loadData() async {
@@ -242,7 +345,10 @@ class _TextsScreenState extends State<TextsScreen> {
               Text('Characters: ${importResult.totalCharacters}'),
               if (importResult.warnings.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                const Text('Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Notes:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 ...importResult.warnings.take(3).map((w) => Text('• $w')),
                 if (importResult.warnings.length > 3)
                   Text('... and ${importResult.warnings.length - 3} more'),
@@ -359,6 +465,61 @@ class _TextsScreenState extends State<TextsScreen> {
             ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: _goBack)
             : null,
         actions: [
+          // Sort button
+          PopupMenuButton<TextSortOption>(
+            icon: const Icon(Icons.sort),
+            tooltip: 'Sort',
+            onSelected: _setSortOption,
+            itemBuilder: (context) => TextSortOption.values.map((option) {
+              final isSelected = _sortOption == option;
+              return PopupMenuItem(
+                value: option,
+                child: Row(
+                  children: [
+                    Icon(
+                      option.icon,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        option.label,
+                        style: TextStyle(
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
+                          fontWeight: isSelected ? FontWeight.bold : null,
+                        ),
+                      ),
+                    ),
+                    if (isSelected)
+                      Icon(
+                        _sortAscending
+                            ? Icons.arrow_upward
+                            : Icons.arrow_downward,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          // Filter button
+          IconButton(
+            icon: Icon(
+              _hideCompleted ? Icons.visibility_off : Icons.visibility,
+              color: _hideCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            tooltip: _hideCompleted
+                ? 'Show completed texts'
+                : 'Hide completed texts',
+            onPressed: _toggleHideCompleted,
+          ),
           IconButton(
             icon: const Icon(Icons.create_new_folder),
             tooltip: 'New Collection',
@@ -418,6 +579,8 @@ class _TextsScreenState extends State<TextsScreen> {
               onChanged: (_) => setState(() {}),
             ),
           ),
+          // Sort/Filter info bar
+          _buildSortFilterBar(),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -432,19 +595,97 @@ class _TextsScreenState extends State<TextsScreen> {
     );
   }
 
-  Widget _buildContentList() {
-    final query = _searchController.text.toLowerCase();
-    final filteredTexts = query.isEmpty
-        ? _texts
-        : _texts.where((t) => t.title.toLowerCase().contains(query)).toList();
+  Widget _buildSortFilterBar() {
+    final sortedTexts = _getSortedAndFilteredTexts(_texts);
+    final totalTexts = _texts.length;
+    final shownTexts = sortedTexts.length;
+    final hiddenCount = totalTexts - shownTexts;
 
-    if (_collections.isEmpty && filteredTexts.isEmpty) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Icon(
+            _sortOption.icon,
+            size: 16,
+            color: Theme.of(context).colorScheme.outline,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '${_sortOption.label} ${_sortAscending ? '↑' : '↓'}',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.outline,
+            ),
+          ),
+          if (_hideCompleted && hiddenCount > 0) ...[
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$hiddenCount completed hidden',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
+          ],
+          const Spacer(),
+          Text(
+            '$shownTexts text${shownTexts == 1 ? '' : 's'}',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.outline,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContentList() {
+    final sortedTexts = _getSortedAndFilteredTexts(_texts);
+
+    if (_collections.isEmpty && sortedTexts.isEmpty) {
+      if (_hideCompleted && _texts.isNotEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'All texts completed!',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: _toggleHideCompleted,
+                icon: const Icon(Icons.visibility),
+                label: const Text('Show completed texts'),
+              ),
+            ],
+          ),
+        );
+      }
       return const Center(child: Text('No collections or texts'));
     }
 
     return ListView(
       children: [
-        // Collections first
+        // Collections first (not affected by text sorting/filtering)
         ..._collections.map(
           (collection) => Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -478,50 +719,59 @@ class _TextsScreenState extends State<TextsScreen> {
           ),
         ),
 
-        // Then texts
-        ...filteredTexts.map(
-          (text) {
-            final unknownCount = _unknownCounts[text.id] ?? 0;
-            final totalLabel = text.getCountLabel(widget.language.splitByCharacter);
-            final unknownLabel = widget.language.splitByCharacter
-                ? '$unknownCount unknown characters'
-                : '$unknownCount unknown words';
+        // Then texts (sorted and filtered)
+        ...sortedTexts.map((text) {
+          final unknownCount = _unknownCounts[text.id] ?? 0;
+          final totalLabel = text.getCountLabel(
+            widget.language.splitByCharacter,
+          );
+          final unknownLabel = widget.language.splitByCharacter
+              ? '$unknownCount unknown characters'
+              : '$unknownCount unknown words';
 
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.article)),
-                title: Text(text.title),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(totalLabel),
-                    Text(
-                      unknownLabel,
-                      style: TextStyle(
-                        color: unknownCount > 0 ? Colors.orange : Colors.green,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: unknownCount == 0
+                    ? Colors.green.withOpacity(0.2)
+                    : null,
+                child: Icon(
+                  unknownCount == 0 ? Icons.check : Icons.article,
+                  color: unknownCount == 0 ? Colors.green : null,
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteText(text),
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ReaderScreen(text: text, language: widget.language),
-                    ),
-                  ).then((_) => _recalculateUnknownCountForText(text));
-                },
               ),
-            );
-          },
-        ),
+              title: Text(text.title),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(totalLabel),
+                  Text(
+                    unknownCount == 0 ? 'Completed!' : unknownLabel,
+                    style: TextStyle(
+                      color: unknownCount > 0 ? Colors.orange : Colors.green,
+                      fontSize: 12,
+                      fontWeight: unknownCount == 0 ? FontWeight.bold : null,
+                    ),
+                  ),
+                ],
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => _deleteText(text),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ReaderScreen(text: text, language: widget.language),
+                  ),
+                ).then((_) => _recalculateUnknownCountForText(text));
+              },
+            ),
+          );
+        }),
       ],
     );
   }
