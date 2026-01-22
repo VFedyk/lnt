@@ -140,6 +140,7 @@ class _TermsScreenState extends State<TermsScreen> {
         sentence: term.sentence,
         onLookup: (ctx, dictNum) {},
         dictionaries: const [],
+        languageId: widget.language.id!,
       ),
     );
 

@@ -42,7 +42,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -57,6 +57,14 @@ class DatabaseService {
     if (oldVersion < 3) {
       await db.execute(
         'ALTER TABLE collections ADD COLUMN cover_image TEXT',
+      );
+    }
+    if (oldVersion < 4) {
+      await db.execute(
+        'ALTER TABLE terms ADD COLUMN base_term_id INTEGER REFERENCES terms(id) ON DELETE SET NULL',
+      );
+      await db.execute(
+        'CREATE INDEX idx_terms_base ON terms(base_term_id)',
       );
     }
   }
@@ -105,13 +113,16 @@ class DatabaseService {
         sentence TEXT,
         created_at TEXT NOT NULL,
         last_accessed TEXT NOT NULL,
+        base_term_id INTEGER,
         FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE,
+        FOREIGN KEY (base_term_id) REFERENCES terms (id) ON DELETE SET NULL,
         UNIQUE(language_id, lower_text)
       )
     ''');
 
     await db.execute('CREATE INDEX idx_terms_lower ON terms(lower_text)');
     await db.execute('CREATE INDEX idx_terms_language ON terms(language_id)');
+    await db.execute('CREATE INDEX idx_terms_base ON terms(base_term_id)');
     await db.execute('CREATE INDEX idx_texts_language ON texts(language_id)');
 
     await db.execute('''
@@ -208,6 +219,9 @@ class DatabaseService {
       terms.bulkUpdateStatus(termIds, newStatus);
   Future<List<Term>> searchTerms(int languageId, String query) =>
       terms.search(languageId, query);
+  Future<Term?> getTerm(int id) => terms.getById(id);
+  Future<List<Term>> getLinkedTerms(int baseTermId) =>
+      terms.getLinkedTerms(baseTermId);
 
   // Collection
   Future<int> createCollection(Collection collection) =>

@@ -12,6 +12,7 @@ class Term {
   final String sentence;
   final DateTime createdAt;
   final DateTime lastAccessed;
+  final int? baseTermId; // Reference to base form term (e.g., "hablar" for "hablo")
 
   Term({
     this.id,
@@ -24,6 +25,7 @@ class Term {
     this.sentence = '',
     DateTime? createdAt,
     DateTime? lastAccessed,
+    this.baseTermId,
   }) : createdAt = createdAt ?? DateTime.now(),
        lastAccessed = lastAccessed ?? DateTime.now();
 
@@ -81,6 +83,7 @@ class Term {
       'sentence': sentence,
       'created_at': createdAt.toIso8601String(),
       'last_accessed': lastAccessed.toIso8601String(),
+      'base_term_id': baseTermId,
     };
   }
 
@@ -96,6 +99,7 @@ class Term {
       sentence: map['sentence'] ?? '',
       createdAt: DateTime.parse(map['created_at']),
       lastAccessed: DateTime.parse(map['last_accessed']),
+      baseTermId: map['base_term_id'] as int?,
     );
   }
 
@@ -110,6 +114,8 @@ class Term {
     String? sentence,
     DateTime? createdAt,
     DateTime? lastAccessed,
+    int? baseTermId,
+    bool clearBaseTermId = false,
   }) {
     return Term(
       id: id ?? this.id,
@@ -122,6 +128,7 @@ class Term {
       sentence: sentence ?? this.sentence,
       createdAt: createdAt ?? this.createdAt,
       lastAccessed: lastAccessed ?? this.lastAccessed,
+      baseTermId: clearBaseTermId ? null : (baseTermId ?? this.baseTermId),
     );
   }
 }

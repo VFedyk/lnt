@@ -50,6 +50,28 @@ class TermRepository extends BaseRepository {
     return Term.fromMap(maps.first);
   }
 
+  Future<Term?> getById(int id) async {
+    final db = await getDatabase();
+    final maps = await db.query(
+      'terms',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (maps.isEmpty) return null;
+    return Term.fromMap(maps.first);
+  }
+
+  Future<List<Term>> getLinkedTerms(int baseTermId) async {
+    final db = await getDatabase();
+    final maps = await db.query(
+      'terms',
+      where: 'base_term_id = ?',
+      whereArgs: [baseTermId],
+      orderBy: 'lower_text ASC',
+    );
+    return maps.map((map) => Term.fromMap(map)).toList();
+  }
+
   Future<Map<String, Term>> getMapByLanguage(int languageId) async {
     final db = await getDatabase();
     final maps = await db.query(
