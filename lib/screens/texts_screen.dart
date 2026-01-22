@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/language.dart';
 import '../models/text_document.dart';
@@ -10,6 +12,7 @@ import '../services/database_service.dart';
 import '../services/import_export_service.dart';
 import '../services/epub_import_service.dart';
 import '../services/text_parser_service.dart';
+import '../widgets/book_cover.dart';
 import 'reader_screen.dart';
 
 /// Sorting options for texts
@@ -22,6 +25,9 @@ enum TextSortOption {
   final IconData icon;
   const TextSortOption(this.label, this.icon);
 }
+
+/// View mode for texts screen
+enum TextViewMode { list, grid }
 
 class TextsScreen extends StatefulWidget {
   final Language language;
@@ -45,11 +51,13 @@ class _TextsScreenState extends State<TextsScreen> {
   TextSortOption _sortOption = TextSortOption.lastRead;
   bool _sortAscending = false;
   bool _hideCompleted = false; // Hide texts with 0 unknown words
+  TextViewMode _viewMode = TextViewMode.list;
 
   // Preference keys
   static const String _sortOptionKey = 'texts_sort_option';
   static const String _sortAscendingKey = 'texts_sort_ascending';
   static const String _hideCompletedKey = 'texts_hide_completed';
+  static const String _viewModeKey = 'texts_view_mode';
 
   // Static cache for unknown counts - persists across folder navigations
   // Key: languageId -> (textId -> unknownCount)
@@ -80,6 +88,9 @@ class _TextsScreenState extends State<TextsScreen> {
           .values[sortIndex.clamp(0, TextSortOption.values.length - 1)];
       _sortAscending = prefs.getBool(_sortAscendingKey) ?? false;
       _hideCompleted = prefs.getBool(_hideCompletedKey) ?? false;
+      final viewModeIndex = prefs.getInt(_viewModeKey) ?? TextViewMode.list.index;
+      _viewMode = TextViewMode
+          .values[viewModeIndex.clamp(0, TextViewMode.values.length - 1)];
     });
   }
 
@@ -88,6 +99,16 @@ class _TextsScreenState extends State<TextsScreen> {
     await prefs.setInt(_sortOptionKey, _sortOption.index);
     await prefs.setBool(_sortAscendingKey, _sortAscending);
     await prefs.setBool(_hideCompletedKey, _hideCompleted);
+    await prefs.setInt(_viewModeKey, _viewMode.index);
+  }
+
+  void _toggleViewMode() {
+    setState(() {
+      _viewMode = _viewMode == TextViewMode.list
+          ? TextViewMode.grid
+          : TextViewMode.list;
+    });
+    _savePreferences();
   }
 
   void _setSortOption(TextSortOption option) {
@@ -465,6 +486,16 @@ class _TextsScreenState extends State<TextsScreen> {
             ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: _goBack)
             : null,
         actions: [
+          // View mode toggle
+          IconButton(
+            icon: Icon(
+              _viewMode == TextViewMode.list ? Icons.grid_view : Icons.list,
+            ),
+            tooltip: _viewMode == TextViewMode.list
+                ? 'Switch to grid view'
+                : 'Switch to list view',
+            onPressed: _toggleViewMode,
+          ),
           // Sort button
           PopupMenuButton<TextSortOption>(
             icon: const Icon(Icons.sort),
@@ -584,7 +615,9 @@ class _TextsScreenState extends State<TextsScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _buildContentList(),
+                : _viewMode == TextViewMode.list
+                    ? _buildContentList()
+                    : _buildContentGrid(),
           ),
         ],
       ),
@@ -698,6 +731,16 @@ class _TextsScreenState extends State<TextsScreen> {
               trailing: PopupMenuButton(
                 itemBuilder: (context) => [
                   const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit),
+                        SizedBox(width: 8),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
@@ -709,7 +752,9 @@ class _TextsScreenState extends State<TextsScreen> {
                   ),
                 ],
                 onSelected: (value) {
-                  if (value == 'delete') {
+                  if (value == 'edit') {
+                    _editCollection(collection);
+                  } else if (value == 'delete') {
                     _deleteCollection(collection);
                   }
                 },
@@ -775,13 +820,187 @@ class _TextsScreenState extends State<TextsScreen> {
       ],
     );
   }
+
+  Widget _buildContentGrid() {
+    final sortedTexts = _getSortedAndFilteredTexts(_texts);
+
+    if (_collections.isEmpty && sortedTexts.isEmpty) {
+      if (_hideCompleted && _texts.isNotEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'All texts completed!',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: _toggleHideCompleted,
+                icon: const Icon(Icons.visibility),
+                label: const Text('Show completed texts'),
+              ),
+            ],
+          ),
+        );
+      }
+      return const Center(child: Text('No collections or texts'));
+    }
+
+    // Combine collections and texts into a single list for grid
+    final items = <_GridItem>[
+      ..._collections.map((c) => _GridItem(collection: c)),
+      ...sortedTexts.map((t) => _GridItem(text: t)),
+    ];
+
+    // Max cover height: 256px with 2:3 aspect ratio = ~170px width
+    // Plus ~50px for title/subtitle text
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 140,
+        childAspectRatio: 0.45,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+
+        if (item.collection != null) {
+          final collection = item.collection!;
+          return BookCover(
+            title: collection.name,
+            subtitle: collection.description.isNotEmpty
+                ? collection.description
+                : null,
+            imagePath: collection.coverImage,
+            isFolder: true,
+            onTap: () => _openCollection(collection),
+            onLongPress: () => _showCollectionOptions(collection),
+          );
+        } else {
+          final text = item.text!;
+          final unknownCount = _unknownCounts[text.id] ?? 0;
+          final unknownLabel = widget.language.splitByCharacter
+              ? '$unknownCount unknown'
+              : '$unknownCount unknown';
+
+          return BookCover(
+            title: text.title,
+            subtitle: unknownCount == 0 ? 'Completed!' : unknownLabel,
+            isCompleted: unknownCount == 0,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      ReaderScreen(text: text, language: widget.language),
+                ),
+              ).then((_) => _recalculateUnknownCountForText(text));
+            },
+            onLongPress: () => _showTextOptions(text),
+          );
+        }
+      },
+    );
+  }
+
+  void _showCollectionOptions(Collection collection) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Edit'),
+              onTap: () {
+                Navigator.pop(context);
+                _editCollection(collection);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _deleteCollection(collection);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTextOptions(TextDocument text) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _deleteText(text);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editCollection(Collection collection) async {
+    final result = await showDialog<Collection>(
+      context: context,
+      builder: (context) => _CollectionDialog(
+        languageId: widget.language.id!,
+        parentId: collection.parentId,
+        existingCollection: collection,
+      ),
+    );
+
+    if (result != null) {
+      await DatabaseService.instance.updateCollection(result);
+      _loadData();
+    }
+  }
+}
+
+class _GridItem {
+  final Collection? collection;
+  final TextDocument? text;
+
+  _GridItem({this.collection, this.text});
 }
 
 class _CollectionDialog extends StatefulWidget {
   final int languageId;
   final int? parentId;
+  final Collection? existingCollection;
 
-  const _CollectionDialog({required this.languageId, this.parentId});
+  const _CollectionDialog({
+    required this.languageId,
+    this.parentId,
+    this.existingCollection,
+  });
+
+  bool get isEditing => existingCollection != null;
 
   @override
   State<_CollectionDialog> createState() => _CollectionDialogState();
@@ -791,6 +1010,17 @@ class _CollectionDialogState extends State<_CollectionDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
+  String? _coverImagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingCollection != null) {
+      _nameController.text = widget.existingCollection!.name;
+      _descriptionController.text = widget.existingCollection!.description;
+      _coverImagePath = widget.existingCollection!.coverImage;
+    }
+  }
 
   @override
   void dispose() {
@@ -799,30 +1029,109 @@ class _CollectionDialogState extends State<_CollectionDialog> {
     super.dispose();
   }
 
+  Future<void> _pickCoverImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+    );
+
+    if (result != null && result.files.single.path != null) {
+      final sourcePath = result.files.single.path!;
+      final sourceFile = File(sourcePath);
+
+      // Copy to app's documents directory for persistent access
+      final appDir = await getApplicationDocumentsDirectory();
+      final coversDir = Directory(p.join(appDir.path, 'covers'));
+      if (!await coversDir.exists()) {
+        await coversDir.create(recursive: true);
+      }
+
+      // Generate unique filename using timestamp
+      final extension = p.extension(sourcePath);
+      final newFileName = '${DateTime.now().millisecondsSinceEpoch}$extension';
+      final newPath = p.join(coversDir.path, newFileName);
+
+      await sourceFile.copy(newPath);
+
+      setState(() {
+        _coverImagePath = newPath;
+      });
+    }
+  }
+
+  void _removeCoverImage() {
+    setState(() {
+      _coverImagePath = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('New Collection'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-              validator: (v) => v?.isEmpty == true ? 'Required' : null,
-              autofocus: true,
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
+      title: Text(widget.isEditing ? 'Edit Collection' : 'New Collection'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Cover image picker
+              GestureDetector(
+                onTap: _pickCoverImage,
+                child: Container(
+                  width: 100,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[400]!),
+                    image: _coverImagePath != null
+                        ? DecorationImage(
+                            image: FileImage(File(_coverImagePath!)),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: _coverImagePath == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_photo_alternate,
+                                size: 32, color: Colors.grey[600]),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Add Cover',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        )
+                      : null,
+                ),
               ),
-              maxLines: 2,
-            ),
-          ],
+              if (_coverImagePath != null)
+                TextButton(
+                  onPressed: _removeCoverImage,
+                  child: const Text('Remove Cover'),
+                ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Name'),
+                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                autofocus: !widget.isEditing,
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Description (optional)',
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -833,16 +1142,25 @@ class _CollectionDialogState extends State<_CollectionDialog> {
         TextButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
-              final collection = Collection(
-                languageId: widget.languageId,
-                parentId: widget.parentId,
-                name: _nameController.text,
-                description: _descriptionController.text,
-              );
+              final collection = widget.isEditing
+                  ? widget.existingCollection!.copyWith(
+                      name: _nameController.text,
+                      description: _descriptionController.text,
+                      coverImage: _coverImagePath,
+                      clearCoverImage: _coverImagePath == null &&
+                          widget.existingCollection!.coverImage != null,
+                    )
+                  : Collection(
+                      languageId: widget.languageId,
+                      parentId: widget.parentId,
+                      name: _nameController.text,
+                      description: _descriptionController.text,
+                      coverImage: _coverImagePath,
+                    );
               Navigator.pop(context, collection);
             }
           },
-          child: const Text('Create'),
+          child: Text(widget.isEditing ? 'Save' : 'Create'),
         ),
       ],
     );
