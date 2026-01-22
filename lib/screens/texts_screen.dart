@@ -28,12 +28,19 @@ class _TextsScreenState extends State<TextsScreen> {
   final _searchController = TextEditingController();
   final _importService = ImportExportService();
   final _textParser = TextParserService();
-  Map<int, int> _unknownCounts = {}; // textId -> unknown word count
+
+  // Static cache for unknown counts - persists across folder navigations
+  // Key: languageId -> (textId -> unknownCount)
+  static final Map<int, Map<int, int>> _unknownCountsCache = {};
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  Map<int, int> get _unknownCounts {
+    return _unknownCountsCache[widget.language.id!] ??= {};
   }
 
   Future<void> _loadData() async {
@@ -48,26 +55,31 @@ class _TextsScreenState extends State<TextsScreen> {
       languageId: widget.language.id!,
     );
 
-    // Load terms map for unknown word calculation
-    final termsMap = await DatabaseService.instance.getTermsMap(
-      widget.language.id!,
-    );
-
     // Filter texts by current collection
     final filteredTexts = _currentCollection == null
         ? texts.where((t) => t.collectionId == null).toList()
         : texts.where((t) => t.collectionId == _currentCollection!.id).toList();
 
-    // Calculate unknown counts for each text
-    final unknownCounts = <int, int>{};
-    for (final text in filteredTexts) {
-      unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
+    // Find texts that need unknown count calculation (not in cache)
+    final textsToCalculate = filteredTexts
+        .where((t) => !_unknownCounts.containsKey(t.id!))
+        .toList();
+
+    // Only load terms map if we have texts to calculate
+    if (textsToCalculate.isNotEmpty) {
+      final termsMap = await DatabaseService.instance.getTermsMap(
+        widget.language.id!,
+      );
+
+      // Calculate unknown counts only for texts not in cache
+      for (final text in textsToCalculate) {
+        _unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
+      }
     }
 
     setState(() {
       _collections = collections;
       _texts = filteredTexts;
-      _unknownCounts = unknownCounts;
       _isLoading = false;
     });
   }
