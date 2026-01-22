@@ -22,6 +22,7 @@ class TermDialog extends StatefulWidget {
 
 class _TermDialogState extends State<TermDialog> {
   late int _status;
+  late TextEditingController _termController;
   late TextEditingController _translationController;
   late TextEditingController _romanizationController;
   late TextEditingController _sentenceController;
@@ -30,6 +31,7 @@ class _TermDialogState extends State<TermDialog> {
   void initState() {
     super.initState();
     _status = widget.term.status;
+    _termController = TextEditingController(text: widget.term.lowerText);
     _translationController = TextEditingController(
       text: widget.term.translation,
     );
@@ -45,6 +47,7 @@ class _TermDialogState extends State<TermDialog> {
 
   @override
   void dispose() {
+    _termController.dispose();
     _translationController.dispose();
     _romanizationController.dispose();
     _sentenceController.dispose();
@@ -57,7 +60,20 @@ class _TermDialogState extends State<TermDialog> {
       title: Row(
         children: [
           Expanded(
-            child: Text(widget.term.text, style: const TextStyle(fontSize: 24)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.term.lowerText,
+                  style: const TextStyle(fontSize: 24),
+                ),
+                if (widget.term.text != widget.term.lowerText)
+                  Text(
+                    'Original: ${widget.term.text}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+              ],
+            ),
           ),
           if (widget.dictionaries.isNotEmpty)
             PopupMenuButton<Dictionary>(
@@ -80,6 +96,16 @@ class _TermDialogState extends State<TermDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Term field (editable)
+            TextField(
+              controller: _termController,
+              decoration: const InputDecoration(
+                labelText: 'Term',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
             // Status selector
             const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
@@ -145,7 +171,10 @@ class _TermDialogState extends State<TermDialog> {
         ),
         TextButton(
           onPressed: () {
+            final editedTerm = _termController.text.trim().toLowerCase();
             final updatedTerm = widget.term.copyWith(
+              text: editedTerm,
+              lowerText: editedTerm,
               status: _status,
               translation: _translationController.text,
               romanization: _romanizationController.text,
