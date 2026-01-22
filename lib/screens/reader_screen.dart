@@ -58,13 +58,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         widget.language.id!,
       );
 
-      // Get term counts by status
-      _termCounts = await DatabaseService.instance.getTermCountsByStatus(
-        widget.language.id!,
-      );
-
       // Parse text into words
       _parseText();
+
+      // Calculate term counts for this specific text
+      _updateTextTermCounts();
 
       setState(() => _isLoading = false);
     } catch (e) {
@@ -75,6 +73,25 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ).showSnackBar(SnackBar(content: Text('Error loading terms: $e')));
       }
     }
+  }
+
+  void _updateTextTermCounts() {
+    final counts = <int, int>{};
+    final seenWords = <String>{};
+
+    for (final token in _wordTokens) {
+      if (!token.isWord) continue;
+
+      final normalized = token.text.toLowerCase();
+      if (seenWords.contains(normalized)) continue;
+      seenWords.add(normalized);
+
+      final term = _termsMap[normalized];
+      final status = term?.status ?? 1; // Default to Unknown (1) if no term
+      counts[status] = (counts[status] ?? 0) + 1;
+    }
+
+    _termCounts = counts;
   }
 
   void _parseText() {
