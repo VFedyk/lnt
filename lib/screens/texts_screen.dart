@@ -4,9 +4,11 @@ import 'package:file_picker/file_picker.dart';
 import '../models/language.dart';
 import '../models/text_document.dart';
 import '../models/collection.dart';
+import '../models/term.dart';
 import '../services/database_service.dart';
 import '../services/import_export_service.dart';
 import '../services/epub_import_service.dart';
+import '../services/text_parser_service.dart';
 import 'reader_screen.dart';
 
 class TextsScreen extends StatefulWidget {
@@ -25,6 +27,8 @@ class _TextsScreenState extends State<TextsScreen> {
   bool _isLoading = true;
   final _searchController = TextEditingController();
   final _importService = ImportExportService();
+  final _textParser = TextParserService();
+  Map<int, int> _unknownCounts = {}; // textId -> unknown word count
 
   @override
   void initState() {
@@ -44,15 +48,57 @@ class _TextsScreenState extends State<TextsScreen> {
       languageId: widget.language.id!,
     );
 
+    // Load terms map for unknown word calculation
+    final termsMap = await DatabaseService.instance.getTermsMap(
+      widget.language.id!,
+    );
+
     // Filter texts by current collection
     final filteredTexts = _currentCollection == null
         ? texts.where((t) => t.collectionId == null).toList()
         : texts.where((t) => t.collectionId == _currentCollection!.id).toList();
 
+    // Calculate unknown counts for each text
+    final unknownCounts = <int, int>{};
+    for (final text in filteredTexts) {
+      unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
+    }
+
     setState(() {
       _collections = collections;
       _texts = filteredTexts;
+      _unknownCounts = unknownCounts;
       _isLoading = false;
+    });
+  }
+
+  int _calculateUnknownCount(TextDocument text, Map<String, Term> termsMap) {
+    final words = _textParser.splitIntoWords(text.content, widget.language);
+    int unknownCount = 0;
+
+    final seenWords = <String>{};
+    for (final word in words) {
+      final normalized = word.toLowerCase();
+      if (seenWords.contains(normalized)) continue;
+      seenWords.add(normalized);
+
+      final term = termsMap[normalized];
+      // Count as unknown if no term exists or status is 1 (Unknown)
+      if (term == null || term.status == 1) {
+        unknownCount++;
+      }
+    }
+
+    return unknownCount;
+  }
+
+  Future<void> _recalculateUnknownCountForText(TextDocument text) async {
+    final termsMap = await DatabaseService.instance.getTermsMap(
+      widget.language.id!,
+    );
+    final newCount = _calculateUnknownCount(text, termsMap);
+    setState(() {
+      _unknownCounts[text.id!] = newCount;
     });
   }
 
@@ -422,29 +468,47 @@ class _TextsScreenState extends State<TextsScreen> {
 
         // Then texts
         ...filteredTexts.map(
-          (text) => Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.article)),
-              title: Text(text.title),
-              subtitle: Text(
-                text.getCountLabel(widget.language.splitByCharacter),
+          (text) {
+            final unknownCount = _unknownCounts[text.id] ?? 0;
+            final totalLabel = text.getCountLabel(widget.language.splitByCharacter);
+            final unknownLabel = widget.language.splitByCharacter
+                ? '$unknownCount unknown characters'
+                : '$unknownCount unknown words';
+
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.article)),
+                title: Text(text.title),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(totalLabel),
+                    Text(
+                      unknownLabel,
+                      style: TextStyle(
+                        color: unknownCount > 0 ? Colors.orange : Colors.green,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _deleteText(text),
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ReaderScreen(text: text, language: widget.language),
+                    ),
+                  ).then((_) => _recalculateUnknownCountForText(text));
+                },
               ),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _deleteText(text),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        ReaderScreen(text: text, language: widget.language),
-                  ),
-                );
-              },
-            ),
-          ),
+            );
+          },
         ),
       ],
     );
