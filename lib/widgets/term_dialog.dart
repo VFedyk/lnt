@@ -99,9 +99,18 @@ class _TermDialogState extends State<TermDialog> {
             // Term field (editable)
             TextField(
               controller: _termController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Term',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                suffixIcon: widget.term.text != widget.term.lowerText
+                    ? IconButton(
+                        icon: const Icon(Icons.history),
+                        tooltip: 'Use original: ${widget.term.text}',
+                        onPressed: () {
+                          _termController.text = widget.term.text;
+                        },
+                      )
+                    : null,
               ),
             ),
             const SizedBox(height: 16),
