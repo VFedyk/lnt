@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:epubx/epubx.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/text_document.dart';
 import '../models/collection.dart';
 import 'database_service.dart';
@@ -9,6 +11,7 @@ class EpubImportResult {
   final int collectionId;
   final String bookTitle;
   final String? author;
+  final String? coverImagePath;
   final int totalChapters;
   final int totalParts;
   final int totalCharacters;
@@ -18,6 +21,7 @@ class EpubImportResult {
     required this.collectionId,
     required this.bookTitle,
     this.author,
+    this.coverImagePath,
     required this.totalChapters,
     required this.totalParts,
     required this.totalCharacters,
@@ -74,6 +78,17 @@ class EpubImportService {
 
     final collectionId = await DatabaseService.instance.createCollection(collection);
 
+    // Extract and save cover image
+    final coverImagePath = await _extractCoverImage(epubBook, collectionId);
+    if (coverImagePath != null) {
+      // Update collection with cover image
+      final updatedCollection = collection.copyWith(
+        id: collectionId,
+        coverImage: coverImagePath,
+      );
+      await DatabaseService.instance.updateCollection(updatedCollection);
+    }
+
     try {
       // Process chapters
       final chapters = epubBook.Chapters;
@@ -83,6 +98,7 @@ class EpubImportService {
           collectionId: collectionId,
           bookTitle: title,
           author: author,
+          coverImagePath: coverImagePath,
           totalChapters: 0,
           totalParts: 0,
           totalCharacters: 0,
@@ -124,6 +140,7 @@ class EpubImportService {
         collectionId: collectionId,
         bookTitle: title,
         author: author,
+        coverImagePath: coverImagePath,
         totalChapters: chaptersRef.value,
         totalParts: partsRef.value,
         totalCharacters: charsRef.value,
@@ -133,6 +150,68 @@ class EpubImportService {
       // If import fails, delete the created collection
       await DatabaseService.instance.deleteCollection(collectionId);
       rethrow;
+    }
+  }
+
+  /// Extract and save cover image from EPUB
+  Future<String?> _extractCoverImage(EpubBook epubBook, int collectionId) async {
+    try {
+      // Try to find cover image in EPUB content
+      final content = epubBook.Content;
+      if (content == null || content.Images == null || content.Images!.isEmpty) {
+        return null;
+      }
+
+      final images = content.Images!;
+      EpubByteContentFile? coverFile;
+
+      // Look for common cover image patterns in filenames
+      for (final key in images.keys) {
+        final lowerKey = key.toLowerCase();
+        if (lowerKey.contains('cover') ||
+            lowerKey.contains('title') ||
+            lowerKey.contains('front')) {
+          coverFile = images[key];
+          break;
+        }
+      }
+
+      // If still not found, just take the first image
+      coverFile ??= images.values.first;
+
+      if (coverFile.Content == null) {
+        return null;
+      }
+
+      // Determine file extension from filename
+      String extension = 'jpg';
+      final fileName = coverFile.FileName?.toLowerCase() ?? '';
+
+      if (fileName.endsWith('.png')) {
+        extension = 'png';
+      } else if (fileName.endsWith('.gif')) {
+        extension = 'gif';
+      } else if (fileName.endsWith('.webp')) {
+        extension = 'webp';
+      } else if (fileName.endsWith('.jpeg')) {
+        extension = 'jpeg';
+      }
+
+      // Save to app documents directory
+      final appDir = await getApplicationDocumentsDirectory();
+      final coverDir = Directory('${appDir.path}/covers');
+      if (!await coverDir.exists()) {
+        await coverDir.create(recursive: true);
+      }
+
+      final coverPath = '${coverDir.path}/cover_$collectionId.$extension';
+      final file = File(coverPath);
+      await file.writeAsBytes(coverFile.Content!);
+
+      return coverPath;
+    } catch (e) {
+      // Cover extraction failed, but don't fail the whole import
+      return null;
     }
   }
 
