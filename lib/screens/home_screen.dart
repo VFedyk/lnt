@@ -244,6 +244,7 @@ class _DashboardTabState extends State<_DashboardTab> {
   List<TextDocument> _recentlyAddedTexts = [];
   Map<int, int> _termCounts = {};
   Map<int, int> _unknownCounts = {};
+  Map<int, String> _collectionNames = {};
   bool _isLoading = true;
   final _textParser = TextParserService();
 
@@ -285,11 +286,25 @@ class _DashboardTabState extends State<_DashboardTab> {
         unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
       }
 
+      // Load collection names for texts in collections
+      final collectionNames = <int, String>{};
+      final collectionIds = allTexts
+          .where((t) => t.collectionId != null)
+          .map((t) => t.collectionId!)
+          .toSet();
+      for (final collectionId in collectionIds) {
+        final collection = await DatabaseService.instance.getCollection(collectionId);
+        if (collection != null) {
+          collectionNames[collectionId] = collection.name;
+        }
+      }
+
       setState(() {
         _recentlyReadTexts = recentlyRead;
         _recentlyAddedTexts = recentlyAdded;
         _termCounts = counts;
         _unknownCounts = unknownCounts;
+        _collectionNames = collectionNames;
         _isLoading = false;
       });
     } catch (e) {
@@ -464,23 +479,28 @@ class _DashboardTabState extends State<_DashboardTab> {
               )
             else
               ..._recentlyReadTexts.map(
-                (text) => ListTile(
-                  leading: const Icon(Icons.history),
-                  title: Text(text.title),
-                  subtitle: Text(
-                    '${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ReaderScreen(text: text, language: widget.language),
-                      ),
-                    );
-                  },
-                ),
+                (text) {
+                  final collectionName = text.collectionId != null
+                      ? _collectionNames[text.collectionId]
+                      : null;
+                  return ListTile(
+                    leading: const Icon(Icons.history),
+                    title: Text(text.title),
+                    subtitle: Text(
+                      '${collectionName != null ? '$collectionName • ' : ''}${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ReaderScreen(text: text, language: widget.language),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
           ],
         ),
@@ -507,23 +527,28 @@ class _DashboardTabState extends State<_DashboardTab> {
               )
             else
               ..._recentlyAddedTexts.map(
-                (text) => ListTile(
-                  leading: const Icon(Icons.article),
-                  title: Text(text.title),
-                  subtitle: Text(
-                    '${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ReaderScreen(text: text, language: widget.language),
-                      ),
-                    );
-                  },
-                ),
+                (text) {
+                  final collectionName = text.collectionId != null
+                      ? _collectionNames[text.collectionId]
+                      : null;
+                  return ListTile(
+                    leading: const Icon(Icons.article),
+                    title: Text(text.title),
+                    subtitle: Text(
+                      '${collectionName != null ? '$collectionName • ' : ''}${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ReaderScreen(text: text, language: widget.language),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
           ],
         ),
