@@ -614,15 +614,35 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   List<Widget> _buildWordWidgets() {
-    return _wordTokens.asMap().entries.map((entry) {
-      final index = entry.key;
-      final token = entry.value;
+    final widgets = <Widget>[];
+
+    for (int index = 0; index < _wordTokens.length; index++) {
+      final token = _wordTokens[index];
 
       if (!token.isWord) {
-        return Text(
-          token.text,
-          style: TextStyle(fontSize: _fontSize, height: 1.6),
-        );
+        // Handle newlines specially to create proper line breaks in Wrap
+        if (token.text.contains('\n')) {
+          final parts = token.text.split('\n');
+          for (int i = 0; i < parts.length; i++) {
+            // Add the text part (may be empty)
+            if (parts[i].isNotEmpty) {
+              widgets.add(Text(
+                parts[i],
+                style: TextStyle(fontSize: _fontSize, height: 1.6),
+              ));
+            }
+            // Add line break (except after last part)
+            if (i < parts.length - 1) {
+              widgets.add(const SizedBox(width: double.infinity, height: 8));
+            }
+          }
+        } else {
+          widgets.add(Text(
+            token.text,
+            style: TextStyle(fontSize: _fontSize, height: 1.6),
+          ));
+        }
+        continue;
       }
 
       final term = token.term;
@@ -663,7 +683,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       }
       // All other cases use null (theme default) for better readability
 
-      return GestureDetector(
+      widgets.add(GestureDetector(
         onTap: () => _handleWordTap(token.text, token.position, index),
         onLongPress: () => _handleWordLongPress(index),
         child: Container(
@@ -684,8 +704,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
             ),
           ),
         ),
-      );
-    }).toList();
+      ));
+    }
+
+    return widgets;
   }
 
   void _showFontSizeDialog() {
