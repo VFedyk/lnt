@@ -389,8 +389,8 @@ class _TermDialogState extends State<TermDialog> {
 
   Widget _buildStatusChip(int status, String label, Color color) {
     final isSelected = _status == status;
-    final isIgnored = status == 0;
-    final isWellKnown = status == 99;
+    final isIgnored = status == TermStatus.ignored;
+    final isWellKnown = status == TermStatus.wellKnown;
 
     // For ignored and well-known when not selected, show as plain text
     if ((isIgnored || isWellKnown) && !isSelected) {
@@ -546,7 +546,7 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
       languageId: widget.languageId,
       text: termText,
       lowerText: termText,
-      status: 1,
+      status: TermStatus.unknown,
       translation: _translationController.text.trim(),
     );
 

@@ -1,6 +1,69 @@
 // FILE: lib/models/term.dart
 import 'package:flutter/material.dart';
 
+/// Centralized definition of term statuses with their colors and names
+class TermStatus {
+  static const int ignored = 0;
+  static const int unknown = 1;
+  static const int learning2 = 2;
+  static const int learning3 = 3;
+  static const int learning4 = 4;
+  static const int known = 5;
+  static const int wellKnown = 99;
+
+  static const List<int> allStatuses = [
+    ignored,
+    unknown,
+    learning2,
+    learning3,
+    learning4,
+    known,
+    wellKnown,
+  ];
+
+  static Color colorFor(int status) {
+    switch (status) {
+      case ignored:
+        return Colors.grey.shade400;
+      case unknown:
+        return Colors.red.shade400;
+      case learning2:
+        return Colors.orange.shade400;
+      case learning3:
+        return Colors.yellow.shade700;
+      case learning4:
+        return Colors.lightGreen.shade500;
+      case known:
+        return Colors.green.shade600;
+      case wellKnown:
+        return Colors.blue.shade400;
+      default:
+        return Colors.red.shade400;
+    }
+  }
+
+  static String nameFor(int status) {
+    switch (status) {
+      case ignored:
+        return 'Ignored';
+      case unknown:
+        return 'Unknown';
+      case learning2:
+        return 'Learning 2';
+      case learning3:
+        return 'Learning 3';
+      case learning4:
+        return 'Learning 4';
+      case known:
+        return 'Known';
+      case wellKnown:
+        return 'Well Known';
+      default:
+        return 'Unknown';
+    }
+  }
+}
+
 class Term {
   final int? id;
   final int languageId;
@@ -12,7 +75,8 @@ class Term {
   final String sentence;
   final DateTime createdAt;
   final DateTime lastAccessed;
-  final int? baseTermId; // Reference to base form term (e.g., "hablar" for "hablo")
+  final int?
+  baseTermId; // Reference to base form term (e.g., "hablar" for "hablo")
 
   Term({
     this.id,
@@ -29,47 +93,9 @@ class Term {
   }) : createdAt = createdAt ?? DateTime.now(),
        lastAccessed = lastAccessed ?? DateTime.now();
 
-  Color get statusColor {
-    switch (status) {
-      case 0:
-        return Colors.grey.shade400;
-      case 1:
-        return Colors.red.shade400;
-      case 2:
-        return Colors.orange.shade400;
-      case 3:
-        return Colors.yellow.shade700;
-      case 4:
-        return Colors.lightGreen.shade500;
-      case 5:
-        return Colors.green.shade600;
-      case 99:
-        return Colors.blue.shade400;
-      default:
-        return Colors.grey;
-    }
-  }
+  Color get statusColor => TermStatus.colorFor(status);
 
-  String get statusName {
-    switch (status) {
-      case 0:
-        return 'Ignored';
-      case 1:
-        return 'Unknown';
-      case 2:
-        return 'Learning 2';
-      case 3:
-        return 'Learning 3';
-      case 4:
-        return 'Learning 4';
-      case 5:
-        return 'Known';
-      case 99:
-        return 'Well Known';
-      default:
-        return 'Unknown';
-    }
-  }
+  String get statusName => TermStatus.nameFor(status);
 
   Map<String, dynamic> toMap() {
     return {

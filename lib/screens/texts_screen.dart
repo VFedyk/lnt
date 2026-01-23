@@ -219,8 +219,8 @@ class _TextsScreenState extends State<TextsScreen> {
       seenWords.add(normalized);
 
       final term = termsMap[normalized];
-      // Count as unknown if no term exists or status is 1 (Unknown)
-      if (term == null || term.status == 1) {
+      // Count as unknown if no term exists or status is Unknown
+      if (term == null || term.status == TermStatus.unknown) {
         unknownCount++;
       }
     }

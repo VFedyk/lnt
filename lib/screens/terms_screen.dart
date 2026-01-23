@@ -155,7 +155,7 @@ class _TermsScreenState extends State<TermsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Terms - ${widget.language.name}'),
+        title: Text('Vocabulary - ${widget.language.name}'),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),

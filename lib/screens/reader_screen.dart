@@ -332,7 +332,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         languageId: widget.language.id!,
         text: word,
         lowerText: lowerWord,
-        status: 1,
+        status: TermStatus.unknown,
         sentence: sentence,
       );
 
@@ -475,7 +475,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         languageId: widget.language.id!,
         text: selectedWords,
         lowerText: lowerWords,
-        status: 1,
+        status: TermStatus.unknown,
         sentence: sentence,
       );
 
@@ -627,8 +627,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
       final term = token.term;
       final isSelected = _selectedWordIndices.contains(index);
-      final isIgnored = term?.status == 0;
-      final isWellKnown = term?.status == 99;
+      final isIgnored = term?.status == TermStatus.ignored;
+      final isWellKnown = term?.status == TermStatus.wellKnown;
 
       Color backgroundColor;
       if (isSelected) {
@@ -639,30 +639,29 @@ class _ReaderScreenState extends State<ReaderScreen> {
       } else if (term != null) {
         backgroundColor = term.statusColor.withOpacity(0.3);
       } else {
-        backgroundColor = Colors.grey.shade200;
+        backgroundColor = TermStatus.colorFor(
+          TermStatus.unknown,
+        ).withOpacity(0.3);
       }
 
-      Color? borderColor;
+      Color borderColor;
       if (isSelected) {
         borderColor = Colors.blue.shade600;
       } else if (isIgnored || isWellKnown) {
-        // Ignored and well-known words have no border
-        borderColor = null;
+        // Ignored and well-known words have transparent border for consistent height
+        borderColor = Colors.transparent;
       } else if (term != null) {
         borderColor = term.statusColor.withOpacity(0.5);
       } else {
-        borderColor = Colors.grey.shade400;
+        borderColor = TermStatus.colorFor(TermStatus.unknown).withOpacity(0.5);
       }
 
-      // Text color matches the context (inherited from theme)
+      // Text color - use theme default for readability
       Color? textColor;
       if (isSelected) {
         textColor = Colors.black87;
-      } else if (isIgnored || isWellKnown) {
-        textColor = null; // Use theme default (same as regular text)
-      } else {
-        textColor = Colors.black87;
       }
+      // All other cases use null (theme default) for better readability
 
       return GestureDetector(
         onTap: () => _handleWordTap(token.text, token.position, index),
@@ -672,17 +671,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 1),
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: (isIgnored || isWellKnown)
-                ? null
-                : BorderRadius.circular(4),
-            border: borderColor != null
-                ? Border.all(color: borderColor, width: isSelected ? 2 : 1)
-                : null,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
           ),
           child: Text(
             token.text,
             style: TextStyle(
               fontSize: _fontSize,
+              height: 1.6,
               color: textColor,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
@@ -765,7 +761,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         if (existingTerm != null) {
           await DatabaseService.instance.updateTerm(
-            existingTerm.copyWith(status: 99),
+            existingTerm.copyWith(status: TermStatus.wellKnown),
           );
         } else {
           await DatabaseService.instance.createTerm(
@@ -773,7 +769,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               languageId: widget.language.id!,
               text: word,
               lowerText: lowerWord,
-              status: 99,
+              status: TermStatus.wellKnown,
             ),
           );
         }

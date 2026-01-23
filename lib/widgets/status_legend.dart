@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/term.dart';
 
 class StatusLegend extends StatelessWidget {
   final Map<int, int>? termCounts; // Optional term counts by status
@@ -32,15 +33,13 @@ class StatusLegend extends StatelessWidget {
           Wrap(
             spacing: 12,
             runSpacing: 8,
-            children: [
-              _buildLegendItem('Ignored', Colors.grey.shade400, 0),
-              _buildLegendItem('Unknown', Colors.red.shade400, 1),
-              _buildLegendItem('Learning 2', Colors.orange.shade400, 2),
-              _buildLegendItem('Learning 3', Colors.yellow.shade700, 3),
-              _buildLegendItem('Learning 4', Colors.lightGreen.shade500, 4),
-              _buildLegendItem('Known', Colors.green.shade600, 5),
-              _buildLegendItem('Well Known', Colors.blue.shade400, 99),
-            ],
+            children: TermStatus.allStatuses
+                .map((status) => _buildLegendItem(
+                      TermStatus.nameFor(status),
+                      TermStatus.colorFor(status),
+                      status,
+                    ))
+                .toList(),
           ),
         ],
       ),
@@ -48,8 +47,8 @@ class StatusLegend extends StatelessWidget {
   }
 
   Widget _buildLegendItem(String label, Color color, int status) {
-    final isIgnored = label == 'Ignored';
-    final isWellKnown = label == 'Well Known';
+    final isIgnored = status == TermStatus.ignored;
+    final isWellKnown = status == TermStatus.wellKnown;
     final count = termCounts?[status] ?? 0;
     final showCount = termCounts != null;
 

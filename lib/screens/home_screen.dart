@@ -211,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 NavigationDestination(
                   icon: Icon(Icons.book_outlined),
                   selectedIcon: Icon(Icons.book),
-                  label: 'Terms',
+                  label: 'Vocabulary',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.bar_chart_outlined),
@@ -323,7 +323,7 @@ class _DashboardTabState extends State<_DashboardTab> {
       seenWords.add(normalized);
 
       final term = termsMap[normalized];
-      if (term == null || term.status == 1) {
+      if (term == null || term.status == TermStatus.unknown) {
         unknownCount++;
       }
     }
@@ -442,7 +442,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                 ),
                 ActionChip(
                   avatar: const Icon(Icons.import_export),
-                  label: const Text('Import Terms'),
+                  label: const Text('Import Vocabulary'),
                   onPressed: () {
                     Navigator.push(
                       context,

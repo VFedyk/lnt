@@ -1,6 +1,7 @@
 // FILE: lib/screens/statistics_screen.dart
 import 'package:flutter/material.dart';
 import '../models/language.dart';
+import '../models/term.dart';
 import '../services/database_service.dart';
 
 class StatisticsScreen extends StatefulWidget {
@@ -125,46 +126,46 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                   const SizedBox(height: 16),
                   _buildStatusBar(
-                    0,
-                    'Ignored',
+                    TermStatus.ignored,
+                    TermStatus.nameFor(TermStatus.ignored),
                     ignoredCount,
-                    Colors.grey.shade400,
+                    TermStatus.colorFor(TermStatus.ignored),
                   ),
                   _buildStatusBar(
-                    1,
-                    'Unknown',
-                    _statusCounts[1] ?? 0,
-                    Colors.red.shade400,
+                    TermStatus.unknown,
+                    TermStatus.nameFor(TermStatus.unknown),
+                    _statusCounts[TermStatus.unknown] ?? 0,
+                    TermStatus.colorFor(TermStatus.unknown),
                   ),
                   _buildStatusBar(
-                    2,
-                    'Learning 2',
-                    _statusCounts[2] ?? 0,
-                    Colors.orange.shade400,
+                    TermStatus.learning2,
+                    TermStatus.nameFor(TermStatus.learning2),
+                    _statusCounts[TermStatus.learning2] ?? 0,
+                    TermStatus.colorFor(TermStatus.learning2),
                   ),
                   _buildStatusBar(
-                    3,
-                    'Learning 3',
-                    _statusCounts[3] ?? 0,
-                    Colors.yellow.shade700,
+                    TermStatus.learning3,
+                    TermStatus.nameFor(TermStatus.learning3),
+                    _statusCounts[TermStatus.learning3] ?? 0,
+                    TermStatus.colorFor(TermStatus.learning3),
                   ),
                   _buildStatusBar(
-                    4,
-                    'Learning 4',
-                    _statusCounts[4] ?? 0,
-                    Colors.lightGreen.shade500,
+                    TermStatus.learning4,
+                    TermStatus.nameFor(TermStatus.learning4),
+                    _statusCounts[TermStatus.learning4] ?? 0,
+                    TermStatus.colorFor(TermStatus.learning4),
                   ),
                   _buildStatusBar(
-                    5,
-                    'Known',
-                    _statusCounts[5] ?? 0,
-                    Colors.green.shade600,
+                    TermStatus.known,
+                    TermStatus.nameFor(TermStatus.known),
+                    _statusCounts[TermStatus.known] ?? 0,
+                    TermStatus.colorFor(TermStatus.known),
                   ),
                   _buildStatusBar(
-                    99,
-                    'Well Known',
-                    _statusCounts[99] ?? 0,
-                    Colors.blue.shade400,
+                    TermStatus.wellKnown,
+                    TermStatus.nameFor(TermStatus.wellKnown),
+                    _statusCounts[TermStatus.wellKnown] ?? 0,
+                    TermStatus.colorFor(TermStatus.wellKnown),
                   ),
                 ],
               ),
