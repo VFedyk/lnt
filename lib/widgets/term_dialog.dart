@@ -583,71 +583,89 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
                 padding: EdgeInsets.all(16),
                 child: CircularProgressIndicator(),
               )
-            else if (_searchResults.isEmpty && _searchController.text.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text(
-                      'No terms found',
-                      style: TextStyle(color: Colors.grey.shade600),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _translationController,
-                      decoration: InputDecoration(
-                        labelText: 'Translation (optional)',
-                        border: const OutlineInputBorder(),
-                        isDense: true,
-                        suffixIcon: _hasDeepLKey
-                            ? IconButton(
-                                icon: _isTranslating
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : const Icon(Icons.translate, size: 20),
-                                tooltip: 'Translate with DeepL',
-                                onPressed: _isTranslating ? null : _translateTerm,
+            else ...[
+              // Show search results if any
+              if (_searchResults.isNotEmpty)
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _searchResults.length,
+                    itemBuilder: (context, index) {
+                      final term = _searchResults[index];
+                      return ListTile(
+                        title: Text(term.lowerText),
+                        subtitle: term.translation.isNotEmpty
+                            ? Text(
+                                term.translation,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               )
                             : null,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: _createNewBaseTerm,
-                      icon: const Icon(Icons.add),
-                      label: Text('Create "${_searchController.text.trim().toLowerCase()}"'),
-                    ),
-                  ],
+                        leading: CircleAvatar(
+                          backgroundColor: term.statusColor,
+                          radius: 12,
+                        ),
+                        onTap: () => Navigator.pop(context, term),
+                      );
+                    },
+                  ),
+                )
+              else if (_searchController.text.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'No existing terms found',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
                 ),
-              )
-            else
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _searchResults.length,
-                  itemBuilder: (context, index) {
-                    final term = _searchResults[index];
-                    return ListTile(
-                      title: Text(term.lowerText),
-                      subtitle: term.translation.isNotEmpty
-                          ? Text(
-                              term.translation,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            )
-                          : null,
-                      leading: CircleAvatar(
-                        backgroundColor: term.statusColor,
-                        radius: 12,
+              // Always show create option when there's text
+              if (_searchController.text.isNotEmpty) ...[
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Create new base term',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
-                      onTap: () => Navigator.pop(context, term),
-                    );
-                  },
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _translationController,
+                        decoration: InputDecoration(
+                          labelText: 'Translation (optional)',
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                          suffixIcon: _hasDeepLKey
+                              ? IconButton(
+                                  icon: _isTranslating
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.translate, size: 20),
+                                  tooltip: 'Translate with DeepL',
+                                  onPressed: _isTranslating ? null : _translateTerm,
+                                )
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _createNewBaseTerm,
+                        icon: const Icon(Icons.add),
+                        label: Text('Create "${_searchController.text.trim().toLowerCase()}"'),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
+            ],
           ],
         ),
       ),
