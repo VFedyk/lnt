@@ -108,6 +108,113 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
+  Widget _buildUsageSection() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.blue.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue.shade200),
+        ),
+        child: _isLoadingUsage
+            ? const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 8),
+                  Text('Loading usage...'),
+                ],
+              )
+            : _usage == null
+                ? Row(
+                    children: [
+                      Icon(Icons.error_outline,
+                           color: Colors.orange.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text('Could not load usage. Check your API key.'),
+                      ),
+                      TextButton(
+                        onPressed: _loadUsage,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Monthly Usage',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            '${(_usage!.usagePercent * 100).toStringAsFixed(1)}%',
+                            style: TextStyle(
+                              color: _usage!.usagePercent > 0.9
+                                  ? Colors.red
+                                  : _usage!.usagePercent > 0.7
+                                      ? Colors.orange
+                                      : Colors.green,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: _usage!.usagePercent,
+                          minHeight: 8,
+                          backgroundColor: Colors.grey.shade300,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _usage!.usagePercent > 0.9
+                                ? Colors.red
+                                : _usage!.usagePercent > 0.7
+                                    ? Colors.orange
+                                    : Colors.blue,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${_formatNumber(_usage!.characterCount)} / ${_formatNumber(_usage!.characterLimit)} characters',
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        '${_formatNumber(_usage!.charactersRemaining)} characters remaining',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+      ),
+    );
+  }
+
+  String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(0)}K';
+    }
+    return number.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -185,13 +292,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 8),
                         Text(
                           _isApiFree
-                              ? "Free API: 500,000 characters/month (${_usage?.charactersRemaining} remaining)"
+                              ? 'Free API: 500,000 characters/month'
                               : 'Pro API: Pay per usage',
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 12,
                           ),
                         ),
+                        // Usage display for free plan
+                        if (_isApiFree && _apiKeyController.text.isNotEmpty)
+                          _buildUsageSection(),
                         const SizedBox(height: 16),
                         Text(
                           'Target Language',
