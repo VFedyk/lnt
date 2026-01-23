@@ -318,6 +318,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           dictionaries: dictionaries,
           onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
           languageId: widget.language.id!,
+          languageName: widget.language.name,
         ),
       );
 
@@ -343,6 +344,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           dictionaries: dictionaries,
           onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
           languageId: widget.language.id!,
+          languageName: widget.language.name,
         ),
       );
 
@@ -460,6 +462,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           onLookup: (ctx, dict) =>
               _dictService.lookupWord(ctx, selectedWords, dict.url),
           languageId: widget.language.id!,
+          languageName: widget.language.name,
         ),
       );
 
@@ -485,6 +488,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           onLookup: (ctx, dict) =>
               _dictService.lookupWord(ctx, selectedWords, dict.url),
           languageId: widget.language.id!,
+          languageName: widget.language.name,
         ),
       );
 

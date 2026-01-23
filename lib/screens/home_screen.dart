@@ -12,6 +12,7 @@ import 'texts_screen.dart';
 import 'reader_screen.dart';
 import 'terms_screen.dart';
 import 'statistics_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -176,6 +177,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                   .toList(),
             ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
         ],
       ),
       body: _buildBody(),

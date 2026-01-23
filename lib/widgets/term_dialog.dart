@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
 import '../services/database_service.dart';
+import '../services/deepl_service.dart';
+import '../services/settings_service.dart';
 
 class TermDialog extends StatefulWidget {
   final Term term;
@@ -9,6 +11,7 @@ class TermDialog extends StatefulWidget {
   final List<Dictionary> dictionaries;
   final Function(BuildContext, Dictionary) onLookup;
   final int languageId;
+  final String languageName;
 
   const TermDialog({
     super.key,
@@ -17,6 +20,7 @@ class TermDialog extends StatefulWidget {
     required this.dictionaries,
     required this.onLookup,
     required this.languageId,
+    required this.languageName,
   });
 
   @override
@@ -34,6 +38,10 @@ class _TermDialogState extends State<TermDialog> {
   int? _baseTermId;
   Term? _baseTerm;
   List<Term> _linkedTerms = [];
+
+  // Translation
+  bool _isTranslating = false;
+  bool _hasDeepLKey = false;
 
   @override
   void initState() {
@@ -53,6 +61,46 @@ class _TermDialogState extends State<TermDialog> {
     );
     _baseTermId = widget.term.baseTermId;
     _loadBaseTermAndLinkedTerms();
+    _checkDeepLKey();
+  }
+
+  Future<void> _checkDeepLKey() async {
+    final hasKey = await SettingsService.instance.hasDeepLApiKey();
+    if (mounted) {
+      setState(() => _hasDeepLKey = hasKey);
+    }
+  }
+
+  Future<void> _translateTerm() async {
+    final sourceCode = DeepLService.getDeepLLanguageCode(widget.languageName);
+    if (sourceCode == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Language "${widget.languageName}" not supported by DeepL')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isTranslating = true);
+
+    final targetLang = await SettingsService.instance.getDeepLTargetLang();
+    final translation = await DeepLService.instance.translate(
+      text: _termController.text.trim(),
+      sourceLang: sourceCode,
+      targetLang: targetLang,
+    );
+
+    if (mounted) {
+      setState(() => _isTranslating = false);
+      if (translation != null) {
+        _translationController.text = translation;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Translation failed. Check your API key.')),
+        );
+      }
+    }
   }
 
   Future<void> _loadBaseTermAndLinkedTerms() async {
@@ -77,6 +125,7 @@ class _TermDialogState extends State<TermDialog> {
       context: context,
       builder: (context) => _BaseTermSearchDialog(
         languageId: widget.languageId,
+        languageName: widget.languageName,
         excludeTermId: widget.term.id,
       ),
     );
@@ -261,9 +310,22 @@ class _TermDialogState extends State<TermDialog> {
             // Translation field
             TextField(
               controller: _translationController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Translation',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                suffixIcon: _hasDeepLKey
+                    ? IconButton(
+                        icon: _isTranslating
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.translate),
+                        tooltip: 'Translate with DeepL',
+                        onPressed: _isTranslating ? null : _translateTerm,
+                      )
+                    : null,
               ),
               maxLines: 2,
             ),
@@ -381,9 +443,11 @@ class _TermDialogState extends State<TermDialog> {
 class _BaseTermSearchDialog extends StatefulWidget {
   final int languageId;
   final int? excludeTermId;
+  final String languageName;
 
   const _BaseTermSearchDialog({
     required this.languageId,
+    required this.languageName,
     this.excludeTermId,
   });
 
@@ -396,6 +460,53 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
   final _translationController = TextEditingController();
   List<Term> _searchResults = [];
   bool _isSearching = false;
+  bool _isTranslating = false;
+  bool _hasDeepLKey = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDeepLKey();
+  }
+
+  Future<void> _checkDeepLKey() async {
+    final hasKey = await SettingsService.instance.hasDeepLApiKey();
+    if (mounted) {
+      setState(() => _hasDeepLKey = hasKey);
+    }
+  }
+
+  Future<void> _translateTerm() async {
+    final sourceCode = DeepLService.getDeepLLanguageCode(widget.languageName);
+    if (sourceCode == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Language "${widget.languageName}" not supported by DeepL')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isTranslating = true);
+
+    final targetLang = await SettingsService.instance.getDeepLTargetLang();
+    final translation = await DeepLService.instance.translate(
+      text: _searchController.text.trim(),
+      sourceLang: sourceCode,
+      targetLang: targetLang,
+    );
+
+    if (mounted) {
+      setState(() => _isTranslating = false);
+      if (translation != null) {
+        _translationController.text = translation;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Translation failed. Check your API key.')),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -484,10 +595,23 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: _translationController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Translation (optional)',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                         isDense: true,
+                        suffixIcon: _hasDeepLKey
+                            ? IconButton(
+                                icon: _isTranslating
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.translate, size: 20),
+                                tooltip: 'Translate with DeepL',
+                                onPressed: _isTranslating ? null : _translateTerm,
+                              )
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 12),
