@@ -16,7 +16,7 @@ class Language {
     this.showRomanization = false,
     this.splitByCharacter = false,
     this.characterSubstitutions = '',
-    this.regexpWordCharacters = r'[\p{L}\p{M}]+',
+    this.regexpWordCharacters = r"[\p{L}\p{M}]+(?:['''][\p{L}\p{M}]+)*",
     this.regexpSplitSentences = r'[.!?]+',
     this.exceptionsSplitSentences = '',
   });
@@ -43,7 +43,7 @@ class Language {
       showRomanization: map['show_romanization'] == 1,
       splitByCharacter: map['split_by_character'] == 1,
       characterSubstitutions: map['character_substitutions'] ?? '',
-      regexpWordCharacters: map['regexp_word_characters'] ?? r'[\p{L}\p{M}]+',
+      regexpWordCharacters: map['regexp_word_characters'] ?? r"[\p{L}\p{M}]+(?:['''][\p{L}\p{M}]+)*",
       regexpSplitSentences: map['regexp_split_sentences'] ?? r'[.!?]+',
       exceptionsSplitSentences: map['exceptions_split_sentences'] ?? '',
     );
