@@ -765,7 +765,13 @@ class _TextsScreenState extends State<TextsScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: ListTile(
               leading: const CircleAvatar(child: Icon(Icons.folder)),
-              title: Text(collection.name),
+              title: Tooltip(
+                message: collection.name,
+                child: Text(
+                  collection.name,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               subtitle: collection.description.isNotEmpty
                   ? Text(collection.description)
                   : null,
@@ -827,7 +833,13 @@ class _TextsScreenState extends State<TextsScreen> {
                   color: unknownCount == 0 ? Colors.green : null,
                 ),
               ),
-              title: Text(text.title),
+              title: Tooltip(
+                message: text.title,
+                child: Text(
+                  text.title,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
