@@ -56,12 +56,14 @@ flutter build web
 
 ## Features
 
-- Import texts (TXT and EPUB formats)
-- Track vocabulary with status levels (Unknown, Learning, Known, Well Known)
-- Dictionary lookup integration
-- Statistics and progress tracking
-- Support for character-based languages (Chinese, Japanese)
-- Export vocabulary to CSV or Anki format
+- Import texts from URL, TXT, or EPUB (with cover extraction)
+- Organize texts in collections with grid/list views
+- Track vocabulary with status levels (Unknown → Known)
+- Link word forms to base terms
+- Color-coded reader with multi-word selection
+- DeepL translation integration
+- Character-based language support (Chinese, Japanese)
+- Export vocabulary to CSV or Anki
 
 ## Gratitude and recognition
 
