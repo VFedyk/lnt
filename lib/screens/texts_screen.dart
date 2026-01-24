@@ -11,6 +11,7 @@ import '../models/term.dart';
 import '../services/database_service.dart';
 import '../services/import_export_service.dart';
 import '../services/epub_import_service.dart';
+import '../services/url_import_service.dart';
 import '../services/text_parser_service.dart';
 import '../widgets/book_cover.dart';
 import 'reader_screen.dart';
@@ -408,6 +409,21 @@ class _TextsScreenState extends State<TextsScreen> {
     }
   }
 
+  Future<void> _importFromUrl() async {
+    final result = await showDialog<TextDocument>(
+      context: context,
+      builder: (context) => _UrlImportDialog(
+        languageId: widget.language.id!,
+        collectionId: _currentCollection?.id,
+      ),
+    );
+
+    if (result != null) {
+      await DatabaseService.instance.createText(result);
+      _loadData();
+    }
+  }
+
   Future<void> _deleteText(TextDocument text) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -567,9 +583,22 @@ class _TextsScreenState extends State<TextsScreen> {
                 case 'epub':
                   _importFromEpub();
                   break;
+                case 'url':
+                  _importFromUrl();
+                  break;
               }
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'url',
+                child: Row(
+                  children: [
+                    Icon(Icons.link),
+                    SizedBox(width: 8),
+                    Text('Import from URL'),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'txt',
                 child: Row(
@@ -1237,6 +1266,178 @@ class _AddTextDialogState extends State<_AddTextDialog> {
           },
           child: const Text('Add'),
         ),
+      ],
+    );
+  }
+}
+
+class _UrlImportDialog extends StatefulWidget {
+  final int languageId;
+  final int? collectionId;
+
+  const _UrlImportDialog({required this.languageId, this.collectionId});
+
+  @override
+  State<_UrlImportDialog> createState() => _UrlImportDialogState();
+}
+
+class _UrlImportDialogState extends State<_UrlImportDialog> {
+  final _urlController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _urlImportService = UrlImportService();
+
+  bool _isLoading = false;
+  bool _isFetched = false;
+  String? _error;
+  String _content = '';
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchUrl() async {
+    final url = _urlController.text.trim();
+    if (url.isEmpty) {
+      setState(() => _error = 'Please enter a URL');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final result = await _urlImportService.importFromUrl(url);
+      setState(() {
+        _titleController.text = result.title;
+        _content = result.content;
+        _isFetched = true;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _import() {
+    if (_titleController.text.isEmpty) {
+      setState(() => _error = 'Please enter a title');
+      return;
+    }
+
+    final text = TextDocument(
+      languageId: widget.languageId,
+      collectionId: widget.collectionId,
+      title: _titleController.text,
+      content: _content,
+      sourceUri: _urlController.text.trim(),
+    );
+    Navigator.pop(context, text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Import from URL'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _urlController,
+                decoration: InputDecoration(
+                  labelText: 'URL',
+                  hintText: 'https://example.com/article',
+                  prefixIcon: const Icon(Icons.link),
+                  suffixIcon: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.download),
+                          tooltip: 'Fetch content',
+                          onPressed: _fetchUrl,
+                        ),
+                ),
+                keyboardType: TextInputType.url,
+                onSubmitted: (_) => _fetchUrl(),
+                enabled: !_isLoading,
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+              if (_isFetched) ...[
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Title',
+                    prefixIcon: Icon(Icons.title),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Preview',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 200,
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      _content,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${_content.split(RegExp(r'\\s+')).length} words',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        if (_isFetched)
+          TextButton(
+            onPressed: _import,
+            child: const Text('Import'),
+          ),
       ],
     );
   }
