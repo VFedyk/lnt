@@ -845,6 +845,16 @@ class _TextsScreenState extends State<TextsScreen> {
               trailing: PopupMenuButton(
                 itemBuilder: (context) => [
                   const PopupMenuItem(
+                    value: 'cover',
+                    child: Row(
+                      children: [
+                        Icon(Icons.image),
+                        SizedBox(width: 8),
+                        Text('Set Cover'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
@@ -866,7 +876,9 @@ class _TextsScreenState extends State<TextsScreen> {
                   ),
                 ],
                 onSelected: (value) {
-                  if (value == 'edit') {
+                  if (value == 'cover') {
+                    _setCoverImage(text);
+                  } else if (value == 'edit') {
                     _editText(text);
                   } else if (value == 'delete') {
                     _deleteText(text);
@@ -966,6 +978,7 @@ class _TextsScreenState extends State<TextsScreen> {
           return BookCover(
             title: text.title,
             subtitle: unknownCount == 0 ? 'Completed!' : unknownLabel,
+            imagePath: text.coverImage,
             isCompleted: unknownCount == 0,
             onTap: () {
               Navigator.push(
@@ -1020,6 +1033,14 @@ class _TextsScreenState extends State<TextsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
+              leading: const Icon(Icons.image),
+              title: const Text('Set Cover'),
+              onTap: () {
+                Navigator.pop(context);
+                _setCoverImage(text);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.edit),
               title: const Text('Edit'),
               onTap: () {
@@ -1039,6 +1060,35 @@ class _TextsScreenState extends State<TextsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _setCoverImage(TextDocument text) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+    );
+
+    if (result != null && result.files.single.path != null) {
+      final sourcePath = result.files.single.path!;
+      final sourceFile = File(sourcePath);
+
+      // Copy to app's documents directory for persistent access
+      final appDir = await getApplicationDocumentsDirectory();
+      final coversDir = Directory(p.join(appDir.path, 'covers'));
+      if (!await coversDir.exists()) {
+        await coversDir.create(recursive: true);
+      }
+
+      // Generate unique filename using timestamp
+      final extension = p.extension(sourcePath);
+      final newFileName = '${DateTime.now().millisecondsSinceEpoch}$extension';
+      final newPath = p.join(coversDir.path, newFileName);
+
+      await sourceFile.copy(newPath);
+
+      final updatedText = text.copyWith(coverImage: newPath);
+      await DatabaseService.instance.updateText(updatedText);
+      _loadData();
+    }
   }
 
   Future<void> _editCollection(Collection collection) async {
@@ -1331,12 +1381,14 @@ class _EditTextDialogState extends State<_EditTextDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
+  String? _coverImagePath;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.text.title);
     _contentController = TextEditingController(text: widget.text.content);
+    _coverImagePath = widget.text.coverImage;
   }
 
   @override
@@ -1344,6 +1396,41 @@ class _EditTextDialogState extends State<_EditTextDialog> {
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickCoverImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+    );
+
+    if (result != null && result.files.single.path != null) {
+      final sourcePath = result.files.single.path!;
+      final sourceFile = File(sourcePath);
+
+      // Copy to app's documents directory for persistent access
+      final appDir = await getApplicationDocumentsDirectory();
+      final coversDir = Directory(p.join(appDir.path, 'covers'));
+      if (!await coversDir.exists()) {
+        await coversDir.create(recursive: true);
+      }
+
+      // Generate unique filename using timestamp
+      final extension = p.extension(sourcePath);
+      final newFileName = '${DateTime.now().millisecondsSinceEpoch}$extension';
+      final newPath = p.join(coversDir.path, newFileName);
+
+      await sourceFile.copy(newPath);
+
+      setState(() {
+        _coverImagePath = newPath;
+      });
+    }
+  }
+
+  void _removeCoverImage() {
+    setState(() {
+      _coverImagePath = null;
+    });
   }
 
   @override
@@ -1356,6 +1443,48 @@ class _EditTextDialogState extends State<_EditTextDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Cover image picker
+              GestureDetector(
+                onTap: _pickCoverImage,
+                child: Container(
+                  width: 100,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[400]!),
+                    image: _coverImagePath != null
+                        ? DecorationImage(
+                            image: FileImage(File(_coverImagePath!)),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: _coverImagePath == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_photo_alternate,
+                                size: 32, color: Colors.grey[600]),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Add Cover',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        )
+                      : null,
+                ),
+              ),
+              if (_coverImagePath != null)
+                TextButton(
+                  onPressed: _removeCoverImage,
+                  child: const Text('Remove Cover'),
+                ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Title'),
@@ -1386,6 +1515,9 @@ class _EditTextDialogState extends State<_EditTextDialog> {
               final updatedText = widget.text.copyWith(
                 title: _titleController.text,
                 content: _contentController.text,
+                coverImage: _coverImagePath,
+                clearCoverImage: _coverImagePath == null &&
+                    widget.text.coverImage != null,
               );
               Navigator.pop(context, updatedText);
             }
@@ -1416,6 +1548,7 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
   bool _isFetched = false;
   String? _error;
   String _content = '';
+  String? _coverImagePath;
 
   @override
   void dispose() {
@@ -1441,6 +1574,7 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
       setState(() {
         _titleController.text = result.title;
         _content = result.content;
+        _coverImagePath = result.coverImagePath;
         _isFetched = true;
         _isLoading = false;
       });
@@ -1464,6 +1598,7 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
       title: _titleController.text,
       content: _content,
       sourceUri: _urlController.text.trim(),
+      coverImage: _coverImagePath,
     );
     Navigator.pop(context, text);
   }

@@ -123,6 +123,7 @@ class EpubImportService {
         languageId: languageId,
         collectionId: collectionId,
         sourceUri: 'epub://$title',
+        coverImagePath: coverImagePath,
         textsToCreate: textsToCreate,
         sortOrderRef: sortOrderRef,
         totalChaptersRef: chaptersRef,
@@ -220,6 +221,7 @@ class EpubImportService {
     required int languageId,
     required int collectionId,
     required String sourceUri,
+    String? coverImagePath,
     required List<TextDocument> textsToCreate,
     required _SortOrderRef sortOrderRef,
     required _CounterRef totalChaptersRef,
@@ -260,6 +262,7 @@ class EpubImportService {
             content: part.content,
             sourceUri: sourceUri,
             sortOrder: sortOrderRef.value++,
+            coverImage: coverImagePath,
           ));
           totalPartsRef.value++;
           totalCharactersRef.value += part.content.length;
@@ -275,6 +278,7 @@ class EpubImportService {
           languageId: languageId,
           collectionId: collectionId,
           sourceUri: sourceUri,
+          coverImagePath: coverImagePath,
           textsToCreate: textsToCreate,
           sortOrderRef: sortOrderRef,
           totalChaptersRef: totalChaptersRef,

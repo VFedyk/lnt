@@ -42,7 +42,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -65,6 +65,11 @@ class DatabaseService {
       );
       await db.execute(
         'CREATE INDEX idx_terms_base ON terms(base_term_id)',
+      );
+    }
+    if (oldVersion < 5) {
+      await db.execute(
+        'ALTER TABLE texts ADD COLUMN cover_image TEXT',
       );
     }
   }
@@ -96,6 +101,7 @@ class DatabaseService {
         last_read TEXT NOT NULL,
         position INTEGER DEFAULT 0,
         sort_order INTEGER DEFAULT 0,
+        cover_image TEXT,
         FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE,
         FOREIGN KEY (collection_id) REFERENCES collections (id) ON DELETE SET NULL
       )

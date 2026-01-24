@@ -9,6 +9,7 @@ class TextDocument {
   final DateTime lastRead;
   final int position;
   final int sortOrder; // For ordering chapters within a collection
+  final String? coverImage; // Path to cover image file
 
   TextDocument({
     this.id,
@@ -21,6 +22,7 @@ class TextDocument {
     DateTime? lastRead,
     this.position = 0,
     this.sortOrder = 0,
+    this.coverImage,
   }) : createdAt = createdAt ?? DateTime.now(),
        lastRead = lastRead ?? DateTime.now();
 
@@ -36,6 +38,7 @@ class TextDocument {
       'last_read': lastRead.toIso8601String(),
       'position': position,
       'sort_order': sortOrder,
+      'cover_image': coverImage,
     };
   }
 
@@ -51,6 +54,7 @@ class TextDocument {
       lastRead: DateTime.parse(map['last_read']),
       position: map['position'] ?? 0,
       sortOrder: map['sort_order'] ?? 0,
+      coverImage: map['cover_image'],
     );
   }
 
@@ -65,6 +69,8 @@ class TextDocument {
     DateTime? lastRead,
     int? position,
     int? sortOrder,
+    String? coverImage,
+    bool clearCoverImage = false,
   }) {
     return TextDocument(
       id: id ?? this.id,
@@ -77,6 +83,7 @@ class TextDocument {
       lastRead: lastRead ?? this.lastRead,
       position: position ?? this.position,
       sortOrder: sortOrder ?? this.sortOrder,
+      coverImage: clearCoverImage ? null : (coverImage ?? this.coverImage),
     );
   }
 

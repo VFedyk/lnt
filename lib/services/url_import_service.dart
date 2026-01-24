@@ -1,17 +1,22 @@
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 /// Result of a URL import operation
 class UrlImportResult {
   final String title;
   final String content;
   final String url;
+  final String? coverImagePath;
 
   UrlImportResult({
     required this.title,
     required this.content,
     required this.url,
+    this.coverImagePath,
   });
 }
 
@@ -48,6 +53,9 @@ class UrlImportService {
     // Extract title
     String title = _extractTitle(document, uri);
 
+    // Extract cover image
+    String? coverImagePath = await _extractCoverImage(document, uri);
+
     // Extract main content
     String content = _extractContent(document);
 
@@ -59,6 +67,7 @@ class UrlImportService {
       title: title,
       content: content,
       url: url,
+      coverImagePath: coverImagePath,
     );
   }
 
@@ -87,6 +96,107 @@ class UrlImportService {
 
     // Fallback to domain name
     return uri.host;
+  }
+
+  /// Extract and download cover image from the page
+  Future<String?> _extractCoverImage(Document document, Uri pageUri) async {
+    String? imageUrl;
+
+    // Try og:image meta tag first (most reliable for articles)
+    final ogImage = document.querySelector('meta[property="og:image"]');
+    if (ogImage != null) {
+      imageUrl = ogImage.attributes['content'];
+    }
+
+    // Try twitter:image meta tag
+    if (imageUrl == null || imageUrl.isEmpty) {
+      final twitterImage = document.querySelector('meta[name="twitter:image"]');
+      if (twitterImage != null) {
+        imageUrl = twitterImage.attributes['content'];
+      }
+    }
+
+    // Try article image
+    if (imageUrl == null || imageUrl.isEmpty) {
+      final articleImg = document.querySelector('article img[src]');
+      if (articleImg != null) {
+        imageUrl = articleImg.attributes['src'];
+      }
+    }
+
+    // Try first significant image in main content
+    if (imageUrl == null || imageUrl.isEmpty) {
+      final mainImg = document.querySelector('main img[src], .content img[src], .article img[src]');
+      if (mainImg != null) {
+        imageUrl = mainImg.attributes['src'];
+      }
+    }
+
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return null;
+    }
+
+    // Resolve relative URLs
+    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      if (imageUrl.startsWith('//')) {
+        imageUrl = '${pageUri.scheme}:$imageUrl';
+      } else if (imageUrl.startsWith('/')) {
+        imageUrl = '${pageUri.scheme}://${pageUri.host}$imageUrl';
+      } else {
+        final basePath = pageUri.path.substring(0, pageUri.path.lastIndexOf('/') + 1);
+        imageUrl = '${pageUri.scheme}://${pageUri.host}$basePath$imageUrl';
+      }
+    }
+
+    // Download and save the image
+    try {
+      final imageResponse = await http.get(
+        Uri.parse(imageUrl),
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+          'Accept': 'image/*,*/*;q=0.8',
+        },
+      );
+
+      if (imageResponse.statusCode != 200) {
+        return null;
+      }
+
+      // Determine file extension from content-type or URL
+      String extension = 'jpg';
+      final contentType = imageResponse.headers['content-type'] ?? '';
+      if (contentType.contains('png')) {
+        extension = 'png';
+      } else if (contentType.contains('gif')) {
+        extension = 'gif';
+      } else if (contentType.contains('webp')) {
+        extension = 'webp';
+      } else if (imageUrl.toLowerCase().contains('.png')) {
+        extension = 'png';
+      } else if (imageUrl.toLowerCase().contains('.gif')) {
+        extension = 'gif';
+      } else if (imageUrl.toLowerCase().contains('.webp')) {
+        extension = 'webp';
+      }
+
+      // Save to app documents directory
+      final appDir = await getApplicationDocumentsDirectory();
+      final coversDir = Directory(p.join(appDir.path, 'covers'));
+      if (!await coversDir.exists()) {
+        await coversDir.create(recursive: true);
+      }
+
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$extension';
+      final filePath = p.join(coversDir.path, fileName);
+      final file = File(filePath);
+      await file.writeAsBytes(imageResponse.bodyBytes);
+
+      return filePath;
+    } catch (e) {
+      // Image extraction failed, but don't fail the whole import
+      return null;
+    }
   }
 
   /// Extract the main text content from the page
