@@ -1,4 +1,5 @@
 // FILE: lib/screens/home_screen.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
@@ -412,6 +413,21 @@ class _DashboardTabState extends State<_DashboardTab> {
     );
   }
 
+  Widget _buildTextThumbnail(TextDocument text, IconData fallbackIcon) {
+    if (text.coverImage != null && File(text.coverImage!).existsSync()) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: Image.file(
+          File(text.coverImage!),
+          width: 40,
+          height: 56,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+    return Icon(fallbackIcon);
+  }
+
   Widget _buildQuickActions() {
     return Card(
       child: Padding(
@@ -484,7 +500,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                       ? _collectionNames[text.collectionId]
                       : null;
                   return ListTile(
-                    leading: const Icon(Icons.history),
+                    leading: _buildTextThumbnail(text, Icons.history),
                     title: Text(text.title),
                     subtitle: Text(
                       '${collectionName != null ? '$collectionName • ' : ''}${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
@@ -532,7 +548,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                       ? _collectionNames[text.collectionId]
                       : null;
                   return ListTile(
-                    leading: const Icon(Icons.article),
+                    leading: _buildTextThumbnail(text, Icons.article),
                     title: Text(text.title),
                     subtitle: Text(
                       '${collectionName != null ? '$collectionName • ' : ''}${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
