@@ -449,6 +449,18 @@ class _TextsScreenState extends State<TextsScreen> {
     }
   }
 
+  Future<void> _editText(TextDocument text) async {
+    final result = await showDialog<TextDocument>(
+      context: context,
+      builder: (context) => _EditTextDialog(text: text),
+    );
+
+    if (result != null) {
+      await DatabaseService.instance.updateText(result);
+      _loadData();
+    }
+  }
+
   Future<void> _deleteCollection(Collection collection) async {
     final textCount = await DatabaseService.instance.getTextCountInCollection(
       collection.id!,
@@ -830,9 +842,36 @@ class _TextsScreenState extends State<TextsScreen> {
                   ),
                 ],
               ),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _deleteText(text),
+              trailing: PopupMenuButton(
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit),
+                        SizedBox(width: 8),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Delete'),
+                      ],
+                    ),
+                  ),
+                ],
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _editText(text);
+                  } else if (value == 'delete') {
+                    _deleteText(text);
+                  }
+                },
               ),
               onTap: () {
                 Navigator.push(
@@ -980,6 +1019,14 @@ class _TextsScreenState extends State<TextsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Edit'),
+              onTap: () {
+                Navigator.pop(context);
+                _editText(text);
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -1265,6 +1312,85 @@ class _AddTextDialogState extends State<_AddTextDialog> {
             }
           },
           child: const Text('Add'),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditTextDialog extends StatefulWidget {
+  final TextDocument text;
+
+  const _EditTextDialog({required this.text});
+
+  @override
+  State<_EditTextDialog> createState() => _EditTextDialogState();
+}
+
+class _EditTextDialogState extends State<_EditTextDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _titleController;
+  late final TextEditingController _contentController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.text.title);
+    _contentController = TextEditingController(text: widget.text.content);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Text'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Title'),
+                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _contentController,
+                decoration: const InputDecoration(
+                  labelText: 'Text Content',
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 10,
+                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              final updatedText = widget.text.copyWith(
+                title: _titleController.text,
+                content: _contentController.text,
+              );
+              Navigator.pop(context, updatedText);
+            }
+          },
+          child: const Text('Save'),
         ),
       ],
     );

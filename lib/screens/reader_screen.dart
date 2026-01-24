@@ -24,6 +24,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final _textParser = TextParserService();
   final _dictService = DictionaryService();
 
+  late TextDocument _text;
   Map<String, Term> _termsMap = {};
   List<_WordToken> _wordTokens = [];
   bool _isLoading = true;
@@ -40,6 +41,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void initState() {
     super.initState();
+    _text = widget.text;
     _loadTermsAndParse();
   }
 
@@ -55,7 +57,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     try {
       // Update last_read timestamp
       await DatabaseService.instance.updateText(
-        widget.text.copyWith(lastRead: DateTime.now()),
+        _text.copyWith(lastRead: DateTime.now()),
       );
 
       // Load all terms for this language
@@ -108,13 +110,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     // Standard word-based parsing for languages with spaces
     final words = _textParser.splitIntoWords(
-      widget.text.content,
+      _text.content,
       widget.language,
     );
     final tokens = <_WordToken>[];
     int wordIndex = 0;
     int position = 0;
-    String remainingText = widget.text.content;
+    String remainingText = _text.content;
 
     // Get multi-word terms sorted by length (longest first)
     final multiWordTerms =
@@ -202,7 +204,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void _parseTextByCharacter() {
     final tokens = <_WordToken>[];
     int position = 0;
-    final content = widget.text.content;
+    final content = _text.content;
 
     // Get multi-character terms sorted by length (longest first)
     final multiCharTerms =
@@ -297,7 +299,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     // Get sentence context
     final sentence = _textParser.getSentenceAtPosition(
-      widget.text.content,
+      _text.content,
       position,
       widget.language,
     );
@@ -440,7 +442,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     // Get sentence context from first selected word
     final firstToken = _wordTokens[selectedTokens.first];
     final sentence = _textParser.getSentenceAtPosition(
-      widget.text.content,
+      _text.content,
       firstToken.position,
       widget.language,
     );
@@ -508,7 +510,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.text.title, overflow: TextOverflow.ellipsis),
+        title: Text(_text.title, overflow: TextOverflow.ellipsis),
         actions: [
           if (_isSelectionMode)
             IconButton(
@@ -541,6 +543,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
               icon: const Icon(Icons.more_vert),
               onSelected: (value) {
                 switch (value) {
+                  case 'edit':
+                    _editText();
+                    break;
                   case 'font_size':
                     _showFontSizeDialog();
                     break;
@@ -550,6 +555,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 }
               },
               itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit),
+                      SizedBox(width: 8),
+                      Text('Edit Text'),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'font_size',
                   child: Row(
@@ -710,6 +725,25 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return widgets;
   }
 
+  Future<void> _editText() async {
+    final result = await showDialog<TextDocument>(
+      context: context,
+      builder: (context) => _EditTextDialog(text: _text),
+    );
+
+    if (result != null) {
+      final contentChanged = result.content != _text.content;
+      await DatabaseService.instance.updateText(result);
+      setState(() {
+        _text = result;
+      });
+      // Re-parse if content changed
+      if (contentChanged) {
+        await _loadTermsAndParse();
+      }
+    }
+  }
+
   void _showFontSizeDialog() {
     showDialog(
       context: context,
@@ -773,7 +807,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Future<void> _performMarkAllKnown() async {
     try {
       final words = _textParser.splitIntoWords(
-        widget.text.content,
+        _text.content,
         widget.language,
       );
 
@@ -826,4 +860,83 @@ class _WordToken {
     this.term,
     this.position = 0,
   });
+}
+
+class _EditTextDialog extends StatefulWidget {
+  final TextDocument text;
+
+  const _EditTextDialog({required this.text});
+
+  @override
+  State<_EditTextDialog> createState() => _EditTextDialogState();
+}
+
+class _EditTextDialogState extends State<_EditTextDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _titleController;
+  late final TextEditingController _contentController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.text.title);
+    _contentController = TextEditingController(text: widget.text.content);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Text'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Title'),
+                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _contentController,
+                decoration: const InputDecoration(
+                  labelText: 'Text Content',
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 10,
+                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              final updatedText = widget.text.copyWith(
+                title: _titleController.text,
+                content: _contentController.text,
+              );
+              Navigator.pop(context, updatedText);
+            }
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
 }
