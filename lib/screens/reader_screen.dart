@@ -106,6 +106,32 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _termCounts = counts;
   }
 
+  /// Update a single term in place without reloading everything
+  void _updateTermInPlace(Term term) {
+    final lowerText = term.lowerText;
+
+    // Update the terms map
+    _termsMap[lowerText] = term;
+
+    // Update all tokens that match this term
+    _wordTokens = _wordTokens.map((token) {
+      if (token.isWord && token.text.toLowerCase() == lowerText) {
+        return _WordToken(
+          text: token.text,
+          isWord: true,
+          term: term,
+          position: token.position,
+        );
+      }
+      return token;
+    }).toList();
+
+    // Recalculate term counts
+    _updateTextTermCounts();
+
+    setState(() {});
+  }
+
   void _parseText() {
     // For character-based languages, use different parsing
     if (widget.language.splitByCharacter) {
@@ -331,7 +357,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
       if (result != null) {
         await DatabaseService.instance.updateTerm(result);
-        await _loadTermsAndParse();
+        _updateTermInPlace(result);
       }
     } else {
       // Create new term
@@ -357,7 +383,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
       if (result != null) {
         await DatabaseService.instance.createTerm(result);
-        await _loadTermsAndParse();
+        _updateTermInPlace(result);
       }
     }
   }
