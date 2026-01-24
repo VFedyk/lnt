@@ -42,7 +42,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -70,6 +70,11 @@ class DatabaseService {
     if (oldVersion < 5) {
       await db.execute(
         'ALTER TABLE texts ADD COLUMN cover_image TEXT',
+      );
+    }
+    if (oldVersion < 6) {
+      await db.execute(
+        'ALTER TABLE texts ADD COLUMN status INTEGER DEFAULT 0',
       );
     }
   }
@@ -102,6 +107,7 @@ class DatabaseService {
         position INTEGER DEFAULT 0,
         sort_order INTEGER DEFAULT 0,
         cover_image TEXT,
+        status INTEGER DEFAULT 0,
         FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE,
         FOREIGN KEY (collection_id) REFERENCES collections (id) ON DELETE SET NULL
       )

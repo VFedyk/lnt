@@ -118,9 +118,10 @@ class TextRepository extends BaseRepository {
 
   Future<List<TextDocument>> getRecentlyRead(int languageId, {int limit = 5}) async {
     final db = await getDatabase();
+    // Only return texts that are in progress (1) or finished (2)
     final maps = await db.query(
       'texts',
-      where: 'language_id = ?',
+      where: 'language_id = ? AND status IN (1, 2)',
       whereArgs: [languageId],
       orderBy: 'last_read DESC',
       limit: limit,

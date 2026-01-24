@@ -55,10 +55,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Update last_read timestamp
-      await DatabaseService.instance.updateText(
-        _text.copyWith(lastRead: DateTime.now()),
+      // Update last_read timestamp and status to in_progress if pending
+      final updatedText = _text.copyWith(
+        lastRead: DateTime.now(),
+        status: _text.status == TextStatus.pending
+            ? TextStatus.inProgress
+            : _text.status,
       );
+      await DatabaseService.instance.updateText(updatedText);
+      _text = updatedText;
 
       // Load all terms for this language
       _termsMap = await DatabaseService.instance.getTermsMap(
@@ -552,6 +557,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   case 'mark_all_known':
                     _markAllWordsKnown();
                     break;
+                  case 'mark_finished':
+                    _markAsFinished();
+                    break;
                 }
               },
               itemBuilder: (context) => [
@@ -582,6 +590,25 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       Icon(Icons.done_all),
                       SizedBox(width: 8),
                       Text('Mark All Known'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'mark_finished',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _text.status == TextStatus.finished
+                            ? Icons.check_circle
+                            : Icons.check_circle_outline,
+                        color: _text.status == TextStatus.finished
+                            ? Colors.green
+                            : null,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(_text.status == TextStatus.finished
+                          ? 'Marked as Finished'
+                          : 'Mark as Finished'),
                     ],
                   ),
                 ),
@@ -844,6 +871,29 @@ class _ReaderScreenState extends State<ReaderScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
+    }
+  }
+
+  Future<void> _markAsFinished() async {
+    final newStatus = _text.status == TextStatus.finished
+        ? TextStatus.inProgress
+        : TextStatus.finished;
+
+    final updatedText = _text.copyWith(status: newStatus);
+    await DatabaseService.instance.updateText(updatedText);
+
+    setState(() {
+      _text = updatedText;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(newStatus == TextStatus.finished
+              ? 'Text marked as finished'
+              : 'Text marked as in progress'),
+        ),
+      );
     }
   }
 }
