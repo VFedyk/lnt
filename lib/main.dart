@@ -7,30 +7,30 @@ import 'services/database_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseService.instance.database;
-  runApp(const FLTRApp());
+  runApp(const LNTApp());
 }
 
-class FLTRApp extends StatelessWidget {
-  const FLTRApp({super.key});
+class LNTApp extends StatelessWidget {
+  const LNTApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => AppState())],
       child: MaterialApp(
-        title: 'FLTR - Foreign Language Text Reader',
+        title: 'Language Nerd Tools',
         theme: ThemeData(
-          primarySwatch: Colors.blue,
+          primarySwatch: Colors.purple,
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
+            seedColor: Colors.purple,
             brightness: Brightness.light,
           ),
         ),
         darkTheme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
+            seedColor: Colors.purple,
             brightness: Brightness.dark,
           ),
         ),

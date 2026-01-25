@@ -1,6 +1,6 @@
-# FLTR - Foreign Language Text Reader (Flutter)
+# LNT - Language Nerd Tools
 
-A Flutter implementation of the Foreign Language Text Reader application for learning languages through reading.
+Application for learning languages through reading.
 
 ## Requirements
 
@@ -12,8 +12,8 @@ A Flutter implementation of the Foreign Language Text Reader application for lea
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/VFedyk/fltr-exp-1
-   cd fltr_flutter
+   git clone https://github.com/VFedyk/lnt
+   cd lnt
    ```
 
 2. Install dependencies:

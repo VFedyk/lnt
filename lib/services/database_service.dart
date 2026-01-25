@@ -32,7 +32,7 @@ class DatabaseService {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('fltr.db');
+    _database = await _initDB('lnt.db');
     return _database!;
   }
 
@@ -55,27 +55,19 @@ class DatabaseService {
       );
     }
     if (oldVersion < 3) {
-      await db.execute(
-        'ALTER TABLE collections ADD COLUMN cover_image TEXT',
-      );
+      await db.execute('ALTER TABLE collections ADD COLUMN cover_image TEXT');
     }
     if (oldVersion < 4) {
       await db.execute(
         'ALTER TABLE terms ADD COLUMN base_term_id INTEGER REFERENCES terms(id) ON DELETE SET NULL',
       );
-      await db.execute(
-        'CREATE INDEX idx_terms_base ON terms(base_term_id)',
-      );
+      await db.execute('CREATE INDEX idx_terms_base ON terms(base_term_id)');
     }
     if (oldVersion < 5) {
-      await db.execute(
-        'ALTER TABLE texts ADD COLUMN cover_image TEXT',
-      );
+      await db.execute('ALTER TABLE texts ADD COLUMN cover_image TEXT');
     }
     if (oldVersion < 6) {
-      await db.execute(
-        'ALTER TABLE texts ADD COLUMN status INTEGER DEFAULT 0',
-      );
+      await db.execute('ALTER TABLE texts ADD COLUMN status INTEGER DEFAULT 0');
     }
   }
 
@@ -206,10 +198,14 @@ class DatabaseService {
       texts.batchCreate(textList);
   Future<List<TextDocument>> getTextsInCollection(int collectionId) =>
       texts.getByCollection(collectionId);
-  Future<List<TextDocument>> getRecentlyAddedTexts(int languageId, {int limit = 5}) =>
-      texts.getRecentlyAdded(languageId, limit: limit);
-  Future<List<TextDocument>> getRecentlyReadTexts(int languageId, {int limit = 5}) =>
-      texts.getRecentlyRead(languageId, limit: limit);
+  Future<List<TextDocument>> getRecentlyAddedTexts(
+    int languageId, {
+    int limit = 5,
+  }) => texts.getRecentlyAdded(languageId, limit: limit);
+  Future<List<TextDocument>> getRecentlyReadTexts(
+    int languageId, {
+    int limit = 5,
+  }) => texts.getRecentlyRead(languageId, limit: limit);
 
   // Term
   Future<int> createTerm(Term term) => terms.create(term);
@@ -251,8 +247,7 @@ class DatabaseService {
   Future<List<Dictionary>> getDictionaries({
     int? languageId,
     bool activeOnly = false,
-  }) =>
-      dictionaries.getAll(languageId: languageId, activeOnly: activeOnly);
+  }) => dictionaries.getAll(languageId: languageId, activeOnly: activeOnly);
   Future<Dictionary?> getDictionary(int id) => dictionaries.getById(id);
   Future<int> updateDictionary(Dictionary dictionary) =>
       dictionaries.update(dictionary);

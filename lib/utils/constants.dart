@@ -28,7 +28,7 @@ class AppConstants {
   static const String txtExtension = '.txt';
 
   // App info
-  static const String appName = 'FLTR';
+  static const String appName = 'LNT';
   static const String appVersion = '1.0.0';
-  static const String appDescription = 'Foreign Language Text Reader';
+  static const String appDescription = 'Language Nerd Tools';
 }

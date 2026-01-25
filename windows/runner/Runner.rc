@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "fltr_flutter" "\0"
+            VALUE "CompanyName", "com.volodymyrfedyk" "\0"
+            VALUE "FileDescription", "lnt" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "fltr_flutter" "\0"
+            VALUE "InternalName", "lnt" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "fltr_flutter.exe" "\0"
-            VALUE "ProductName", "fltr_flutter" "\0"
+            VALUE "OriginalFilename", "lnt.exe" "\0"
+            VALUE "ProductName", "lnt" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

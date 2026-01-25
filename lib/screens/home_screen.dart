@@ -150,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FLTR'),
+        title: const Text('LNT'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (_languages.isNotEmpty)
@@ -294,7 +294,9 @@ class _DashboardTabState extends State<_DashboardTab> {
           .map((t) => t.collectionId!)
           .toSet();
       for (final collectionId in collectionIds) {
-        final collection = await DatabaseService.instance.getCollection(collectionId);
+        final collection = await DatabaseService.instance.getCollection(
+          collectionId,
+        );
         if (collection != null) {
           collectionNames[collectionId] = collection.name;
         }
@@ -494,30 +496,28 @@ class _DashboardTabState extends State<_DashboardTab> {
                 child: Text('No texts read yet.'),
               )
             else
-              ..._recentlyReadTexts.map(
-                (text) {
-                  final collectionName = text.collectionId != null
-                      ? _collectionNames[text.collectionId]
-                      : null;
-                  return ListTile(
-                    leading: _buildTextThumbnail(text, Icons.history),
-                    title: Text(text.title),
-                    subtitle: Text(
-                      '${collectionName != null ? '$collectionName • ' : ''}${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ReaderScreen(text: text, language: widget.language),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+              ..._recentlyReadTexts.map((text) {
+                final collectionName = text.collectionId != null
+                    ? _collectionNames[text.collectionId]
+                    : null;
+                return ListTile(
+                  leading: _buildTextThumbnail(text, Icons.history),
+                  title: Text(text.title),
+                  subtitle: Text(
+                    '${collectionName != null ? '$collectionName • ' : ''}${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ReaderScreen(text: text, language: widget.language),
+                      ),
+                    );
+                  },
+                );
+              }),
           ],
         ),
       ),
@@ -542,30 +542,28 @@ class _DashboardTabState extends State<_DashboardTab> {
                 child: Text('No texts yet. Add one to get started!'),
               )
             else
-              ..._recentlyAddedTexts.map(
-                (text) {
-                  final collectionName = text.collectionId != null
-                      ? _collectionNames[text.collectionId]
-                      : null;
-                  return ListTile(
-                    leading: _buildTextThumbnail(text, Icons.article),
-                    title: Text(text.title),
-                    subtitle: Text(
-                      '${collectionName != null ? '$collectionName • ' : ''}${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ReaderScreen(text: text, language: widget.language),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+              ..._recentlyAddedTexts.map((text) {
+                final collectionName = text.collectionId != null
+                    ? _collectionNames[text.collectionId]
+                    : null;
+                return ListTile(
+                  leading: _buildTextThumbnail(text, Icons.article),
+                  title: Text(text.title),
+                  subtitle: Text(
+                    '${collectionName != null ? '$collectionName • ' : ''}${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ReaderScreen(text: text, language: widget.language),
+                      ),
+                    );
+                  },
+                );
+              }),
           ],
         ),
       ),

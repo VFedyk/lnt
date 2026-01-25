@@ -107,7 +107,7 @@ class ImportExportService {
 
     await Share.shareXFiles([
       XFile(file.path, mimeType: mimeType),
-    ], text: 'FLTR Export: $fileName');
+    ], text: 'LNT Export: $fileName');
   }
 
   // Export with share dialog
@@ -120,13 +120,13 @@ class ImportExportService {
       case 'anki':
         content = await exportToAnki(terms);
         fileName =
-            'fltr_export_anki_${DateTime.now().millisecondsSinceEpoch}.txt';
+            'lnt_export_anki_${DateTime.now().millisecondsSinceEpoch}.txt';
         mimeType = 'text/plain';
         break;
       case 'csv':
       default:
         content = await exportTermsToCSV(terms);
-        fileName = 'fltr_export_${DateTime.now().millisecondsSinceEpoch}.csv';
+        fileName = 'lnt_export_${DateTime.now().millisecondsSinceEpoch}.csv';
         mimeType = 'text/csv';
     }
 
