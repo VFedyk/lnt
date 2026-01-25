@@ -21,12 +21,13 @@ class TextParserService {
 
     // Use language-specific word character pattern
     // Default pattern includes apostrophes for contractions (we're, don't) and possessives (winter's)
-    final defaultPattern = r"[\p{L}\p{M}]+(?:['''][\p{L}\p{M}]+)*";
+    final defaultPattern = r"[\p{L}\p{M}]+(?:[''’'][\p{L}\p{M}]+)*";
     final basicPattern = r'[\p{L}\p{M}]+';
 
     // Use enhanced pattern if language has no custom pattern or uses the basic pattern
-    final pattern = (language.regexpWordCharacters.isEmpty ||
-                     language.regexpWordCharacters == basicPattern)
+    final pattern =
+        (language.regexpWordCharacters.isEmpty ||
+            language.regexpWordCharacters == basicPattern)
         ? defaultPattern
         : language.regexpWordCharacters;
 
