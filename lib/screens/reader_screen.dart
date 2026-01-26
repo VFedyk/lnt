@@ -921,6 +921,57 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
       );
     }
+
+    // If marked as finished and text is in a collection, check for next text
+    if (newStatus == TextStatus.finished && _text.collectionId != null) {
+      await _promptForNextText();
+    }
+  }
+
+  Future<void> _promptForNextText() async {
+    final textsInCollection = await DatabaseService.instance
+        .getTextsInCollection(_text.collectionId!);
+
+    final currentIndex = textsInCollection.indexWhere((t) => t.id == _text.id);
+
+    // Check if there's a next text
+    if (currentIndex >= 0 && currentIndex < textsInCollection.length - 1) {
+      final nextText = textsInCollection[currentIndex + 1];
+
+      if (!mounted) return;
+
+      final shouldProceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Continue Reading?'),
+          content: Text(
+            'Would you like to continue with the next text?\n\n"${nextText.title}"',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Yes'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldProceed == true && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ReaderScreen(
+              text: nextText,
+              language: widget.language,
+            ),
+          ),
+        );
+      }
+    }
   }
 }
 
