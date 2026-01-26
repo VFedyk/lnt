@@ -38,6 +38,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // Term counts by status
   Map<int, int> _termCounts = {};
 
+  // Sidebar
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
@@ -540,6 +543,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
+      endDrawer: _buildWordListDrawer(),
       appBar: AppBar(
         title: Text(_text.title, overflow: TextOverflow.ellipsis),
         actions: [
@@ -567,6 +572,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
               tooltip: 'Toggle Legend',
               onPressed: () {
                 setState(() => _showLegend = !_showLegend);
+              },
+            ),
+          if (!_isSelectionMode)
+            IconButton(
+              icon: const Icon(Icons.list_alt),
+              tooltip: 'Word List',
+              onPressed: () {
+                _scaffoldKey.currentState?.openEndDrawer();
               },
             ),
           if (!_isSelectionMode)
@@ -972,6 +985,112 @@ class _ReaderScreenState extends State<ReaderScreen> {
         );
       }
     }
+  }
+
+  Widget _buildWordListDrawer() {
+    // Group unique words by status
+    final wordsByStatus = <int, List<_WordToken>>{};
+    final seenWords = <String>{};
+
+    for (final token in _wordTokens) {
+      if (!token.isWord) continue;
+      final normalized = token.text.toLowerCase();
+      if (seenWords.contains(normalized)) continue;
+      seenWords.add(normalized);
+
+      final status = token.term?.status ?? TermStatus.unknown;
+      wordsByStatus.putIfAbsent(status, () => []).add(token);
+    }
+
+    // Sort words alphabetically within each group
+    for (final list in wordsByStatus.values) {
+      list.sort((a, b) => a.text.toLowerCase().compareTo(b.text.toLowerCase()));
+    }
+
+    // Define status order and labels
+    final statusOrder = [
+      TermStatus.unknown,
+      TermStatus.learning2,
+      TermStatus.learning3,
+      TermStatus.learning4,
+      TermStatus.known,
+      TermStatus.wellKnown,
+      TermStatus.ignored,
+    ];
+
+    final statusLabels = {
+      TermStatus.unknown: 'Unknown',
+      TermStatus.learning2: 'Learning 2',
+      TermStatus.learning3: 'Learning 3',
+      TermStatus.learning4: 'Learning 4',
+      TermStatus.known: 'Known',
+      TermStatus.wellKnown: 'Well Known',
+      TermStatus.ignored: 'Ignored',
+    };
+
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Word List',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView(
+                children: [
+                  for (final status in statusOrder)
+                    if (wordsByStatus.containsKey(status) &&
+                        wordsByStatus[status]!.isNotEmpty)
+                      _buildStatusSection(
+                        statusLabels[status]!,
+                        wordsByStatus[status]!,
+                        TermStatus.colorFor(status),
+                      ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusSection(String label, List<_WordToken> tokens, Color color) {
+    return ExpansionTile(
+      initiallyExpanded: label == 'Unknown',
+      leading: CircleAvatar(
+        backgroundColor: color,
+        radius: 8,
+      ),
+      title: Text('$label (${tokens.length})'),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: tokens.map((token) {
+              return ActionChip(
+                label: Text(token.text),
+                backgroundColor: color.withAlpha(50),
+                side: BorderSide(color: color.withAlpha(100)),
+                onPressed: () {
+                  Navigator.pop(context); // Close drawer
+                  _handleWordTap(token.text, token.position,
+                      _wordTokens.indexOf(token));
+                },
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
   }
 }
 
