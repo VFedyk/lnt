@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
+import '../models/language.dart';
 import '../services/database_service.dart';
 import '../services/deepl_service.dart';
 import '../services/settings_service.dart';
@@ -39,14 +40,19 @@ class _TermDialogState extends State<TermDialog> {
   Term? _baseTerm;
   List<Term> _linkedTerms = [];
 
-  // Translation
+  // Translation and language selection
   bool _isTranslating = false;
   bool _hasDeepLKey = false;
+  List<Language> _languages = [];
+  late int _selectedLanguageId;
+  late String _selectedLanguageName;
 
   @override
   void initState() {
     super.initState();
     _status = widget.term.status;
+    _selectedLanguageId = widget.languageId;
+    _selectedLanguageName = widget.languageName;
     _termController = TextEditingController(text: widget.term.lowerText);
     _translationController = TextEditingController(
       text: widget.term.translation,
@@ -62,6 +68,14 @@ class _TermDialogState extends State<TermDialog> {
     _baseTermId = widget.term.baseTermId;
     _loadBaseTermAndLinkedTerms();
     _checkDeepLKey();
+    _loadLanguages();
+  }
+
+  Future<void> _loadLanguages() async {
+    final languages = await DatabaseService.instance.getLanguages();
+    if (mounted) {
+      setState(() => _languages = languages);
+    }
   }
 
   Future<void> _checkDeepLKey() async {
@@ -72,11 +86,11 @@ class _TermDialogState extends State<TermDialog> {
   }
 
   Future<void> _translateTerm() async {
-    final sourceCode = DeepLService.getDeepLLanguageCode(widget.languageName);
+    final sourceCode = DeepLService.getDeepLLanguageCode(_selectedLanguageName);
     if (sourceCode == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Language "${widget.languageName}" not supported by DeepL')),
+          SnackBar(content: Text('Language "$_selectedLanguageName" not supported by DeepL')),
         );
       }
       return;
@@ -307,7 +321,53 @@ class _TermDialogState extends State<TermDialog> {
             ),
             const SizedBox(height: 16),
 
-            // Translation field
+            // Language selector (for saving to different language dictionary)
+            if (_languages.length > 1) ...[
+              Row(
+                children: [
+                  const Text('Language: ', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: DropdownButton<int>(
+                        value: _selectedLanguageId,
+                        isExpanded: true,
+                        isDense: true,
+                        underline: const SizedBox(),
+                        items: _languages.map((lang) {
+                          final isSupported = DeepLService.getDeepLLanguageCode(lang.name) != null;
+                          return DropdownMenuItem(
+                            value: lang.id,
+                            child: Text(
+                              lang.name + (_hasDeepLKey && !isSupported ? ' (no DeepL)' : ''),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: _hasDeepLKey && !isSupported ? Colors.grey : null,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            final lang = _languages.firstWhere((l) => l.id == value);
+                            setState(() {
+                              _selectedLanguageId = value;
+                              _selectedLanguageName = lang.name;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
             TextField(
               controller: _translationController,
               decoration: InputDecoration(
@@ -369,6 +429,7 @@ class _TermDialogState extends State<TermDialog> {
           onPressed: () {
             final editedTerm = _termController.text.trim().toLowerCase();
             final updatedTerm = widget.term.copyWith(
+              languageId: _selectedLanguageId,
               text: editedTerm,
               lowerText: editedTerm,
               status: _status,

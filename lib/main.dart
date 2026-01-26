@@ -23,14 +23,14 @@ class LNTApp extends StatelessWidget {
           primarySwatch: Colors.purple,
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.purple,
+            seedColor: Colors.blue,
             brightness: Brightness.light,
           ),
         ),
         darkTheme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.purple,
+            seedColor: Colors.blue,
             brightness: Brightness.dark,
           ),
         ),
