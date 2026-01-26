@@ -89,7 +89,8 @@ class _TextsScreenState extends State<TextsScreen> {
           .values[sortIndex.clamp(0, TextSortOption.values.length - 1)];
       _sortAscending = prefs.getBool(_sortAscendingKey) ?? false;
       _hideCompleted = prefs.getBool(_hideCompletedKey) ?? false;
-      final viewModeIndex = prefs.getInt(_viewModeKey) ?? TextViewMode.list.index;
+      final viewModeIndex =
+          prefs.getInt(_viewModeKey) ?? TextViewMode.list.index;
       _viewMode = TextViewMode
           .values[viewModeIndex.clamp(0, TextViewMode.values.length - 1)];
     });
@@ -210,23 +211,145 @@ class _TextsScreenState extends State<TextsScreen> {
   }
 
   int _calculateUnknownCount(TextDocument text, Map<String, Term> termsMap) {
+    // For character-based languages, use character-based counting
+    if (widget.language.splitByCharacter) {
+      return _calculateUnknownCountByCharacter(text, termsMap);
+    }
+
     final words = _textParser.splitIntoWords(text.content, widget.language);
     int unknownCount = 0;
 
-    final seenWords = <String>{};
-    for (final word in words) {
-      final normalized = word.toLowerCase();
-      if (seenWords.contains(normalized)) continue;
-      seenWords.add(normalized);
+    // Get multi-word terms sorted by length (longest first)
+    final multiWordTerms =
+        termsMap.entries.where((e) => e.key.contains(' ')).toList()
+          ..sort((a, b) => b.key.length.compareTo(a.key.length));
 
-      final term = termsMap[normalized];
-      // Count as unknown if no term exists or status is Unknown
-      if (term == null || term.status == TermStatus.unknown) {
-        unknownCount++;
+    final seenWords = <String>{};
+    int wordIndex = 0;
+
+    while (wordIndex < words.length) {
+      final word = words[wordIndex];
+      final normalized = word.toLowerCase();
+
+      // Check if this word starts a multi-word term
+      bool isPartOfMultiWord = false;
+      for (final multiWordEntry in multiWordTerms) {
+        final multiWordText = multiWordEntry.key; // Already lowercase
+        final multiWordParts = multiWordText.split(RegExp(r'\s+'));
+
+        // Check if we have enough words left
+        if (wordIndex + multiWordParts.length > words.length) continue;
+
+        // Check if the next N words match this multi-word term
+        bool matches = true;
+        for (int i = 0; i < multiWordParts.length; i++) {
+          if (words[wordIndex + i].toLowerCase() != multiWordParts[i]) {
+            matches = false;
+            break;
+          }
+        }
+
+        if (matches) {
+          // Found a multi-word term match
+          if (!seenWords.contains(multiWordText)) {
+            seenWords.add(multiWordText);
+            final term = termsMap[multiWordText];
+            if (term == null || term.status == TermStatus.unknown) {
+              unknownCount++;
+            }
+          }
+          wordIndex += multiWordParts.length;
+          isPartOfMultiWord = true;
+          break;
+        }
       }
+
+      if (isPartOfMultiWord) continue;
+
+      // Single word
+      if (!seenWords.contains(normalized)) {
+        seenWords.add(normalized);
+        final term = termsMap[normalized];
+        if (term == null || term.status == TermStatus.unknown) {
+          unknownCount++;
+        }
+      }
+      wordIndex++;
     }
 
     return unknownCount;
+  }
+
+  int _calculateUnknownCountByCharacter(
+    TextDocument text,
+    Map<String, Term> termsMap,
+  ) {
+    final content = text.content;
+    int unknownCount = 0;
+
+    // Get multi-character terms sorted by length (longest first)
+    final multiCharTerms =
+        termsMap.entries.where((e) => e.key.length > 1).toList()
+          ..sort((a, b) => b.key.length.compareTo(a.key.length));
+
+    final seenWords = <String>{};
+    int i = 0;
+
+    while (i < content.length) {
+      final char = content[i];
+
+      // Skip whitespace and punctuation
+      if (char.trim().isEmpty || _isPunctuation(char)) {
+        i++;
+        continue;
+      }
+
+      // Check if this position starts a multi-character term
+      bool foundMultiCharTerm = false;
+      for (final termEntry in multiCharTerms) {
+        final termText = termEntry.value.text;
+        final termKey = termEntry.key;
+        final termLength = termText.length;
+
+        final endIndex = i + termLength;
+        if (endIndex <= content.length) {
+          final substring = content.substring(i, endIndex);
+          final normalizedSubstring = _textParser.normalizeWord(substring);
+
+          if (normalizedSubstring == termKey) {
+            if (!seenWords.contains(termKey)) {
+              seenWords.add(termKey);
+              final term = termsMap[termKey];
+              if (term == null || term.status == TermStatus.unknown) {
+                unknownCount++;
+              }
+            }
+            i += termLength;
+            foundMultiCharTerm = true;
+            break;
+          }
+        }
+      }
+
+      if (foundMultiCharTerm) continue;
+
+      // Single character
+      final normalizedChar = _textParser.normalizeWord(char);
+      if (!seenWords.contains(normalizedChar)) {
+        seenWords.add(normalizedChar);
+        final term = termsMap[normalizedChar];
+        if (term == null || term.status == TermStatus.unknown) {
+          unknownCount++;
+        }
+      }
+      i++;
+    }
+
+    return unknownCount;
+  }
+
+  bool _isPunctuation(String char) {
+    return RegExp(r'[\p{P}\p{S}]', unicode: true).hasMatch(char);
   }
 
   Future<void> _recalculateUnknownCountForText(TextDocument text) async {
@@ -288,7 +411,7 @@ class _TextsScreenState extends State<TextsScreen> {
     }
   }
 
-  Future<void> _importFromFile() async {
+  Future<void> _importFromTextFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['txt'],
@@ -590,7 +713,7 @@ class _TextsScreenState extends State<TextsScreen> {
             onSelected: (value) {
               switch (value) {
                 case 'txt':
-                  _importFromFile();
+                  _importFromTextFile();
                   break;
                 case 'epub':
                   _importFromEpub();
@@ -657,8 +780,8 @@ class _TextsScreenState extends State<TextsScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _viewMode == TextViewMode.list
-                    ? _buildContentList()
-                    : _buildContentGrid(),
+                ? _buildContentList()
+                : _buildContentGrid(),
           ),
         ],
       ),
@@ -767,10 +890,7 @@ class _TextsScreenState extends State<TextsScreen> {
               leading: const CircleAvatar(child: Icon(Icons.folder)),
               title: Tooltip(
                 message: collection.name,
-                child: Text(
-                  collection.name,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: Text(collection.name, overflow: TextOverflow.ellipsis),
               ),
               subtitle: collection.description.isNotEmpty
                   ? Text(collection.description)
@@ -826,7 +946,7 @@ class _TextsScreenState extends State<TextsScreen> {
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: unknownCount == 0
-                    ? Colors.green.withOpacity(0.2)
+                    ? Colors.green.withValues(alpha: 0.2)
                     : null,
                 child: Icon(
                   unknownCount == 0 ? Icons.check : Icons.article,
@@ -835,10 +955,7 @@ class _TextsScreenState extends State<TextsScreen> {
               ),
               title: Tooltip(
                 message: text.title,
-                child: Text(
-                  text.title,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: Text(text.title, overflow: TextOverflow.ellipsis),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1075,9 +1192,7 @@ class _TextsScreenState extends State<TextsScreen> {
   }
 
   Future<void> _setCoverImage(TextDocument text) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-    );
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
 
     if (result != null && result.files.single.path != null) {
       final sourcePath = result.files.single.path!;
@@ -1168,9 +1283,7 @@ class _CollectionDialogState extends State<_CollectionDialog> {
   }
 
   Future<void> _pickCoverImage() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-    );
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
 
     if (result != null && result.files.single.path != null) {
       final sourcePath = result.files.single.path!;
@@ -1233,8 +1346,11 @@ class _CollectionDialogState extends State<_CollectionDialog> {
                       ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_photo_alternate,
-                                size: 32, color: Colors.grey[600]),
+                            Icon(
+                              Icons.add_photo_alternate,
+                              size: 32,
+                              color: Colors.grey[600],
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               'Add Cover',
@@ -1285,7 +1401,8 @@ class _CollectionDialogState extends State<_CollectionDialog> {
                       name: _nameController.text,
                       description: _descriptionController.text,
                       coverImage: _coverImagePath,
-                      clearCoverImage: _coverImagePath == null &&
+                      clearCoverImage:
+                          _coverImagePath == null &&
                           widget.existingCollection!.coverImage != null,
                     )
                   : Collection(
@@ -1411,9 +1528,7 @@ class _EditTextDialogState extends State<_EditTextDialog> {
   }
 
   Future<void> _pickCoverImage() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-    );
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
 
     if (result != null && result.files.single.path != null) {
       final sourcePath = result.files.single.path!;
@@ -1476,8 +1591,11 @@ class _EditTextDialogState extends State<_EditTextDialog> {
                       ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_photo_alternate,
-                                size: 32, color: Colors.grey[600]),
+                            Icon(
+                              Icons.add_photo_alternate,
+                              size: 32,
+                              color: Colors.grey[600],
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               'Add Cover',
@@ -1528,8 +1646,8 @@ class _EditTextDialogState extends State<_EditTextDialog> {
                 title: _titleController.text,
                 content: _contentController.text,
                 coverImage: _coverImagePath,
-                clearCoverImage: _coverImagePath == null &&
-                    widget.text.coverImage != null,
+                clearCoverImage:
+                    _coverImagePath == null && widget.text.coverImage != null,
               );
               Navigator.pop(context, updatedText);
             }
@@ -1587,7 +1705,9 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
       // Download cover image if available
       String? coverPath;
       if (result.coverImageUrl != null) {
-        coverPath = await _urlImportService.downloadCoverImage(result.coverImageUrl!);
+        coverPath = await _urlImportService.downloadCoverImage(
+          result.coverImageUrl!,
+        );
       }
 
       setState(() {
@@ -1707,11 +1827,11 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>
                                     Container(
-                                  width: 80,
-                                  height: 120,
-                                  color: Colors.grey[200],
-                                  child: const Icon(Icons.broken_image),
-                                ),
+                                      width: 80,
+                                      height: 120,
+                                      color: Colors.grey[200],
+                                      child: const Icon(Icons.broken_image),
+                                    ),
                               )
                             : Container(
                                 width: 80,
@@ -1720,8 +1840,10 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.add_photo_alternate,
-                                        color: Colors.grey[400]),
+                                    Icon(
+                                      Icons.add_photo_alternate,
+                                      color: Colors.grey[400],
+                                    ),
                                     const SizedBox(height: 4),
                                     Text(
                                       'Add Cover',
@@ -1748,10 +1870,7 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'Preview',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
+                Text('Preview', style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 8),
                 Container(
                   height: 200,
@@ -1762,19 +1881,13 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: SingleChildScrollView(
-                    child: Text(
-                      _content,
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    child: Text(_content, style: const TextStyle(fontSize: 12)),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '${_content.split(RegExp(r'\\s+')).length} words',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ],
@@ -1787,10 +1900,7 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
           child: const Text('Cancel'),
         ),
         if (_isFetched)
-          TextButton(
-            onPressed: _import,
-            child: const Text('Import'),
-          ),
+          TextButton(onPressed: _import, child: const Text('Import')),
       ],
     );
   }

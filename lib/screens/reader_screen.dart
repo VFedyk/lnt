@@ -143,10 +143,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
 
     // Standard word-based parsing for languages with spaces
-    final words = _textParser.splitIntoWords(
-      _text.content,
-      widget.language,
-    );
+    final words = _textParser.splitIntoWords(_text.content, widget.language);
     final tokens = <_WordToken>[];
     int wordIndex = 0;
     int position = 0;
@@ -645,9 +642,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             : null,
                       ),
                       const SizedBox(width: 8),
-                      Text(_text.status == TextStatus.finished
-                          ? 'Marked as Finished'
-                          : 'Mark as Finished'),
+                      Text(
+                        _text.status == TextStatus.finished
+                            ? 'Marked as Finished'
+                            : 'Mark as Finished',
+                      ),
                     ],
                   ),
                 ),
@@ -707,10 +706,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
           for (int i = 0; i < parts.length; i++) {
             // Add the text part (may be empty)
             if (parts[i].isNotEmpty) {
-              widgets.add(Text(
-                parts[i],
-                style: TextStyle(fontSize: _fontSize, height: 1.6),
-              ));
+              widgets.add(
+                Text(
+                  parts[i],
+                  style: TextStyle(fontSize: _fontSize, height: 1.6),
+                ),
+              );
             }
             // Add line break (except after last part)
             if (i < parts.length - 1) {
@@ -718,10 +719,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
             }
           }
         } else {
-          widgets.add(Text(
-            token.text,
-            style: TextStyle(fontSize: _fontSize, height: 1.6),
-          ));
+          widgets.add(
+            Text(
+              token.text,
+              style: TextStyle(fontSize: _fontSize, height: 1.6),
+            ),
+          );
         }
         continue;
       }
@@ -764,28 +767,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
       }
       // All other cases use null (theme default) for better readability
 
-      widgets.add(GestureDetector(
-        onTap: () => _handleWordTap(token.text, token.position, index),
-        onLongPress: () => _handleWordLongPress(index),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-          margin: const EdgeInsets.symmetric(horizontal: 1),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
-          ),
-          child: Text(
-            token.text,
-            style: TextStyle(
-              fontSize: _fontSize,
-              height: 1.6,
-              color: textColor,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      widgets.add(
+        GestureDetector(
+          onTap: () => _handleWordTap(token.text, token.position, index),
+          onLongPress: () => _handleWordLongPress(index),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
+            ),
+            child: Text(
+              token.text,
+              style: TextStyle(
+                fontSize: _fontSize,
+                height: 1.6,
+                color: textColor,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ),
         ),
-      ));
+      );
     }
 
     return widgets;
@@ -872,10 +877,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Future<void> _performMarkAllKnown() async {
     try {
-      final words = _textParser.splitIntoWords(
-        _text.content,
-        widget.language,
-      );
+      final words = _textParser.splitIntoWords(_text.content, widget.language);
 
       for (final word in words) {
         final lowerWord = _textParser.normalizeWord(word);
@@ -928,9 +930,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(newStatus == TextStatus.finished
-              ? 'Text marked as finished'
-              : 'Text marked as in progress'),
+          content: Text(
+            newStatus == TextStatus.finished
+                ? 'Text marked as finished'
+                : 'Text marked as in progress',
+          ),
         ),
       );
     }
@@ -977,10 +981,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => ReaderScreen(
-              text: nextText,
-              language: widget.language,
-            ),
+            builder: (_) =>
+                ReaderScreen(text: nextText, language: widget.language),
           ),
         );
       }
@@ -1061,13 +1063,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  Widget _buildStatusSection(String label, List<_WordToken> tokens, Color color) {
+  Widget _buildStatusSection(
+    String label,
+    List<_WordToken> tokens,
+    Color color,
+  ) {
     return ExpansionTile(
       initiallyExpanded: label == 'Unknown',
-      leading: CircleAvatar(
-        backgroundColor: color,
-        radius: 8,
-      ),
+      leading: CircleAvatar(backgroundColor: color, radius: 8),
       title: Text('$label (${tokens.length})'),
       children: [
         Padding(
@@ -1082,8 +1085,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 side: BorderSide(color: color.withAlpha(100)),
                 onPressed: () {
                   Navigator.pop(context); // Close drawer
-                  _handleWordTap(token.text, token.position,
-                      _wordTokens.indexOf(token));
+                  _handleWordTap(
+                    token.text,
+                    token.position,
+                    _wordTokens.indexOf(token),
+                  );
                 },
               );
             }).toList(),
