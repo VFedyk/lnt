@@ -144,8 +144,9 @@ class _TextsScreenState extends State<TextsScreen> {
     // Then filter by completion status
     if (_hideCompleted) {
       filtered = filtered.where((t) {
-        final unknownCount = _unknownCounts[t.id] ?? 0;
-        return unknownCount > 0;
+        // final unknownCount = _unknownCounts[t.id] ?? 0;
+        // return unknownCount > 0;
+        return t.status != TextStatus.finished;
       }).toList();
     }
 
@@ -945,12 +946,16 @@ class _TextsScreenState extends State<TextsScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: unknownCount == 0
+                backgroundColor: text.status == TextStatus.finished
                     ? Colors.green.withValues(alpha: 0.2)
                     : null,
                 child: Icon(
-                  unknownCount == 0 ? Icons.check : Icons.article,
-                  color: unknownCount == 0 ? Colors.green : null,
+                  text.status == TextStatus.finished
+                      ? Icons.check
+                      : Icons.article,
+                  color: text.status == TextStatus.finished
+                      ? Colors.green
+                      : null,
                 ),
               ),
               title: Tooltip(
@@ -962,7 +967,7 @@ class _TextsScreenState extends State<TextsScreen> {
                 children: [
                   Text(totalLabel),
                   Text(
-                    unknownCount == 0 ? 'Completed!' : unknownLabel,
+                    unknownLabel,
                     style: TextStyle(
                       color: unknownCount > 0 ? Colors.orange : Colors.green,
                       fontSize: 12,
@@ -1106,9 +1111,11 @@ class _TextsScreenState extends State<TextsScreen> {
 
           return BookCover(
             title: text.title,
-            subtitle: unknownCount == 0 ? 'Completed!' : unknownLabel,
+            subtitle: text.status == TextStatus.finished
+                ? 'Completed!'
+                : unknownLabel,
             imagePath: text.coverImage,
-            isCompleted: unknownCount == 0,
+            isCompleted: text.status == TextStatus.finished,
             onTap: () {
               Navigator.push(
                 context,
