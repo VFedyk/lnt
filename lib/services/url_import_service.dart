@@ -10,13 +10,13 @@ class UrlImportResult {
   final String title;
   final String content;
   final String url;
-  final String? coverImagePath;
+  final String? coverImageUrl;
 
   UrlImportResult({
     required this.title,
     required this.content,
     required this.url,
-    this.coverImagePath,
+    this.coverImageUrl,
   });
 }
 
@@ -53,8 +53,8 @@ class UrlImportService {
     // Extract title
     String title = _extractTitle(document, uri);
 
-    // Extract cover image
-    String? coverImagePath = await _extractCoverImage(document, uri);
+    // Extract cover image URL
+    String? coverImageUrl = _extractCoverImageUrl(document, uri);
 
     // Extract main content
     String content = _extractContent(document);
@@ -67,7 +67,7 @@ class UrlImportService {
       title: title,
       content: content,
       url: url,
-      coverImagePath: coverImagePath,
+      coverImageUrl: coverImageUrl,
     );
   }
 
@@ -98,8 +98,8 @@ class UrlImportService {
     return uri.host;
   }
 
-  /// Extract and download cover image from the page
-  Future<String?> _extractCoverImage(Document document, Uri pageUri) async {
+  /// Extract cover image URL from the page (does not download)
+  String? _extractCoverImageUrl(Document document, Uri pageUri) {
     String? imageUrl;
 
     // Try og:image meta tag first (most reliable for articles)
@@ -148,7 +148,11 @@ class UrlImportService {
       }
     }
 
-    // Download and save the image
+    return imageUrl;
+  }
+
+  /// Download and save a cover image from URL
+  Future<String?> downloadCoverImage(String imageUrl) async {
     try {
       final imageResponse = await http.get(
         Uri.parse(imageUrl),
@@ -194,7 +198,7 @@ class UrlImportService {
 
       return filePath;
     } catch (e) {
-      // Image extraction failed, but don't fail the whole import
+      // Image download failed
       return null;
     }
   }

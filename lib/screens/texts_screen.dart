@@ -1560,7 +1560,7 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
   bool _isFetched = false;
   String? _error;
   String _content = '';
-  String? _coverImagePath;
+  String? _coverImagePath; // Local path for cover image
 
   @override
   void dispose() {
@@ -1583,10 +1583,17 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
 
     try {
       final result = await _urlImportService.importFromUrl(url);
+
+      // Download cover image if available
+      String? coverPath;
+      if (result.coverImageUrl != null) {
+        coverPath = await _urlImportService.downloadCoverImage(result.coverImageUrl!);
+      }
+
       setState(() {
         _titleController.text = result.title;
         _content = result.content;
-        _coverImagePath = result.coverImagePath;
+        _coverImagePath = coverPath;
         _isFetched = true;
         _isLoading = false;
       });
@@ -1594,6 +1601,31 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
       setState(() {
         _error = e.toString();
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _pickCoverImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+
+    if (result != null && result.files.single.path != null) {
+      final sourcePath = result.files.single.path!;
+      final sourceFile = File(sourcePath);
+
+      final appDir = await getApplicationDocumentsDirectory();
+      final coversDir = Directory(p.join(appDir.path, 'covers'));
+      if (!await coversDir.exists()) {
+        await coversDir.create(recursive: true);
+      }
+
+      final extension = p.extension(sourcePath);
+      final newFileName = '${DateTime.now().millisecondsSinceEpoch}$extension';
+      final newPath = p.join(coversDir.path, newFileName);
+
+      await sourceFile.copy(newPath);
+
+      setState(() {
+        _coverImagePath = newPath;
       });
     }
   }
@@ -1660,12 +1692,60 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
               ],
               if (_isFetched) ...[
                 const SizedBox(height: 16),
-                TextField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title',
-                    prefixIcon: Icon(Icons.title),
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: _pickCoverImage,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: _coverImagePath != null
+                            ? Image.file(
+                                File(_coverImagePath!),
+                                width: 80,
+                                height: 120,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                  width: 80,
+                                  height: 120,
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.broken_image),
+                                ),
+                              )
+                            : Container(
+                                width: 80,
+                                height: 120,
+                                color: Colors.grey[200],
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add_photo_alternate,
+                                        color: Colors.grey[400]),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Add Cover',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _titleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Title',
+                          prefixIcon: Icon(Icons.title),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 Text(
