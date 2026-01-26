@@ -114,9 +114,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.blue.shade50,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.blue.shade200),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: _isLoadingUsage
             ? const Row(
@@ -135,7 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? Row(
                     children: [
                       Icon(Icons.error_outline,
-                           color: Colors.orange.shade700, size: 20),
+                           color: Theme.of(context).colorScheme.error, size: 20),
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text('Could not load usage. Check your API key.'),
@@ -160,10 +160,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             '${(_usage!.usagePercent * 100).toStringAsFixed(1)}%',
                             style: TextStyle(
                               color: _usage!.usagePercent > 0.9
-                                  ? Colors.red
+                                  ? Theme.of(context).colorScheme.error
                                   : _usage!.usagePercent > 0.7
                                       ? Colors.orange
-                                      : Colors.green,
+                                      : Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -175,13 +175,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: LinearProgressIndicator(
                           value: _usage!.usagePercent,
                           minHeight: 8,
-                          backgroundColor: Colors.grey.shade300,
+                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                           valueColor: AlwaysStoppedAnimation<Color>(
                             _usage!.usagePercent > 0.9
-                                ? Colors.red
+                                ? Theme.of(context).colorScheme.error
                                 : _usage!.usagePercent > 0.7
                                     ? Colors.orange
-                                    : Colors.blue,
+                                    : Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
@@ -189,14 +189,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Text(
                         '${_formatNumber(_usage!.characterCount)} / ${_formatNumber(_usage!.characterLimit)} characters',
                         style: TextStyle(
-                          color: Colors.grey.shade700,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 12,
                         ),
                       ),
                       Text(
                         '${_formatNumber(_usage!.charactersRemaining)} characters remaining',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 12,
                         ),
                       ),

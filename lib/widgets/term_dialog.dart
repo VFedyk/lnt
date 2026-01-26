@@ -159,6 +159,7 @@ class _TermDialogState extends State<TermDialog> {
   }
 
   Widget _buildBaseTermSection() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -167,18 +168,18 @@ class _TermDialogState extends State<TermDialog> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.shade200),
+              border: Border.all(color: colorScheme.primary.withAlpha(100)),
             ),
             child: Row(
               children: [
-                Icon(Icons.link, size: 16, color: Colors.blue.shade700),
+                Icon(Icons.link, size: 16, color: colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Base: ',
                   style: TextStyle(
-                    color: Colors.blue.shade700,
+                    color: colorScheme.primary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -186,7 +187,7 @@ class _TermDialogState extends State<TermDialog> {
                   child: Text(
                     _baseTerm!.lowerText,
                     style: TextStyle(
-                      color: Colors.blue.shade900,
+                      color: colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -208,8 +209,8 @@ class _TermDialogState extends State<TermDialog> {
             icon: const Icon(Icons.add_link, size: 18),
             label: const Text('Link to base form...'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.blue.shade700,
-              side: BorderSide(color: Colors.blue.shade300),
+              foregroundColor: colorScheme.primary,
+              side: BorderSide(color: colorScheme.outline),
             ),
           ),
 
@@ -220,7 +221,7 @@ class _TermDialogState extends State<TermDialog> {
             'Forms: ${_linkedTerms.map((t) => t.lowerText).join(", ")}',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: colorScheme.onSurfaceVariant,
               fontStyle: FontStyle.italic,
             ),
           ),
