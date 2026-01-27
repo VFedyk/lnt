@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../services/database_service.dart';
 import 'dictionaries_screen.dart';
@@ -45,21 +46,20 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
         final langId = await DatabaseService.instance.createLanguage(result);
         // After creating language, prompt to add dictionaries
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           final shouldAddDict = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Add Dictionaries?'),
-              content: Text(
-                'Would you like to add dictionaries for ${result.name}?',
-              ),
+              title: Text(l10n.addDictionariesQuestion),
+              content: Text(l10n.addDictionariesPrompt(result.name)),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Later'),
+                  child: Text(l10n.later),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Add Now'),
+                  child: Text(l10n.addNow),
                 ),
               ],
             ),
@@ -98,22 +98,21 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
   }
 
   Future<void> _deleteLanguage(Language language) async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Language?'),
-        content: Text(
-          'This will delete "${language.name}" and all associated texts, terms, and dictionaries. Continue?',
-        ),
+        title: Text(l10n.deleteLanguageQuestion),
+        content: Text(l10n.deleteLanguageConfirm(language.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -127,8 +126,9 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Languages')),
+      appBar: AppBar(title: Text(l10n.languages)),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _languages.isEmpty
@@ -138,12 +138,12 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
                 children: [
                   Icon(Icons.language, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
-                  const Text('No languages yet'),
+                  Text(l10n.noLanguagesYet),
                   const SizedBox(height: 8),
                   ElevatedButton.icon(
                     onPressed: () => _addOrEditLanguage(),
                     icon: const Icon(Icons.add),
-                    label: const Text('Add Language'),
+                    label: Text(l10n.addLanguage),
                   ),
                 ],
               ),
@@ -166,9 +166,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
                       future: _getDictionaryCount(lang.id!),
                       builder: (context, snapshot) {
                         final count = snapshot.data ?? 0;
-                        return Text(
-                          '$count ${count == 1 ? 'dictionary' : 'dictionaries'}',
-                        );
+                        return Text(l10n.dictionaryCount(count));
                       },
                     ),
                     trailing: Row(
@@ -177,7 +175,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
                         IconButton(
                           icon: const Icon(Icons.book),
                           onPressed: () => _manageDictionaries(lang),
-                          tooltip: 'Manage Dictionaries',
+                          tooltip: l10n.manageDictionaries,
                         ),
                         IconButton(
                           icon: const Icon(Icons.edit),
@@ -236,8 +234,9 @@ class _LanguageDialogState extends State<_LanguageDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(widget.language == null ? 'Add Language' : 'Edit Language'),
+      title: Text(widget.language == null ? l10n.addLanguage : l10n.editLanguage),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -247,31 +246,31 @@ class _LanguageDialogState extends State<_LanguageDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Language Name',
-                  hintText: 'e.g., Spanish, Japanese, Chinese',
+                decoration: InputDecoration(
+                  labelText: l10n.languageNameLabel,
+                  hintText: l10n.languageNameHint,
                 ),
-                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                validator: (v) => v?.isEmpty == true ? l10n.required : null,
                 autofocus: true,
               ),
               const SizedBox(height: 16),
               SwitchListTile(
-                title: const Text('Right-to-Left Text'),
-                subtitle: const Text('For languages like Arabic, Hebrew'),
+                title: Text(l10n.rightToLeftText),
+                subtitle: Text(l10n.rightToLeftHint),
                 value: _rightToLeft,
                 onChanged: (v) => setState(() => _rightToLeft = v),
                 contentPadding: EdgeInsets.zero,
               ),
               SwitchListTile(
-                title: const Text('Show Romanization'),
-                subtitle: const Text('Display pronunciation guide'),
+                title: Text(l10n.showRomanization),
+                subtitle: Text(l10n.showRomanizationHint),
                 value: _showRomanization,
                 onChanged: (v) => setState(() => _showRomanization = v),
                 contentPadding: EdgeInsets.zero,
               ),
               SwitchListTile(
-                title: const Text('Split by Character'),
-                subtitle: const Text('For Chinese, Japanese (no spaces)'),
+                title: Text(l10n.splitByCharacter),
+                subtitle: Text(l10n.splitByCharacterHint),
                 value: _splitByCharacter,
                 onChanged: (v) => setState(() => _splitByCharacter = v),
                 contentPadding: EdgeInsets.zero,
@@ -294,7 +293,7 @@ class _LanguageDialogState extends State<_LanguageDialog> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Add dictionaries after creating the language',
+                        l10n.addDictionariesAfterCreating,
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.blue.shade700,
@@ -311,7 +310,7 @@ class _LanguageDialogState extends State<_LanguageDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -326,7 +325,7 @@ class _LanguageDialogState extends State<_LanguageDialog> {
               Navigator.pop(context, lang);
             }
           },
-          child: const Text('Save'),
+          child: Text(l10n.save),
         ),
       ],
     );

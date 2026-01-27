@@ -1,5 +1,6 @@
 // FILE: lib/screens/dictionaries_screen.dart
 import 'package:flutter/material.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/dictionary.dart';
 import '../services/database_service.dart';
@@ -54,20 +55,21 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
   }
 
   Future<void> _deleteDictionary(Dictionary dictionary) async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Dictionary?'),
-        content: Text('Delete "${dictionary.name}"?'),
+        title: Text(l10n.deleteDictionary),
+        content: Text(l10n.deleteDictionaryConfirm(dictionary.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -100,13 +102,14 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dictionaries - ${widget.language.name}'),
+        title: Text(l10n.dictionariesTitle(widget.language.name)),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),
-            tooltip: 'Help',
+            tooltip: l10n.help,
             onPressed: () => _showHelp(),
           ),
         ],
@@ -170,13 +173,13 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'edit',
                           child: Row(
                             children: [
-                              Icon(Icons.edit),
-                              SizedBox(width: 8),
-                              Text('Edit'),
+                              const Icon(Icons.edit),
+                              const SizedBox(width: 8),
+                              Text(l10n.edit),
                             ],
                           ),
                         ),
@@ -190,19 +193,19 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                                     : Icons.visibility,
                               ),
                               const SizedBox(width: 8),
-                              Text(dict.isActive ? 'Deactivate' : 'Activate'),
+                              Text(dict.isActive ? l10n.deactivate : l10n.activate),
                             ],
                           ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'delete',
                           child: Row(
                             children: [
-                              Icon(Icons.delete, color: Colors.red),
-                              SizedBox(width: 8),
+                              const Icon(Icons.delete, color: Colors.red),
+                              const SizedBox(width: 8),
                               Text(
-                                'Delete',
-                                style: TextStyle(color: Colors.red),
+                                l10n.delete,
+                                style: const TextStyle(color: Colors.red),
                               ),
                             ],
                           ),
@@ -221,23 +224,24 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.book, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          const Text('No dictionaries yet'),
+          Text(l10n.noDictionariesYet),
           const SizedBox(height: 8),
           Text(
-            'Add dictionaries for ${widget.language.name}',
+            l10n.addDictionariesFor(widget.language.name),
             style: TextStyle(color: Colors.grey[600]),
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () => _addOrEditDictionary(),
             icon: const Icon(Icons.add),
-            label: const Text('Add Dictionary'),
+            label: Text(l10n.addDictionary),
           ),
         ],
       ),
@@ -245,36 +249,37 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
   }
 
   void _showHelp() {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dictionary Help'),
-        content: const SingleChildScrollView(
+        title: Text(l10n.dictionaryHelp),
+        content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'How to use:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                l10n.howToUse,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 8),
-              Text('1. Add dictionary URLs for this language'),
-              Text('2. Use ### as placeholder for the word'),
-              Text('3. Drag to reorder dictionaries'),
-              Text('4. Toggle active/inactive'),
-              SizedBox(height: 16),
+              const SizedBox(height: 8),
+              Text(l10n.dictionaryHelpStep1),
+              Text(l10n.dictionaryHelpStep2),
+              Text(l10n.dictionaryHelpStep3),
+              Text(l10n.dictionaryHelpStep4),
+              const SizedBox(height: 16),
               Text(
-                'Example URLs:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                l10n.exampleUrls,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 8),
-              Text(
+              const SizedBox(height: 8),
+              const Text(
                 'WordReference:\nhttps://www.wordreference.com/es/en/translation.asp?spen=###',
                 style: TextStyle(fontSize: 12),
               ),
-              SizedBox(height: 8),
-              Text(
+              const SizedBox(height: 8),
+              const Text(
                 'Jisho (Japanese):\nhttps://jisho.org/search/###',
                 style: TextStyle(fontSize: 12),
               ),
@@ -284,7 +289,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Got it'),
+            child: Text(l10n.gotIt),
           ),
         ],
       ),
@@ -326,9 +331,10 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(
-        widget.dictionary == null ? 'Add Dictionary' : 'Edit Dictionary',
+        widget.dictionary == null ? l10n.addDictionary : l10n.editDictionary,
       ),
       content: SingleChildScrollView(
         child: Form(
@@ -339,31 +345,31 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Dictionary Name',
-                  hintText: 'e.g., WordReference, Jisho',
+                decoration: InputDecoration(
+                  labelText: l10n.dictionaryName,
+                  hintText: l10n.dictionaryNameHint,
                 ),
-                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _urlController,
-                decoration: const InputDecoration(
-                  labelText: 'URL Template',
-                  hintText: 'https://example.com/dict?word=###',
-                  helperText: 'Use ### as placeholder for the word',
+                decoration: InputDecoration(
+                  labelText: l10n.urlTemplate,
+                  hintText: l10n.urlTemplateHint,
+                  helperText: l10n.urlTemplateHelper,
                 ),
                 maxLines: 3,
                 validator: (v) {
-                  if (v?.isEmpty == true) return 'Required';
-                  if (!v!.contains('###')) return 'URL must contain ###';
+                  if (v?.isEmpty == true) return l10n.required;
+                  if (!v!.contains('###')) return l10n.urlMustContainPlaceholder;
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               SwitchListTile(
-                title: const Text('Active'),
-                subtitle: const Text('Show in dictionary lookup menu'),
+                title: Text(l10n.active),
+                subtitle: Text(l10n.showInDictionaryLookupMenu),
                 value: _isActive,
                 onChanged: (v) => setState(() => _isActive = v),
                 contentPadding: EdgeInsets.zero,
@@ -388,7 +394,7 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Quick Templates:',
+                          l10n.quickTemplates,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.blue.shade700,
@@ -419,7 +425,7 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -435,7 +441,7 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
               Navigator.pop(context, dict);
             }
           },
-          child: const Text('Save'),
+          child: Text(l10n.save),
         ),
       ],
     );

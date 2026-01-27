@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
 import '../models/language.dart';
@@ -89,8 +90,9 @@ class _TermDialogState extends State<TermDialog> {
     final sourceCode = DeepLService.getDeepLLanguageCode(_selectedLanguageName);
     if (sourceCode == null) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Language "$_selectedLanguageName" not supported by DeepL')),
+          SnackBar(content: Text(l10n.languageNotSupported(_selectedLanguageName))),
         );
       }
       return;
@@ -110,8 +112,9 @@ class _TermDialogState extends State<TermDialog> {
       if (translation != null) {
         _translationController.text = translation;
       } else {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Translation failed. Check your API key.')),
+          SnackBar(content: Text(l10n.translationFailed)),
         );
       }
     }
@@ -159,6 +162,7 @@ class _TermDialogState extends State<TermDialog> {
   }
 
   Widget _buildBaseTermSection() {
+    final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,7 +181,7 @@ class _TermDialogState extends State<TermDialog> {
                 Icon(Icons.link, size: 16, color: colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
-                  'Base: ',
+                  l10n.base,
                   style: TextStyle(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.w500,
@@ -197,7 +201,7 @@ class _TermDialogState extends State<TermDialog> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: _removeBaseTerm,
-                  tooltip: 'Remove link',
+                  tooltip: l10n.removeLink,
                 ),
               ],
             ),
@@ -207,7 +211,7 @@ class _TermDialogState extends State<TermDialog> {
           OutlinedButton.icon(
             onPressed: _selectBaseTerm,
             icon: const Icon(Icons.add_link, size: 18),
-            label: const Text('Link to base form...'),
+            label: Text(l10n.linkToBaseForm),
             style: OutlinedButton.styleFrom(
               foregroundColor: colorScheme.primary,
               side: BorderSide(color: colorScheme.outline),
@@ -218,7 +222,7 @@ class _TermDialogState extends State<TermDialog> {
         if (_linkedTerms.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(
-            'Forms: ${_linkedTerms.map((t) => t.lowerText).join(", ")}',
+            l10n.forms(_linkedTerms.map((t) => t.lowerText).join(", ")),
             style: TextStyle(
               fontSize: 12,
               color: colorScheme.onSurfaceVariant,
@@ -241,6 +245,7 @@ class _TermDialogState extends State<TermDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
       title: Row(
         children: [
@@ -254,7 +259,7 @@ class _TermDialogState extends State<TermDialog> {
                 ),
                 if (widget.term.text != widget.term.lowerText)
                   Text(
-                    'Original: ${widget.term.text}',
+                    l10n.original(widget.term.text),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
               ],
@@ -263,7 +268,7 @@ class _TermDialogState extends State<TermDialog> {
           if (widget.dictionaries.isNotEmpty)
             PopupMenuButton<Dictionary>(
               icon: const Icon(Icons.search),
-              tooltip: 'Lookup in Dictionary',
+              tooltip: l10n.lookupInDictionary,
               onSelected: (dict) {
                 widget.onLookup(context, dict);
               },
@@ -285,12 +290,12 @@ class _TermDialogState extends State<TermDialog> {
             TextField(
               controller: _termController,
               decoration: InputDecoration(
-                labelText: 'Term',
+                labelText: l10n.term,
                 border: const OutlineInputBorder(),
                 suffixIcon: widget.term.text != widget.term.lowerText
                     ? IconButton(
                         icon: const Icon(Icons.history),
-                        tooltip: 'Use original: ${widget.term.text}',
+                        tooltip: l10n.useOriginal(widget.term.text),
                         onPressed: () {
                           _termController.text = widget.term.text;
                         },
@@ -305,19 +310,19 @@ class _TermDialogState extends State<TermDialog> {
             const SizedBox(height: 12),
 
             // Status selector
-            const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(l10n.status, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                _buildStatusChip(0, 'Ignored', Colors.grey.shade400),
-                _buildStatusChip(1, 'Unknown', Colors.red.shade400),
-                _buildStatusChip(2, 'Learning 2', Colors.orange.shade400),
-                _buildStatusChip(3, 'Learning 3', Colors.yellow.shade700),
-                _buildStatusChip(4, 'Learning 4', Colors.lightGreen.shade500),
-                _buildStatusChip(5, 'Known', Colors.green.shade600),
-                _buildStatusChip(99, 'Well Known', Colors.blue.shade400),
+                _buildStatusChip(0, l10n.statusIgnored, Colors.grey.shade400),
+                _buildStatusChip(1, l10n.statusUnknown, Colors.red.shade400),
+                _buildStatusChip(2, l10n.statusLearning2, Colors.orange.shade400),
+                _buildStatusChip(3, l10n.statusLearning3, Colors.yellow.shade700),
+                _buildStatusChip(4, l10n.statusLearning4, Colors.lightGreen.shade500),
+                _buildStatusChip(5, l10n.statusKnown, Colors.green.shade600),
+                _buildStatusChip(99, l10n.statusWellKnown, Colors.blue.shade400),
               ],
             ),
             const SizedBox(height: 16),
@@ -326,7 +331,7 @@ class _TermDialogState extends State<TermDialog> {
             if (_languages.length > 1) ...[
               Row(
                 children: [
-                  const Text('Language: ', style: TextStyle(fontSize: 12)),
+                  Text(l10n.language, style: const TextStyle(fontSize: 12)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Container(
@@ -345,7 +350,7 @@ class _TermDialogState extends State<TermDialog> {
                           return DropdownMenuItem(
                             value: lang.id,
                             child: Text(
-                              lang.name + (_hasDeepLKey && !isSupported ? ' (no DeepL)' : ''),
+                              lang.name + (_hasDeepLKey && !isSupported ? l10n.noDeepL : ''),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: _hasDeepLKey && !isSupported ? Colors.grey : null,
@@ -372,7 +377,7 @@ class _TermDialogState extends State<TermDialog> {
             TextField(
               controller: _translationController,
               decoration: InputDecoration(
-                labelText: 'Translation',
+                labelText: l10n.translation,
                 border: const OutlineInputBorder(),
                 suffixIcon: _hasDeepLKey
                     ? IconButton(
@@ -383,7 +388,7 @@ class _TermDialogState extends State<TermDialog> {
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.translate),
-                        tooltip: 'Translate with DeepL',
+                        tooltip: l10n.translateWithDeepL,
                         onPressed: _isTranslating ? null : _translateTerm,
                       )
                     : null,
@@ -395,9 +400,9 @@ class _TermDialogState extends State<TermDialog> {
             // Romanization field
             TextField(
               controller: _romanizationController,
-              decoration: const InputDecoration(
-                labelText: 'Romanization / Pronunciation',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.romanizationPronunciation,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
@@ -405,9 +410,9 @@ class _TermDialogState extends State<TermDialog> {
             // Sentence field
             TextField(
               controller: _sentenceController,
-              decoration: const InputDecoration(
-                labelText: 'Example Sentence',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.exampleSentence,
+                border: const OutlineInputBorder(),
                 alignLabelWithHint: true,
               ),
               maxLines: 3,
@@ -420,11 +425,11 @@ class _TermDialogState extends State<TermDialog> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(foregroundColor: Colors.grey),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -443,7 +448,7 @@ class _TermDialogState extends State<TermDialog> {
             );
             Navigator.pop(context, updatedTerm);
           },
-          child: const Text('Save'),
+          child: Text(l10n.save),
         ),
       ],
     );
@@ -542,8 +547,9 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
     final sourceCode = DeepLService.getDeepLLanguageCode(widget.languageName);
     if (sourceCode == null) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Language "${widget.languageName}" not supported by DeepL')),
+          SnackBar(content: Text(l10n.languageNotSupported(widget.languageName))),
         );
       }
       return;
@@ -563,8 +569,9 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
       if (translation != null) {
         _translationController.text = translation;
       } else {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Translation failed. Check your API key.')),
+          SnackBar(content: Text(l10n.translationFailed)),
         );
       }
     }
@@ -622,8 +629,9 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Select Base Form'),
+      title: Text(l10n.selectBaseForm),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
@@ -631,10 +639,10 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
           children: [
             TextField(
               controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Search terms...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: l10n.searchTerms,
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
               ),
               onChanged: _search,
               autofocus: true,
@@ -676,7 +684,7 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Text(
-                    'No existing terms found',
+                    l10n.noExistingTermsFound,
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ),
@@ -689,7 +697,7 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Create new base term',
+                        l10n.createNewBaseTerm,
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           color: Colors.grey.shade700,
@@ -699,7 +707,7 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
                       TextField(
                         controller: _translationController,
                         decoration: InputDecoration(
-                          labelText: 'Translation (optional)',
+                          labelText: l10n.translationOptional,
                           border: const OutlineInputBorder(),
                           isDense: true,
                           suffixIcon: _hasDeepLKey
@@ -711,7 +719,7 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
                                           child: CircularProgressIndicator(strokeWidth: 2),
                                         )
                                       : const Icon(Icons.translate, size: 20),
-                                  tooltip: 'Translate with DeepL',
+                                  tooltip: l10n.translateWithDeepL,
                                   onPressed: _isTranslating ? null : _translateTerm,
                                 )
                               : null,
@@ -721,7 +729,7 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
                       ElevatedButton.icon(
                         onPressed: _createNewBaseTerm,
                         icon: const Icon(Icons.add),
-                        label: Text('Create "${_searchController.text.trim().toLowerCase()}"'),
+                        label: Text(l10n.createTerm(_searchController.text.trim().toLowerCase())),
                       ),
                     ],
                   ),
@@ -734,7 +742,7 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
       ],
     );

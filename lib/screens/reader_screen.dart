@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/text_document.dart';
 import '../models/term.dart';
@@ -83,9 +84,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading terms: $e')));
+        ).showSnackBar(SnackBar(content: Text(l10n.errorLoadingTerms(e.toString()))));
       }
     }
   }
@@ -417,9 +419,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
       widget.language.id!,
     );
 
+    final l10n = AppLocalizations.of(context);
     if (dictionaries.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No dictionaries configured')),
+        SnackBar(content: Text(l10n.noDictionariesConfigured)),
       );
       return;
     }
@@ -428,7 +431,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final selectedDict = await showDialog<Dictionary?>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Lookup "$selectedWords"'),
+        title: Text(l10n.lookupWord(selectedWords)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: dictionaries
@@ -444,7 +447,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
         ],
       ),
@@ -539,6 +542,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: _buildWordListDrawer(),
@@ -548,25 +552,25 @@ class _ReaderScreenState extends State<ReaderScreen> {
           if (_isSelectionMode)
             IconButton(
               icon: const Icon(Icons.close),
-              tooltip: 'Cancel Selection',
+              tooltip: l10n.cancelSelection,
               onPressed: _cancelSelection,
             ),
           if (_isSelectionMode)
             IconButton(
               icon: const Icon(Icons.add),
-              tooltip: 'Save as Term',
+              tooltip: l10n.saveAsTerm,
               onPressed: _saveSelectionAsTerm,
             ),
           if (_isSelectionMode)
             IconButton(
               icon: const Icon(Icons.search),
-              tooltip: 'Lookup in Dictionary',
+              tooltip: l10n.lookupInDictionary,
               onPressed: _lookupSelectedWords,
             ),
           if (!_isSelectionMode)
             IconButton(
               icon: Icon(_showLegend ? Icons.visibility_off : Icons.visibility),
-              tooltip: 'Toggle Legend',
+              tooltip: l10n.toggleLegend,
               onPressed: () {
                 setState(() => _showLegend = !_showLegend);
               },
@@ -574,7 +578,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           if (!_isSelectionMode)
             IconButton(
               icon: const Icon(Icons.list_alt),
-              tooltip: 'Word List',
+              tooltip: l10n.wordList,
               onPressed: () {
                 _scaffoldKey.currentState?.openEndDrawer();
               },
@@ -599,33 +603,33 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'edit',
                   child: Row(
                     children: [
-                      Icon(Icons.edit),
-                      SizedBox(width: 8),
-                      Text('Edit Text'),
+                      const Icon(Icons.edit),
+                      const SizedBox(width: 8),
+                      Text(l10n.editText),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'font_size',
                   child: Row(
                     children: [
-                      Icon(Icons.text_fields),
-                      SizedBox(width: 8),
-                      Text('Font Size'),
+                      const Icon(Icons.text_fields),
+                      const SizedBox(width: 8),
+                      Text(l10n.fontSize),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'mark_all_known',
                   child: Row(
                     children: [
-                      Icon(Icons.done_all),
-                      SizedBox(width: 8),
-                      Text('Mark All Known'),
+                      const Icon(Icons.done_all),
+                      const SizedBox(width: 8),
+                      Text(l10n.markAllKnown),
                     ],
                   ),
                 ),
@@ -644,8 +648,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       const SizedBox(width: 8),
                       Text(
                         _text.status == TextStatus.finished
-                            ? 'Marked as Finished'
-                            : 'Mark as Finished',
+                            ? l10n.markedAsFinished
+                            : l10n.markAsFinished,
                       ),
                     ],
                   ),
@@ -669,7 +673,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '${_selectedWordIndices.length} word(s) selected. Tap + to save as term or 🔍 to lookup.',
+                            l10n.wordsSelected(_selectedWordIndices.length),
                             style: const TextStyle(color: Colors.blue),
                           ),
                         ),
@@ -816,15 +820,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _showFontSizeDialog() {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Font Size'),
+        title: Text(l10n.fontSize),
         content: StatefulBuilder(
           builder: (context, setDialogState) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Preview Text', style: TextStyle(fontSize: _fontSize)),
+              Text(l10n.previewText, style: TextStyle(fontSize: _fontSize)),
               Slider(
                 value: _fontSize,
                 min: 12,
@@ -843,7 +848,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Done'),
+            child: Text(l10n.done),
           ),
         ],
       ),
@@ -851,24 +856,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _markAllWordsKnown() {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Mark All Known?'),
-        content: const Text(
-          'This will mark all words in this text as "Well Known" (status 99). Continue?',
-        ),
+        title: Text(l10n.markAllKnownQuestion),
+        content: Text(l10n.markAllKnownConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
               await _performMarkAllKnown();
             },
-            child: const Text('Mark All'),
+            child: Text(l10n.markAll),
           ),
         ],
       ),
@@ -902,15 +906,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
       await _loadTermsAndParse();
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All words marked as known')),
+          SnackBar(content: Text(l10n.allWordsMarkedKnown)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')));
       }
     }
   }
@@ -928,12 +933,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
     });
 
     if (mounted) {
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             newStatus == TextStatus.finished
-                ? 'Text marked as finished'
-                : 'Text marked as in progress',
+                ? l10n.textMarkedFinished
+                : l10n.textMarkedInProgress,
           ),
         ),
       );
@@ -957,21 +963,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
       if (!mounted) return;
 
+      final l10n = AppLocalizations.of(context);
       final shouldProceed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Continue Reading?'),
-          content: Text(
-            'Would you like to continue with the next text?\n\n"${nextText.title}"',
-          ),
+          title: Text(l10n.continueReading),
+          content: Text(l10n.continueReadingPrompt(nextText.title)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('No'),
+              child: Text(l10n.no),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Yes'),
+              child: Text(l10n.yes),
             ),
           ],
         ),
@@ -990,6 +995,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildWordListDrawer() {
+    final l10n = AppLocalizations.of(context);
     // Group unique words by status
     final wordsByStatus = <int, List<_WordToken>>{};
     final seenWords = <String>{};
@@ -1021,13 +1027,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
     ];
 
     final statusLabels = {
-      TermStatus.unknown: 'Unknown',
-      TermStatus.learning2: 'Learning 2',
-      TermStatus.learning3: 'Learning 3',
-      TermStatus.learning4: 'Learning 4',
-      TermStatus.known: 'Known',
-      TermStatus.wellKnown: 'Well Known',
-      TermStatus.ignored: 'Ignored',
+      TermStatus.unknown: l10n.statusUnknown,
+      TermStatus.learning2: l10n.statusLearning2,
+      TermStatus.learning3: l10n.statusLearning3,
+      TermStatus.learning4: l10n.statusLearning4,
+      TermStatus.known: l10n.statusKnown,
+      TermStatus.wellKnown: l10n.statusWellKnown,
+      TermStatus.ignored: l10n.statusIgnored,
     };
 
     return Drawer(
@@ -1038,7 +1044,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Word List',
+                l10n.wordList,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
@@ -1068,8 +1074,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     List<_WordToken> tokens,
     Color color,
   ) {
+    final l10n = AppLocalizations.of(context);
     return ExpansionTile(
-      initiallyExpanded: label == 'Unknown',
+      initiallyExpanded: label == l10n.statusUnknown,
       leading: CircleAvatar(backgroundColor: color, radius: 8),
       title: Text('$label (${tokens.length})'),
       children: [
@@ -1144,8 +1151,9 @@ class _EditTextDialogState extends State<_EditTextDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Edit Text'),
+      title: Text(l10n.editText),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -1154,18 +1162,18 @@ class _EditTextDialogState extends State<_EditTextDialog> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                decoration: InputDecoration(labelText: l10n.title),
+                validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _contentController,
-                decoration: const InputDecoration(
-                  labelText: 'Text Content',
+                decoration: InputDecoration(
+                  labelText: l10n.textContent,
                   alignLabelWithHint: true,
                 ),
                 maxLines: 10,
-                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
             ],
           ),
@@ -1174,7 +1182,7 @@ class _EditTextDialogState extends State<_EditTextDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -1186,7 +1194,7 @@ class _EditTextDialogState extends State<_EditTextDialog> {
               Navigator.pop(context, updatedText);
             }
           },
-          child: const Text('Save'),
+          child: Text(l10n.save),
         ),
       ],
     );

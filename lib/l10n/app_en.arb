@@ -1,0 +1,450 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Language Nerd Tools",
+  "@appTitle": {
+    "description": "The app title"
+  },
+
+  "home": "Home",
+  "texts": "Texts",
+  "vocabulary": "Vocabulary",
+  "stats": "Stats",
+  "languages": "Languages",
+  "settings": "Settings",
+
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "add": "Add",
+  "ok": "OK",
+  "retry": "Retry",
+  "create": "Create",
+  "import": "Import",
+  "export": "Export",
+  "close": "Close",
+  "yes": "Yes",
+  "no": "No",
+  "search": "Search",
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "warning": "Warning",
+  "confirm": "Confirm",
+
+  "appLanguage": "App Language",
+  "english": "English",
+  "ukrainian": "Ukrainian",
+
+  "deepLTranslation": "DeepL Translation",
+  "deepLApiKey": "DeepL API Key",
+  "deepLApiKeyHint": "Get your API key from deepl.com/pro-api",
+  "apiType": "API Type",
+  "free": "Free",
+  "pro": "Pro",
+  "freeApiLimit": "Free API: 500,000 characters/month",
+  "proApiPayPerUse": "Pro API: Pay per usage",
+  "targetLanguage": "Target Language",
+  "languageForTranslations": "Language for translations",
+  "saveSettings": "Save Settings",
+  "settingsSaved": "Settings saved",
+  "monthlyUsage": "Monthly Usage",
+  "couldNotLoadUsage": "Could not load usage. Check your API key.",
+  "loadingUsage": "Loading usage...",
+  "charactersRemaining": "{count} characters remaining",
+  "@charactersRemaining": {
+    "placeholders": {
+      "count": {"type": "String"}
+    }
+  },
+  "charactersUsed": "{used} / {limit} characters",
+  "@charactersUsed": {
+    "placeholders": {
+      "used": {"type": "String"},
+      "limit": {"type": "String"}
+    }
+  },
+
+  "noLanguagesYet": "No Languages Yet",
+  "addLanguageToStart": "Add a language to get started",
+  "addLanguage": "Add Language",
+  "editLanguage": "Edit Language",
+  "deleteLanguageQuestion": "Delete Language?",
+  "deleteLanguageConfirm": "This will delete \"{name}\" and all associated texts, terms, and dictionaries. Continue?",
+  "@deleteLanguageConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "totalTerms": "Total Terms",
+  "known": "Known",
+  "unknown": "Unknown",
+  "unknownWords": "{count} unknown words",
+  "@unknownWords": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "unknownCharacters": "{count} unknown characters",
+  "@unknownCharacters": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "completed": "Completed!",
+
+  "quickActions": "Quick Actions",
+  "addText": "Add Text",
+  "importVocabulary": "Import Vocabulary",
+  "recentlyRead": "Recently read",
+  "recentlyAdded": "Recently added",
+  "noTextsReadYet": "No texts read yet.",
+  "noTextsYetAddOne": "No texts yet. Add one to get started!",
+
+  "searchTexts": "Search texts...",
+  "searchTerms": "Search terms...",
+  "noCollectionsOrTexts": "No collections or texts",
+  "allTextsCompleted": "All texts completed!",
+  "showCompletedTexts": "Show completed texts",
+  "hideCompletedTexts": "Hide completed texts",
+  "completedHidden": "{count} completed hidden",
+  "@completedHidden": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "importFromUrl": "Import from URL",
+  "importTxt": "Import TXT",
+  "importEpub": "Import EPUB",
+  "importingEpub": "Importing EPUB...",
+  "importComplete": "Import Complete",
+  "importFailed": "Import Failed",
+  "couldNotImportEpub": "Could not import EPUB: {error}",
+  "@couldNotImportEpub": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+
+  "newCollection": "New Collection",
+  "editCollection": "Edit Collection",
+  "deleteCollection": "Delete Collection?",
+  "deleteCollectionConfirm": "Delete \"{name}\" and its {count} text(s)?",
+  "@deleteCollectionConfirm": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "deleteCollectionSimple": "Delete \"{name}\"?",
+  "@deleteCollectionSimple": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "deleteText": "Delete Text?",
+  "deleteTextConfirm": "Delete \"{title}\"?",
+  "@deleteTextConfirm": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "editText": "Edit Text",
+  "title": "Title",
+  "textContent": "Text Content",
+  "setCover": "Set Cover",
+  "addCover": "Add Cover",
+  "removeCover": "Remove Cover",
+
+  "noTermsFound": "No terms found",
+  "importCsv": "Import CSV",
+  "exportCsv": "Export CSV",
+  "exportAnki": "Export Anki",
+
+  "name": "Name",
+  "description": "Description",
+  "descriptionOptional": "Description (optional)",
+  "required": "Required",
+
+  "sortByName": "Name",
+  "sortByDateAdded": "Date Added",
+  "sortByLastRead": "Last Read",
+
+  "listView": "List view",
+  "gridView": "Grid view",
+  "switchToListView": "Switch to list view",
+  "switchToGridView": "Switch to grid view",
+
+  "url": "URL",
+  "urlHint": "https://example.com/article",
+  "fetchContent": "Fetch content",
+  "preview": "Preview",
+  "wordsCount": "{count} words",
+  "@wordsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "pleaseEnterUrl": "Please enter a URL",
+  "pleaseEnterTitle": "Please enter a title",
+
+  "book": "Book",
+  "author": "Author",
+  "chapters": "Chapters",
+  "totalParts": "Total parts",
+  "characters": "Characters",
+  "notes": "Notes",
+
+  "textsTitle": "Texts - {languageName}",
+  "@textsTitle": {
+    "placeholders": {
+      "languageName": {"type": "String"}
+    }
+  },
+  "sort": "Sort",
+  "textCount": "{count, plural, =1{1 text} other{{count} texts}}",
+  "@textCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "unknownCount": "{count} unknown",
+  "@unknownCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "vocabularyTitle": "Vocabulary - {languageName}",
+  "@vocabularyTitle": {
+    "placeholders": {
+      "languageName": {"type": "String"}
+    }
+  },
+  "exportedTerms": "Exported {count} terms",
+  "@exportedTerms": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "importedTerms": "Imported {count} terms",
+  "@importedTerms": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "importFailed": "Import failed: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "all": "All",
+  "statusIgnored": "Ignored",
+  "statusUnknown": "Unknown",
+  "statusLearning2": "Learning 2",
+  "statusLearning3": "Learning 3",
+  "statusLearning4": "Learning 4",
+  "statusKnown": "Known",
+  "statusWellKnown": "Well Known",
+
+  "addDictionariesQuestion": "Add Dictionaries?",
+  "addDictionariesPrompt": "Would you like to add dictionaries for {name}?",
+  "@addDictionariesPrompt": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "later": "Later",
+  "addNow": "Add Now",
+  "dictionaryCount": "{count, plural, =1{1 dictionary} other{{count} dictionaries}}",
+  "@dictionaryCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "manageDictionaries": "Manage Dictionaries",
+  "languageNameLabel": "Language Name",
+  "languageNameHint": "e.g., Spanish, Japanese, Chinese",
+  "rightToLeftText": "Right-to-Left Text",
+  "rightToLeftHint": "For languages like Arabic, Hebrew",
+  "showRomanization": "Show Romanization",
+  "showRomanizationHint": "Display pronunciation guide",
+  "splitByCharacter": "Split by Character",
+  "splitByCharacterHint": "For Chinese, Japanese (no spaces)",
+  "addDictionariesAfterCreating": "Add dictionaries after creating the language",
+
+  "errorLoadingTerms": "Error loading terms: {error}",
+  "@errorLoadingTerms": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "noDictionariesConfigured": "No dictionaries configured",
+  "lookupWord": "Lookup \"{word}\"",
+  "@lookupWord": {
+    "placeholders": {
+      "word": {"type": "String"}
+    }
+  },
+  "cancelSelection": "Cancel Selection",
+  "saveAsTerm": "Save as Term",
+  "lookupInDictionary": "Lookup in Dictionary",
+  "toggleLegend": "Toggle Legend",
+  "wordList": "Word List",
+  "fontSize": "Font Size",
+  "markAllKnown": "Mark All Known",
+  "markedAsFinished": "Marked as Finished",
+  "markAsFinished": "Mark as Finished",
+  "wordsSelected": "{count} word(s) selected. Tap + to save as term or tap search to lookup.",
+  "@wordsSelected": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "previewText": "Preview Text",
+  "done": "Done",
+  "markAllKnownQuestion": "Mark All Known?",
+  "markAllKnownConfirm": "This will mark all words in this text as \"Well Known\". Continue?",
+  "markAll": "Mark All",
+  "allWordsMarkedKnown": "All words marked as known",
+  "textMarkedFinished": "Text marked as finished",
+  "textMarkedInProgress": "Text marked as in progress",
+  "continueReading": "Continue Reading?",
+  "continueReadingPrompt": "Would you like to continue with the next text?\n\n\"{title}\"",
+  "@continueReadingPrompt": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "termsByStatus": "Terms by Status",
+  "progressOverview": "Progress Overview",
+  "percentKnown": "{percent}% Known",
+  "@percentKnown": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+  "noTermsYet": "No terms yet",
+  "learning": "Learning",
+
+  "dictionariesTitle": "Dictionaries - {languageName}",
+  "@dictionariesTitle": {
+    "placeholders": {
+      "languageName": {"type": "String"}
+    }
+  },
+  "deleteDictionary": "Delete Dictionary?",
+  "deleteDictionaryConfirm": "Delete \"{name}\"?",
+  "@deleteDictionaryConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "deactivate": "Deactivate",
+  "activate": "Activate",
+  "noDictionariesYet": "No dictionaries yet",
+  "addDictionariesFor": "Add dictionaries for {name}",
+  "@addDictionariesFor": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "addDictionary": "Add Dictionary",
+  "editDictionary": "Edit Dictionary",
+  "help": "Help",
+  "dictionaryHelp": "Dictionary Help",
+  "howToUse": "How to use:",
+  "dictionaryHelpStep1": "1. Add dictionary URLs for this language",
+  "dictionaryHelpStep2": "2. Use ### as placeholder for the word",
+  "dictionaryHelpStep3": "3. Drag to reorder dictionaries",
+  "dictionaryHelpStep4": "4. Toggle active/inactive",
+  "exampleUrls": "Example URLs:",
+  "gotIt": "Got it",
+  "dictionaryName": "Dictionary Name",
+  "dictionaryNameHint": "e.g., WordReference, Jisho",
+  "urlTemplate": "URL Template",
+  "urlTemplateHint": "https://example.com/dict?word=###",
+  "urlTemplateHelper": "Use ### as placeholder for the word",
+  "urlMustContainPlaceholder": "URL must contain ###",
+  "active": "Active",
+  "showInDictionaryLookupMenu": "Show in dictionary lookup menu",
+  "quickTemplates": "Quick Templates:",
+
+  "dictionaryLookup": "Dictionary Lookup",
+  "reload": "Reload",
+  "back": "Back",
+  "forward": "Forward",
+  "openInBrowser": "Open in Browser",
+  "errorLoadingPage": "Error loading page: {error}",
+  "@errorLoadingPage": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "errorOpeningBrowser": "Error opening browser: {error}",
+  "@errorOpeningBrowser": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+
+  "term": "Term",
+  "useOriginal": "Use original: {text}",
+  "@useOriginal": {
+    "placeholders": {
+      "text": {"type": "String"}
+    }
+  },
+  "original": "Original: {text}",
+  "@original": {
+    "placeholders": {
+      "text": {"type": "String"}
+    }
+  },
+  "base": "Base: ",
+  "removeLink": "Remove link",
+  "linkToBaseForm": "Link to base form...",
+  "forms": "Forms: {forms}",
+  "@forms": {
+    "placeholders": {
+      "forms": {"type": "String"}
+    }
+  },
+  "status": "Status",
+  "language": "Language: ",
+  "translation": "Translation",
+  "translateWithDeepL": "Translate with DeepL",
+  "romanizationPronunciation": "Romanization / Pronunciation",
+  "exampleSentence": "Example Sentence",
+  "translationFailed": "Translation failed. Check your API key.",
+  "languageNotSupported": "Language \"{name}\" not supported by DeepL",
+  "@languageNotSupported": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "noDeepL": " (no DeepL)",
+  "selectBaseForm": "Select Base Form",
+  "noExistingTermsFound": "No existing terms found",
+  "createNewBaseTerm": "Create new base term",
+  "translationOptional": "Translation (optional)",
+  "createTerm": "Create \"{term}\"",
+  "@createTerm": {
+    "placeholders": {
+      "term": {"type": "String"}
+    }
+  },
+  "statusLegendTitle": "Status Legend"
+}

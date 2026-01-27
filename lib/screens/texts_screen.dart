@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/text_document.dart';
 import '../models/collection.dart';
@@ -549,19 +550,20 @@ class _TextsScreenState extends State<TextsScreen> {
   }
 
   Future<void> _deleteText(TextDocument text) async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Text?'),
-        content: Text('Delete "${text.title}"?'),
+        title: Text(l10n.deleteText),
+        content: Text(l10n.deleteTextConfirm(text.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -586,6 +588,7 @@ class _TextsScreenState extends State<TextsScreen> {
   }
 
   Future<void> _deleteCollection(Collection collection) async {
+    final l10n = AppLocalizations.of(context);
     final textCount = await DatabaseService.instance.getTextCountInCollection(
       collection.id!,
     );
@@ -593,21 +596,21 @@ class _TextsScreenState extends State<TextsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Collection?'),
+        title: Text(l10n.deleteCollection),
         content: Text(
           textCount > 0
-              ? 'Delete "${collection.name}" and its $textCount text(s)?'
-              : 'Delete "${collection.name}"?',
+              ? l10n.deleteCollectionConfirm(collection.name, textCount)
+              : l10n.deleteCollectionSimple(collection.name),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -621,12 +624,13 @@ class _TextsScreenState extends State<TextsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Texts - ${widget.language.name}'),
+            Text(l10n.textsTitle(widget.language.name)),
             if (_currentCollection != null)
               Text(
                 _currentCollection!.name,
@@ -644,14 +648,14 @@ class _TextsScreenState extends State<TextsScreen> {
               _viewMode == TextViewMode.list ? Icons.grid_view : Icons.list,
             ),
             tooltip: _viewMode == TextViewMode.list
-                ? 'Switch to grid view'
-                : 'Switch to list view',
+                ? l10n.switchToGridView
+                : l10n.switchToListView,
             onPressed: _toggleViewMode,
           ),
           // Sort button
           PopupMenuButton<TextSortOption>(
             icon: const Icon(Icons.sort),
-            tooltip: 'Sort',
+            tooltip: l10n.sort,
             onSelected: _setSortOption,
             itemBuilder: (context) => TextSortOption.values.map((option) {
               final isSelected = _sortOption == option;
@@ -699,18 +703,18 @@ class _TextsScreenState extends State<TextsScreen> {
                   : null,
             ),
             tooltip: _hideCompleted
-                ? 'Show completed texts'
-                : 'Hide completed texts',
+                ? l10n.showCompletedTexts
+                : l10n.hideCompletedTexts,
             onPressed: _toggleHideCompleted,
           ),
           IconButton(
             icon: const Icon(Icons.create_new_folder),
-            tooltip: 'New Collection',
+            tooltip: l10n.newCollection,
             onPressed: _addCollection,
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.file_upload),
-            tooltip: 'Import',
+            tooltip: l10n.import,
             onSelected: (value) {
               switch (value) {
                 case 'txt':
@@ -725,33 +729,33 @@ class _TextsScreenState extends State<TextsScreen> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'url',
                 child: Row(
                   children: [
-                    Icon(Icons.link),
-                    SizedBox(width: 8),
-                    Text('Import from URL'),
+                    const Icon(Icons.link),
+                    const SizedBox(width: 8),
+                    Text(l10n.importFromUrl),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'txt',
                 child: Row(
                   children: [
-                    Icon(Icons.text_snippet),
-                    SizedBox(width: 8),
-                    Text('Import TXT'),
+                    const Icon(Icons.text_snippet),
+                    const SizedBox(width: 8),
+                    Text(l10n.importTxt),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'epub',
                 child: Row(
                   children: [
-                    Icon(Icons.book),
-                    SizedBox(width: 8),
-                    Text('Import EPUB'),
+                    const Icon(Icons.book),
+                    const SizedBox(width: 8),
+                    Text(l10n.importEpub),
                   ],
                 ),
               ),
@@ -766,7 +770,7 @@ class _TextsScreenState extends State<TextsScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search texts...',
+                hintText: l10n.searchTexts,
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -847,6 +851,7 @@ class _TextsScreenState extends State<TextsScreen> {
   }
 
   Widget _buildContentList() {
+    final l10n = AppLocalizations.of(context);
     final sortedTexts = _getSortedAndFilteredTexts(_texts);
 
     if (_collections.isEmpty && sortedTexts.isEmpty) {
@@ -862,7 +867,7 @@ class _TextsScreenState extends State<TextsScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'All texts completed!',
+                l10n.allTextsCompleted,
                 style: TextStyle(
                   fontSize: 18,
                   color: Theme.of(context).colorScheme.outline,
@@ -872,13 +877,13 @@ class _TextsScreenState extends State<TextsScreen> {
               TextButton.icon(
                 onPressed: _toggleHideCompleted,
                 icon: const Icon(Icons.visibility),
-                label: const Text('Show completed texts'),
+                label: Text(l10n.showCompletedTexts),
               ),
             ],
           ),
         );
       }
-      return const Center(child: Text('No collections or texts'));
+      return Center(child: Text(l10n.noCollectionsOrTexts));
     }
 
     return ListView(
@@ -898,23 +903,23 @@ class _TextsScreenState extends State<TextsScreen> {
                   : null,
               trailing: PopupMenuButton(
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit),
-                        SizedBox(width: 8),
-                        Text('Edit'),
+                        const Icon(Icons.edit),
+                        const SizedBox(width: 8),
+                        Text(l10n.edit),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete'),
+                        const Icon(Icons.delete, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Text(l10n.delete),
                       ],
                     ),
                   ),
@@ -939,8 +944,8 @@ class _TextsScreenState extends State<TextsScreen> {
             widget.language.splitByCharacter,
           );
           final unknownLabel = widget.language.splitByCharacter
-              ? '$unknownCount unknown characters'
-              : '$unknownCount unknown words';
+              ? l10n.unknownCharacters(unknownCount)
+              : l10n.unknownWords(unknownCount);
 
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -978,33 +983,33 @@ class _TextsScreenState extends State<TextsScreen> {
               ),
               trailing: PopupMenuButton(
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'cover',
                     child: Row(
                       children: [
-                        Icon(Icons.image),
-                        SizedBox(width: 8),
-                        Text('Set Cover'),
+                        const Icon(Icons.image),
+                        const SizedBox(width: 8),
+                        Text(l10n.setCover),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit),
-                        SizedBox(width: 8),
-                        Text('Edit'),
+                        const Icon(Icons.edit),
+                        const SizedBox(width: 8),
+                        Text(l10n.edit),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete'),
+                        const Icon(Icons.delete, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Text(l10n.delete),
                       ],
                     ),
                   ),
@@ -1036,6 +1041,7 @@ class _TextsScreenState extends State<TextsScreen> {
   }
 
   Widget _buildContentGrid() {
+    final l10n = AppLocalizations.of(context);
     final sortedTexts = _getSortedAndFilteredTexts(_texts);
 
     if (_collections.isEmpty && sortedTexts.isEmpty) {
@@ -1051,7 +1057,7 @@ class _TextsScreenState extends State<TextsScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'All texts completed!',
+                l10n.allTextsCompleted,
                 style: TextStyle(
                   fontSize: 18,
                   color: Theme.of(context).colorScheme.outline,
@@ -1061,13 +1067,13 @@ class _TextsScreenState extends State<TextsScreen> {
               TextButton.icon(
                 onPressed: _toggleHideCompleted,
                 icon: const Icon(Icons.visibility),
-                label: const Text('Show completed texts'),
+                label: Text(l10n.showCompletedTexts),
               ),
             ],
           ),
         );
       }
-      return const Center(child: Text('No collections or texts'));
+      return Center(child: Text(l10n.noCollectionsOrTexts));
     }
 
     // Combine collections and texts into a single list for grid
@@ -1105,14 +1111,12 @@ class _TextsScreenState extends State<TextsScreen> {
         } else {
           final text = item.text!;
           final unknownCount = _unknownCounts[text.id] ?? 0;
-          final unknownLabel = widget.language.splitByCharacter
-              ? '$unknownCount unknown'
-              : '$unknownCount unknown';
+          final unknownLabel = l10n.unknownCount(unknownCount);
 
           return BookCover(
             title: text.title,
             subtitle: text.status == TextStatus.finished
-                ? 'Completed!'
+                ? l10n.completed
                 : unknownLabel,
             imagePath: text.coverImage,
             isCompleted: text.status == TextStatus.finished,
@@ -1133,6 +1137,7 @@ class _TextsScreenState extends State<TextsScreen> {
   }
 
   void _showCollectionOptions(Collection collection) {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -1141,7 +1146,7 @@ class _TextsScreenState extends State<TextsScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.edit),
-              title: const Text('Edit'),
+              title: Text(l10n.edit),
               onTap: () {
                 Navigator.pop(context);
                 _editCollection(collection);
@@ -1149,7 +1154,7 @@ class _TextsScreenState extends State<TextsScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
                 _deleteCollection(collection);
@@ -1162,6 +1167,7 @@ class _TextsScreenState extends State<TextsScreen> {
   }
 
   void _showTextOptions(TextDocument text) {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -1170,7 +1176,7 @@ class _TextsScreenState extends State<TextsScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.image),
-              title: const Text('Set Cover'),
+              title: Text(l10n.setCover),
               onTap: () {
                 Navigator.pop(context);
                 _setCoverImage(text);
@@ -1178,7 +1184,7 @@ class _TextsScreenState extends State<TextsScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.edit),
-              title: const Text('Edit'),
+              title: Text(l10n.edit),
               onTap: () {
                 Navigator.pop(context);
                 _editText(text);
@@ -1186,7 +1192,7 @@ class _TextsScreenState extends State<TextsScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
                 _deleteText(text);
@@ -1324,8 +1330,9 @@ class _CollectionDialogState extends State<_CollectionDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(widget.isEditing ? 'Edit Collection' : 'New Collection'),
+      title: Text(widget.isEditing ? l10n.editCollection : l10n.newCollection),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -1360,7 +1367,7 @@ class _CollectionDialogState extends State<_CollectionDialog> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Add Cover',
+                              l10n.addCover,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -1374,20 +1381,20 @@ class _CollectionDialogState extends State<_CollectionDialog> {
               if (_coverImagePath != null)
                 TextButton(
                   onPressed: _removeCoverImage,
-                  child: const Text('Remove Cover'),
+                  child: Text(l10n.removeCover),
                 ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                decoration: InputDecoration(labelText: l10n.name),
+                validator: (v) => v?.isEmpty == true ? l10n.required : null,
                 autofocus: !widget.isEditing,
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (optional)',
+                decoration: InputDecoration(
+                  labelText: l10n.descriptionOptional,
                 ),
                 maxLines: 2,
               ),
@@ -1398,7 +1405,7 @@ class _CollectionDialogState extends State<_CollectionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -1422,7 +1429,7 @@ class _CollectionDialogState extends State<_CollectionDialog> {
               Navigator.pop(context, collection);
             }
           },
-          child: Text(widget.isEditing ? 'Save' : 'Create'),
+          child: Text(widget.isEditing ? l10n.save : l10n.create),
         ),
       ],
     );
@@ -1453,8 +1460,9 @@ class _AddTextDialogState extends State<_AddTextDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Add Text'),
+      title: Text(l10n.addText),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -1463,18 +1471,18 @@ class _AddTextDialogState extends State<_AddTextDialog> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                decoration: InputDecoration(labelText: l10n.title),
+                validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _contentController,
-                decoration: const InputDecoration(
-                  labelText: 'Text Content',
+                decoration: InputDecoration(
+                  labelText: l10n.textContent,
                   alignLabelWithHint: true,
                 ),
                 maxLines: 10,
-                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
             ],
           ),
@@ -1483,7 +1491,7 @@ class _AddTextDialogState extends State<_AddTextDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -1497,7 +1505,7 @@ class _AddTextDialogState extends State<_AddTextDialog> {
               Navigator.pop(context, text);
             }
           },
-          child: const Text('Add'),
+          child: Text(l10n.add),
         ),
       ],
     );
@@ -1569,8 +1577,9 @@ class _EditTextDialogState extends State<_EditTextDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Edit Text'),
+      title: Text(l10n.editText),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -1605,7 +1614,7 @@ class _EditTextDialogState extends State<_EditTextDialog> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Add Cover',
+                              l10n.addCover,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -1619,23 +1628,23 @@ class _EditTextDialogState extends State<_EditTextDialog> {
               if (_coverImagePath != null)
                 TextButton(
                   onPressed: _removeCoverImage,
-                  child: const Text('Remove Cover'),
+                  child: Text(l10n.removeCover),
                 ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                decoration: InputDecoration(labelText: l10n.title),
+                validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _contentController,
-                decoration: const InputDecoration(
-                  labelText: 'Text Content',
+                decoration: InputDecoration(
+                  labelText: l10n.textContent,
                   alignLabelWithHint: true,
                 ),
                 maxLines: 10,
-                validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
             ],
           ),
@@ -1644,7 +1653,7 @@ class _EditTextDialogState extends State<_EditTextDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -1659,7 +1668,7 @@ class _EditTextDialogState extends State<_EditTextDialog> {
               Navigator.pop(context, updatedText);
             }
           },
-          child: const Text('Save'),
+          child: Text(l10n.save),
         ),
       ],
     );
@@ -1695,9 +1704,10 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
   }
 
   Future<void> _fetchUrl() async {
+    final l10n = AppLocalizations.of(context);
     final url = _urlController.text.trim();
     if (url.isEmpty) {
-      setState(() => _error = 'Please enter a URL');
+      setState(() => _error = l10n.pleaseEnterUrl);
       return;
     }
 
@@ -1758,8 +1768,9 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
   }
 
   void _import() {
+    final l10n = AppLocalizations.of(context);
     if (_titleController.text.isEmpty) {
-      setState(() => _error = 'Please enter a title');
+      setState(() => _error = l10n.pleaseEnterTitle);
       return;
     }
 
@@ -1776,8 +1787,9 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Import from URL'),
+      title: Text(l10n.importFromUrl),
       content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
@@ -1788,8 +1800,8 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
               TextField(
                 controller: _urlController,
                 decoration: InputDecoration(
-                  labelText: 'URL',
-                  hintText: 'https://example.com/article',
+                  labelText: l10n.url,
+                  hintText: l10n.urlHint,
                   prefixIcon: const Icon(Icons.link),
                   suffixIcon: _isLoading
                       ? const SizedBox(
@@ -1802,7 +1814,7 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                         )
                       : IconButton(
                           icon: const Icon(Icons.download),
-                          tooltip: 'Fetch content',
+                          tooltip: l10n.fetchContent,
                           onPressed: _fetchUrl,
                         ),
                 ),
@@ -1853,7 +1865,7 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Add Cover',
+                                      l10n.addCover,
                                       style: TextStyle(
                                         fontSize: 10,
                                         color: Colors.grey[500],
@@ -1868,16 +1880,16 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                     Expanded(
                       child: TextField(
                         controller: _titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Title',
-                          prefixIcon: Icon(Icons.title),
+                        decoration: InputDecoration(
+                          labelText: l10n.title,
+                          prefixIcon: const Icon(Icons.title),
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text('Preview', style: Theme.of(context).textTheme.titleSmall),
+                Text(l10n.preview, style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 8),
                 Container(
                   height: 200,
@@ -1893,7 +1905,7 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${_content.split(RegExp(r'\\s+')).length} words',
+                  l10n.wordsCount(_content.split(RegExp(r'\s+')).length),
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
@@ -1904,10 +1916,10 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         if (_isFetched)
-          TextButton(onPressed: _import, child: const Text('Import')),
+          TextButton(onPressed: _import, child: Text(l10n.import)),
       ],
     );
   }

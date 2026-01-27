@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/term.dart';
 import '../services/database_service.dart';
@@ -75,23 +76,25 @@ class _TermsScreenState extends State<TermsScreen> {
   }
 
   Future<void> _exportTerms(String format) async {
+    final l10n = AppLocalizations.of(context);
     try {
       await _importService.exportAndShare(_terms, format);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Exported ${_terms.length} terms')),
+          SnackBar(content: Text(l10n.exportedTerms(_terms.length))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
+        ).showSnackBar(SnackBar(content: Text(l10n.exportFailed(e.toString()))));
       }
     }
   }
 
   Future<void> _importFromCSV() async {
+    final l10n = AppLocalizations.of(context);
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv', 'txt'],
@@ -114,14 +117,14 @@ class _TermsScreenState extends State<TermsScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Imported ${importedTerms.length} terms')),
+            SnackBar(content: Text(l10n.importedTerms(importedTerms.length))),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Import failed: $e')));
+          ).showSnackBar(SnackBar(content: Text(l10n.importFailed(e.toString()))));
         }
       }
     }
@@ -153,9 +156,10 @@ class _TermsScreenState extends State<TermsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Vocabulary - ${widget.language.name}'),
+        title: Text(l10n.vocabularyTitle(widget.language.name)),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -173,33 +177,33 @@ class _TermsScreenState extends State<TermsScreen> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'import',
                 child: Row(
                   children: [
-                    Icon(Icons.file_upload),
-                    SizedBox(width: 8),
-                    Text('Import CSV'),
+                    const Icon(Icons.file_upload),
+                    const SizedBox(width: 8),
+                    Text(l10n.importCsv),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export_csv',
                 child: Row(
                   children: [
-                    Icon(Icons.file_download),
-                    SizedBox(width: 8),
-                    Text('Export CSV'),
+                    const Icon(Icons.file_download),
+                    const SizedBox(width: 8),
+                    Text(l10n.exportCsv),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export_anki',
                 child: Row(
                   children: [
-                    Icon(Icons.file_download),
-                    SizedBox(width: 8),
-                    Text('Export Anki'),
+                    const Icon(Icons.file_download),
+                    const SizedBox(width: 8),
+                    Text(l10n.exportAnki),
                   ],
                 ),
               ),
@@ -216,7 +220,7 @@ class _TermsScreenState extends State<TermsScreen> {
                 TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search terms...',
+                    hintText: l10n.searchTerms,
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -230,7 +234,7 @@ class _TermsScreenState extends State<TermsScreen> {
                   child: Row(
                     children: [
                       FilterChip(
-                        label: Text('All (${_terms.length})'),
+                        label: Text('${l10n.all} (${_terms.length})'),
                         selected: _statusFilter == null,
                         onSelected: (_) {
                           setState(() {
@@ -242,7 +246,7 @@ class _TermsScreenState extends State<TermsScreen> {
                       const SizedBox(width: 8),
                       ...List.generate(7, (i) {
                         final status = i == 6 ? 99 : i;
-                        final statusName = _getStatusName(status);
+                        final statusName = _getStatusName(status, l10n);
                         final count = _statusCounts[status] ?? 0;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
@@ -279,8 +283,9 @@ class _TermsScreenState extends State<TermsScreen> {
   }
 
   Widget _buildTermsList() {
+    final l10n = AppLocalizations.of(context);
     if (_filteredTerms.isEmpty) {
-      return const Center(child: Text('No terms found'));
+      return Center(child: Text(l10n.noTermsFound));
     }
 
     return ListView.builder(
@@ -311,23 +316,23 @@ class _TermsScreenState extends State<TermsScreen> {
             ),
             trailing: PopupMenuButton(
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'edit',
                   child: Row(
                     children: [
-                      Icon(Icons.edit),
-                      SizedBox(width: 8),
-                      Text('Edit'),
+                      const Icon(Icons.edit),
+                      const SizedBox(width: 8),
+                      Text(l10n.edit),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Delete', style: TextStyle(color: Colors.red)),
+                      const Icon(Icons.delete, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Text(l10n.delete, style: const TextStyle(color: Colors.red)),
                     ],
                   ),
                 ),
@@ -347,24 +352,24 @@ class _TermsScreenState extends State<TermsScreen> {
     );
   }
 
-  String _getStatusName(int status) {
+  String _getStatusName(int status, AppLocalizations l10n) {
     switch (status) {
       case 0:
-        return 'Ignored';
+        return l10n.statusIgnored;
       case 1:
-        return 'Unknown';
+        return l10n.statusUnknown;
       case 2:
-        return 'Learning 2';
+        return l10n.statusLearning2;
       case 3:
-        return 'Learning 3';
+        return l10n.statusLearning3;
       case 4:
-        return 'Learning 4';
+        return l10n.statusLearning4;
       case 5:
-        return 'Known';
+        return l10n.statusKnown;
       case 99:
-        return 'Well Known';
+        return l10n.statusWellKnown;
       default:
-        return 'Unknown';
+        return l10n.statusUnknown;
     }
   }
 

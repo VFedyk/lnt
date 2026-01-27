@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../main.dart';
 import '../models/language.dart';
 import '../models/text_document.dart';
@@ -112,6 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -119,14 +121,14 @@ class _HomeScreenState extends State<HomeScreen> {
           Icon(Icons.language, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No Languages Yet',
+            l10n.noLanguagesYet,
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
-            'Add a language to get started',
+            l10n.addLanguageToStart,
             style: TextStyle(color: Colors.grey[600]),
           ),
           const SizedBox(height: 24),
@@ -139,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _loadLanguages();
             },
             icon: const Icon(Icons.add),
-            label: const Text('Add Language'),
+            label: Text(l10n.addLanguage),
           ),
         ],
       ),
@@ -148,15 +150,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LNT'),
+        title: Text(l10n.appTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (_languages.isNotEmpty)
             PopupMenuButton<Language>(
               icon: const Icon(Icons.language),
-              tooltip: 'Select Language',
+              tooltip: l10n.languages,
               onSelected: (language) {
                 setState(() => _selectedLanguage = language);
                 context.read<AppState>().setSelectedLanguage(language.id);
@@ -180,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           IconButton(
             icon: const Icon(Icons.settings),
-            tooltip: 'Settings',
+            tooltip: l10n.settings,
             onPressed: () {
               Navigator.push(
                 context,
@@ -198,31 +201,31 @@ class _HomeScreenState extends State<HomeScreen> {
               onDestinationSelected: (index) {
                 setState(() => _selectedIndex = index);
               },
-              destinations: const [
+              destinations: [
                 NavigationDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home),
-                  label: 'Home',
+                  icon: const Icon(Icons.home_outlined),
+                  selectedIcon: const Icon(Icons.home),
+                  label: l10n.home,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.article_outlined),
-                  selectedIcon: Icon(Icons.article),
-                  label: 'Texts',
+                  icon: const Icon(Icons.article_outlined),
+                  selectedIcon: const Icon(Icons.article),
+                  label: l10n.texts,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.book_outlined),
-                  selectedIcon: Icon(Icons.book),
-                  label: 'Vocabulary',
+                  icon: const Icon(Icons.book_outlined),
+                  selectedIcon: const Icon(Icons.book),
+                  label: l10n.vocabulary,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.bar_chart_outlined),
-                  selectedIcon: Icon(Icons.bar_chart),
-                  label: 'Stats',
+                  icon: const Icon(Icons.bar_chart_outlined),
+                  selectedIcon: const Icon(Icons.bar_chart),
+                  label: l10n.stats,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.settings_outlined),
-                  selectedIcon: Icon(Icons.settings),
-                  label: 'Languages',
+                  icon: const Icon(Icons.settings_outlined),
+                  selectedIcon: const Icon(Icons.settings),
+                  label: l10n.languages,
                 ),
               ],
             ),
@@ -382,16 +385,17 @@ class _DashboardTabState extends State<_DashboardTab> {
   }
 
   Widget _buildStatsRow() {
+    final l10n = AppLocalizations.of(context);
     final totalTerms = _termCounts.values.fold(0, (sum, count) => sum + count);
     final knownTerms = (_termCounts[5] ?? 0) + (_termCounts[99] ?? 0);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        _buildStatItem('Total Terms', totalTerms.toString(), Icons.book),
-        _buildStatItem('Known', knownTerms.toString(), Icons.check_circle),
+        _buildStatItem(l10n.totalTerms, totalTerms.toString(), Icons.book),
+        _buildStatItem(l10n.known, knownTerms.toString(), Icons.check_circle),
         _buildStatItem(
-          'Texts',
+          l10n.texts,
           _recentlyAddedTexts.length.toString(),
           Icons.article,
         ),
@@ -431,6 +435,7 @@ class _DashboardTabState extends State<_DashboardTab> {
   }
 
   Widget _buildQuickActions() {
+    final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -438,7 +443,7 @@ class _DashboardTabState extends State<_DashboardTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Quick Actions',
+              l10n.quickActions,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -448,7 +453,7 @@ class _DashboardTabState extends State<_DashboardTab> {
               children: [
                 ActionChip(
                   avatar: const Icon(Icons.add),
-                  label: const Text('Add Text'),
+                  label: Text(l10n.addText),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -460,7 +465,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                 ),
                 ActionChip(
                   avatar: const Icon(Icons.import_export),
-                  label: const Text('Import Vocabulary'),
+                  label: Text(l10n.importVocabulary),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -479,6 +484,7 @@ class _DashboardTabState extends State<_DashboardTab> {
   }
 
   Widget _buildRecentlyReadTexts() {
+    final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -486,14 +492,14 @@ class _DashboardTabState extends State<_DashboardTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Recently read',
+              l10n.recentlyRead,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
             if (_recentlyReadTexts.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('No texts read yet.'),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(l10n.noTextsReadYet),
               )
             else
               ..._recentlyReadTexts.map((text) {
@@ -525,6 +531,7 @@ class _DashboardTabState extends State<_DashboardTab> {
   }
 
   Widget _buildRecentlyAddedTexts() {
+    final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -532,14 +539,14 @@ class _DashboardTabState extends State<_DashboardTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Recently added',
+              l10n.recentlyAdded,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
             if (_recentlyAddedTexts.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('No texts yet. Add one to get started!'),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(l10n.noTextsYetAddOne),
               )
             else
               ..._recentlyAddedTexts.map((text) {

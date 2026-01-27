@@ -1,5 +1,6 @@
 // FILE: lib/screens/statistics_screen.dart
 import 'package:flutter/material.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/term.dart';
 import '../services/database_service.dart';
@@ -59,6 +60,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -90,19 +92,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildStatColumn(
-                        'Total Terms',
+                        l10n.totalTerms,
                         _totalTerms.toString(),
                         Icons.book,
                         Colors.blue,
                       ),
                       _buildStatColumn(
-                        'Known',
+                        l10n.known,
                         knownCount.toString(),
                         Icons.check_circle,
                         Colors.green,
                       ),
                       _buildStatColumn(
-                        'Texts',
+                        l10n.texts,
                         _totalTexts.toString(),
                         Icons.article,
                         Colors.purple,
@@ -121,49 +123,49 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Terms by Status',
+                    l10n.termsByStatus,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   _buildStatusBar(
                     TermStatus.ignored,
-                    TermStatus.nameFor(TermStatus.ignored),
+                    l10n.statusIgnored,
                     ignoredCount,
                     TermStatus.colorFor(TermStatus.ignored),
                   ),
                   _buildStatusBar(
                     TermStatus.unknown,
-                    TermStatus.nameFor(TermStatus.unknown),
+                    l10n.statusUnknown,
                     _statusCounts[TermStatus.unknown] ?? 0,
                     TermStatus.colorFor(TermStatus.unknown),
                   ),
                   _buildStatusBar(
                     TermStatus.learning2,
-                    TermStatus.nameFor(TermStatus.learning2),
+                    l10n.statusLearning2,
                     _statusCounts[TermStatus.learning2] ?? 0,
                     TermStatus.colorFor(TermStatus.learning2),
                   ),
                   _buildStatusBar(
                     TermStatus.learning3,
-                    TermStatus.nameFor(TermStatus.learning3),
+                    l10n.statusLearning3,
                     _statusCounts[TermStatus.learning3] ?? 0,
                     TermStatus.colorFor(TermStatus.learning3),
                   ),
                   _buildStatusBar(
                     TermStatus.learning4,
-                    TermStatus.nameFor(TermStatus.learning4),
+                    l10n.statusLearning4,
                     _statusCounts[TermStatus.learning4] ?? 0,
                     TermStatus.colorFor(TermStatus.learning4),
                   ),
                   _buildStatusBar(
                     TermStatus.known,
-                    TermStatus.nameFor(TermStatus.known),
+                    l10n.statusKnown,
                     _statusCounts[TermStatus.known] ?? 0,
                     TermStatus.colorFor(TermStatus.known),
                   ),
                   _buildStatusBar(
                     TermStatus.wellKnown,
-                    TermStatus.nameFor(TermStatus.wellKnown),
+                    l10n.statusWellKnown,
                     _statusCounts[TermStatus.wellKnown] ?? 0,
                     TermStatus.colorFor(TermStatus.wellKnown),
                   ),
@@ -179,7 +181,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Progress Overview',
+                    l10n.progressOverview,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
@@ -192,8 +194,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(height: 8),
                   Text(
                     _totalTerms > 0
-                        ? '${(knownCount / _totalTerms * 100).toStringAsFixed(1)}% Known'
-                        : 'No terms yet',
+                        ? l10n.percentKnown((knownCount / _totalTerms * 100).toStringAsFixed(1))
+                        : l10n.noTermsYet,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 16),
@@ -201,7 +203,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     children: [
                       Expanded(
                         child: _buildProgressCard(
-                          'Learning',
+                          l10n.learning,
                           learningCount,
                           Colors.orange,
                         ),
@@ -209,7 +211,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildProgressCard(
-                          'Known',
+                          l10n.known,
                           knownCount,
                           Colors.green,
                         ),

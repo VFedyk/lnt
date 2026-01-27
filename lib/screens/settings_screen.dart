@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../l10n/generated/app_localizations.dart';
+import '../main.dart';
 import '../services/settings_service.dart';
 import '../services/deepl_service.dart';
 
@@ -98,7 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Settings saved')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).settingsSaved)));
     }
   }
 
@@ -119,16 +122,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: _isLoadingUsage
-            ? const Row(
+            ? Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  SizedBox(width: 8),
-                  Text('Loading usage...'),
+                  const SizedBox(width: 8),
+                  Text(AppLocalizations.of(context).loadingUsage),
                 ],
               )
             : _usage == null
@@ -137,12 +140,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Icon(Icons.error_outline,
                            color: Theme.of(context).colorScheme.error, size: 20),
                       const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text('Could not load usage. Check your API key.'),
+                      Expanded(
+                        child: Text(AppLocalizations.of(context).couldNotLoadUsage),
                       ),
                       TextButton(
                         onPressed: _loadUsage,
-                        child: const Text('Retry'),
+                        child: Text(AppLocalizations.of(context).retry),
                       ),
                     ],
                   )
@@ -152,9 +155,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Monthly Usage',
-                            style: TextStyle(fontWeight: FontWeight.w500),
+                          Text(
+                            AppLocalizations.of(context).monthlyUsage,
+                            style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                           Text(
                             '${(_usage!.usagePercent * 100).toStringAsFixed(1)}%',
@@ -187,14 +190,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${_formatNumber(_usage!.characterCount)} / ${_formatNumber(_usage!.characterLimit)} characters',
+                        AppLocalizations.of(context).charactersUsed(
+                          _formatNumber(_usage!.characterCount),
+                          _formatNumber(_usage!.characterLimit),
+                        ),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 12,
                         ),
                       ),
                       Text(
-                        '${_formatNumber(_usage!.charactersRemaining)} characters remaining',
+                        AppLocalizations.of(context).charactersRemaining(
+                          _formatNumber(_usage!.charactersRemaining),
+                        ),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 12,
@@ -219,7 +227,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(AppLocalizations.of(context).settings),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: _isLoading
@@ -227,6 +235,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // App Language Section
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.language),
+                            const SizedBox(width: 8),
+                            Text(
+                              AppLocalizations.of(context).appLanguage,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SegmentedButton<Locale>(
+                          segments: [
+                            ButtonSegment(
+                              value: const Locale('en'),
+                              label: Text(AppLocalizations.of(context).english),
+                            ),
+                            ButtonSegment(
+                              value: const Locale('uk'),
+                              label: Text(AppLocalizations.of(context).ukrainian),
+                            ),
+                          ],
+                          selected: {context.watch<AppState>().locale},
+                          onSelectionChanged: (selected) {
+                            context.read<AppState>().setLocale(selected.first);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 // DeepL API Section
                 Card(
                   child: Padding(
@@ -239,14 +286,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const Icon(Icons.translate),
                             const SizedBox(width: 8),
                             Text(
-                              'DeepL Translation',
+                              AppLocalizations.of(context).deepLTranslation,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Get your API key from deepl.com/pro-api',
+                          AppLocalizations.of(context).deepLApiKeyHint,
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 12,
@@ -256,7 +303,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         TextField(
                           controller: _apiKeyController,
                           decoration: InputDecoration(
-                            labelText: 'DeepL API Key',
+                            labelText: AppLocalizations.of(context).deepLApiKey,
                             border: const OutlineInputBorder(),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -275,14 +322,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'API Type',
+                          AppLocalizations.of(context).apiType,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         const SizedBox(height: 8),
                         SegmentedButton<bool>(
-                          segments: const [
-                            ButtonSegment(value: true, label: Text('Free')),
-                            ButtonSegment(value: false, label: Text('Pro')),
+                          segments: [
+                            ButtonSegment(value: true, label: Text(AppLocalizations.of(context).free)),
+                            ButtonSegment(value: false, label: Text(AppLocalizations.of(context).pro)),
                           ],
                           selected: {_isApiFree},
                           onSelectionChanged: (selected) {
@@ -292,8 +339,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 8),
                         Text(
                           _isApiFree
-                              ? 'Free API: 500,000 characters/month'
-                              : 'Pro API: Pay per usage',
+                              ? AppLocalizations.of(context).freeApiLimit
+                              : AppLocalizations.of(context).proApiPayPerUse,
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 12,
@@ -304,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _buildUsageSection(),
                         const SizedBox(height: 16),
                         Text(
-                          'Target Language',
+                          AppLocalizations.of(context).targetLanguage,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         const SizedBox(height: 8),
@@ -333,7 +380,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Language for translations',
+                          AppLocalizations.of(context).languageForTranslations,
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 12,
@@ -347,7 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ElevatedButton.icon(
                   onPressed: _saveSettings,
                   icon: const Icon(Icons.save),
-                  label: const Text('Save Settings'),
+                  label: Text(AppLocalizations.of(context).saveSettings),
                 ),
               ],
             ),

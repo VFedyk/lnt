@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../l10n/generated/app_localizations.dart';
 
 class DictionaryWebViewScreen extends StatefulWidget {
   final String url;
@@ -60,11 +61,12 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
             }
 
             if (mounted) {
+              final l10n = AppLocalizations.of(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Error loading page: ${error.description}'),
+                  content: Text(l10n.errorLoadingPage(error.description)),
                   action: SnackBarAction(
-                    label: 'Retry',
+                    label: l10n.retry,
                     onPressed: () => _controller.reload(),
                   ),
                 ),
@@ -82,6 +84,7 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -89,7 +92,7 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
           children: [
             Text(widget.word, style: const TextStyle(fontSize: 18)),
             Text(
-              'Dictionary Lookup',
+              l10n.dictionaryLookup,
               style: TextStyle(fontSize: 12, color: Colors.grey[300]),
             ),
           ],
@@ -112,7 +115,7 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => _controller.reload(),
-            tooltip: 'Reload',
+            tooltip: l10n.reload,
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -133,33 +136,33 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'back',
                 child: Row(
                   children: [
-                    Icon(Icons.arrow_back),
-                    SizedBox(width: 8),
-                    Text('Back'),
+                    const Icon(Icons.arrow_back),
+                    const SizedBox(width: 8),
+                    Text(l10n.back),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'forward',
                 child: Row(
                   children: [
-                    Icon(Icons.arrow_forward),
-                    SizedBox(width: 8),
-                    Text('Forward'),
+                    const Icon(Icons.arrow_forward),
+                    const SizedBox(width: 8),
+                    Text(l10n.forward),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'open_external',
                 child: Row(
                   children: [
-                    Icon(Icons.open_in_browser),
-                    SizedBox(width: 8),
-                    Text('Open in Browser'),
+                    const Icon(Icons.open_in_browser),
+                    const SizedBox(width: 8),
+                    Text(l10n.openInBrowser),
                   ],
                 ),
               ),
@@ -185,9 +188,10 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error opening browser: $e')));
+        ).showSnackBar(SnackBar(content: Text(l10n.errorOpeningBrowser(e.toString()))));
       }
     }
   }
