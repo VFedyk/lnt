@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
@@ -9,6 +10,157 @@ import '../services/dictionary_service.dart';
 import '../services/text_parser_service.dart';
 import '../widgets/term_dialog.dart';
 import '../widgets/status_legend.dart';
+
+/// Data passed to isolate for parsing
+class _ParseInput {
+  final String content;
+  final bool splitByCharacter;
+  final String characterSubstitutions;
+  final String regexpWordCharacters;
+  final Map<String, Map<String, dynamic>> termsMapData; // Serialized terms
+
+  _ParseInput({
+    required this.content,
+    required this.splitByCharacter,
+    required this.characterSubstitutions,
+    required this.regexpWordCharacters,
+    required this.termsMapData,
+  });
+}
+
+/// Result from isolate parsing
+class _ParsedToken {
+  final String text;
+  final bool isWord;
+  final int position;
+  final String? termLowerText; // Reference to term by lowerText
+
+  _ParsedToken({
+    required this.text,
+    required this.isWord,
+    required this.position,
+    this.termLowerText,
+  });
+}
+
+/// Top-level function for isolate parsing - O(n) algorithm
+List<_ParsedToken> _parseInIsolate(_ParseInput input) {
+  final totalStopwatch = Stopwatch()..start();
+  final stepWatch = Stopwatch();
+
+  final parser = TextParserService();
+  final tokens = <_ParsedToken>[];
+  final content = input.content;
+
+  // Build term keys set for O(1) lookup
+  stepWatch.start();
+  final termKeys = input.termsMapData.keys.toSet();
+  print('[PARSE] Build termKeys set: ${stepWatch.elapsedMilliseconds}ms (${termKeys.length} terms)');
+  stepWatch.reset();
+
+  // Create language for word matching
+  final tempLang = Language(
+    name: '',
+    splitByCharacter: input.splitByCharacter,
+    characterSubstitutions: input.characterSubstitutions,
+    regexpWordCharacters: input.regexpWordCharacters,
+  );
+
+  // Get word matches with positions - O(n)
+  stepWatch.start();
+  final wordMatches = parser.getWordMatches(content, tempLang);
+  print('[PARSE] getWordMatches: ${stepWatch.elapsedMilliseconds}ms (${wordMatches.length} words)');
+  stepWatch.reset();
+
+  // Get multi-word terms for phrase matching
+  stepWatch.start();
+  final multiWordTerms = <String, String>{}; // lowerText -> originalText
+  for (final entry in input.termsMapData.entries) {
+    if (entry.key.contains(' ') || (input.splitByCharacter && entry.key.length > 1)) {
+      multiWordTerms[entry.key] = entry.value['text'] as String;
+    }
+  }
+  final sortedMultiWordKeys = multiWordTerms.keys.toList()
+    ..sort((a, b) => b.length.compareTo(a.length));
+  print('[PARSE] Build multi-word terms: ${stepWatch.elapsedMilliseconds}ms (${sortedMultiWordKeys.length} terms)');
+  stepWatch.reset();
+
+  // Main parsing loop - O(n)
+  stepWatch.start();
+  int lastEnd = 0;
+  int matchIndex = 0;
+
+  while (matchIndex < wordMatches.length) {
+    final match = wordMatches[matchIndex];
+
+    // Add non-word text before this word
+    if (match.start > lastEnd) {
+      tokens.add(_ParsedToken(
+        text: content.substring(lastEnd, match.start),
+        isWord: false,
+        position: lastEnd,
+      ));
+    }
+
+    // Check if this word starts a multi-word term
+    bool foundMultiWord = false;
+    for (final termKey in sortedMultiWordKeys) {
+      final termText = multiWordTerms[termKey]!;
+      final endPos = match.start + termText.length;
+
+      if (endPos <= content.length) {
+        final substring = content.substring(match.start, endPos);
+        if (substring.toLowerCase() == termText.toLowerCase()) {
+          tokens.add(_ParsedToken(
+            text: substring,
+            isWord: true,
+            position: match.start,
+            termLowerText: termKey,
+          ));
+
+          // Skip all word matches that are within this multi-word term
+          lastEnd = endPos;
+          while (matchIndex < wordMatches.length && wordMatches[matchIndex].start < endPos) {
+            matchIndex++;
+          }
+          foundMultiWord = true;
+          break;
+        }
+      }
+    }
+
+    if (foundMultiWord) continue;
+
+    // Add single word token
+    final lowerWord = parser.normalizeWord(match.word);
+    tokens.add(_ParsedToken(
+      text: match.word,
+      isWord: true,
+      position: match.start,
+      termLowerText: termKeys.contains(lowerWord) ? lowerWord : null,
+    ));
+
+    lastEnd = match.end;
+    matchIndex++;
+  }
+
+  // Add any remaining text after last word
+  if (lastEnd < content.length) {
+    tokens.add(_ParsedToken(
+      text: content.substring(lastEnd),
+      isWord: false,
+      position: lastEnd,
+    ));
+  }
+
+  print('[PARSE] Main loop: ${stepWatch.elapsedMilliseconds}ms (${tokens.length} tokens)');
+  stepWatch.reset();
+
+  totalStopwatch.stop();
+  print('[PARSE] TOTAL: ${totalStopwatch.elapsedMilliseconds}ms');
+
+  return tokens;
+}
 
 class ReaderScreen extends StatefulWidget {
   final TextDocument text;
@@ -28,6 +180,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   late TextDocument _text;
   Map<String, Term> _termsMap = {};
   List<_WordToken> _wordTokens = [];
+  List<List<_WordToken>> _paragraphs =
+      []; // Tokens grouped by paragraph for lazy rendering
   bool _isLoading = true;
   bool _showLegend = false;
   double _fontSize = 18.0;
@@ -46,7 +200,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void initState() {
     super.initState();
     _text = widget.text;
-    _loadTermsAndParse();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Start parsing only after route animation completes and screen is visible
+    final route = ModalRoute.of(context);
+    if (route != null && _isLoading && _wordTokens.isEmpty) {
+      void onAnimationComplete(AnimationStatus status) {
+        if (status == AnimationStatus.completed) {
+          route.animation?.removeStatusListener(onAnimationComplete);
+          if (mounted) _loadTermsAndParse();
+        }
+      }
+
+      if (route.animation?.isCompleted ?? true) {
+        // Animation already complete (e.g., no animation or instant)
+        Future.microtask(() {
+          if (mounted) _loadTermsAndParse();
+        });
+      } else {
+        route.animation?.addStatusListener(onAnimationComplete);
+      }
+    }
   }
 
   @override
@@ -74,8 +251,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
         widget.language.id!,
       );
 
-      // Parse text into words
-      _parseText();
+      // Parse text into words (async to prevent UI blocking)
+      await _parseTextAsync();
 
       // Calculate term counts for this specific text
       _updateTextTermCounts();
@@ -85,9 +262,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.errorLoadingTerms(e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errorLoadingTerms(e.toString()))),
+        );
       }
     }
   }
@@ -131,183 +308,86 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return token;
     }).toList();
 
+    // Rebuild paragraphs with updated tokens
+    _groupIntoParagraphs();
+
     // Recalculate term counts
     _updateTextTermCounts();
 
     setState(() {});
   }
 
-  void _parseText() {
-    // For character-based languages, use different parsing
-    if (widget.language.splitByCharacter) {
-      _parseTextByCharacter();
-      return;
+  Future<void> _parseTextAsync() async {
+    // Serialize terms map for isolate
+    final termsMapData = <String, Map<String, dynamic>>{};
+    for (final entry in _termsMap.entries) {
+      termsMapData[entry.key] = {
+        'text': entry.value.text,
+        'status': entry.value.status,
+      };
     }
 
-    // Standard word-based parsing for languages with spaces
-    final words = _textParser.splitIntoWords(_text.content, widget.language);
-    final tokens = <_WordToken>[];
-    int wordIndex = 0;
-    int position = 0;
-    String remainingText = _text.content;
+    // Run parsing in isolate
+    final input = _ParseInput(
+      content: _text.content,
+      splitByCharacter: widget.language.splitByCharacter,
+      characterSubstitutions: widget.language.characterSubstitutions,
+      regexpWordCharacters: widget.language.regexpWordCharacters,
+      termsMapData: termsMapData,
+    );
 
-    // Get multi-word terms sorted by length (longest first)
-    final multiWordTerms =
-        _termsMap.entries.where((e) => e.key.contains(' ')).toList()
-          ..sort((a, b) => b.key.length.compareTo(a.key.length));
+    final parsedTokens = await compute(_parseInIsolate, input);
 
-    while (wordIndex < words.length) {
-      final word = words[wordIndex];
+    if (!mounted) return;
 
-      // Find word position in remaining text
-      final currentWordIndex = remainingText.indexOf(word);
-      if (currentWordIndex == -1) {
-        wordIndex++;
-        continue;
-      }
-
-      // Add any text before the word (whitespace, punctuation)
-      if (currentWordIndex > 0) {
-        tokens.add(
-          _WordToken(
-            text: remainingText.substring(0, currentWordIndex),
-            isWord: false,
-          ),
-        );
-      }
-
-      // Check if this word starts a multi-word term
-      bool isPartOfMultiWord = false;
-      for (final multiWordEntry in multiWordTerms) {
-        final multiWordText = multiWordEntry.value.text;
-        final checkText = remainingText.substring(currentWordIndex);
-
-        if (checkText.toLowerCase().startsWith(multiWordText.toLowerCase())) {
-          // Found a multi-word term match
-          tokens.add(
-            _WordToken(
-              text: multiWordText,
-              isWord: true,
-              term: multiWordEntry.value,
-              position: position + currentWordIndex,
-            ),
-          );
-
-          // Skip all words that are part of this multi-word term
-          final wordsInPhrase = multiWordText.split(RegExp(r'\s+'));
-          wordIndex += wordsInPhrase.length;
-
-          remainingText = remainingText.substring(
-            currentWordIndex + multiWordText.length,
-          );
-          position += currentWordIndex + multiWordText.length;
-          isPartOfMultiWord = true;
-          break;
-        }
-      }
-
-      if (isPartOfMultiWord) continue;
-
-      // Add single word token
-      final lowerWord = _textParser.normalizeWord(word);
-      final term = _termsMap[lowerWord];
-
-      tokens.add(
-        _WordToken(
-          text: word,
-          isWord: true,
-          term: term,
-          position: position + currentWordIndex,
-        ),
+    // Convert parsed tokens back to _WordToken with Term references
+    _wordTokens = parsedTokens.map((pt) {
+      return _WordToken(
+        text: pt.text,
+        isWord: pt.isWord,
+        position: pt.position,
+        term: pt.termLowerText != null ? _termsMap[pt.termLowerText] : null,
       );
+    }).toList();
 
-      remainingText = remainingText.substring(currentWordIndex + word.length);
-      position += currentWordIndex + word.length;
-      wordIndex++;
-    }
-
-    // Add any remaining text
-    if (remainingText.isNotEmpty) {
-      tokens.add(_WordToken(text: remainingText, isWord: false));
-    }
-
-    _wordTokens = tokens;
+    _groupIntoParagraphs();
   }
 
-  void _parseTextByCharacter() {
-    final tokens = <_WordToken>[];
-    int position = 0;
-    final content = _text.content;
+  void _groupIntoParagraphs() {
+    // First assign global indices to all tokens
+    _wordTokens = [
+      for (int i = 0; i < _wordTokens.length; i++)
+        _wordTokens[i].copyWithIndex(i),
+    ];
 
-    // Get multi-character terms sorted by length (longest first)
-    final multiCharTerms =
-        _termsMap.entries
-            .where((e) => e.key.length > 1) // Only multi-character terms
-            .toList()
-          ..sort((a, b) => b.key.length.compareTo(a.key.length));
+    // Group tokens by paragraph (split on double newlines or single newlines)
+    _paragraphs = [];
+    List<_WordToken> currentParagraph = [];
 
-    int i = 0;
-    while (i < content.length) {
-      final char = content[i];
-
-      // Skip whitespace and punctuation as non-word tokens
-      if (char.trim().isEmpty || _isPunctuation(char)) {
-        tokens.add(_WordToken(text: char, isWord: false));
-        position++;
-        i++;
-        continue;
-      }
-
-      // Check if this position starts a multi-character term
-      bool foundMultiCharTerm = false;
-      for (final termEntry in multiCharTerms) {
-        final termText = termEntry.value.text;
-        final termLength = termText.length;
-
-        final endIndex = i + termLength;
-        if (endIndex <= content.length) {
-          final substring = content.substring(i, endIndex);
-          final normalizedSubstring = _textParser.normalizeWord(substring);
-
-          // Direct comparison with the term's lower text
-          if (normalizedSubstring == termEntry.key) {
-            // Found a multi-character term
-            tokens.add(
-              _WordToken(
-                text: substring,
-                isWord: true,
-                term: termEntry.value,
-                position: position,
-              ),
-            );
-            i += termLength;
-            position += termLength;
-            foundMultiCharTerm = true;
-            break;
-          }
+    for (final token in _wordTokens) {
+      if (!token.isWord && token.text.contains('\n\n')) {
+        // Double newline - end current paragraph
+        if (currentParagraph.isNotEmpty) {
+          _paragraphs.add(currentParagraph);
+          currentParagraph = [];
         }
+        // Add the newline as its own "paragraph" for spacing
+        currentParagraph.add(token);
+        _paragraphs.add(currentParagraph);
+        currentParagraph = [];
+      } else if (!token.isWord && token.text.contains('\n')) {
+        // Single newline - also split for better chunking
+        currentParagraph.add(token);
+        _paragraphs.add(currentParagraph);
+        currentParagraph = [];
+      } else {
+        currentParagraph.add(token);
       }
-
-      if (foundMultiCharTerm) continue;
-
-      // Add single character token
-      final lowerChar = _textParser.normalizeWord(char);
-      final term = _termsMap[lowerChar];
-
-      tokens.add(
-        _WordToken(text: char, isWord: true, term: term, position: position),
-      );
-
-      position++;
-      i++;
     }
 
-    _wordTokens = tokens;
-  }
-
-  bool _isPunctuation(String char) {
-    final punctuationPattern = RegExp(r'[\p{P}\p{S}]', unicode: true);
-    return punctuationPattern.hasMatch(char);
+    if (currentParagraph.isNotEmpty) {
+      _paragraphs.add(currentParagraph);
+    }
   }
 
   Future<void> _handleWordTap(String word, int position, int tokenIndex) async {
@@ -421,9 +501,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     final l10n = AppLocalizations.of(context);
     if (dictionaries.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.noDictionariesConfigured)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.noDictionariesConfigured)));
       return;
     }
 
@@ -681,14 +761,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     ),
                   ),
                 Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    child: Directionality(
-                      textDirection: widget.language.rightToLeft
-                          ? TextDirection.rtl
-                          : TextDirection.ltr,
-                      child: Wrap(children: _buildWordWidgets()),
+                  child: Directionality(
+                    textDirection: widget.language.rightToLeft
+                        ? TextDirection.rtl
+                        : TextDirection.ltr,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _paragraphs.length,
+                      itemBuilder: (context, index) {
+                        return Wrap(
+                          children: _buildParagraphWidgets(_paragraphs[index]),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -697,11 +782,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  List<Widget> _buildWordWidgets() {
+  List<Widget> _buildParagraphWidgets(List<_WordToken> paragraphTokens) {
     final widgets = <Widget>[];
 
-    for (int index = 0; index < _wordTokens.length; index++) {
-      final token = _wordTokens[index];
+    for (final token in paragraphTokens) {
+      final globalIndex = token.globalIndex;
 
       if (!token.isWord) {
         // Handle newlines specially to create proper line breaks in Wrap
@@ -734,7 +819,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       }
 
       final term = token.term;
-      final isSelected = _selectedWordIndices.contains(index);
+      final isSelected = _selectedWordIndices.contains(globalIndex);
       final isIgnored = term?.status == TermStatus.ignored;
       final isWellKnown = term?.status == TermStatus.wellKnown;
 
@@ -761,7 +846,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       } else if (term != null) {
         borderColor = term.statusColor.withValues(alpha: 0.5);
       } else {
-        borderColor = TermStatus.colorFor(TermStatus.unknown).withValues(alpha: 0.5);
+        borderColor = TermStatus.colorFor(
+          TermStatus.unknown,
+        ).withValues(alpha: 0.5);
       }
 
       // Text color - use theme default for readability
@@ -773,8 +860,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
       widgets.add(
         GestureDetector(
-          onTap: () => _handleWordTap(token.text, token.position, index),
-          onLongPress: () => _handleWordLongPress(index),
+          onTap: () => _handleWordTap(token.text, token.position, globalIndex),
+          onLongPress: () => _handleWordLongPress(globalIndex),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
             margin: const EdgeInsets.symmetric(horizontal: 1),
@@ -907,15 +994,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.allWordsMarkedKnown)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.allWordsMarkedKnown)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')),
+        );
       }
     }
   }
@@ -1112,13 +1199,23 @@ class _WordToken {
   final bool isWord;
   final Term? term;
   final int position;
+  final int globalIndex; // Index in _wordTokens for selection tracking
 
   _WordToken({
     required this.text,
     required this.isWord,
     this.term,
     this.position = 0,
+    this.globalIndex = -1,
   });
+
+  _WordToken copyWithIndex(int index) => _WordToken(
+    text: text,
+    isWord: isWord,
+    term: term,
+    position: position,
+    globalIndex: index,
+  );
 }
 
 class _EditTextDialog extends StatefulWidget {

@@ -1,6 +1,57 @@
 import '../models/language.dart';
 
+/// Represents a word match with its position in the text
+class WordMatch {
+  final String word;
+  final int start;
+  final int end;
+
+  WordMatch(this.word, this.start, this.end);
+}
+
 class TextParserService {
+  /// Get word matches with their positions - O(n) instead of O(n²)
+  List<WordMatch> getWordMatches(String text, Language language) {
+    if (text.isEmpty) return [];
+
+    if (language.splitByCharacter) {
+      return _getCharacterMatches(text);
+    }
+
+    // Apply character substitutions if configured
+    String processedText = text;
+    if (language.characterSubstitutions.isNotEmpty) {
+      processedText = _applySubstitutions(text, language.characterSubstitutions);
+    }
+
+    final defaultPattern = r"[\p{L}\p{M}]+(?:[''''][\p{L}\p{M}]+)*";
+    final basicPattern = r'[\p{L}\p{M}]+';
+
+    final pattern = (language.regexpWordCharacters.isEmpty ||
+            language.regexpWordCharacters == basicPattern)
+        ? defaultPattern
+        : language.regexpWordCharacters;
+
+    final regex = RegExp(pattern, unicode: true);
+    final matches = regex.allMatches(processedText);
+
+    return matches.map((m) => WordMatch(m.group(0)!, m.start, m.end)).toList();
+  }
+
+  List<WordMatch> _getCharacterMatches(String text) {
+    final matches = <WordMatch>[];
+    final punctuationPattern = RegExp(r'[\p{P}\p{S}]', unicode: true);
+
+    for (int i = 0; i < text.length; i++) {
+      final char = text[i];
+      if (char.trim().isNotEmpty && !punctuationPattern.hasMatch(char)) {
+        matches.add(WordMatch(char, i, i + 1));
+      }
+    }
+
+    return matches;
+  }
+
   // Split text into words based on language rules
   List<String> splitIntoWords(String text, Language language) {
     if (text.isEmpty) return [];
