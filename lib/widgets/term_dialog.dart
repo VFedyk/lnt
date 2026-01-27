@@ -493,7 +493,7 @@ class _TermDialogState extends State<TermDialog> {
       ),
       selected: isSelected,
       selectedColor: color,
-      backgroundColor: color.withOpacity(0.2),
+      backgroundColor: color.withValues(alpha: 0.2),
       onSelected: (selected) {
         if (selected) {
           setState(() => _status = status);

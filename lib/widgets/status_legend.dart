@@ -37,7 +37,7 @@ class StatusLegend extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -119,8 +119,8 @@ class StatusLegend extends StatelessWidget {
           width: 16,
           height: 16,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.3),
-            border: Border.all(color: color.withOpacity(0.5)),
+            color: color.withValues(alpha: 0.3),
+            border: Border.all(color: color.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(3),
           ),
         ),

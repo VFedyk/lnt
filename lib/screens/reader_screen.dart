@@ -745,11 +745,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // Ignored and well-known words have transparent background (blend with text)
         backgroundColor = Colors.transparent;
       } else if (term != null) {
-        backgroundColor = term.statusColor.withOpacity(0.3);
+        backgroundColor = term.statusColor.withValues(alpha: 0.3);
       } else {
         backgroundColor = TermStatus.colorFor(
           TermStatus.unknown,
-        ).withOpacity(0.3);
+        ).withValues(alpha: 0.3);
       }
 
       Color borderColor;
@@ -759,9 +759,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // Ignored and well-known words have transparent border for consistent height
         borderColor = Colors.transparent;
       } else if (term != null) {
-        borderColor = term.statusColor.withOpacity(0.5);
+        borderColor = term.statusColor.withValues(alpha: 0.5);
       } else {
-        borderColor = TermStatus.colorFor(TermStatus.unknown).withOpacity(0.5);
+        borderColor = TermStatus.colorFor(TermStatus.unknown).withValues(alpha: 0.5);
       }
 
       // Text color - use theme default for readability
