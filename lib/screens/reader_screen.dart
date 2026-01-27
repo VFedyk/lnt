@@ -410,6 +410,70 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final lowerWord = _textParser.normalizeWord(word);
     final existingTerm = _termsMap[lowerWord];
 
+    // If term exists and has translation, show quick popup
+    if (existingTerm != null && existingTerm.translation.isNotEmpty) {
+      final shouldEdit = await _showTranslationPopup(existingTerm);
+      if (shouldEdit == true) {
+        await _openTermDialog(word, position, existingTerm);
+      }
+      return;
+    }
+
+    // No translation - open term dialog directly
+    await _openTermDialog(word, position, existingTerm);
+  }
+
+  Future<bool?> _showTranslationPopup(Term term) async {
+    final l10n = AppLocalizations.of(context);
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                term.text,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              if (term.romanization.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  term.romanization,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey.shade600,
+                      ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                term.translation,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => Navigator.pop(context, true),
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: Text(l10n.edit),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openTermDialog(String word, int position, Term? existingTerm) async {
+    final lowerWord = _textParser.normalizeWord(word);
+
     // Get sentence context
     final sentence = _textParser.getSentenceAtPosition(
       _text.content,
@@ -858,29 +922,46 @@ class _ReaderScreenState extends State<ReaderScreen> {
       }
       // All other cases use null (theme default) for better readability
 
-      widgets.add(
-        GestureDetector(
-          onTap: () => _handleWordTap(token.text, token.position, globalIndex),
-          onLongPress: () => _handleWordLongPress(globalIndex),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-            margin: const EdgeInsets.symmetric(horizontal: 1),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
-            ),
-            child: Text(
-              token.text,
-              style: TextStyle(
-                fontSize: _fontSize,
-                height: 1.6,
-                color: textColor,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
+      // Build tooltip message if term has translation
+      String? tooltipMessage;
+      if (term != null && term.translation.isNotEmpty) {
+        tooltipMessage = term.translation;
+        if (term.romanization.isNotEmpty) {
+          tooltipMessage = '${term.romanization}\n$tooltipMessage';
+        }
+      }
+
+      final wordWidget = GestureDetector(
+        onTap: () => _handleWordTap(token.text, token.position, globalIndex),
+        onLongPress: () => _handleWordLongPress(globalIndex),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+          margin: const EdgeInsets.symmetric(horizontal: 1),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
+          ),
+          child: Text(
+            token.text,
+            style: TextStyle(
+              fontSize: _fontSize,
+              height: 1.6,
+              color: textColor,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ),
+      );
+
+      widgets.add(
+        tooltipMessage != null
+            ? Tooltip(
+                message: tooltipMessage,
+                waitDuration: const Duration(milliseconds: 300),
+                child: wordWidget,
+              )
+            : wordWidget,
       );
     }
 
