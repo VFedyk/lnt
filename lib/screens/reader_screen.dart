@@ -239,7 +239,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   late TextDocument _text;
   Map<String, Term> _termsMap = {};
-  Set<String> _otherLanguageWords = {}; // Words that exist in other languages
+  Map<String, ({Term term, String languageName})> _otherLanguageTerms = {}; // Terms from other languages
   List<_WordToken> _wordTokens = [];
   List<List<_WordToken>> _paragraphs =
       []; // Tokens grouped by paragraph for lazy rendering
@@ -345,7 +345,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       seenWords.add(normalized);
 
       // Skip words that belong to other languages
-      if (_otherLanguageWords.contains(normalized)) continue;
+      if (_otherLanguageTerms.containsKey(normalized)) continue;
 
       final term = _termsMap[normalized];
       final status = term?.status ?? TermStatus.unknown;
@@ -356,13 +356,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   /// Update a single term in place without reloading everything
-  void _updateTermInPlace(Term term) {
+  Future<void> _updateTermInPlace(Term term) async {
     final lowerText = term.lowerText;
 
     // Check if term was saved to a different language
     if (term.languageId != widget.language.id) {
-      // Term belongs to another language - mark as other language word
-      _otherLanguageWords.add(lowerText);
+      // Term belongs to another language - fetch language name and mark
+      final lang = await DatabaseService.instance.getLanguage(term.languageId);
+      _otherLanguageTerms[lowerText] = (term: term, languageName: lang?.name ?? '');
       _termsMap.remove(lowerText);
 
       // Update tokens to have no term (for current language)
@@ -454,12 +455,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
 
     if (wordsToCheck.isEmpty) {
-      _otherLanguageWords = {};
+      _otherLanguageTerms = {};
       return;
     }
 
-    // Query database for words that exist in other languages
-    _otherLanguageWords = await DatabaseService.instance.getWordsInOtherLanguages(
+    // Query database for terms that exist in other languages
+    _otherLanguageTerms = await DatabaseService.instance.getTermsInOtherLanguages(
       widget.language.id!,
       wordsToCheck,
     );
@@ -999,7 +1000,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       final isIgnored = term?.status == TermStatus.ignored;
       final isWellKnown = term?.status == TermStatus.wellKnown;
       final lowerWord = token.text.toLowerCase();
-      final isOtherLanguage = term == null && _otherLanguageWords.contains(lowerWord);
+      final isOtherLanguage = term == null && _otherLanguageTerms.containsKey(lowerWord);
 
       Color backgroundColor;
       if (isSelected) {
@@ -1048,6 +1049,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
         tooltipMessage = term.translation;
         if (term.romanization.isNotEmpty) {
           tooltipMessage = '${term.romanization}\n$tooltipMessage';
+        }
+      } else if (isOtherLanguage) {
+        final otherInfo = _otherLanguageTerms[lowerWord]!;
+        final otherTerm = otherInfo.term;
+        final parts = <String>[];
+        if (otherTerm.romanization.isNotEmpty) {
+          parts.add(otherTerm.romanization);
+        }
+        if (otherTerm.translation.isNotEmpty) {
+          parts.add(otherTerm.translation);
+        }
+        if (otherInfo.languageName.isNotEmpty) {
+          parts.add('(${otherInfo.languageName})');
+        }
+        if (parts.isNotEmpty) {
+          tooltipMessage = parts.join('\n');
         }
       }
 

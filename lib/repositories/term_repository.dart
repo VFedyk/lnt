@@ -160,16 +160,17 @@ class TermRepository extends BaseRepository {
     return maps.map((map) => Term.fromMap(map)).toList();
   }
 
-  /// Get set of lowercase words that exist in any language OTHER than the specified one
-  Future<Set<String>> getWordsInOtherLanguages(
+  /// Get terms that exist in any language OTHER than the specified one,
+  /// along with the language name. Returns a map from lowercase word to
+  /// a record containing the Term and language name.
+  Future<Map<String, ({Term term, String languageName})>> getTermsInOtherLanguages(
     int excludeLanguageId,
     Set<String> words,
   ) async {
     if (words.isEmpty) return {};
 
     final db = await getDatabase();
-    // Query in batches to avoid SQL parameter limits
-    final result = <String>{};
+    final result = <String, ({Term term, String languageName})>{};
     final wordList = words.toList();
     const batchSize = 500;
 
@@ -178,14 +179,22 @@ class TermRepository extends BaseRepository {
       final placeholders = List.filled(batch.length, '?').join(',');
       final maps = await db.rawQuery(
         '''
-        SELECT DISTINCT lower_text
-        FROM terms
-        WHERE language_id != ? AND lower_text IN ($placeholders)
+        SELECT t.*, l.name AS language_name
+        FROM terms t
+        JOIN languages l ON l.id = t.language_id
+        WHERE t.language_id != ? AND t.lower_text IN ($placeholders)
         ''',
         [excludeLanguageId, ...batch],
       );
       for (final map in maps) {
-        result.add(map['lower_text'] as String);
+        final lowerText = map['lower_text'] as String;
+        // Keep first match per word (or could prefer by status)
+        if (!result.containsKey(lowerText)) {
+          result[lowerText] = (
+            term: Term.fromMap(map),
+            languageName: map['language_name'] as String,
+          );
+        }
       }
     }
     return result;
