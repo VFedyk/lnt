@@ -159,4 +159,35 @@ class TermRepository extends BaseRepository {
     );
     return maps.map((map) => Term.fromMap(map)).toList();
   }
+
+  /// Get set of lowercase words that exist in any language OTHER than the specified one
+  Future<Set<String>> getWordsInOtherLanguages(
+    int excludeLanguageId,
+    Set<String> words,
+  ) async {
+    if (words.isEmpty) return {};
+
+    final db = await getDatabase();
+    // Query in batches to avoid SQL parameter limits
+    final result = <String>{};
+    final wordList = words.toList();
+    const batchSize = 500;
+
+    for (var i = 0; i < wordList.length; i += batchSize) {
+      final batch = wordList.skip(i).take(batchSize).toList();
+      final placeholders = List.filled(batch.length, '?').join(',');
+      final maps = await db.rawQuery(
+        '''
+        SELECT DISTINCT lower_text
+        FROM terms
+        WHERE language_id != ? AND lower_text IN ($placeholders)
+        ''',
+        [excludeLanguageId, ...batch],
+      );
+      for (final map in maps) {
+        result.add(map['lower_text'] as String);
+      }
+    }
+    return result;
+  }
 }

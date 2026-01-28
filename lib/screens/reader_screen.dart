@@ -66,6 +66,9 @@ abstract class _ReaderScreenConstants {
 
   // Text colors
   static const Color subtitleColor = Color(0xFF757575); // Colors.grey.shade600
+
+  // Other language words (words that exist in another language's dictionary)
+  static const Color otherLanguageColor = Color(0xFFCE93D8); // Colors.purple.shade200
 }
 
 /// Data passed to isolate for parsing
@@ -236,6 +239,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   late TextDocument _text;
   Map<String, Term> _termsMap = {};
+  Set<String> _otherLanguageWords = {}; // Words that exist in other languages
   List<_WordToken> _wordTokens = [];
   List<List<_WordToken>> _paragraphs =
       []; // Tokens grouped by paragraph for lazy rendering
@@ -311,6 +315,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       // Parse text into words (async to prevent UI blocking)
       await _parseTextAsync();
 
+      // Find words that exist in other languages (for distinct styling)
+      await _loadOtherLanguageWords();
+
       // Calculate term counts for this specific text
       _updateTextTermCounts();
 
@@ -337,6 +344,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (seenWords.contains(normalized)) continue;
       seenWords.add(normalized);
 
+      // Skip words that belong to other languages
+      if (_otherLanguageWords.contains(normalized)) continue;
+
       final term = _termsMap[normalized];
       final status = term?.status ?? TermStatus.unknown;
       counts[status] = (counts[status] ?? 0) + 1;
@@ -349,21 +359,41 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void _updateTermInPlace(Term term) {
     final lowerText = term.lowerText;
 
-    // Update the terms map
-    _termsMap[lowerText] = term;
+    // Check if term was saved to a different language
+    if (term.languageId != widget.language.id) {
+      // Term belongs to another language - mark as other language word
+      _otherLanguageWords.add(lowerText);
+      _termsMap.remove(lowerText);
 
-    // Update all tokens that match this term
-    _wordTokens = _wordTokens.map((token) {
-      if (token.isWord && token.text.toLowerCase() == lowerText) {
-        return _WordToken(
-          text: token.text,
-          isWord: true,
-          term: term,
-          position: token.position,
-        );
-      }
-      return token;
-    }).toList();
+      // Update tokens to have no term (for current language)
+      _wordTokens = _wordTokens.map((token) {
+        if (token.isWord && token.text.toLowerCase() == lowerText) {
+          return _WordToken(
+            text: token.text,
+            isWord: true,
+            term: null,
+            position: token.position,
+          );
+        }
+        return token;
+      }).toList();
+    } else {
+      // Term is for current language - update normally
+      _termsMap[lowerText] = term;
+
+      // Update all tokens that match this term
+      _wordTokens = _wordTokens.map((token) {
+        if (token.isWord && token.text.toLowerCase() == lowerText) {
+          return _WordToken(
+            text: token.text,
+            isWord: true,
+            term: term,
+            position: token.position,
+          );
+        }
+        return token;
+      }).toList();
+    }
 
     // Rebuild paragraphs with updated tokens
     _groupIntoParagraphs();
@@ -408,6 +438,31 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }).toList();
 
     _groupIntoParagraphs();
+  }
+
+  Future<void> _loadOtherLanguageWords() async {
+    // Collect all unique words from the text that don't have terms in current language
+    final wordsToCheck = <String>{};
+    for (final token in _wordTokens) {
+      if (token.isWord) {
+        final lowerWord = token.text.toLowerCase();
+        // Only check words that aren't already in current language's terms
+        if (!_termsMap.containsKey(lowerWord)) {
+          wordsToCheck.add(lowerWord);
+        }
+      }
+    }
+
+    if (wordsToCheck.isEmpty) {
+      _otherLanguageWords = {};
+      return;
+    }
+
+    // Query database for words that exist in other languages
+    _otherLanguageWords = await DatabaseService.instance.getWordsInOtherLanguages(
+      widget.language.id!,
+      wordsToCheck,
+    );
   }
 
   void _groupIntoParagraphs() {
@@ -943,6 +998,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       final isSelected = _selectedWordIndices.contains(globalIndex);
       final isIgnored = term?.status == TermStatus.ignored;
       final isWellKnown = term?.status == TermStatus.wellKnown;
+      final lowerWord = token.text.toLowerCase();
+      final isOtherLanguage = term == null && _otherLanguageWords.contains(lowerWord);
 
       Color backgroundColor;
       if (isSelected) {
@@ -950,6 +1007,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       } else if (isIgnored || isWellKnown) {
         // Ignored and well-known words have transparent background (blend with text)
         backgroundColor = _ReaderScreenConstants.transparentColor;
+      } else if (isOtherLanguage) {
+        // Words from other languages have distinct purple tint
+        backgroundColor = _ReaderScreenConstants.otherLanguageColor.withValues(alpha: _ReaderScreenConstants.backgroundAlpha);
       } else if (term != null) {
         backgroundColor = term.statusColor.withValues(alpha: _ReaderScreenConstants.backgroundAlpha);
       } else {
@@ -964,6 +1024,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       } else if (isIgnored || isWellKnown) {
         // Ignored and well-known words have transparent border for consistent height
         borderColor = _ReaderScreenConstants.transparentColor;
+      } else if (isOtherLanguage) {
+        // Words from other languages have distinct purple border
+        borderColor = _ReaderScreenConstants.otherLanguageColor.withValues(alpha: _ReaderScreenConstants.borderAlpha);
       } else if (term != null) {
         borderColor = term.statusColor.withValues(alpha: _ReaderScreenConstants.borderAlpha);
       } else {

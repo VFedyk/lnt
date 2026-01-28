@@ -230,6 +230,11 @@ class DatabaseService {
   Future<Term?> getTerm(int id) => terms.getById(id);
   Future<List<Term>> getLinkedTerms(int baseTermId) =>
       terms.getLinkedTerms(baseTermId);
+  Future<Set<String>> getWordsInOtherLanguages(
+    int excludeLanguageId,
+    Set<String> words,
+  ) =>
+      terms.getWordsInOtherLanguages(excludeLanguageId, words);
 
   // Collection
   Future<int> createCollection(Collection collection) =>
