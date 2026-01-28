@@ -21,13 +21,17 @@ class TextParserService {
     // Apply character substitutions if configured
     String processedText = text;
     if (language.characterSubstitutions.isNotEmpty) {
-      processedText = _applySubstitutions(text, language.characterSubstitutions);
+      processedText = _applySubstitutions(
+        text,
+        language.characterSubstitutions,
+      );
     }
 
-    final defaultPattern = r"[\p{L}\p{M}]+(?:[''''][\p{L}\p{M}]+)*";
+    final defaultPattern = r"[\p{L}\p{M}]+(?:[''ʼ'][\p{L}\p{M}]+)*";
     final basicPattern = r'[\p{L}\p{M}]+';
 
-    final pattern = (language.regexpWordCharacters.isEmpty ||
+    final pattern =
+        (language.regexpWordCharacters.isEmpty ||
             language.regexpWordCharacters == basicPattern)
         ? defaultPattern
         : language.regexpWordCharacters;
