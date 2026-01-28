@@ -11,6 +11,63 @@ import '../services/text_parser_service.dart';
 import '../widgets/term_dialog.dart';
 import '../widgets/status_legend.dart';
 
+/// Layout, sizing, and timing constants for the reader screen
+abstract class _ReaderScreenConstants {
+  // Font sizes
+  static const double defaultFontSize = 18.0;
+  static const double fontSizeMin = 12.0;
+  static const double fontSizeMax = 32.0;
+  static const int fontSizeSliderDivisions = 20;
+
+  // Icon sizes
+  static const double editIconSize = 18.0;
+  static const double statusCircleRadius = 8.0;
+
+  // Spacing
+  static const double spacingXS = 4.0;
+  static const double spacingS = 8.0;
+  static const double spacingM = 12.0;
+  static const double spacingL = 16.0;
+
+  // Word token layout
+  static const double wordPaddingHorizontal = 3.0;
+  static const double wordPaddingVertical = 2.0;
+  static const double wordMarginHorizontal = 1.0;
+  static const double wordBorderRadius = 4.0;
+  static const double wordBorderWidthNormal = 1.0;
+  static const double wordBorderWidthSelected = 2.0;
+
+  // Text layout
+  static const double textLineHeight = 1.6;
+  static const int editDialogMaxLines = 10;
+
+  // Timing
+  static const Duration tooltipWaitDuration = Duration(milliseconds: 300);
+
+  // Opacity values
+  static const double backgroundAlpha = 0.3;
+  static const double borderAlpha = 0.5;
+  static const int chipBackgroundAlpha = 50;
+  static const int chipBorderAlpha = 100;
+
+  // Divider
+  static const double dividerHeight = 1.0;
+
+  // Selection mode colors
+  static const Color selectionBackgroundColor = Color(0xFF90CAF9); // Colors.blue.shade200
+  static const Color selectionBorderColor = Color(0xFF1E88E5); // Colors.blue.shade600
+  static const Color selectionBannerColor = Color(0xFFBBDEFB); // Colors.blue.shade100
+  static const Color selectionAccentColor = Colors.blue;
+  static const Color selectedTextColor = Colors.black87;
+
+  // Status colors
+  static const Color successColor = Colors.green;
+  static const Color transparentColor = Colors.transparent;
+
+  // Text colors
+  static const Color subtitleColor = Color(0xFF757575); // Colors.grey.shade600
+}
+
 /// Data passed to isolate for parsing
 class _ParseInput {
   final String content;
@@ -184,7 +241,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       []; // Tokens grouped by paragraph for lazy rendering
   bool _isLoading = true;
   bool _showLegend = false;
-  double _fontSize = 18.0;
+  double _fontSize = _ReaderScreenConstants.defaultFontSize;
 
   // Multi-word selection state
   final Set<int> _selectedWordIndices = {};
@@ -281,7 +338,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       seenWords.add(normalized);
 
       final term = _termsMap[normalized];
-      final status = term?.status ?? 1; // Default to Unknown (1) if no term
+      final status = term?.status ?? TermStatus.unknown;
       counts[status] = (counts[status] ?? 0) + 1;
     }
 
@@ -429,7 +486,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       context: context,
       builder: (context) => Dialog(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(_ReaderScreenConstants.spacingL),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,26 +498,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     ),
               ),
               if (term.romanization.isNotEmpty) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: _ReaderScreenConstants.spacingXS),
                 Text(
                   term.romanization,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontStyle: FontStyle.italic,
-                        color: Colors.grey.shade600,
+                        color: _ReaderScreenConstants.subtitleColor,
                       ),
                 ),
               ],
-              const SizedBox(height: 8),
+              const SizedBox(height: _ReaderScreenConstants.spacingS),
               Text(
                 term.translation,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: _ReaderScreenConstants.spacingL),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   onPressed: () => Navigator.pop(context, true),
-                  icon: const Icon(Icons.edit, size: 18),
+                  icon: const Icon(Icons.edit, size: _ReaderScreenConstants.editIconSize),
                   label: Text(l10n.edit),
                 ),
               ),
@@ -752,7 +809,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: Row(
                     children: [
                       const Icon(Icons.edit),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: _ReaderScreenConstants.spacingS),
                       Text(l10n.editText),
                     ],
                   ),
@@ -762,7 +819,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: Row(
                     children: [
                       const Icon(Icons.text_fields),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: _ReaderScreenConstants.spacingS),
                       Text(l10n.fontSize),
                     ],
                   ),
@@ -772,7 +829,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: Row(
                     children: [
                       const Icon(Icons.done_all),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: _ReaderScreenConstants.spacingS),
                       Text(l10n.markAllKnown),
                     ],
                   ),
@@ -786,10 +843,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             ? Icons.check_circle
                             : Icons.check_circle_outline,
                         color: _text.status == TextStatus.finished
-                            ? Colors.green
+                            ? _ReaderScreenConstants.successColor
                             : null,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: _ReaderScreenConstants.spacingS),
                       Text(
                         _text.status == TextStatus.finished
                             ? l10n.markedAsFinished
@@ -809,16 +866,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 if (_showLegend) StatusLegend(termCounts: _termCounts),
                 if (_isSelectionMode)
                   Container(
-                    padding: const EdgeInsets.all(12),
-                    color: Colors.blue.shade100,
+                    padding: const EdgeInsets.all(_ReaderScreenConstants.spacingM),
+                    color: _ReaderScreenConstants.selectionBannerColor,
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline, color: Colors.blue),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.info_outline, color: _ReaderScreenConstants.selectionAccentColor),
+                        const SizedBox(width: _ReaderScreenConstants.spacingS),
                         Expanded(
                           child: Text(
                             l10n.wordsSelected(_selectedWordIndices.length),
-                            style: const TextStyle(color: Colors.blue),
+                            style: const TextStyle(color: _ReaderScreenConstants.selectionAccentColor),
                           ),
                         ),
                       ],
@@ -831,7 +888,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         : TextDirection.ltr,
                     child: ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(_ReaderScreenConstants.spacingL),
                       itemCount: _paragraphs.length,
                       itemBuilder: (context, index) {
                         return Wrap(
@@ -862,20 +919,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
               widgets.add(
                 Text(
                   parts[i],
-                  style: TextStyle(fontSize: _fontSize, height: 1.6),
+                  style: TextStyle(fontSize: _fontSize, height: _ReaderScreenConstants.textLineHeight),
                 ),
               );
             }
             // Add line break (except after last part)
             if (i < parts.length - 1) {
-              widgets.add(const SizedBox(width: double.infinity, height: 8));
+              widgets.add(const SizedBox(width: double.infinity, height: _ReaderScreenConstants.spacingS));
             }
           }
         } else {
           widgets.add(
             Text(
               token.text,
-              style: TextStyle(fontSize: _fontSize, height: 1.6),
+              style: TextStyle(fontSize: _fontSize, height: _ReaderScreenConstants.textLineHeight),
             ),
           );
         }
@@ -889,36 +946,36 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
       Color backgroundColor;
       if (isSelected) {
-        backgroundColor = Colors.blue.shade200;
+        backgroundColor = _ReaderScreenConstants.selectionBackgroundColor;
       } else if (isIgnored || isWellKnown) {
         // Ignored and well-known words have transparent background (blend with text)
-        backgroundColor = Colors.transparent;
+        backgroundColor = _ReaderScreenConstants.transparentColor;
       } else if (term != null) {
-        backgroundColor = term.statusColor.withValues(alpha: 0.3);
+        backgroundColor = term.statusColor.withValues(alpha: _ReaderScreenConstants.backgroundAlpha);
       } else {
         backgroundColor = TermStatus.colorFor(
           TermStatus.unknown,
-        ).withValues(alpha: 0.3);
+        ).withValues(alpha: _ReaderScreenConstants.backgroundAlpha);
       }
 
       Color borderColor;
       if (isSelected) {
-        borderColor = Colors.blue.shade600;
+        borderColor = _ReaderScreenConstants.selectionBorderColor;
       } else if (isIgnored || isWellKnown) {
         // Ignored and well-known words have transparent border for consistent height
-        borderColor = Colors.transparent;
+        borderColor = _ReaderScreenConstants.transparentColor;
       } else if (term != null) {
-        borderColor = term.statusColor.withValues(alpha: 0.5);
+        borderColor = term.statusColor.withValues(alpha: _ReaderScreenConstants.borderAlpha);
       } else {
         borderColor = TermStatus.colorFor(
           TermStatus.unknown,
-        ).withValues(alpha: 0.5);
+        ).withValues(alpha: _ReaderScreenConstants.borderAlpha);
       }
 
       // Text color - use theme default for readability
       Color? textColor;
       if (isSelected) {
-        textColor = Colors.black87;
+        textColor = _ReaderScreenConstants.selectedTextColor;
       }
       // All other cases use null (theme default) for better readability
 
@@ -935,18 +992,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
         onTap: () => _handleWordTap(token.text, token.position, globalIndex),
         onLongPress: () => _handleWordLongPress(globalIndex),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-          margin: const EdgeInsets.symmetric(horizontal: 1),
+          padding: const EdgeInsets.symmetric(
+            horizontal: _ReaderScreenConstants.wordPaddingHorizontal,
+            vertical: _ReaderScreenConstants.wordPaddingVertical,
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: _ReaderScreenConstants.wordMarginHorizontal),
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
+            borderRadius: BorderRadius.circular(_ReaderScreenConstants.wordBorderRadius),
+            border: Border.all(
+              color: borderColor,
+              width: isSelected
+                  ? _ReaderScreenConstants.wordBorderWidthSelected
+                  : _ReaderScreenConstants.wordBorderWidthNormal,
+            ),
           ),
           child: Text(
             token.text,
             style: TextStyle(
               fontSize: _fontSize,
-              height: 1.6,
+              height: _ReaderScreenConstants.textLineHeight,
               color: textColor,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
@@ -958,7 +1023,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         tooltipMessage != null
             ? Tooltip(
                 message: tooltipMessage,
-                waitDuration: const Duration(milliseconds: 300),
+                waitDuration: _ReaderScreenConstants.tooltipWaitDuration,
                 child: wordWidget,
               )
             : wordWidget,
@@ -1000,9 +1065,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
               Text(l10n.previewText, style: TextStyle(fontSize: _fontSize)),
               Slider(
                 value: _fontSize,
-                min: 12,
-                max: 32,
-                divisions: 20,
+                min: _ReaderScreenConstants.fontSizeMin,
+                max: _ReaderScreenConstants.fontSizeMax,
+                divisions: _ReaderScreenConstants.fontSizeSliderDivisions,
                 label: _fontSize.round().toString(),
                 onChanged: (value) {
                   setDialogState(() => _fontSize = value);
@@ -1210,13 +1275,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(_ReaderScreenConstants.spacingL),
               child: Text(
                 l10n.wordList,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
-            const Divider(height: 1),
+            const Divider(height: _ReaderScreenConstants.dividerHeight),
             Expanded(
               child: ListView(
                 children: [
@@ -1245,19 +1310,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final l10n = AppLocalizations.of(context);
     return ExpansionTile(
       initiallyExpanded: label == l10n.statusUnknown,
-      leading: CircleAvatar(backgroundColor: color, radius: 8),
+      leading: CircleAvatar(backgroundColor: color, radius: _ReaderScreenConstants.statusCircleRadius),
       title: Text('$label (${tokens.length})'),
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: _ReaderScreenConstants.spacingL, vertical: _ReaderScreenConstants.spacingS),
           child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: _ReaderScreenConstants.spacingS,
+            runSpacing: _ReaderScreenConstants.spacingS,
             children: tokens.map((token) {
               return ActionChip(
                 label: Text(token.text),
-                backgroundColor: color.withAlpha(50),
-                side: BorderSide(color: color.withAlpha(100)),
+                backgroundColor: color.withAlpha(_ReaderScreenConstants.chipBackgroundAlpha),
+                side: BorderSide(color: color.withAlpha(_ReaderScreenConstants.chipBorderAlpha)),
                 onPressed: () {
                   Navigator.pop(context); // Close drawer
                   _handleWordTap(
@@ -1343,14 +1408,14 @@ class _EditTextDialogState extends State<_EditTextDialog> {
                 decoration: InputDecoration(labelText: l10n.title),
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: _ReaderScreenConstants.spacingL),
               TextFormField(
                 controller: _contentController,
                 decoration: InputDecoration(
                   labelText: l10n.textContent,
                   alignLabelWithHint: true,
                 ),
-                maxLines: 10,
+                maxLines: _ReaderScreenConstants.editDialogMaxLines,
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
             ],
