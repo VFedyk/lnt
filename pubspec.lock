@@ -586,6 +586,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.12.1"
+  stemmer:
+    dependency: "direct main"
+    description:
+      name: stemmer
+      sha256: "4517e4303443f6ab353e7611b3bcab4821929e1f8faa73de0f119c72afbe26b9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.0"
   stream_channel:
     dependency: transitive
     description:

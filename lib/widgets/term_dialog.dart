@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stemmer/stemmer.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
@@ -144,6 +145,7 @@ class _TermDialogState extends State<TermDialog> {
         languageId: widget.languageId,
         languageName: widget.languageName,
         excludeTermId: widget.term.id,
+        initialWord: widget.term.lowerText,
       ),
     );
     if (selectedTerm != null && mounted) {
@@ -511,11 +513,13 @@ class _BaseTermSearchDialog extends StatefulWidget {
   final int languageId;
   final int? excludeTermId;
   final String languageName;
+  final String? initialWord;
 
   const _BaseTermSearchDialog({
     required this.languageId,
     required this.languageName,
     this.excludeTermId,
+    this.initialWord,
   });
 
   @override
@@ -530,10 +534,29 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
   bool _isTranslating = false;
   bool _hasDeepLKey = false;
 
+  static final _snowballStemmer = SnowballStemmer();
+
   @override
   void initState() {
     super.initState();
     _checkDeepLKey();
+    _prefillSearch();
+  }
+
+  void _prefillSearch() {
+    if (widget.initialWord == null || widget.initialWord!.isEmpty) return;
+
+    // Stem the word for English, otherwise use as-is
+    final isEnglish = widget.languageName.toLowerCase() == 'english';
+    final searchWord = isEnglish
+        ? _snowballStemmer.stem(widget.initialWord!)
+        : widget.initialWord!;
+
+    _searchController.text = searchWord;
+    // Auto-trigger search after frame renders
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _search(searchWord);
+    });
   }
 
   Future<void> _checkDeepLKey() async {
