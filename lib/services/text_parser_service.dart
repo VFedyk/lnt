@@ -10,6 +10,11 @@ class WordMatch {
 }
 
 class TextParserService {
+  static const _defaultPattern = r"[\p{L}\p{M}]+(?:[''ʼ'][\p{L}\p{M}]+)*";
+  static const _basicPattern = r'[\p{L}\p{M}]+';
+  static final _punctuationPattern = RegExp(r'[\p{P}\p{S}]', unicode: true);
+  static const _protectionMarker = '⁜';
+
   /// Get word matches with their positions - O(n) instead of O(n²)
   List<WordMatch> getWordMatches(String text, Language language) {
     if (text.isEmpty) return [];
@@ -18,25 +23,8 @@ class TextParserService {
       return _getCharacterMatches(text);
     }
 
-    // Apply character substitutions if configured
-    String processedText = text;
-    if (language.characterSubstitutions.isNotEmpty) {
-      processedText = _applySubstitutions(
-        text,
-        language.characterSubstitutions,
-      );
-    }
-
-    final defaultPattern = r"[\p{L}\p{M}]+(?:[''ʼ'][\p{L}\p{M}]+)*";
-    final basicPattern = r'[\p{L}\p{M}]+';
-
-    final pattern =
-        (language.regexpWordCharacters.isEmpty ||
-            language.regexpWordCharacters == basicPattern)
-        ? defaultPattern
-        : language.regexpWordCharacters;
-
-    final regex = RegExp(pattern, unicode: true);
+    final processedText = _applySubstitutionsIfNeeded(text, language);
+    final regex = RegExp(_wordPattern(language), unicode: true);
     final matches = regex.allMatches(processedText);
 
     return matches.map((m) => WordMatch(m.group(0)!, m.start, m.end)).toList();
@@ -44,11 +32,10 @@ class TextParserService {
 
   List<WordMatch> _getCharacterMatches(String text) {
     final matches = <WordMatch>[];
-    final punctuationPattern = RegExp(r'[\p{P}\p{S}]', unicode: true);
 
     for (int i = 0; i < text.length; i++) {
       final char = text[i];
-      if (char.trim().isNotEmpty && !punctuationPattern.hasMatch(char)) {
+      if (char.trim().isNotEmpty && !_punctuationPattern.hasMatch(char)) {
         matches.add(WordMatch(char, i, i + 1));
       }
     }
@@ -60,33 +47,12 @@ class TextParserService {
   List<String> splitIntoWords(String text, Language language) {
     if (text.isEmpty) return [];
 
-    // For character-based languages (Chinese, Japanese), split by character
     if (language.splitByCharacter) {
       return _splitByCharacter(text);
     }
 
-    // Apply character substitutions if configured
-    String processedText = text;
-    if (language.characterSubstitutions.isNotEmpty) {
-      processedText = _applySubstitutions(
-        text,
-        language.characterSubstitutions,
-      );
-    }
-
-    // Use language-specific word character pattern
-    // Default pattern includes apostrophes for contractions (we're, don't) and possessives (winter's)
-    final defaultPattern = r"[\p{L}\p{M}]+(?:[''’'][\p{L}\p{M}]+)*";
-    final basicPattern = r'[\p{L}\p{M}]+';
-
-    // Use enhanced pattern if language has no custom pattern or uses the basic pattern
-    final pattern =
-        (language.regexpWordCharacters.isEmpty ||
-            language.regexpWordCharacters == basicPattern)
-        ? defaultPattern
-        : language.regexpWordCharacters;
-
-    final regex = RegExp(pattern, unicode: true);
+    final processedText = _applySubstitutionsIfNeeded(text, language);
+    final regex = RegExp(_wordPattern(language), unicode: true);
     final matches = regex.allMatches(processedText);
 
     return matches.map((m) => m.group(0)!).toList();
@@ -95,13 +61,13 @@ class TextParserService {
   // Split text by individual characters (for Chinese, Japanese, etc.)
   List<String> _splitByCharacter(String text) {
     final characters = <String>[];
-    final runes = text.runes.toList();
 
-    for (int i = 0; i < runes.length; i++) {
-      final char = String.fromCharCode(runes[i]);
+    // Use runes iterator to correctly handle characters outside the BMP
+    for (final rune in text.runes) {
+      final char = String.fromCharCode(rune);
 
       // Skip whitespace and punctuation for character-based languages
-      if (char.trim().isEmpty || _isPunctuation(char)) {
+      if (char.trim().isEmpty || _punctuationPattern.hasMatch(char)) {
         continue;
       }
 
@@ -109,12 +75,6 @@ class TextParserService {
     }
 
     return characters;
-  }
-
-  // Check if character is punctuation
-  bool _isPunctuation(String char) {
-    final punctuationPattern = RegExp(r'[\p{P}\p{S}]', unicode: true);
-    return punctuationPattern.hasMatch(char);
   }
 
   // Split text into sentences
@@ -136,11 +96,75 @@ class TextParserService {
 
     final sentences = processedText
         .split(RegExp(pattern))
-        .map((s) => s.trim())
+        .map((s) => s.replaceAll(_protectionMarker, '.').trim())
         .where((s) => s.isNotEmpty)
         .toList();
 
     return sentences;
+  }
+
+  // Get sentence containing word at position
+  String getSentenceAtPosition(String text, int position, Language language) {
+    if (text.isEmpty) return '';
+
+    final pattern = language.regexpSplitSentences.isNotEmpty
+        ? language.regexpSplitSentences
+        : r'[.!?]+';
+
+    // Protect exceptions before splitting
+    String processedText = text;
+    if (language.exceptionsSplitSentences.isNotEmpty) {
+      processedText = _protectExceptions(
+        text,
+        language.exceptionsSplitSentences,
+      );
+    }
+
+    // Split using the regex but track positions in the original text
+    final splitRegex = RegExp(pattern);
+    int start = 0;
+
+    for (final match in splitRegex.allMatches(processedText)) {
+      // The sentence runs from start to this delimiter
+      if (position >= start && position < match.start) {
+        return processedText
+            .substring(start, match.start)
+            .replaceAll(_protectionMarker, '.')
+            .trim();
+      }
+      start = match.end;
+    }
+
+    // Check the last segment after the final delimiter
+    if (position >= start && start < processedText.length) {
+      return processedText
+          .substring(start)
+          .replaceAll(_protectionMarker, '.')
+          .trim();
+    }
+
+    return '';
+  }
+
+  // Normalize word for comparison
+  String normalizeWord(String word) {
+    return word.toLowerCase().trim();
+  }
+
+  // --- Private helpers ---
+
+  /// Returns the word-matching pattern for a language.
+  String _wordPattern(Language language) {
+    return (language.regexpWordCharacters.isEmpty ||
+            language.regexpWordCharacters == _basicPattern)
+        ? _defaultPattern
+        : language.regexpWordCharacters;
+  }
+
+  /// Applies character substitutions if the language has them configured.
+  String _applySubstitutionsIfNeeded(String text, Language language) {
+    if (language.characterSubstitutions.isEmpty) return text;
+    return _applySubstitutions(text, language.characterSubstitutions);
   }
 
   // Apply character substitutions
@@ -166,31 +190,12 @@ class TextParserService {
     String result = text;
 
     for (final exception in exceptionList) {
-      // Replace exception with protected version (using special marker)
-      result = result.replaceAll(exception, exception.replaceAll('.', '⁜'));
+      result = result.replaceAll(
+        exception,
+        exception.replaceAll('.', _protectionMarker),
+      );
     }
 
     return result;
-  }
-
-  // Get sentence containing word at position
-  String getSentenceAtPosition(String text, int position, Language language) {
-    final sentences = splitIntoSentences(text, language);
-    int currentPos = 0;
-
-    for (final sentence in sentences) {
-      final sentenceEnd = currentPos + sentence.length;
-      if (position >= currentPos && position <= sentenceEnd) {
-        return sentence;
-      }
-      currentPos = sentenceEnd + 1;
-    }
-
-    return '';
-  }
-
-  // Normalize word for comparison
-  String normalizeWord(String word) {
-    return word.toLowerCase().trim();
   }
 }
