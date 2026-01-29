@@ -257,33 +257,40 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // Sidebar
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  bool _loadScheduled = false;
+
   @override
   void initState() {
     super.initState();
     _text = widget.text;
+    // Schedule load after first frame so we have a valid context,
+    // but avoid ModalRoute.of in didChangeDependencies which would
+    // register an InheritedWidget dependency and cause extra rebuilds
+    // during the route transition.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_loadScheduled) {
+        _loadScheduled = true;
+        _waitForAnimationAndLoad();
+      }
+    });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Start parsing only after route animation completes and screen is visible
+  void _waitForAnimationAndLoad() {
+    // Read the route animation directly from the navigator's history
+    // via the element tree, without registering an InheritedWidget dependency.
     final route = ModalRoute.of(context);
-    if (route != null && _isLoading && _wordTokens.isEmpty) {
-      void onAnimationComplete(AnimationStatus status) {
+    final animation = route?.animation;
+
+    if (animation == null || animation.isCompleted) {
+      _loadTermsAndParse();
+    } else {
+      void onComplete(AnimationStatus status) {
         if (status == AnimationStatus.completed) {
-          route.animation?.removeStatusListener(onAnimationComplete);
+          animation.removeStatusListener(onComplete);
           if (mounted) _loadTermsAndParse();
         }
       }
-
-      if (route.animation?.isCompleted ?? true) {
-        // Animation already complete (e.g., no animation or instant)
-        Future.microtask(() {
-          if (mounted) _loadTermsAndParse();
-        });
-      } else {
-        route.animation?.addStatusListener(onAnimationComplete);
-      }
+      animation.addStatusListener(onComplete);
     }
   }
 
@@ -294,19 +301,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Future<void> _loadTermsAndParse() async {
-    setState(() => _isLoading = true);
+    // _isLoading is already true from field initializer on first load;
+    // only call setState when reloading to avoid a redundant rebuild.
+    if (!_isLoading) {
+      setState(() => _isLoading = true);
+    }
 
     try {
-      // Update last_read timestamp and status to in_progress if pending
-      final updatedText = _text.copyWith(
-        lastRead: DateTime.now(),
-        status: _text.status == TextStatus.pending
-            ? TextStatus.inProgress
-            : _text.status,
-      );
-      await DatabaseService.instance.updateText(updatedText);
-      _text = updatedText;
-
       // Load all terms for this language
       _termsMap = await DatabaseService.instance.getTermsMap(
         widget.language.id!,
@@ -322,6 +323,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       _updateTextTermCounts();
 
       setState(() => _isLoading = false);
+
+      // Update last_read timestamp and status after UI is ready (non-critical)
+      _updateLastRead();
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -331,6 +335,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
         );
       }
     }
+  }
+
+  /// Updates last_read timestamp and status in the background.
+  /// This is non-critical metadata, so it runs after the UI has rendered.
+  Future<void> _updateLastRead() async {
+    final updatedText = _text.copyWith(
+      lastRead: DateTime.now(),
+      status: _text.status == TextStatus.pending
+          ? TextStatus.inProgress
+          : _text.status,
+    );
+    await DatabaseService.instance.updateText(updatedText);
+    _text = updatedText;
   }
 
   void _updateTextTermCounts() {
@@ -802,7 +819,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       key: _scaffoldKey,
-      endDrawer: _buildWordListDrawer(),
+      endDrawer: _isLoading ? null : _buildWordListDrawer(),
       appBar: AppBar(
         title: Text(_text.title, overflow: TextOverflow.ellipsis),
         actions: [
