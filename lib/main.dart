@@ -1,19 +1,110 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:window_manager/window_manager.dart';
 import 'screens/home_screen.dart';
 import 'services/database_service.dart';
+import 'services/settings_service.dart';
+
+bool get _isDesktop =>
+    Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseService.instance.database;
+
+  if (_isDesktop) {
+    await windowManager.ensureInitialized();
+
+    final settings = SettingsService.instance;
+    final width = await settings.getWindowWidth();
+    final height = await settings.getWindowHeight();
+    final maximized = await settings.getWindowMaximized();
+
+    const minSize = Size(400, 300);
+
+    await windowManager.waitUntilReadyToShow(
+      WindowOptions(
+        size: Size(width, height),
+        minimumSize: minSize,
+        center: true,
+      ),
+      () async {
+        if (maximized) {
+          await windowManager.maximize();
+        }
+        await windowManager.show();
+      },
+    );
+  }
+
   runApp(const LNTApp());
 }
 
-class LNTApp extends StatelessWidget {
+class LNTApp extends StatefulWidget {
   const LNTApp({super.key});
+
+  @override
+  State<LNTApp> createState() => _LNTAppState();
+}
+
+class _LNTAppState extends State<LNTApp> with WindowListener {
+  Timer? _resizeDebounce;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isDesktop) {
+      windowManager.addListener(this);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_isDesktop) {
+      windowManager.removeListener(this);
+    }
+    _resizeDebounce?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void onWindowResize() {
+    _resizeDebounce?.cancel();
+    _resizeDebounce = Timer(const Duration(milliseconds: 500), () async {
+      if (await windowManager.isMaximized()) return;
+      final size = await windowManager.getSize();
+      await SettingsService.instance.saveWindowState(
+        width: size.width,
+        height: size.height,
+        isMaximized: false,
+      );
+    });
+  }
+
+  @override
+  void onWindowMaximize() {
+    SettingsService.instance.saveWindowState(
+      width: SettingsService.defaultWindowWidth,
+      height: SettingsService.defaultWindowHeight,
+      isMaximized: true,
+    );
+  }
+
+  @override
+  void onWindowUnmaximize() async {
+    final size = await windowManager.getSize();
+    await SettingsService.instance.saveWindowState(
+      width: size.width,
+      height: size.height,
+      isMaximized: false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

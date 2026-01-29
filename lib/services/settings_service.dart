@@ -9,6 +9,13 @@ class SettingsService {
   static const String _deepLTargetLangKey = 'deepl_target_lang';
   static const String defaultTargetLang = 'EN';
 
+  // Window size persistence
+  static const String _windowWidthKey = 'window_width';
+  static const String _windowHeightKey = 'window_height';
+  static const String _windowMaximizedKey = 'window_maximized';
+  static const double defaultWindowWidth = 1280;
+  static const double defaultWindowHeight = 720;
+
   Future<String?> getDeepLApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_deepLApiKeyKey);
@@ -46,5 +53,33 @@ class SettingsService {
   Future<void> setDeepLTargetLang(String langCode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_deepLTargetLangKey, langCode);
+  }
+
+  // Window size persistence
+
+  Future<double> getWindowWidth() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(_windowWidthKey) ?? defaultWindowWidth;
+  }
+
+  Future<double> getWindowHeight() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(_windowHeightKey) ?? defaultWindowHeight;
+  }
+
+  Future<bool> getWindowMaximized() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_windowMaximizedKey) ?? false;
+  }
+
+  Future<void> saveWindowState({
+    required double width,
+    required double height,
+    required bool isMaximized,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_windowWidthKey, width);
+    await prefs.setDouble(_windowHeightKey, height);
+    await prefs.setBool(_windowMaximizedKey, isMaximized);
   }
 }

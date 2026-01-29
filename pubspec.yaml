@@ -52,6 +52,7 @@ dependencies:
   webview_flutter: ^4.4.2
   epubx: ^4.0.0
   stemmer: ^3.2.0
+  window_manager: ^0.5.1
 
 dev_dependencies:
   flutter_test:
