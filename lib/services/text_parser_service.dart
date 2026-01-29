@@ -10,7 +10,7 @@ class WordMatch {
 }
 
 class TextParserService {
-  static const _defaultPattern = r"[\p{L}\p{M}]+(?:[''ʼ'][\p{L}\p{M}]+)*";
+  static const _defaultPattern = r"[\p{L}\p{M}]+(?:[''ʼ’'][\p{L}\p{M}]+)*";
   static const _basicPattern = r'[\p{L}\p{M}]+';
   static final _punctuationPattern = RegExp(r'[\p{P}\p{S}]', unicode: true);
   static const _protectionMarker = '⁜';
