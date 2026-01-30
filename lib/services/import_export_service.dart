@@ -102,6 +102,9 @@ class ImportExportService {
     String mimeType,
   ) async {
     final directory = await getTemporaryDirectory();
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
     final file = File('${directory.path}/$fileName');
     await file.writeAsString(content);
 
