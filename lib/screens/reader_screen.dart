@@ -54,9 +54,15 @@ abstract class _ReaderScreenConstants {
   static const double dividerHeight = 1.0;
 
   // Selection mode colors
-  static const Color selectionBackgroundColor = Color(0xFF90CAF9); // Colors.blue.shade200
-  static const Color selectionBorderColor = Color(0xFF1E88E5); // Colors.blue.shade600
-  static const Color selectionBannerColor = Color(0xFFBBDEFB); // Colors.blue.shade100
+  static const Color selectionBackgroundColor = Color(
+    0xFF90CAF9,
+  ); // Colors.blue.shade200
+  static const Color selectionBorderColor = Color(
+    0xFF1E88E5,
+  ); // Colors.blue.shade600
+  static const Color selectionBannerColor = Color(
+    0xFFBBDEFB,
+  ); // Colors.blue.shade100
   static const Color selectionAccentColor = Colors.blue;
   static const Color selectedTextColor = Colors.black87;
 
@@ -68,7 +74,9 @@ abstract class _ReaderScreenConstants {
   static const Color subtitleColor = Color(0xFF757575); // Colors.grey.shade600
 
   // Other language words (words that exist in another language's dictionary)
-  static const Color otherLanguageColor = Color(0xFFCE93D8); // Colors.purple.shade200
+  static const Color otherLanguageColor = Color(
+    0xFFCE93D8,
+  ); // Colors.purple.shade200
 }
 
 /// Data passed to isolate for parsing
@@ -115,7 +123,9 @@ List<_ParsedToken> _parseInIsolate(_ParseInput input) {
   // Build term keys set for O(1) lookup
   stepWatch.start();
   final termKeys = input.termsMapData.keys.toSet();
-  print('[PARSE] Build termKeys set: ${stepWatch.elapsedMilliseconds}ms (${termKeys.length} terms)');
+  print(
+    '[PARSE] Build termKeys set: ${stepWatch.elapsedMilliseconds}ms (${termKeys.length} terms)',
+  );
   stepWatch.reset();
 
   // Create language for word matching
@@ -129,20 +139,25 @@ List<_ParsedToken> _parseInIsolate(_ParseInput input) {
   // Get word matches with positions - O(n)
   stepWatch.start();
   final wordMatches = parser.getWordMatches(content, tempLang);
-  print('[PARSE] getWordMatches: ${stepWatch.elapsedMilliseconds}ms (${wordMatches.length} words)');
+  print(
+    '[PARSE] getWordMatches: ${stepWatch.elapsedMilliseconds}ms (${wordMatches.length} words)',
+  );
   stepWatch.reset();
 
   // Get multi-word terms for phrase matching
   stepWatch.start();
   final multiWordTerms = <String, String>{}; // lowerText -> originalText
   for (final entry in input.termsMapData.entries) {
-    if (entry.key.contains(' ') || (input.splitByCharacter && entry.key.length > 1)) {
+    if (entry.key.contains(' ') ||
+        (input.splitByCharacter && entry.key.length > 1)) {
       multiWordTerms[entry.key] = entry.value['text'] as String;
     }
   }
   final sortedMultiWordKeys = multiWordTerms.keys.toList()
     ..sort((a, b) => b.length.compareTo(a.length));
-  print('[PARSE] Build multi-word terms: ${stepWatch.elapsedMilliseconds}ms (${sortedMultiWordKeys.length} terms)');
+  print(
+    '[PARSE] Build multi-word terms: ${stepWatch.elapsedMilliseconds}ms (${sortedMultiWordKeys.length} terms)',
+  );
   stepWatch.reset();
 
   // Main parsing loop - O(n)
@@ -155,11 +170,13 @@ List<_ParsedToken> _parseInIsolate(_ParseInput input) {
 
     // Add non-word text before this word
     if (match.start > lastEnd) {
-      tokens.add(_ParsedToken(
-        text: content.substring(lastEnd, match.start),
-        isWord: false,
-        position: lastEnd,
-      ));
+      tokens.add(
+        _ParsedToken(
+          text: content.substring(lastEnd, match.start),
+          isWord: false,
+          position: lastEnd,
+        ),
+      );
     }
 
     // Check if this word starts a multi-word term
@@ -171,16 +188,19 @@ List<_ParsedToken> _parseInIsolate(_ParseInput input) {
       if (endPos <= content.length) {
         final substring = content.substring(match.start, endPos);
         if (substring.toLowerCase() == termText.toLowerCase()) {
-          tokens.add(_ParsedToken(
-            text: substring,
-            isWord: true,
-            position: match.start,
-            termLowerText: termKey,
-          ));
+          tokens.add(
+            _ParsedToken(
+              text: substring,
+              isWord: true,
+              position: match.start,
+              termLowerText: termKey,
+            ),
+          );
 
           // Skip all word matches that are within this multi-word term
           lastEnd = endPos;
-          while (matchIndex < wordMatches.length && wordMatches[matchIndex].start < endPos) {
+          while (matchIndex < wordMatches.length &&
+              wordMatches[matchIndex].start < endPos) {
             matchIndex++;
           }
           foundMultiWord = true;
@@ -193,12 +213,14 @@ List<_ParsedToken> _parseInIsolate(_ParseInput input) {
 
     // Add single word token
     final lowerWord = parser.normalizeWord(match.word);
-    tokens.add(_ParsedToken(
-      text: match.word,
-      isWord: true,
-      position: match.start,
-      termLowerText: termKeys.contains(lowerWord) ? lowerWord : null,
-    ));
+    tokens.add(
+      _ParsedToken(
+        text: match.word,
+        isWord: true,
+        position: match.start,
+        termLowerText: termKeys.contains(lowerWord) ? lowerWord : null,
+      ),
+    );
 
     lastEnd = match.end;
     matchIndex++;
@@ -206,14 +228,18 @@ List<_ParsedToken> _parseInIsolate(_ParseInput input) {
 
   // Add any remaining text after last word
   if (lastEnd < content.length) {
-    tokens.add(_ParsedToken(
-      text: content.substring(lastEnd),
-      isWord: false,
-      position: lastEnd,
-    ));
+    tokens.add(
+      _ParsedToken(
+        text: content.substring(lastEnd),
+        isWord: false,
+        position: lastEnd,
+      ),
+    );
   }
 
-  print('[PARSE] Main loop: ${stepWatch.elapsedMilliseconds}ms (${tokens.length} tokens)');
+  print(
+    '[PARSE] Main loop: ${stepWatch.elapsedMilliseconds}ms (${tokens.length} tokens)',
+  );
   stepWatch.reset();
 
   totalStopwatch.stop();
@@ -239,7 +265,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   late TextDocument _text;
   Map<String, Term> _termsMap = {};
-  Map<String, ({Term term, String languageName})> _otherLanguageTerms = {}; // Terms from other languages
+  Map<String, ({Term term, String languageName})> _otherLanguageTerms =
+      {}; // Terms from other languages
   List<_WordToken> _wordTokens = [];
   List<List<_WordToken>> _paragraphs =
       []; // Tokens grouped by paragraph for lazy rendering
@@ -290,6 +317,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           if (mounted) _loadTermsAndParse();
         }
       }
+
       animation.addStatusListener(onComplete);
     }
   }
@@ -380,7 +408,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (term.languageId != widget.language.id) {
       // Term belongs to another language - fetch language name and mark
       final lang = await DatabaseService.instance.getLanguage(term.languageId);
-      _otherLanguageTerms[lowerText] = (term: term, languageName: lang?.name ?? '');
+      _otherLanguageTerms[lowerText] = (
+        term: term,
+        languageName: lang?.name ?? '',
+      );
       _termsMap.remove(lowerText);
 
       // Update tokens to have no term (for current language)
@@ -477,10 +508,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
 
     // Query database for terms that exist in other languages
-    _otherLanguageTerms = await DatabaseService.instance.getTermsInOtherLanguages(
-      widget.language.id!,
-      wordsToCheck,
-    );
+    _otherLanguageTerms = await DatabaseService.instance
+        .getTermsInOtherLanguages(widget.language.id!, wordsToCheck);
   }
 
   void _groupIntoParagraphs() {
@@ -495,21 +524,47 @@ class _ReaderScreenState extends State<ReaderScreen> {
     List<_WordToken> currentParagraph = [];
 
     for (final token in _wordTokens) {
-      if (!token.isWord && token.text.contains('\n\n')) {
-        // Double newline - end current paragraph
+      if (!token.isWord && token.text.contains('\n')) {
+        // Split: keep text before first newline (e.g. ".") with current paragraph
+        final nlIndex = token.text.indexOf('\n');
+        final before = token.text.substring(0, nlIndex);
+        final nlPart = token.text.substring(nlIndex);
+
+        if (before.isNotEmpty) {
+          currentParagraph.add(_WordToken(
+            text: before,
+            isWord: false,
+            globalIndex: token.globalIndex,
+          ));
+        }
+
         if (currentParagraph.isNotEmpty) {
           _paragraphs.add(currentParagraph);
           currentParagraph = [];
         }
-        // Add the newline as its own "paragraph" for spacing
-        currentParagraph.add(token);
+
+        // Split nlPart into pure newlines and any trailing text (e.g. "'")
+        final lastNl = nlPart.lastIndexOf('\n');
+        final pureNl = nlPart.substring(0, lastNl + 1);
+        final after = nlPart.substring(lastNl + 1);
+
+        // Add the newline portion as spacing paragraph
+        currentParagraph.add(_WordToken(
+          text: pureNl,
+          isWord: false,
+          globalIndex: token.globalIndex,
+        ));
         _paragraphs.add(currentParagraph);
         currentParagraph = [];
-      } else if (!token.isWord && token.text.contains('\n')) {
-        // Single newline - also split for better chunking
-        currentParagraph.add(token);
-        _paragraphs.add(currentParagraph);
-        currentParagraph = [];
+
+        // Any text after the last newline starts the next paragraph
+        if (after.isNotEmpty) {
+          currentParagraph.add(_WordToken(
+            text: after,
+            isWord: false,
+            globalIndex: token.globalIndex,
+          ));
+        }
       } else {
         currentParagraph.add(token);
       }
@@ -566,18 +621,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
             children: [
               Text(
                 term.text,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               if (term.romanization.isNotEmpty) ...[
                 const SizedBox(height: _ReaderScreenConstants.spacingXS),
                 Text(
                   term.romanization,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontStyle: FontStyle.italic,
-                        color: _ReaderScreenConstants.subtitleColor,
-                      ),
+                    fontStyle: FontStyle.italic,
+                    color: _ReaderScreenConstants.subtitleColor,
+                  ),
                 ),
               ],
               const SizedBox(height: _ReaderScreenConstants.spacingS),
@@ -590,7 +645,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   onPressed: () => Navigator.pop(context, true),
-                  icon: const Icon(Icons.edit, size: _ReaderScreenConstants.editIconSize),
+                  icon: const Icon(
+                    Icons.edit,
+                    size: _ReaderScreenConstants.editIconSize,
+                  ),
                   label: Text(l10n.edit),
                 ),
               ),
@@ -601,7 +659,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  Future<void> _openTermDialog(String word, int position, Term? existingTerm) async {
+  Future<void> _openTermDialog(
+    String word,
+    int position,
+    Term? existingTerm,
+  ) async {
     final lowerWord = _textParser.normalizeWord(word);
 
     // Get sentence context
@@ -939,16 +1001,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 if (_showLegend) StatusLegend(termCounts: _termCounts),
                 if (_isSelectionMode)
                   Container(
-                    padding: const EdgeInsets.all(_ReaderScreenConstants.spacingM),
+                    padding: const EdgeInsets.all(
+                      _ReaderScreenConstants.spacingM,
+                    ),
                     color: _ReaderScreenConstants.selectionBannerColor,
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline, color: _ReaderScreenConstants.selectionAccentColor),
+                        const Icon(
+                          Icons.info_outline,
+                          color: _ReaderScreenConstants.selectionAccentColor,
+                        ),
                         const SizedBox(width: _ReaderScreenConstants.spacingS),
                         Expanded(
                           child: Text(
                             l10n.wordsSelected(_selectedWordIndices.length),
-                            style: const TextStyle(color: _ReaderScreenConstants.selectionAccentColor),
+                            style: const TextStyle(
+                              color:
+                                  _ReaderScreenConstants.selectionAccentColor,
+                            ),
                           ),
                         ),
                       ],
@@ -961,12 +1031,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         : TextDirection.ltr,
                     child: ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.all(_ReaderScreenConstants.spacingL),
+                      padding: const EdgeInsets.all(
+                        _ReaderScreenConstants.spacingL,
+                      ),
                       itemCount: _paragraphs.length,
                       itemBuilder: (context, index) {
-                        return Wrap(
-                          children: _buildParagraphWidgets(_paragraphs[index]),
-                        );
+                        final para = _paragraphs[index];
+                        // Newline-only paragraphs act as visual spacers
+                        if (para.length == 1 &&
+                            !para[0].isWord &&
+                            para[0].text.trim().isEmpty) {
+                          return SizedBox(
+                            height: para[0].text.contains('\n\n')
+                                ? _ReaderScreenConstants.spacingL
+                                : _ReaderScreenConstants.spacingS,
+                          );
+                        }
+                        return _buildParagraphRichText(para);
                       },
                     ),
                   ),
@@ -976,40 +1057,47 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  List<Widget> _buildParagraphWidgets(List<_WordToken> paragraphTokens) {
-    final widgets = <Widget>[];
+  static final _leadingPunctuation = RegExp(r'^[\p{P}\p{S}]+', unicode: true);
 
-    for (final token in paragraphTokens) {
+  Widget _buildParagraphRichText(List<_WordToken> paragraphTokens) {
+    final spans = <InlineSpan>[];
+    final textStyle = TextStyle(
+      fontSize: _fontSize,
+      height: _ReaderScreenConstants.textLineHeight,
+    );
+
+    int skipChars = 0;
+
+    for (int ti = 0; ti < paragraphTokens.length; ti++) {
+      final token = paragraphTokens[ti];
       final globalIndex = token.globalIndex;
 
       if (!token.isWord) {
-        // Handle newlines specially to create proper line breaks in Wrap
-        if (token.text.contains('\n')) {
-          final parts = token.text.split('\n');
-          for (int i = 0; i < parts.length; i++) {
-            // Add the text part (may be empty)
-            if (parts[i].isNotEmpty) {
-              widgets.add(
-                Text(
-                  parts[i],
-                  style: TextStyle(fontSize: _fontSize, height: _ReaderScreenConstants.textLineHeight),
-                ),
-              );
-            }
-            // Add line break (except after last part)
-            if (i < parts.length - 1) {
-              widgets.add(const SizedBox(width: double.infinity, height: _ReaderScreenConstants.spacingS));
-            }
-          }
-        } else {
-          widgets.add(
-            Text(
-              token.text,
-              style: TextStyle(fontSize: _fontSize, height: _ReaderScreenConstants.textLineHeight),
-            ),
-          );
+        var text = token.text;
+        if (skipChars > 0) {
+          text = text.substring(skipChars);
+          skipChars = 0;
+        }
+        // Strip newline characters — paragraph splitting already provides
+        // visual separation, so inline newlines would just add blank lines.
+        text = text.replaceAll('\n', '');
+        if (text.isNotEmpty) {
+          spans.add(TextSpan(text: text, style: textStyle));
         }
         continue;
+      }
+
+      // Look ahead: extract leading punctuation from the next non-word
+      // token so we can include it in this word's WidgetSpan, preventing
+      // the line-break algorithm from separating word and punctuation.
+      String trailingPunct = '';
+      if (ti + 1 < paragraphTokens.length && !paragraphTokens[ti + 1].isWord) {
+        final nextText = paragraphTokens[ti + 1].text;
+        final m = _leadingPunctuation.firstMatch(nextText);
+        if (m != null) {
+          trailingPunct = m.group(0)!;
+          skipChars = trailingPunct.length;
+        }
       }
 
       final term = token.term;
@@ -1017,19 +1105,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
       final isIgnored = term?.status == TermStatus.ignored;
       final isWellKnown = term?.status == TermStatus.wellKnown;
       final lowerWord = token.text.toLowerCase();
-      final isOtherLanguage = term == null && _otherLanguageTerms.containsKey(lowerWord);
+      final isOtherLanguage =
+          term == null && _otherLanguageTerms.containsKey(lowerWord);
 
       Color backgroundColor;
       if (isSelected) {
         backgroundColor = _ReaderScreenConstants.selectionBackgroundColor;
       } else if (isIgnored || isWellKnown) {
-        // Ignored and well-known words have transparent background (blend with text)
         backgroundColor = _ReaderScreenConstants.transparentColor;
       } else if (isOtherLanguage) {
-        // Words from other languages have distinct purple tint
-        backgroundColor = _ReaderScreenConstants.otherLanguageColor.withValues(alpha: _ReaderScreenConstants.backgroundAlpha);
+        backgroundColor = _ReaderScreenConstants.otherLanguageColor.withValues(
+          alpha: _ReaderScreenConstants.backgroundAlpha,
+        );
       } else if (term != null) {
-        backgroundColor = term.statusColor.withValues(alpha: _ReaderScreenConstants.backgroundAlpha);
+        backgroundColor = term.statusColor.withValues(
+          alpha: _ReaderScreenConstants.backgroundAlpha,
+        );
       } else {
         backgroundColor = TermStatus.colorFor(
           TermStatus.unknown,
@@ -1040,27 +1131,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (isSelected) {
         borderColor = _ReaderScreenConstants.selectionBorderColor;
       } else if (isIgnored || isWellKnown) {
-        // Ignored and well-known words have transparent border for consistent height
         borderColor = _ReaderScreenConstants.transparentColor;
       } else if (isOtherLanguage) {
-        // Words from other languages have distinct purple border
-        borderColor = _ReaderScreenConstants.otherLanguageColor.withValues(alpha: _ReaderScreenConstants.borderAlpha);
+        borderColor = _ReaderScreenConstants.otherLanguageColor.withValues(
+          alpha: _ReaderScreenConstants.borderAlpha,
+        );
       } else if (term != null) {
-        borderColor = term.statusColor.withValues(alpha: _ReaderScreenConstants.borderAlpha);
+        borderColor = term.statusColor.withValues(
+          alpha: _ReaderScreenConstants.borderAlpha,
+        );
       } else {
         borderColor = TermStatus.colorFor(
           TermStatus.unknown,
         ).withValues(alpha: _ReaderScreenConstants.borderAlpha);
       }
 
-      // Text color - use theme default for readability
       Color? textColor;
       if (isSelected) {
         textColor = _ReaderScreenConstants.selectedTextColor;
       }
-      // All other cases use null (theme default) for better readability
 
-      // Build tooltip message if term has translation
       String? tooltipMessage;
       if (term != null && term.translation.isNotEmpty) {
         tooltipMessage = term.translation;
@@ -1085,7 +1175,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         }
       }
 
-      final wordWidget = GestureDetector(
+      Widget wordContainer = GestureDetector(
         onTap: () => _handleWordTap(token.text, token.position, globalIndex),
         onLongPress: () => _handleWordLongPress(globalIndex),
         child: Container(
@@ -1093,10 +1183,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
             horizontal: _ReaderScreenConstants.wordPaddingHorizontal,
             vertical: _ReaderScreenConstants.wordPaddingVertical,
           ),
-          margin: const EdgeInsets.symmetric(horizontal: _ReaderScreenConstants.wordMarginHorizontal),
+          margin: const EdgeInsets.symmetric(
+            horizontal: _ReaderScreenConstants.wordMarginHorizontal,
+          ),
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(_ReaderScreenConstants.wordBorderRadius),
+            borderRadius: BorderRadius.circular(
+              _ReaderScreenConstants.wordBorderRadius,
+            ),
             border: Border.all(
               color: borderColor,
               width: isSelected
@@ -1116,18 +1210,37 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
       );
 
-      widgets.add(
-        tooltipMessage != null
-            ? Tooltip(
-                message: tooltipMessage,
-                waitDuration: _ReaderScreenConstants.tooltipWaitDuration,
-                child: wordWidget,
-              )
-            : wordWidget,
-      );
+      if (tooltipMessage != null) {
+        wordContainer = Tooltip(
+          message: tooltipMessage,
+          waitDuration: _ReaderScreenConstants.tooltipWaitDuration,
+          child: wordContainer,
+        );
+      }
+
+      // Combine word and trailing punctuation into a single WidgetSpan
+      // so they are treated as one atomic inline element.
+      final Widget spanChild;
+      if (trailingPunct.isNotEmpty) {
+        spanChild = Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            wordContainer,
+            Text(trailingPunct, style: textStyle),
+          ],
+        );
+      } else {
+        spanChild = wordContainer;
+      }
+
+      spans.add(WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: spanChild,
+      ));
     }
 
-    return widgets;
+    return Text.rich(TextSpan(children: spans));
   }
 
   Future<void> _editText() async {
@@ -1407,19 +1520,31 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final l10n = AppLocalizations.of(context);
     return ExpansionTile(
       initiallyExpanded: label == l10n.statusUnknown,
-      leading: CircleAvatar(backgroundColor: color, radius: _ReaderScreenConstants.statusCircleRadius),
+      leading: CircleAvatar(
+        backgroundColor: color,
+        radius: _ReaderScreenConstants.statusCircleRadius,
+      ),
       title: Text('$label (${tokens.length})'),
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: _ReaderScreenConstants.spacingL, vertical: _ReaderScreenConstants.spacingS),
+          padding: const EdgeInsets.symmetric(
+            horizontal: _ReaderScreenConstants.spacingL,
+            vertical: _ReaderScreenConstants.spacingS,
+          ),
           child: Wrap(
             spacing: _ReaderScreenConstants.spacingS,
             runSpacing: _ReaderScreenConstants.spacingS,
             children: tokens.map((token) {
               return ActionChip(
                 label: Text(token.text),
-                backgroundColor: color.withAlpha(_ReaderScreenConstants.chipBackgroundAlpha),
-                side: BorderSide(color: color.withAlpha(_ReaderScreenConstants.chipBorderAlpha)),
+                backgroundColor: color.withAlpha(
+                  _ReaderScreenConstants.chipBackgroundAlpha,
+                ),
+                side: BorderSide(
+                  color: color.withAlpha(
+                    _ReaderScreenConstants.chipBorderAlpha,
+                  ),
+                ),
                 onPressed: () {
                   Navigator.pop(context); // Close drawer
                   _handleWordTap(
