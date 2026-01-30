@@ -531,11 +531,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final nlPart = token.text.substring(nlIndex);
 
         if (before.isNotEmpty) {
-          currentParagraph.add(_WordToken(
-            text: before,
-            isWord: false,
-            globalIndex: token.globalIndex,
-          ));
+          currentParagraph.add(
+            _WordToken(
+              text: before,
+              isWord: false,
+              globalIndex: token.globalIndex,
+            ),
+          );
         }
 
         if (currentParagraph.isNotEmpty) {
@@ -549,21 +551,25 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final after = nlPart.substring(lastNl + 1);
 
         // Add the newline portion as spacing paragraph
-        currentParagraph.add(_WordToken(
-          text: pureNl,
-          isWord: false,
-          globalIndex: token.globalIndex,
-        ));
+        currentParagraph.add(
+          _WordToken(
+            text: pureNl,
+            isWord: false,
+            globalIndex: token.globalIndex,
+          ),
+        );
         _paragraphs.add(currentParagraph);
         currentParagraph = [];
 
         // Any text after the last newline starts the next paragraph
         if (after.isNotEmpty) {
-          currentParagraph.add(_WordToken(
-            text: after,
-            isWord: false,
-            globalIndex: token.globalIndex,
-          ));
+          currentParagraph.add(
+            _WordToken(
+              text: after,
+              isWord: false,
+              globalIndex: token.globalIndex,
+            ),
+          );
         }
       } else {
         currentParagraph.add(token);
@@ -1111,12 +1117,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       Color backgroundColor;
       if (isSelected) {
         backgroundColor = _ReaderScreenConstants.selectionBackgroundColor;
-      } else if (isIgnored || isWellKnown) {
+      } else if (isIgnored || isWellKnown || isOtherLanguage) {
         backgroundColor = _ReaderScreenConstants.transparentColor;
-      } else if (isOtherLanguage) {
-        backgroundColor = _ReaderScreenConstants.otherLanguageColor.withValues(
-          alpha: _ReaderScreenConstants.backgroundAlpha,
-        );
       } else if (term != null) {
         backgroundColor = term.statusColor.withValues(
           alpha: _ReaderScreenConstants.backgroundAlpha,
@@ -1130,12 +1132,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       Color borderColor;
       if (isSelected) {
         borderColor = _ReaderScreenConstants.selectionBorderColor;
-      } else if (isIgnored || isWellKnown) {
+      } else if (isIgnored || isWellKnown || isOtherLanguage) {
         borderColor = _ReaderScreenConstants.transparentColor;
-      } else if (isOtherLanguage) {
-        borderColor = _ReaderScreenConstants.otherLanguageColor.withValues(
-          alpha: _ReaderScreenConstants.borderAlpha,
-        );
       } else if (term != null) {
         borderColor = term.statusColor.withValues(
           alpha: _ReaderScreenConstants.borderAlpha,
@@ -1149,6 +1147,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       Color? textColor;
       if (isSelected) {
         textColor = _ReaderScreenConstants.selectedTextColor;
+      } else if (isOtherLanguage) {
+        textColor = _ReaderScreenConstants.otherLanguageColor;
       }
 
       String? tooltipMessage;
@@ -1234,10 +1234,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
         spanChild = wordContainer;
       }
 
-      spans.add(WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: spanChild,
-      ));
+      spans.add(
+        WidgetSpan(alignment: PlaceholderAlignment.middle, child: spanChild),
+      );
     }
 
     return Text.rich(TextSpan(children: spans));
