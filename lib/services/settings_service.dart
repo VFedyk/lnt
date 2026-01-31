@@ -16,6 +16,9 @@ class SettingsService {
   static const double defaultWindowWidth = 1280;
   static const double defaultWindowHeight = 720;
 
+  // Custom database path
+  static const String _customDbPathKey = 'custom_db_path';
+
   Future<String?> getDeepLApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_deepLApiKeyKey);
@@ -70,6 +73,22 @@ class SettingsService {
   Future<bool> getWindowMaximized() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_windowMaximizedKey) ?? false;
+  }
+
+  // Custom database path
+
+  Future<String?> getCustomDbPath() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_customDbPathKey);
+  }
+
+  Future<void> setCustomDbPath(String? path) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (path == null || path.isEmpty) {
+      await prefs.remove(_customDbPathKey);
+    } else {
+      await prefs.setString(_customDbPathKey, path);
+    }
   }
 
   Future<void> saveWindowState({

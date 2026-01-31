@@ -1519,6 +1519,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Status Legend'**
   String get statusLegendTitle;
+
+  /// No description provided for @databaseSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Database'**
+  String get databaseSection;
+
+  /// No description provided for @databasePath.
+  ///
+  /// In en, this message translates to:
+  /// **'Database path'**
+  String get databasePath;
+
+  /// No description provided for @openDatabaseDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Directory'**
+  String get openDatabaseDirectory;
+
+  /// No description provided for @changeDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Database'**
+  String get changeDatabase;
+
+  /// No description provided for @restartRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart Required'**
+  String get restartRequired;
+
+  /// No description provided for @databaseChangedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The database has been changed. The application will now close. Please reopen it to use the new database.'**
+  String get databaseChangedMessage;
 }
 
 class _AppLocalizationsDelegate

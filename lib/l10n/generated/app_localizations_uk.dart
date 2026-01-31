@@ -811,4 +811,23 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get statusLegendTitle => 'Легенда статусів';
+
+  @override
+  String get databaseSection => 'База даних';
+
+  @override
+  String get databasePath => 'Шлях до бази даних';
+
+  @override
+  String get openDatabaseDirectory => 'Відкрити директорію';
+
+  @override
+  String get changeDatabase => 'Змінити базу даних';
+
+  @override
+  String get restartRequired => 'Потрібен перезапуск';
+
+  @override
+  String get databaseChangedMessage =>
+      'Базу даних змінено. Програма зараз закриється. Будь ласка, відкрийте її знову для використання нової бази даних.';
 }

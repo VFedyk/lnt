@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'settings_service.dart';
 import '../models/language.dart';
 import '../models/term.dart';
 import '../models/text_document.dart';
@@ -14,6 +15,7 @@ import '../repositories/dictionary_repository.dart';
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
+  static String? _dbPath;
 
   // Repositories
   late final LanguageRepository languages;
@@ -32,20 +34,35 @@ class DatabaseService {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('lnt.db');
+    _database = await _initDB();
     return _database!;
   }
 
-  Future<Database> _initDB(String filePath) async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
+  String? get currentDbPath => _dbPath;
+
+  Future<Database> _initDB() async {
+    final customPath = await SettingsService.instance.getCustomDbPath();
+    if (customPath != null && customPath.isNotEmpty) {
+      _dbPath = customPath;
+    } else {
+      final dbDir = await getDatabasesPath();
+      _dbPath = join(dbDir, 'lnt.db');
+    }
 
     return await openDatabase(
-      path,
+      _dbPath!,
       version: 6,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
+  }
+
+  Future<void> closeDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+      _dbPath = null;
+    }
   }
 
   Future _upgradeDB(Database db, int oldVersion, int newVersion) async {

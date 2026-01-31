@@ -458,5 +458,12 @@
       "term": {"type": "String"}
     }
   },
-  "statusLegendTitle": "Status Legend"
+  "statusLegendTitle": "Status Legend",
+
+  "databaseSection": "Database",
+  "databasePath": "Database path",
+  "openDatabaseDirectory": "Open Directory",
+  "changeDatabase": "Change Database",
+  "restartRequired": "Restart Required",
+  "databaseChangedMessage": "The database has been changed. The application will now close. Please reopen it to use the new database."
 }

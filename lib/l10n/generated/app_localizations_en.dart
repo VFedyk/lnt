@@ -808,4 +808,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statusLegendTitle => 'Status Legend';
+
+  @override
+  String get databaseSection => 'Database';
+
+  @override
+  String get databasePath => 'Database path';
+
+  @override
+  String get openDatabaseDirectory => 'Open Directory';
+
+  @override
+  String get changeDatabase => 'Change Database';
+
+  @override
+  String get restartRequired => 'Restart Required';
+
+  @override
+  String get databaseChangedMessage =>
+      'The database has been changed. The application will now close. Please reopen it to use the new database.';
 }

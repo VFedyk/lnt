@@ -1,7 +1,11 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../main.dart';
+import '../services/database_service.dart';
 import '../services/settings_service.dart';
 import '../services/deepl_service.dart';
 
@@ -20,6 +24,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _targetLang = SettingsService.defaultTargetLang;
   DeepLUsage? _usage;
   bool _isLoadingUsage = false;
+  String? _dbPath;
+
+  static bool get _isDesktop =>
+      Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 
   // Supported DeepL target languages
   static const _targetLanguages = {
@@ -65,11 +73,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isFree = await SettingsService.instance.isDeepLApiFree();
     final targetLang = await SettingsService.instance.getDeepLTargetLang();
 
+    // Load DB path on desktop
+    String? dbPath;
+    if (_isDesktop) {
+      await DatabaseService.instance.database; // ensure initialized
+      dbPath = DatabaseService.instance.currentDbPath;
+    }
+
     if (mounted) {
       setState(() {
         _apiKeyController.text = apiKey ?? '';
         _isApiFree = isFree;
         _targetLang = targetLang;
+        _dbPath = dbPath;
         _isLoading = false;
       });
     }
@@ -214,6 +230,105 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildDatabaseSection() {
+    final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.storage),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.databaseSection,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.databasePath,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+              child: SelectableText(
+                _dbPath ?? '',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _openDatabaseDirectory,
+                  icon: const Icon(Icons.folder_open),
+                  label: Text(l10n.openDatabaseDirectory),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _changeDatabase,
+                  icon: const Icon(Icons.swap_horiz),
+                  label: Text(l10n.changeDatabase),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openDatabaseDirectory() async {
+    if (_dbPath == null) return;
+    final dir = File(_dbPath!).parent;
+    final uri = Uri.file(dir.path);
+    await launchUrl(uri);
+  }
+
+  Future<void> _changeDatabase() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final newPath = result.files.single.path;
+    if (newPath == null) return;
+
+    await SettingsService.instance.setCustomDbPath(newPath);
+
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.restartRequired),
+        content: Text(l10n.databaseChangedMessage),
+        actions: [
+          TextButton(
+            onPressed: () => exit(0),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _formatNumber(int number) {
     if (number >= 1000000) {
       return '${(number / 1000000).toStringAsFixed(1)}M';
@@ -273,6 +388,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ),
+                if (_isDesktop) ...[
+                  const SizedBox(height: 16),
+                  _buildDatabaseSection(),
+                ],
                 const SizedBox(height: 16),
                 // DeepL API Section
                 Card(

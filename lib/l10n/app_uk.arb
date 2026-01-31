@@ -263,5 +263,12 @@
   "createNewBaseTerm": "Створити новий базовий термін",
   "translationOptional": "Переклад (необов'язково)",
   "createTerm": "Створити \"{term}\"",
-  "statusLegendTitle": "Легенда статусів"
+  "statusLegendTitle": "Легенда статусів",
+
+  "databaseSection": "База даних",
+  "databasePath": "Шлях до бази даних",
+  "openDatabaseDirectory": "Відкрити директорію",
+  "changeDatabase": "Змінити базу даних",
+  "restartRequired": "Потрібен перезапуск",
+  "databaseChangedMessage": "Базу даних змінено. Програма зараз закриється. Будь ласка, відкрийте її знову для використання нової бази даних."
 }
