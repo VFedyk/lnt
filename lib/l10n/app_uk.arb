@@ -129,6 +129,7 @@
   "fetchContent": "Завантажити вміст",
   "preview": "Попередній перегляд",
   "wordsCount": "{count} слів",
+  "charactersCount": "{count} символів",
   "pleaseEnterUrl": "Введіть URL",
   "pleaseEnterTitle": "Введіть назву",
 
@@ -175,6 +176,7 @@
   "addDictionariesAfterCreating": "Додайте словники після створення мови",
 
   "errorLoadingTerms": "Помилка завантаження термінів: {error}",
+  "errorLoadingLanguages": "Помилка завантаження мов: {error}",
   "noDictionariesConfigured": "Словники не налаштовані",
   "lookupWord": "Шукати \"{word}\"",
   "cancelSelection": "Скасувати вибір",

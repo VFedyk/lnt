@@ -940,9 +940,9 @@ class _TextsScreenState extends State<TextsScreen> {
         // Then texts (sorted and filtered)
         ...sortedTexts.map((text) {
           final unknownCount = _unknownCounts[text.id] ?? 0;
-          final totalLabel = text.getCountLabel(
-            widget.language.splitByCharacter,
-          );
+          final totalLabel = widget.language.splitByCharacter
+              ? l10n.charactersCount(text.characterCount)
+              : l10n.wordsCount(text.wordCount);
           final unknownLabel = widget.language.splitByCharacter
               ? l10n.unknownCharacters(unknownCount)
               : l10n.unknownWords(unknownCount);

@@ -770,6 +770,12 @@ abstract class AppLocalizations {
   /// **'{count} words'**
   String wordsCount(int count);
 
+  /// No description provided for @charactersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} characters'**
+  String charactersCount(int count);
+
   /// No description provided for @pleaseEnterUrl.
   ///
   /// In en, this message translates to:
@@ -1009,6 +1015,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error loading terms: {error}'**
   String errorLoadingTerms(String error);
+
+  /// No description provided for @errorLoadingLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading languages: {error}'**
+  String errorLoadingLanguages(String error);
 
   /// No description provided for @noDictionariesConfigured.
   ///

@@ -369,6 +369,11 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
+  String charactersCount(int count) {
+    return '$count символів';
+  }
+
+  @override
   String get pleaseEnterUrl => 'Введіть URL';
 
   @override
@@ -521,6 +526,11 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String errorLoadingTerms(String error) {
     return 'Помилка завантаження термінів: $error';
+  }
+
+  @override
+  String errorLoadingLanguages(String error) {
+    return 'Помилка завантаження мов: $error';
   }
 
   @override

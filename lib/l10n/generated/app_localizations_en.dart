@@ -369,6 +369,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String charactersCount(int count) {
+    return '$count characters';
+  }
+
+  @override
   String get pleaseEnterUrl => 'Please enter a URL';
 
   @override
@@ -519,6 +524,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String errorLoadingTerms(String error) {
     return 'Error loading terms: $error';
+  }
+
+  @override
+  String errorLoadingLanguages(String error) {
+    return 'Error loading languages: $error';
   }
 
   @override

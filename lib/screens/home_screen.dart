@@ -115,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading languages: $e')));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).errorLoadingLanguages(e.toString()))));
       }
     }
   }
@@ -544,7 +544,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                   leading: _buildTextThumbnail(text, Icons.history),
                   title: Text(text.title),
                   subtitle: Text(
-                    '${collectionName != null ? '$collectionName • ' : ''}${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
+                    '${collectionName != null ? '$collectionName • ' : ''}${widget.language.splitByCharacter ? l10n.charactersCount(text.characterCount) : l10n.wordsCount(text.wordCount)} • ${l10n.unknownCount(_unknownCounts[text.id] ?? 0)}',
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
@@ -591,7 +591,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                   leading: _buildTextThumbnail(text, Icons.article),
                   title: Text(text.title),
                   subtitle: Text(
-                    '${collectionName != null ? '$collectionName • ' : ''}${text.getCountLabel(widget.language.splitByCharacter)} • ${_unknownCounts[text.id] ?? 0} unknown',
+                    '${collectionName != null ? '$collectionName • ' : ''}${widget.language.splitByCharacter ? l10n.charactersCount(text.characterCount) : l10n.wordsCount(text.wordCount)} • ${l10n.unknownCount(_unknownCounts[text.id] ?? 0)}',
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {

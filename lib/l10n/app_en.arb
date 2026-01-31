@@ -189,6 +189,12 @@
       "count": {"type": "int"}
     }
   },
+  "charactersCount": "{count} characters",
+  "@charactersCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "pleaseEnterUrl": "Please enter a URL",
   "pleaseEnterTitle": "Please enter a title",
 
@@ -286,6 +292,12 @@
 
   "errorLoadingTerms": "Error loading terms: {error}",
   "@errorLoadingTerms": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "errorLoadingLanguages": "Error loading languages: {error}",
+  "@errorLoadingLanguages": {
     "placeholders": {
       "error": {"type": "String"}
     }
