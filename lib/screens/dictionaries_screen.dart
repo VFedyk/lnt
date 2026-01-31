@@ -5,6 +5,28 @@ import '../models/language.dart';
 import '../models/dictionary.dart';
 import '../services/database_service.dart';
 
+class _DictionariesScreenConstants {
+  static const double listPadding = 16.0;
+  static const double cardBottomMargin = 8.0;
+  static const double iconSpacing = 8.0;
+  static const double subtitleFontSize = 12.0;
+  static const double emptyIconSize = 64.0;
+  static const double emptyTextSpacing = 16.0;
+  static const double emptySubtextSpacing = 8.0;
+  static const double helpSectionSpacing = 16.0;
+  static const double helpStepSpacing = 8.0;
+  static const double exampleUrlFontSize = 12.0;
+  static const double dialogFieldSpacing = 16.0;
+  static const double switchBottomSpacing = 8.0;
+  static const double tipBoxPadding = 12.0;
+  static const double tipBoxRadius = 8.0;
+  static const double tipIconSize = 16.0;
+  static const double templateVerticalPadding = 4.0;
+  static const double templateFontSize = 12.0;
+  static const int urlMaxLines = 1;
+  static const int urlFieldMaxLines = 3;
+}
+
 class DictionariesScreen extends StatefulWidget {
   final Language language;
 
@@ -56,6 +78,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
 
   Future<void> _deleteDictionary(Dictionary dictionary) async {
     final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -68,7 +91,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
             child: Text(l10n.delete),
           ),
         ],
@@ -103,6 +126,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.dictionariesTitle(widget.language.name)),
@@ -119,27 +143,27 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
           : _dictionaries.isEmpty
           ? _buildEmptyState()
           : ReorderableListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(_DictionariesScreenConstants.listPadding),
               itemCount: _dictionaries.length,
               onReorder: _reorderDictionaries,
               itemBuilder: (context, index) {
                 final dict = _dictionaries[index];
                 return Card(
                   key: ValueKey(dict.id),
-                  margin: const EdgeInsets.only(bottom: 8),
+                  margin: const EdgeInsets.only(bottom: _DictionariesScreenConstants.cardBottomMargin),
                   child: ListTile(
                     leading: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.drag_handle, color: Colors.grey[400]),
-                        const SizedBox(width: 8),
+                        Icon(Icons.drag_handle, color: colorScheme.outline),
+                        const SizedBox(width: _DictionariesScreenConstants.iconSpacing),
                         CircleAvatar(
                           backgroundColor: dict.isActive
-                              ? Colors.green
-                              : Colors.grey,
+                              ? colorScheme.primary
+                              : colorScheme.outline,
                           child: Text(
                             '${index + 1}',
-                            style: const TextStyle(color: Colors.white),
+                            style: TextStyle(color: colorScheme.onPrimary),
                           ),
                         ),
                       ],
@@ -154,9 +178,9 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                     ),
                     subtitle: Text(
                       dict.url,
-                      maxLines: 1,
+                      maxLines: _DictionariesScreenConstants.urlMaxLines,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: _DictionariesScreenConstants.subtitleFontSize, color: colorScheme.onSurfaceVariant),
                     ),
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) {
@@ -178,7 +202,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                           child: Row(
                             children: [
                               const Icon(Icons.edit),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: _DictionariesScreenConstants.iconSpacing),
                               Text(l10n.edit),
                             ],
                           ),
@@ -192,8 +216,10 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                                     ? Icons.visibility_off
                                     : Icons.visibility,
                               ),
-                              const SizedBox(width: 8),
-                              Text(dict.isActive ? l10n.deactivate : l10n.activate),
+                              const SizedBox(width: _DictionariesScreenConstants.iconSpacing),
+                              Text(
+                                dict.isActive ? l10n.deactivate : l10n.activate,
+                              ),
                             ],
                           ),
                         ),
@@ -201,11 +227,11 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                           value: 'delete',
                           child: Row(
                             children: [
-                              const Icon(Icons.delete, color: Colors.red),
-                              const SizedBox(width: 8),
+                              Icon(Icons.delete, color: colorScheme.error),
+                              const SizedBox(width: _DictionariesScreenConstants.iconSpacing),
                               Text(
                                 l10n.delete,
-                                style: const TextStyle(color: Colors.red),
+                                style: TextStyle(color: colorScheme.error),
                               ),
                             ],
                           ),
@@ -225,19 +251,20 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
 
   Widget _buildEmptyState() {
     final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.book, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
+          Icon(Icons.book, size: _DictionariesScreenConstants.emptyIconSize, color: colorScheme.outline),
+          const SizedBox(height: _DictionariesScreenConstants.emptyTextSpacing),
           Text(l10n.noDictionariesYet),
-          const SizedBox(height: 8),
+          const SizedBox(height: _DictionariesScreenConstants.emptySubtextSpacing),
           Text(
             l10n.addDictionariesFor(widget.language.name),
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: _DictionariesScreenConstants.emptyTextSpacing),
           ElevatedButton.icon(
             onPressed: () => _addOrEditDictionary(),
             icon: const Icon(Icons.add),
@@ -263,25 +290,25 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                 l10n.howToUse,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: _DictionariesScreenConstants.helpStepSpacing),
               Text(l10n.dictionaryHelpStep1),
               Text(l10n.dictionaryHelpStep2),
               Text(l10n.dictionaryHelpStep3),
               Text(l10n.dictionaryHelpStep4),
-              const SizedBox(height: 16),
+              const SizedBox(height: _DictionariesScreenConstants.helpSectionSpacing),
               Text(
                 l10n.exampleUrls,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: _DictionariesScreenConstants.helpStepSpacing),
               const Text(
                 'WordReference:\nhttps://www.wordreference.com/es/en/translation.asp?spen=###',
-                style: TextStyle(fontSize: 12),
+                style: TextStyle(fontSize: _DictionariesScreenConstants.exampleUrlFontSize),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: _DictionariesScreenConstants.helpStepSpacing),
               const Text(
                 'Jisho (Japanese):\nhttps://jisho.org/search/###',
-                style: TextStyle(fontSize: 12),
+                style: TextStyle(fontSize: _DictionariesScreenConstants.exampleUrlFontSize),
               ),
             ],
           ),
@@ -332,6 +359,7 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return AlertDialog(
       title: Text(
         widget.dictionary == null ? l10n.addDictionary : l10n.editDictionary,
@@ -351,7 +379,7 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                 ),
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: _DictionariesScreenConstants.dialogFieldSpacing),
               TextFormField(
                 controller: _urlController,
                 decoration: InputDecoration(
@@ -359,14 +387,17 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                   hintText: l10n.urlTemplateHint,
                   helperText: l10n.urlTemplateHelper,
                 ),
-                maxLines: 3,
+                maxLines: _DictionariesScreenConstants.urlFieldMaxLines,
                 validator: (v) {
                   if (v?.isEmpty == true) return l10n.required;
-                  if (!v!.contains('###')) return l10n.urlMustContainPlaceholder;
+                  if (!v!.contains('###')) {
+                    return l10n.urlMustContainPlaceholder;
+                  }
+
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: _DictionariesScreenConstants.dialogFieldSpacing),
               SwitchListTile(
                 title: Text(l10n.active),
                 subtitle: Text(l10n.showInDictionaryLookupMenu),
@@ -374,13 +405,13 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                 onChanged: (v) => setState(() => _isActive = v),
                 contentPadding: EdgeInsets.zero,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: _DictionariesScreenConstants.switchBottomSpacing),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(_DictionariesScreenConstants.tipBoxPadding),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(_DictionariesScreenConstants.tipBoxRadius),
+                  border: Border.all(color: colorScheme.primary.withAlpha(100)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,15 +420,15 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                       children: [
                         Icon(
                           Icons.lightbulb_outline,
-                          size: 16,
-                          color: Colors.blue.shade700,
+                          size: _DictionariesScreenConstants.tipIconSize,
+                          color: colorScheme.primary,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: _DictionariesScreenConstants.iconSpacing),
                         Text(
                           l10n.quickTemplates,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade700,
+                            color: colorScheme.primary,
                           ),
                         ),
                       ],
@@ -448,6 +479,7 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
   }
 
   Widget _buildQuickTemplate(String name, String url) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () {
         setState(() {
@@ -458,13 +490,13 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
         });
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: _DictionariesScreenConstants.templateVerticalPadding),
         child: Text(
           name,
           style: TextStyle(
-            color: Colors.blue.shade700,
+            color: colorScheme.primary,
             decoration: TextDecoration.underline,
-            fontSize: 12,
+            fontSize: _DictionariesScreenConstants.templateFontSize,
           ),
         ),
       ),
