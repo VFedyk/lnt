@@ -433,7 +433,11 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: _DictionariesScreenConstants.helpStepSpacing),
+                    _buildQuickTemplate(
+                      'Google Translate EN-UK',
+                      'https://translate.google.com/?sl=en&tl=uk&text=###&op=translate',
+                    ),
                     _buildQuickTemplate(
                       'WordReference ES-EN',
                       'https://www.wordreference.com/es/en/translation.asp?spen=###',
