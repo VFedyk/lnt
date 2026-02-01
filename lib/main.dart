@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -10,15 +9,13 @@ import 'package:window_manager/window_manager.dart';
 import 'screens/home_screen.dart';
 import 'services/database_service.dart';
 import 'services/settings_service.dart';
-
-bool get _isDesktop =>
-    Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+import 'utils/helpers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseService.instance.database;
 
-  if (_isDesktop) {
+  if (PlatformHelper.isDesktop) {
     await windowManager.ensureInitialized();
 
     final settings = SettingsService.instance;
@@ -59,14 +56,14 @@ class _LNTAppState extends State<LNTApp> with WindowListener {
   @override
   void initState() {
     super.initState();
-    if (_isDesktop) {
+    if (PlatformHelper.isDesktop) {
       windowManager.addListener(this);
     }
   }
 
   @override
   void dispose() {
-    if (_isDesktop) {
+    if (PlatformHelper.isDesktop) {
       windowManager.removeListener(this);
     }
     _resizeDebounce?.cancel();

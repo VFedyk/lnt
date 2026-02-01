@@ -8,6 +8,7 @@ import '../main.dart';
 import '../services/database_service.dart';
 import '../services/settings_service.dart';
 import '../services/deepl_service.dart';
+import '../utils/helpers.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -26,8 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isLoadingUsage = false;
   String? _dbPath;
 
-  static bool get _isDesktop =>
-      Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+  static bool get _isDesktop => PlatformHelper.isDesktop;
 
   // Supported DeepL target languages
   static const _targetLanguages = {

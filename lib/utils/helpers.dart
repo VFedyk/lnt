@@ -1,5 +1,11 @@
 // FILE: lib/utils/helpers.dart
+import 'dart:io';
 import 'package:intl/intl.dart';
+
+class PlatformHelper {
+  static bool get isDesktop =>
+      Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+}
 
 class DateHelper {
   static String formatDate(DateTime date) {

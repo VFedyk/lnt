@@ -2,9 +2,11 @@
 import 'dart:io';
 // import 'dart:convert';
 import 'package:csv/csv.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/term.dart';
+import '../utils/helpers.dart';
 
 class ImportExportService {
   // Export terms to CSV format
@@ -95,25 +97,36 @@ class ImportExportService {
     return await file.writeAsString(content);
   }
 
-  // Share file
+  // Share file (mobile) or save with file picker (desktop)
   Future<void> shareFile(
     String content,
     String fileName,
     String mimeType,
   ) async {
-    final directory = await getTemporaryDirectory();
-    if (!await directory.exists()) {
-      await directory.create(recursive: true);
-    }
-    final file = File('${directory.path}/$fileName');
-    await file.writeAsString(content);
+    if (PlatformHelper.isDesktop) {
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save export',
+        fileName: fileName,
+      );
+      if (result != null) {
+        final file = File(result);
+        await file.writeAsString(content);
+      }
+    } else {
+      final directory = await getTemporaryDirectory();
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsString(content);
 
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(file.path, mimeType: mimeType)],
-        text: 'LNT Export: $fileName',
-      ),
-    );
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: mimeType)],
+          text: 'LNT Export: $fileName',
+        ),
+      );
+    }
   }
 
   // Export with share dialog
