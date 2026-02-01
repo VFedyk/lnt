@@ -143,20 +143,26 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
           : _dictionaries.isEmpty
           ? _buildEmptyState()
           : ReorderableListView.builder(
-              padding: const EdgeInsets.all(_DictionariesScreenConstants.listPadding),
+              padding: const EdgeInsets.all(
+                _DictionariesScreenConstants.listPadding,
+              ),
               itemCount: _dictionaries.length,
               onReorder: _reorderDictionaries,
               itemBuilder: (context, index) {
                 final dict = _dictionaries[index];
                 return Card(
                   key: ValueKey(dict.id),
-                  margin: const EdgeInsets.only(bottom: _DictionariesScreenConstants.cardBottomMargin),
+                  margin: const EdgeInsets.only(
+                    bottom: _DictionariesScreenConstants.cardBottomMargin,
+                  ),
                   child: ListTile(
                     leading: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.drag_handle, color: colorScheme.outline),
-                        const SizedBox(width: _DictionariesScreenConstants.iconSpacing),
+                        const SizedBox(
+                          width: _DictionariesScreenConstants.iconSpacing,
+                        ),
                         CircleAvatar(
                           backgroundColor: dict.isActive
                               ? colorScheme.primary
@@ -180,7 +186,10 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                       dict.url,
                       maxLines: _DictionariesScreenConstants.urlMaxLines,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: _DictionariesScreenConstants.subtitleFontSize, color: colorScheme.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: _DictionariesScreenConstants.subtitleFontSize,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) {
@@ -202,7 +211,9 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                           child: Row(
                             children: [
                               const Icon(Icons.edit),
-                              const SizedBox(width: _DictionariesScreenConstants.iconSpacing),
+                              const SizedBox(
+                                width: _DictionariesScreenConstants.iconSpacing,
+                              ),
                               Text(l10n.edit),
                             ],
                           ),
@@ -216,7 +227,9 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                                     ? Icons.visibility_off
                                     : Icons.visibility,
                               ),
-                              const SizedBox(width: _DictionariesScreenConstants.iconSpacing),
+                              const SizedBox(
+                                width: _DictionariesScreenConstants.iconSpacing,
+                              ),
                               Text(
                                 dict.isActive ? l10n.deactivate : l10n.activate,
                               ),
@@ -228,7 +241,9 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                           child: Row(
                             children: [
                               Icon(Icons.delete, color: colorScheme.error),
-                              const SizedBox(width: _DictionariesScreenConstants.iconSpacing),
+                              const SizedBox(
+                                width: _DictionariesScreenConstants.iconSpacing,
+                              ),
                               Text(
                                 l10n.delete,
                                 style: TextStyle(color: colorScheme.error),
@@ -256,10 +271,16 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.book, size: _DictionariesScreenConstants.emptyIconSize, color: colorScheme.outline),
+          Icon(
+            Icons.book,
+            size: _DictionariesScreenConstants.emptyIconSize,
+            color: colorScheme.outline,
+          ),
           const SizedBox(height: _DictionariesScreenConstants.emptyTextSpacing),
           Text(l10n.noDictionariesYet),
-          const SizedBox(height: _DictionariesScreenConstants.emptySubtextSpacing),
+          const SizedBox(
+            height: _DictionariesScreenConstants.emptySubtextSpacing,
+          ),
           Text(
             l10n.addDictionariesFor(widget.language.name),
             style: TextStyle(color: colorScheme.onSurfaceVariant),
@@ -290,25 +311,37 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                 l10n.howToUse,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: _DictionariesScreenConstants.helpStepSpacing),
+              const SizedBox(
+                height: _DictionariesScreenConstants.helpStepSpacing,
+              ),
               Text(l10n.dictionaryHelpStep1),
               Text(l10n.dictionaryHelpStep2),
               Text(l10n.dictionaryHelpStep3),
               Text(l10n.dictionaryHelpStep4),
-              const SizedBox(height: _DictionariesScreenConstants.helpSectionSpacing),
+              const SizedBox(
+                height: _DictionariesScreenConstants.helpSectionSpacing,
+              ),
               Text(
                 l10n.exampleUrls,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: _DictionariesScreenConstants.helpStepSpacing),
+              const SizedBox(
+                height: _DictionariesScreenConstants.helpStepSpacing,
+              ),
               const Text(
                 'WordReference:\nhttps://www.wordreference.com/es/en/translation.asp?spen=###',
-                style: TextStyle(fontSize: _DictionariesScreenConstants.exampleUrlFontSize),
+                style: TextStyle(
+                  fontSize: _DictionariesScreenConstants.exampleUrlFontSize,
+                ),
               ),
-              const SizedBox(height: _DictionariesScreenConstants.helpStepSpacing),
+              const SizedBox(
+                height: _DictionariesScreenConstants.helpStepSpacing,
+              ),
               const Text(
                 'Jisho (Japanese):\nhttps://jisho.org/search/###',
-                style: TextStyle(fontSize: _DictionariesScreenConstants.exampleUrlFontSize),
+                style: TextStyle(
+                  fontSize: _DictionariesScreenConstants.exampleUrlFontSize,
+                ),
               ),
             ],
           ),
@@ -379,7 +412,9 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                 ),
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
-              const SizedBox(height: _DictionariesScreenConstants.dialogFieldSpacing),
+              const SizedBox(
+                height: _DictionariesScreenConstants.dialogFieldSpacing,
+              ),
               TextFormField(
                 controller: _urlController,
                 decoration: InputDecoration(
@@ -397,7 +432,9 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                   return null;
                 },
               ),
-              const SizedBox(height: _DictionariesScreenConstants.dialogFieldSpacing),
+              const SizedBox(
+                height: _DictionariesScreenConstants.dialogFieldSpacing,
+              ),
               SwitchListTile(
                 title: Text(l10n.active),
                 subtitle: Text(l10n.showInDictionaryLookupMenu),
@@ -405,12 +442,18 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                 onChanged: (v) => setState(() => _isActive = v),
                 contentPadding: EdgeInsets.zero,
               ),
-              const SizedBox(height: _DictionariesScreenConstants.switchBottomSpacing),
+              const SizedBox(
+                height: _DictionariesScreenConstants.switchBottomSpacing,
+              ),
               Container(
-                padding: const EdgeInsets.all(_DictionariesScreenConstants.tipBoxPadding),
+                padding: const EdgeInsets.all(
+                  _DictionariesScreenConstants.tipBoxPadding,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(_DictionariesScreenConstants.tipBoxRadius),
+                  borderRadius: BorderRadius.circular(
+                    _DictionariesScreenConstants.tipBoxRadius,
+                  ),
                   border: Border.all(color: colorScheme.primary.withAlpha(100)),
                 ),
                 child: Column(
@@ -423,7 +466,9 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                           size: _DictionariesScreenConstants.tipIconSize,
                           color: colorScheme.primary,
                         ),
-                        const SizedBox(width: _DictionariesScreenConstants.iconSpacing),
+                        const SizedBox(
+                          width: _DictionariesScreenConstants.iconSpacing,
+                        ),
                         Text(
                           l10n.quickTemplates,
                           style: TextStyle(
@@ -433,7 +478,9 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: _DictionariesScreenConstants.helpStepSpacing),
+                    const SizedBox(
+                      height: _DictionariesScreenConstants.helpStepSpacing,
+                    ),
                     _buildQuickTemplate(
                       'Google Translate EN-UK',
                       'https://translate.google.com/?sl=en&tl=uk&text=###&op=translate',
@@ -494,7 +541,9 @@ class _DictionaryDialogState extends State<_DictionaryDialog> {
         });
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: _DictionariesScreenConstants.templateVerticalPadding),
+        padding: const EdgeInsets.symmetric(
+          vertical: _DictionariesScreenConstants.templateVerticalPadding,
+        ),
         child: Text(
           name,
           style: TextStyle(

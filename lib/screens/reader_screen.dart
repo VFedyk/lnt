@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -123,7 +124,7 @@ List<_ParsedToken> _parseInIsolate(_ParseInput input) {
   // Build term keys set for O(1) lookup
   stepWatch.start();
   final termKeys = input.termsMapData.keys.toSet();
-  print(
+  developer.log(
     '[PARSE] Build termKeys set: ${stepWatch.elapsedMilliseconds}ms (${termKeys.length} terms)',
   );
   stepWatch.reset();
@@ -139,7 +140,7 @@ List<_ParsedToken> _parseInIsolate(_ParseInput input) {
   // Get word matches with positions - O(n)
   stepWatch.start();
   final wordMatches = parser.getWordMatches(content, tempLang);
-  print(
+  developer.log(
     '[PARSE] getWordMatches: ${stepWatch.elapsedMilliseconds}ms (${wordMatches.length} words)',
   );
   stepWatch.reset();
@@ -155,7 +156,7 @@ List<_ParsedToken> _parseInIsolate(_ParseInput input) {
   }
   final sortedMultiWordKeys = multiWordTerms.keys.toList()
     ..sort((a, b) => b.length.compareTo(a.length));
-  print(
+  developer.log(
     '[PARSE] Build multi-word terms: ${stepWatch.elapsedMilliseconds}ms (${sortedMultiWordKeys.length} terms)',
   );
   stepWatch.reset();
@@ -237,13 +238,13 @@ List<_ParsedToken> _parseInIsolate(_ParseInput input) {
     );
   }
 
-  print(
+  developer.log(
     '[PARSE] Main loop: ${stepWatch.elapsedMilliseconds}ms (${tokens.length} tokens)',
   );
   stepWatch.reset();
 
   totalStopwatch.stop();
-  print('[PARSE] TOTAL: ${totalStopwatch.elapsedMilliseconds}ms');
+  developer.log('[PARSE] TOTAL: ${totalStopwatch.elapsedMilliseconds}ms');
 
   return tokens;
 }
@@ -683,6 +684,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final dictionaries = await _dictService.getActiveDictionaries(
       widget.language.id!,
     );
+    if (!mounted) return;
 
     Term? result;
     if (existingTerm != null) {
@@ -760,6 +762,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final dictionaries = await _dictService.getActiveDictionaries(
       widget.language.id!,
     );
+    if (!mounted) return;
 
     final l10n = AppLocalizations.of(context);
     if (dictionaries.isEmpty) {
@@ -795,7 +798,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       ),
     );
 
-    if (selectedDict != null) {
+    if (selectedDict != null && mounted) {
       await _dictService.lookupWord(context, selectedWords, selectedDict.url);
       _cancelSelection();
     }
@@ -827,6 +830,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final dictionaries = await _dictService.getActiveDictionaries(
       widget.language.id!,
     );
+    if (!mounted) return;
 
     Term? result;
     if (existingTerm != null) {

@@ -65,7 +65,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
             ),
           );
 
-          if (shouldAddDict == true) {
+          if (shouldAddDict == true && mounted) {
             final newLang = result.copyWith(id: langId);
             await Navigator.push(
               context,

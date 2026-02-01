@@ -592,6 +592,7 @@ class _TextsScreenState extends State<TextsScreen> {
     final textCount = await DatabaseService.instance.getTextCountInCollection(
       collection.id!,
     );
+    if (!mounted) return;
 
     final confirm = await showDialog<bool>(
       context: context,
