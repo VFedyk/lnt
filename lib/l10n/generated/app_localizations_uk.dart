@@ -1004,4 +1004,59 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get reviewedToday => 'Повторено сьогодні';
+
+  @override
+  String get backupRestore => 'Резервне копіювання';
+
+  @override
+  String get backupToGoogleDrive => 'Зберегти в Google Drive';
+
+  @override
+  String get restoreFromGoogleDrive => 'Відновити з Google Drive';
+
+  @override
+  String get backupToICloud => 'Зберегти в iCloud';
+
+  @override
+  String get restoreFromICloud => 'Відновити з iCloud';
+
+  @override
+  String lastBackup(String date) {
+    return 'Останнє: $date';
+  }
+
+  @override
+  String get noBackupYet => 'Резервної копії ще немає';
+
+  @override
+  String get backupSuccess => 'Резервне копіювання завершено';
+
+  @override
+  String get restoreSuccess => 'Відновлено. Програма зараз закриється.';
+
+  @override
+  String get restoreConfirmTitle => 'Відновити резервну копію?';
+
+  @override
+  String get restoreConfirmMessage =>
+      'Це замінить усі поточні дані резервною копією. Цю дію неможливо скасувати. Продовжити?';
+
+  @override
+  String get restore => 'Відновити';
+
+  @override
+  String backupFailed(String error) {
+    return 'Помилка резервного копіювання: $error';
+  }
+
+  @override
+  String restoreFailed(String error) {
+    return 'Помилка відновлення: $error';
+  }
+
+  @override
+  String get noBackupFound => 'Резервну копію не знайдено';
+
+  @override
+  String get signInCancelled => 'Вхід скасовано';
 }

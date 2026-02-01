@@ -534,5 +534,37 @@
   "flashcardReviewDescription": "Review due cards with spaced repetition",
   "statisticsDescription": "View vocabulary progress and status breakdown",
   "cardsDue": "Cards due",
-  "reviewedToday": "Reviewed today"
+  "reviewedToday": "Reviewed today",
+
+  "backupRestore": "Backup & Restore",
+  "backupToGoogleDrive": "Back up to Google Drive",
+  "restoreFromGoogleDrive": "Restore from Google Drive",
+  "backupToICloud": "Back up to iCloud",
+  "restoreFromICloud": "Restore from iCloud",
+  "lastBackup": "Last backup: {date}",
+  "@lastBackup": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "noBackupYet": "No backup yet",
+  "backupSuccess": "Backup completed successfully",
+  "restoreSuccess": "Restore completed. The app will now close.",
+  "restoreConfirmTitle": "Restore Backup?",
+  "restoreConfirmMessage": "This will replace all current data with the backup. This cannot be undone. Continue?",
+  "restore": "Restore",
+  "backupFailed": "Backup failed: {error}",
+  "@backupFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "restoreFailed": "Restore failed: {error}",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "noBackupFound": "No backup found",
+  "signInCancelled": "Sign-in was cancelled"
 }

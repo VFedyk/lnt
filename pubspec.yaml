@@ -55,6 +55,10 @@ dependencies:
   stemmer: ^3.2.0
   fsrs: ^2.0.1
   window_manager: ^0.5.1
+  google_sign_in: ^6.2.1
+  extension_google_sign_in_as_googleapis_auth: ^2.0.12
+  googleapis: ^13.2.0
+  icloud_storage: ^2.1.0
 
 dev_dependencies:
   flutter_test:

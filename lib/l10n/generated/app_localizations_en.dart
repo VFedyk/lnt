@@ -1001,4 +1001,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reviewedToday => 'Reviewed today';
+
+  @override
+  String get backupRestore => 'Backup & Restore';
+
+  @override
+  String get backupToGoogleDrive => 'Back up to Google Drive';
+
+  @override
+  String get restoreFromGoogleDrive => 'Restore from Google Drive';
+
+  @override
+  String get backupToICloud => 'Back up to iCloud';
+
+  @override
+  String get restoreFromICloud => 'Restore from iCloud';
+
+  @override
+  String lastBackup(String date) {
+    return 'Last backup: $date';
+  }
+
+  @override
+  String get noBackupYet => 'No backup yet';
+
+  @override
+  String get backupSuccess => 'Backup completed successfully';
+
+  @override
+  String get restoreSuccess => 'Restore completed. The app will now close.';
+
+  @override
+  String get restoreConfirmTitle => 'Restore Backup?';
+
+  @override
+  String get restoreConfirmMessage =>
+      'This will replace all current data with the backup. This cannot be undone. Continue?';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String backupFailed(String error) {
+    return 'Backup failed: $error';
+  }
+
+  @override
+  String restoreFailed(String error) {
+    return 'Restore failed: $error';
+  }
+
+  @override
+  String get noBackupFound => 'No backup found';
+
+  @override
+  String get signInCancelled => 'Sign-in was cancelled';
 }
