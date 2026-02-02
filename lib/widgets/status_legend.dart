@@ -20,27 +20,6 @@ class StatusLegend extends StatelessWidget {
 
   const StatusLegend({super.key, this.termCounts});
 
-  String _getStatusName(int status, AppLocalizations l10n) {
-    switch (status) {
-      case TermStatus.ignored:
-        return l10n.statusIgnored;
-      case TermStatus.unknown:
-        return l10n.statusUnknown;
-      case TermStatus.learning2:
-        return l10n.statusLearning2;
-      case TermStatus.learning3:
-        return l10n.statusLearning3;
-      case TermStatus.learning4:
-        return l10n.statusLearning4;
-      case TermStatus.known:
-        return l10n.statusKnown;
-      case TermStatus.wellKnown:
-        return l10n.statusWellKnown;
-      default:
-        return l10n.statusUnknown;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -73,7 +52,7 @@ class StatusLegend extends StatelessWidget {
             runSpacing: AppConstants.spacingS,
             children: TermStatus.allStatuses
                 .map((status) => _buildLegendItem(
-                      _getStatusName(status, l10n),
+                      TermStatus.localizedNameFor(status, l10n),
                       TermStatus.colorFor(status),
                       status,
                     ))

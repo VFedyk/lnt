@@ -1,5 +1,6 @@
 // FILE: lib/models/term.dart
 import 'package:flutter/material.dart';
+import '../l10n/generated/app_localizations.dart';
 
 /// Centralized definition of term statuses with their colors and names
 class TermStatus {
@@ -60,6 +61,27 @@ class TermStatus {
         return 'Well Known';
       default:
         return 'Unknown';
+    }
+  }
+
+  static String localizedNameFor(int status, AppLocalizations l10n) {
+    switch (status) {
+      case ignored:
+        return l10n.statusIgnored;
+      case unknown:
+        return l10n.statusUnknown;
+      case learning2:
+        return l10n.statusLearning2;
+      case learning3:
+        return l10n.statusLearning3;
+      case learning4:
+        return l10n.statusLearning4;
+      case known:
+        return l10n.statusKnown;
+      case wellKnown:
+        return l10n.statusWellKnown;
+      default:
+        return l10n.statusUnknown;
     }
   }
 }

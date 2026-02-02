@@ -256,7 +256,7 @@ class _TermsScreenState extends State<TermsScreen> {
                         final status = i == _TermsConstants.wellKnownStatusIndex
                             ? _TermsConstants.wellKnownStatusValue
                             : i;
-                        final statusName = _getStatusName(status, l10n);
+                        final statusName = TermStatus.localizedNameFor(status, l10n);
                         final count = _statusCounts[status] ?? 0;
                         return Padding(
                           padding: const EdgeInsets.only(right: AppConstants.spacingS),
@@ -371,26 +371,6 @@ class _TermsScreenState extends State<TermsScreen> {
     );
   }
 
-  String _getStatusName(int status, AppLocalizations l10n) {
-    switch (status) {
-      case 0:
-        return l10n.statusIgnored;
-      case 1:
-        return l10n.statusUnknown;
-      case 2:
-        return l10n.statusLearning2;
-      case 3:
-        return l10n.statusLearning3;
-      case 4:
-        return l10n.statusLearning4;
-      case 5:
-        return l10n.statusKnown;
-      case 99:
-        return l10n.statusWellKnown;
-      default:
-        return l10n.statusUnknown;
-    }
-  }
 
   Color _getStatusColor(int status) {
     switch (status) {

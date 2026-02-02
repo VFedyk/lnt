@@ -3,12 +3,8 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../services/database_service.dart';
 import '../utils/constants.dart';
+import '../widgets/language_dialog.dart';
 import 'dictionaries_screen.dart';
-
-abstract class _LanguagesConstants {
-  static const double infoIconSize = 20.0;
-  static const double infoFontSize = 13.0;
-}
 
 class LanguagesScreen extends StatefulWidget {
   final VoidCallback? onLanguagesChanged;
@@ -44,7 +40,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
   Future<void> _addOrEditLanguage([Language? language]) async {
     final result = await showDialog<Language>(
       context: context,
-      builder: (context) => _LanguageDialog(language: language),
+      builder: (context) => LanguageDialog(language: language),
     );
 
     if (result != null) {
@@ -202,138 +198,6 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
         onPressed: () => _addOrEditLanguage(),
         child: const Icon(Icons.add),
       ),
-    );
-  }
-}
-
-class _LanguageDialog extends StatefulWidget {
-  final Language? language;
-
-  const _LanguageDialog({this.language});
-
-  @override
-  State<_LanguageDialog> createState() => _LanguageDialogState();
-}
-
-class _LanguageDialogState extends State<_LanguageDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
-  late bool _rightToLeft;
-  late bool _showRomanization;
-  late bool _splitByCharacter;
-
-  @override
-  void initState() {
-    super.initState();
-    final lang = widget.language;
-    _nameController = TextEditingController(text: lang?.name ?? '');
-    _rightToLeft = lang?.rightToLeft ?? false;
-    _showRomanization = lang?.showRomanization ?? false;
-    _splitByCharacter = lang?.splitByCharacter ?? false;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(widget.language == null ? l10n.addLanguage : l10n.editLanguage),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: l10n.languageNameLabel,
-                  hintText: l10n.languageNameHint,
-                ),
-                validator: (v) => v?.isEmpty == true ? l10n.required : null,
-                autofocus: true,
-              ),
-              const SizedBox(height: AppConstants.spacingL),
-              SwitchListTile(
-                title: Text(l10n.rightToLeftText),
-                subtitle: Text(l10n.rightToLeftHint),
-                value: _rightToLeft,
-                onChanged: (v) => setState(() => _rightToLeft = v),
-                contentPadding: EdgeInsets.zero,
-              ),
-              SwitchListTile(
-                title: Text(l10n.showRomanization),
-                subtitle: Text(l10n.showRomanizationHint),
-                value: _showRomanization,
-                onChanged: (v) => setState(() => _showRomanization = v),
-                contentPadding: EdgeInsets.zero,
-              ),
-              SwitchListTile(
-                title: Text(l10n.splitByCharacter),
-                subtitle: Text(l10n.splitByCharacterHint),
-                value: _splitByCharacter,
-                onChanged: (v) => setState(() => _splitByCharacter = v),
-                contentPadding: EdgeInsets.zero,
-              ),
-              const SizedBox(height: AppConstants.spacingS),
-              Container(
-                padding: const EdgeInsets.all(AppConstants.spacingM),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: _LanguagesConstants.infoIconSize,
-                      color: Colors.blue.shade700,
-                    ),
-                    const SizedBox(width: AppConstants.spacingS),
-                    Expanded(
-                      child: Text(
-                        l10n.addDictionariesAfterCreating,
-                        style: TextStyle(
-                          fontSize: _LanguagesConstants.infoFontSize,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final lang = Language(
-                id: widget.language?.id,
-                name: _nameController.text.trim(),
-                rightToLeft: _rightToLeft,
-                showRomanization: _showRomanization,
-                splitByCharacter: _splitByCharacter,
-              );
-              Navigator.pop(context, lang);
-            }
-          },
-          child: Text(l10n.save),
-        ),
-      ],
     );
   }
 }
