@@ -10,7 +10,7 @@ import 'database_service.dart';
 import 'settings_service.dart';
 
 const _backupFileName = 'lnt_backup.db';
-const _icloudContainerId = 'iCloud.com.example.lnt';
+const _icloudContainerId = 'iCloud.lnt-db-backup';
 
 class BackupService {
   static final BackupService instance = BackupService._();
@@ -28,6 +28,10 @@ class BackupService {
   Future<void> _restoreFromFile(File downloaded) async {
     final dbPath = await _getDbPath();
     await DatabaseService.instance.closeDatabase();
+    final dbDir = Directory(dbPath).parent;
+    if (!await dbDir.exists()) {
+      await dbDir.create(recursive: true);
+    }
     await downloaded.copy(dbPath);
   }
 
@@ -52,7 +56,10 @@ class BackupService {
       $fields: 'files(id)',
     );
 
-    final media = drive.Media(File(dbPath).openRead(), File(dbPath).lengthSync());
+    final media = drive.Media(
+      File(dbPath).openRead(),
+      File(dbPath).lengthSync(),
+    );
 
     if (existing.files != null && existing.files!.isNotEmpty) {
       await api.files.update(
@@ -86,10 +93,12 @@ class BackupService {
     }
 
     final fileId = results.files!.first.id!;
-    final response = await api.files.get(
-      fileId,
-      downloadOptions: drive.DownloadOptions.fullMedia,
-    ) as drive.Media;
+    final response =
+        await api.files.get(
+              fileId,
+              downloadOptions: drive.DownloadOptions.fullMedia,
+            )
+            as drive.Media;
 
     final tempDir = await getTemporaryDirectory();
     final tempFile = File('${tempDir.path}/$_backupFileName');
