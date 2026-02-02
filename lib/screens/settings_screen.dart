@@ -8,7 +8,23 @@ import '../main.dart';
 import '../services/database_service.dart';
 import '../services/settings_service.dart';
 import '../services/deepl_service.dart';
+import '../utils/constants.dart';
 import '../utils/helpers.dart';
+
+abstract class _SettingsScreenConstants {
+  static const double progressIndicatorSize = 16.0;
+  static const double progressIndicatorStrokeWidth = 2.0;
+  static const double errorIconSize = 20.0;
+  static const double progressBarHeight = 8.0;
+  static const double usageWarningThreshold = 0.7;
+  static const double usageCriticalThreshold = 0.9;
+  static const double percentMultiplier = 100.0;
+  static const int percentDecimalPlaces = 1;
+  static const int millionThreshold = 1000000;
+  static const int thousandThreshold = 1000;
+  static const int numberDecimalPlacesMillion = 1;
+  static const int numberDecimalPlacesThousand = 0;
+}
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -127,14 +143,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
+  Color _usageColor(double usagePercent) {
+    if (usagePercent > _SettingsScreenConstants.usageCriticalThreshold) {
+      return Theme.of(context).colorScheme.error;
+    } else if (usagePercent > _SettingsScreenConstants.usageWarningThreshold) {
+      return AppConstants.warningColor;
+    }
+    return Theme.of(context).colorScheme.primary;
+  }
+
   Widget _buildUsageSection() {
     return Padding(
-      padding: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.only(top: AppConstants.spacingL),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppConstants.spacingM),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
           border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: _isLoadingUsage
@@ -142,11 +167,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    width: _SettingsScreenConstants.progressIndicatorSize,
+                    height: _SettingsScreenConstants.progressIndicatorSize,
+                    child: CircularProgressIndicator(
+                      strokeWidth: _SettingsScreenConstants.progressIndicatorStrokeWidth,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppConstants.spacingS),
                   Text(AppLocalizations.of(context).loadingUsage),
                 ],
               )
@@ -154,8 +181,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? Row(
                     children: [
                       Icon(Icons.error_outline,
-                           color: Theme.of(context).colorScheme.error, size: 20),
-                      const SizedBox(width: 8),
+                           color: Theme.of(context).colorScheme.error,
+                           size: _SettingsScreenConstants.errorIconSize),
+                      const SizedBox(width: AppConstants.spacingS),
                       Expanded(
                         child: Text(AppLocalizations.of(context).couldNotLoadUsage),
                       ),
@@ -176,35 +204,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                           Text(
-                            '${(_usage!.usagePercent * 100).toStringAsFixed(1)}%',
+                            '${(_usage!.usagePercent * _SettingsScreenConstants.percentMultiplier).toStringAsFixed(_SettingsScreenConstants.percentDecimalPlaces)}%',
                             style: TextStyle(
-                              color: _usage!.usagePercent > 0.9
-                                  ? Theme.of(context).colorScheme.error
-                                  : _usage!.usagePercent > 0.7
-                                      ? Colors.orange
-                                      : Theme.of(context).colorScheme.primary,
+                              color: _usageColor(_usage!.usagePercent),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppConstants.spacingS),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
                         child: LinearProgressIndicator(
                           value: _usage!.usagePercent,
-                          minHeight: 8,
+                          minHeight: _SettingsScreenConstants.progressBarHeight,
                           backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            _usage!.usagePercent > 0.9
-                                ? Theme.of(context).colorScheme.error
-                                : _usage!.usagePercent > 0.7
-                                    ? Colors.orange
-                                    : Theme.of(context).colorScheme.primary,
+                            _usageColor(_usage!.usagePercent),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppConstants.spacingS),
                       Text(
                         AppLocalizations.of(context).charactersUsed(
                           _formatNumber(_usage!.characterCount),
@@ -212,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: 12,
+                          fontSize: AppConstants.fontSizeCaption,
                         ),
                       ),
                       Text(
@@ -221,7 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: 12,
+                          fontSize: AppConstants.fontSizeCaption,
                         ),
                       ),
                     ],
@@ -235,46 +255,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppConstants.spacingL),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 const Icon(Icons.storage),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppConstants.spacingS),
                 Text(
                   l10n.databaseSection,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppConstants.spacingL),
             Text(
               l10n.databasePath,
               style: Theme.of(context).textTheme.titleSmall,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppConstants.spacingS),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppConstants.spacingM),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                 border: Border.all(color: colorScheme.outlineVariant),
               ),
               child: SelectableText(
                 _dbPath ?? '',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: AppConstants.fontSizeCaption,
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppConstants.spacingL),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: AppConstants.spacingS,
+              runSpacing: AppConstants.spacingS,
               children: [
                 OutlinedButton.icon(
                   onPressed: _openDatabaseDirectory,
@@ -330,10 +350,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _formatNumber(int number) {
-    if (number >= 1000000) {
-      return '${(number / 1000000).toStringAsFixed(1)}M';
-    } else if (number >= 1000) {
-      return '${(number / 1000).toStringAsFixed(0)}K';
+    if (number >= _SettingsScreenConstants.millionThreshold) {
+      return '${(number / _SettingsScreenConstants.millionThreshold).toStringAsFixed(_SettingsScreenConstants.numberDecimalPlacesMillion)}M';
+    } else if (number >= _SettingsScreenConstants.thousandThreshold) {
+      return '${(number / _SettingsScreenConstants.thousandThreshold).toStringAsFixed(_SettingsScreenConstants.numberDecimalPlacesThousand)}K';
     }
     return number.toString();
   }
@@ -348,26 +368,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppConstants.spacingL),
               children: [
                 // App Language Section
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppConstants.spacingL),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             const Icon(Icons.language),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppConstants.spacingS),
                             Text(
                               AppLocalizations.of(context).appLanguage,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppConstants.spacingL),
                         SegmentedButton<Locale>(
                           segments: [
                             ButtonSegment(
@@ -389,36 +409,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 if (_isDesktop) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppConstants.spacingL),
                   _buildDatabaseSection(),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: AppConstants.spacingL),
                 // DeepL API Section
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppConstants.spacingL),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             const Icon(Icons.translate),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppConstants.spacingS),
                             Text(
                               AppLocalizations.of(context).deepLTranslation,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppConstants.spacingS),
                         Text(
                           AppLocalizations.of(context).deepLApiKeyHint,
                           style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
+                            color: AppConstants.subtitleColor,
+                            fontSize: AppConstants.fontSizeCaption,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppConstants.spacingL),
                         TextField(
                           controller: _apiKeyController,
                           decoration: InputDecoration(
@@ -439,12 +459,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           obscureText: _obscureApiKey,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppConstants.spacingL),
                         Text(
                           AppLocalizations.of(context).apiType,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppConstants.spacingS),
                         SegmentedButton<bool>(
                           segments: [
                             ButtonSegment(value: true, label: Text(AppLocalizations.of(context).free)),
@@ -455,32 +475,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             setState(() => _isApiFree = selected.first);
                           },
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppConstants.spacingS),
                         Text(
                           _isApiFree
                               ? AppLocalizations.of(context).freeApiLimit
                               : AppLocalizations.of(context).proApiPayPerUse,
                           style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
+                            color: AppConstants.subtitleColor,
+                            fontSize: AppConstants.fontSizeCaption,
                           ),
                         ),
                         // Usage display for free plan
                         if (_isApiFree && _apiKeyController.text.isNotEmpty)
                           _buildUsageSection(),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppConstants.spacingL),
                         Text(
                           AppLocalizations.of(context).targetLanguage,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppConstants.spacingS),
                         DropdownButtonFormField<String>(
                           initialValue: _targetLang,
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
+                              horizontal: AppConstants.spacingM,
+                              vertical: AppConstants.spacingS,
                             ),
                           ),
                           items: _targetLanguages.entries
@@ -497,19 +517,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             }
                           },
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppConstants.spacingS),
                         Text(
                           AppLocalizations.of(context).languageForTranslations,
                           style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
+                            color: AppConstants.subtitleColor,
+                            fontSize: AppConstants.fontSizeCaption,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppConstants.spacingL),
                 ElevatedButton.icon(
                   onPressed: _saveSettings,
                   icon: const Icon(Icons.save),

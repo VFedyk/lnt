@@ -1,5 +1,44 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../utils/constants.dart';
+
+abstract class _BookCoverConstants {
+  // Layout
+  static const double maxCoverHeight = 256.0;
+  static const double aspectRatioWidth = 2.0;
+  static const double aspectRatioHeight = 3.0;
+  static const double spineWidth = 12.0;
+
+  // Shadows
+  static const double shadowBlurRadius = 8.0;
+  static const double shadowOffsetX = 2.0;
+  static const double shadowOffsetY = 4.0;
+  static const double shadowOpacity = 0.3;
+  static const double textShadowBlurRadius = 4.0;
+  static const double textShadowOpacity = 0.5;
+
+  // Generated cover colors
+  static const double baseSaturation = 0.4;
+  static const double baseLightness = 0.35;
+  static const double lightSaturation = 0.3;
+  static const double lightLightness = 0.45;
+  static const int hueModulo = 360;
+
+  // Icon sizes
+  static const double folderIconSize = 32.0;
+  static const double badgeIconSize = 14.0;
+
+  // Opacity
+  static const double folderIconOpacity = 0.9;
+  static const double titleTextOpacity = 0.95;
+  static const double folderBadgeBackgroundOpacity = 0.6;
+
+  // Text
+  static const int titleMaxLines = 2;
+  static const int coverTitleMaxLines = 4;
+  static const int subtitleMaxLines = 1;
+  static const double coverTitleFontSize = 11.0;
+}
 
 class BookCover extends StatelessWidget {
   final String title;
@@ -21,8 +60,6 @@ class BookCover extends StatelessWidget {
     this.onLongPress,
   });
 
-  static const double maxCoverHeight = 256;
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -32,37 +69,47 @@ class BookCover extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: maxCoverHeight),
+            constraints: const BoxConstraints(
+              maxHeight: _BookCoverConstants.maxCoverHeight,
+            ),
             child: AspectRatio(
-              aspectRatio: 2 / 3,
+              aspectRatio: _BookCoverConstants.aspectRatioWidth /
+                  _BookCoverConstants.aspectRatioHeight,
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.borderRadiusS),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(2, 4),
+                      color: Colors.black.withValues(
+                        alpha: _BookCoverConstants.shadowOpacity,
+                      ),
+                      blurRadius: _BookCoverConstants.shadowBlurRadius,
+                      offset: const Offset(
+                        _BookCoverConstants.shadowOffsetX,
+                        _BookCoverConstants.shadowOffsetY,
+                      ),
                     ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.borderRadiusS),
                   child: _buildCover(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppConstants.spacingS),
           Tooltip(
             message: title,
             child: Text(
               title,
-              maxLines: 2,
+              maxLines: _BookCoverConstants.titleMaxLines,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: AppConstants.fontSizeCaption,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -70,12 +117,14 @@ class BookCover extends StatelessWidget {
           if (subtitle != null)
             Text(
               subtitle!,
-              maxLines: 1,
+              maxLines: _BookCoverConstants.subtitleMaxLines,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 10,
-                color: isCompleted ? Colors.green : Colors.grey[600],
+                fontSize: AppConstants.fontSizeXS,
+                color: isCompleted
+                    ? AppConstants.successColor
+                    : AppConstants.subtitleColor,
                 fontWeight: isCompleted ? FontWeight.bold : null,
               ),
             ),
@@ -117,9 +166,20 @@ class BookCover extends StatelessWidget {
   Widget _buildGeneratedCover(BuildContext context) {
     // Generate a color based on title hash
     final hash = title.hashCode;
-    final hue = (hash % 360).abs().toDouble();
-    final baseColor = HSLColor.fromAHSL(1.0, hue, 0.4, 0.35).toColor();
-    final lightColor = HSLColor.fromAHSL(1.0, hue, 0.3, 0.45).toColor();
+    final hue =
+        (hash % _BookCoverConstants.hueModulo).abs().toDouble();
+    final baseColor = HSLColor.fromAHSL(
+      1.0,
+      hue,
+      _BookCoverConstants.baseSaturation,
+      _BookCoverConstants.baseLightness,
+    ).toColor();
+    final lightColor = HSLColor.fromAHSL(
+      1.0,
+      hue,
+      _BookCoverConstants.lightSaturation,
+      _BookCoverConstants.lightLightness,
+    ).toColor();
 
     return Container(
       decoration: BoxDecoration(
@@ -136,12 +196,14 @@ class BookCover extends StatelessWidget {
             left: 0,
             top: 0,
             bottom: 0,
-            width: 12,
+            width: _BookCoverConstants.spineWidth,
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.black.withValues(alpha: 0.3),
+                    Colors.black.withValues(
+                      alpha: _BookCoverConstants.shadowOpacity,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -151,30 +213,38 @@ class BookCover extends StatelessWidget {
           // Title on cover
           Center(
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppConstants.spacingM),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (isFolder)
                     Icon(
                       Icons.folder,
-                      size: 32,
-                      color: Colors.white.withValues(alpha: 0.9),
+                      size: _BookCoverConstants.folderIconSize,
+                      color: Colors.white.withValues(
+                        alpha: _BookCoverConstants.folderIconOpacity,
+                      ),
                     ),
-                  if (isFolder) const SizedBox(height: 8),
+                  if (isFolder)
+                    const SizedBox(height: AppConstants.spacingS),
                   Text(
                     title,
-                    maxLines: 4,
+                    maxLines: _BookCoverConstants.coverTitleMaxLines,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      fontSize: 11,
+                      color: Colors.white.withValues(
+                        alpha: _BookCoverConstants.titleTextOpacity,
+                      ),
+                      fontSize: _BookCoverConstants.coverTitleFontSize,
                       fontWeight: FontWeight.bold,
                       shadows: [
                         Shadow(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          blurRadius: 4,
+                          color: Colors.black.withValues(
+                            alpha: _BookCoverConstants.textShadowOpacity,
+                          ),
+                          blurRadius:
+                              _BookCoverConstants.textShadowBlurRadius,
                         ),
                       ],
                     ),
@@ -190,17 +260,17 @@ class BookCover extends StatelessWidget {
 
   Widget _buildCompletedBadge() {
     return Positioned(
-      top: 4,
-      right: 4,
+      top: AppConstants.spacingXS,
+      right: AppConstants.spacingXS,
       child: Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(AppConstants.spacingXS),
         decoration: BoxDecoration(
-          color: Colors.green,
-          borderRadius: BorderRadius.circular(12),
+          color: AppConstants.successColor,
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusL),
         ),
         child: const Icon(
           Icons.check,
-          size: 14,
+          size: _BookCoverConstants.badgeIconSize,
           color: Colors.white,
         ),
       ),
@@ -209,17 +279,19 @@ class BookCover extends StatelessWidget {
 
   Widget _buildFolderBadge() {
     return Positioned(
-      bottom: 4,
-      right: 4,
+      bottom: AppConstants.spacingXS,
+      right: AppConstants.spacingXS,
       child: Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(AppConstants.spacingXS),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(4),
+          color: Colors.black.withValues(
+            alpha: _BookCoverConstants.folderBadgeBackgroundOpacity,
+          ),
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
         ),
         child: const Icon(
           Icons.folder,
-          size: 14,
+          size: _BookCoverConstants.badgeIconSize,
           color: Colors.white,
         ),
       ),

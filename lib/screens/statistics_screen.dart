@@ -4,6 +4,19 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/term.dart';
 import '../services/database_service.dart';
+import '../utils/constants.dart';
+
+abstract class _StatisticsConstants {
+  static const double iconSize = 32.0;
+  static const double progressBarHeight = 10.0;
+  static const double statusBarHeight = 8.0;
+  static const double progressCardBackgroundOpacity = 0.1;
+  static const double progressCardBorderOpacity = 0.3;
+  static const double percentMultiplier = 100.0;
+  static const int percentDecimalPlaces = 1;
+  static const Color totalTermsColor = Colors.blue;
+  static const Color textsColor = Colors.purple;
+}
 
 class StatisticsScreen extends StatefulWidget {
   final Language language;
@@ -76,18 +89,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return RefreshIndicator(
       onRefresh: _loadStatistics,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppConstants.spacingL),
         children: [
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppConstants.spacingL),
               child: Column(
                 children: [
                   Text(
                     widget.language.name,
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppConstants.spacingXL),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -95,19 +108,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         l10n.totalTerms,
                         _totalTerms.toString(),
                         Icons.book,
-                        Colors.blue,
+                        _StatisticsConstants.totalTermsColor,
                       ),
                       _buildStatColumn(
                         l10n.known,
                         knownCount.toString(),
                         Icons.check_circle,
-                        Colors.green,
+                        AppConstants.successColor,
                       ),
                       _buildStatColumn(
                         l10n.texts,
                         _totalTexts.toString(),
                         Icons.article,
-                        Colors.purple,
+                        _StatisticsConstants.textsColor,
                       ),
                     ],
                   ),
@@ -115,10 +128,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppConstants.spacingL),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppConstants.spacingL),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -126,7 +139,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     l10n.termsByStatus,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppConstants.spacingL),
                   _buildStatusBar(
                     TermStatus.ignored,
                     l10n.statusIgnored,
@@ -173,10 +186,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppConstants.spacingL),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppConstants.spacingL),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -184,36 +197,36 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     l10n.progressOverview,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppConstants.spacingL),
                   LinearProgressIndicator(
                     value: _totalTerms > 0 ? knownCount / _totalTerms : 0,
-                    minHeight: 10,
+                    minHeight: _StatisticsConstants.progressBarHeight,
                     backgroundColor: Colors.grey.shade200,
-                    valueColor: const AlwaysStoppedAnimation(Colors.green),
+                    valueColor: const AlwaysStoppedAnimation(AppConstants.successColor),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppConstants.spacingS),
                   Text(
                     _totalTerms > 0
-                        ? l10n.percentKnown((knownCount / _totalTerms * 100).toStringAsFixed(1))
+                        ? l10n.percentKnown((knownCount / _totalTerms * _StatisticsConstants.percentMultiplier).toStringAsFixed(_StatisticsConstants.percentDecimalPlaces))
                         : l10n.noTermsYet,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppConstants.spacingL),
                   Row(
                     children: [
                       Expanded(
                         child: _buildProgressCard(
                           l10n.learning,
                           learningCount,
-                          Colors.orange,
+                          AppConstants.warningColor,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppConstants.spacingS),
                       Expanded(
                         child: _buildProgressCard(
                           l10n.known,
                           knownCount,
-                          Colors.green,
+                          AppConstants.successColor,
                         ),
                       ),
                     ],
@@ -235,8 +248,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   ) {
     return Column(
       children: [
-        Icon(icon, size: 32, color: color),
-        const SizedBox(height: 8),
+        Icon(icon, size: _StatisticsConstants.iconSize, color: color),
+        const SizedBox(height: AppConstants.spacingS),
         Text(
           value,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -253,7 +266,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final percentage = _totalTerms > 0 ? count / _totalTerms : 0.0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppConstants.spacingXS),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -261,15 +274,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('$label ($count)'),
-              Text('${(percentage * 100).toStringAsFixed(1)}%'),
+              Text('${(percentage * _StatisticsConstants.percentMultiplier).toStringAsFixed(_StatisticsConstants.percentDecimalPlaces)}%'),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppConstants.spacingXS),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
             child: LinearProgressIndicator(
               value: percentage,
-              minHeight: 8,
+              minHeight: _StatisticsConstants.statusBarHeight,
               backgroundColor: Colors.grey.shade200,
               valueColor: AlwaysStoppedAnimation(color),
             ),
@@ -281,11 +294,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildProgressCard(String label, int count, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppConstants.spacingL),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: color.withValues(alpha: _StatisticsConstants.progressCardBackgroundOpacity),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
+        border: Border.all(color: color.withValues(alpha: _StatisticsConstants.progressCardBorderOpacity)),
       ),
       child: Column(
         children: [

@@ -15,7 +15,53 @@ import '../services/epub_import_service.dart';
 import '../services/url_import_service.dart';
 import '../services/text_parser_service.dart';
 import '../widgets/book_cover.dart';
+import '../utils/constants.dart';
 import 'reader_screen.dart';
+
+abstract class _TextsScreenConstants {
+  // Grid layout
+  static const double gridMaxCrossAxisExtent = 140.0;
+  static const double gridChildAspectRatio = 0.45;
+
+  // Icon sizes
+  static const double emptyStateIconSize = 64.0;
+  static const double sortArrowIconSize = 16.0;
+  static const double coverPickerIconSize = 32.0;
+
+  // Cover image picker
+  static const double coverPickerWidth = 100.0;
+  static const double coverPickerHeight = 150.0;
+
+  // URL import cover thumbnail
+  static const double urlCoverWidth = 80.0;
+  static const double urlCoverHeight = 120.0;
+
+  // URL import progress indicator
+  static const double progressIndicatorSize = 20.0;
+  static const double progressIndicatorStrokeWidth = 2.0;
+
+  // Content preview
+  static const double contentPreviewHeight = 200.0;
+
+  // Add text dialog
+  static const int contentMaxLines = 10;
+  static const int descriptionMaxLines = 2;
+
+  // Hidden count badge vertical padding
+  static const double badgeVerticalPadding = 2.0;
+
+  // Finished text background opacity
+  static const double finishedBackgroundAlpha = 0.2;
+
+  // Max warnings shown in import result
+  static const int maxWarningsShown = 3;
+
+  // Preference keys
+  static const String sortOptionKey = 'texts_sort_option';
+  static const String sortAscendingKey = 'texts_sort_ascending';
+  static const String hideCompletedKey = 'texts_hide_completed';
+  static const String viewModeKey = 'texts_view_mode';
+}
 
 /// Sorting options for texts
 enum TextSortOption {
@@ -55,12 +101,6 @@ class _TextsScreenState extends State<TextsScreen> {
   bool _hideCompleted = false; // Hide texts with 0 unknown words
   TextViewMode _viewMode = TextViewMode.list;
 
-  // Preference keys
-  static const String _sortOptionKey = 'texts_sort_option';
-  static const String _sortAscendingKey = 'texts_sort_ascending';
-  static const String _hideCompletedKey = 'texts_hide_completed';
-  static const String _viewModeKey = 'texts_view_mode';
-
   // Static cache for unknown counts - persists across folder navigations
   // Key: languageId -> (textId -> unknownCount)
   static final Map<int, Map<int, int>> _unknownCountsCache = {};
@@ -85,13 +125,13 @@ class _TextsScreenState extends State<TextsScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       final sortIndex =
-          prefs.getInt(_sortOptionKey) ?? TextSortOption.lastRead.index;
+          prefs.getInt(_TextsScreenConstants.sortOptionKey) ?? TextSortOption.lastRead.index;
       _sortOption = TextSortOption
           .values[sortIndex.clamp(0, TextSortOption.values.length - 1)];
-      _sortAscending = prefs.getBool(_sortAscendingKey) ?? false;
-      _hideCompleted = prefs.getBool(_hideCompletedKey) ?? false;
+      _sortAscending = prefs.getBool(_TextsScreenConstants.sortAscendingKey) ?? false;
+      _hideCompleted = prefs.getBool(_TextsScreenConstants.hideCompletedKey) ?? false;
       final viewModeIndex =
-          prefs.getInt(_viewModeKey) ?? TextViewMode.list.index;
+          prefs.getInt(_TextsScreenConstants.viewModeKey) ?? TextViewMode.list.index;
       _viewMode = TextViewMode
           .values[viewModeIndex.clamp(0, TextViewMode.values.length - 1)];
     });
@@ -99,10 +139,10 @@ class _TextsScreenState extends State<TextsScreen> {
 
   Future<void> _savePreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_sortOptionKey, _sortOption.index);
-    await prefs.setBool(_sortAscendingKey, _sortAscending);
-    await prefs.setBool(_hideCompletedKey, _hideCompleted);
-    await prefs.setInt(_viewModeKey, _viewMode.index);
+    await prefs.setInt(_TextsScreenConstants.sortOptionKey, _sortOption.index);
+    await prefs.setBool(_TextsScreenConstants.sortAscendingKey, _sortAscending);
+    await prefs.setBool(_TextsScreenConstants.hideCompletedKey, _hideCompleted);
+    await prefs.setInt(_TextsScreenConstants.viewModeKey, _viewMode.index);
   }
 
   void _toggleViewMode() {
@@ -145,8 +185,6 @@ class _TextsScreenState extends State<TextsScreen> {
     // Then filter by completion status
     if (_hideCompleted) {
       filtered = filtered.where((t) {
-        // final unknownCount = _unknownCounts[t.id] ?? 0;
-        // return unknownCount > 0;
         return t.status != TextStatus.finished;
       }).toList();
     }
@@ -443,20 +481,19 @@ class _TextsScreenState extends State<TextsScreen> {
     );
 
     if (result == null || result.files.single.bytes == null) return;
+    if (!mounted) return;
 
     final file = result.files.single;
-
-    // Show loading dialog
-    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const AlertDialog(
+      builder: (context) => AlertDialog(
         content: Row(
           children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Expanded(child: Text('Importing EPUB...')),
+            const CircularProgressIndicator(),
+            const SizedBox(width: AppConstants.spacingL),
+            Expanded(child: Text(l10n.importingEpub)),
           ],
         ),
       ),
@@ -478,34 +515,34 @@ class _TextsScreenState extends State<TextsScreen> {
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Import Complete'),
+          title: Text(l10n.importComplete),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Book: ${importResult.bookTitle}'),
+              Text('${l10n.book}: ${importResult.bookTitle}'),
               if (importResult.author != null)
-                Text('Author: ${importResult.author}'),
-              Text('Chapters: ${importResult.totalChapters}'),
+                Text('${l10n.author}: ${importResult.author}'),
+              Text('${l10n.chapters}: ${importResult.totalChapters}'),
               if (importResult.totalParts > importResult.totalChapters)
-                Text('Total parts: ${importResult.totalParts}'),
-              Text('Characters: ${importResult.totalCharacters}'),
+                Text('${l10n.totalParts}: ${importResult.totalParts}'),
+              Text('${l10n.characters}: ${importResult.totalCharacters}'),
               if (importResult.warnings.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                const Text(
-                  'Notes:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                const SizedBox(height: AppConstants.spacingS),
+                Text(
+                  '${l10n.notes}:',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                ...importResult.warnings.take(3).map((w) => Text('• $w')),
-                if (importResult.warnings.length > 3)
-                  Text('... and ${importResult.warnings.length - 3} more'),
+                ...importResult.warnings.take(_TextsScreenConstants.maxWarningsShown).map((w) => Text('\u2022 $w')),
+                if (importResult.warnings.length > _TextsScreenConstants.maxWarningsShown)
+                  Text('... and ${importResult.warnings.length - _TextsScreenConstants.maxWarningsShown} more'),
               ],
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
+              child: Text(l10n.ok),
             ),
           ],
         ),
@@ -522,11 +559,11 @@ class _TextsScreenState extends State<TextsScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Import Failed'),
-          content: Text('Could not import EPUB: $e'),
+          content: Text(l10n.couldNotImportEpub(e.toString())),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
+              child: Text(l10n.ok),
             ),
           ],
         ),
@@ -610,7 +647,7 @@ class _TextsScreenState extends State<TextsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppConstants.deleteColor),
             child: Text(l10n.delete),
           ),
         ],
@@ -635,7 +672,7 @@ class _TextsScreenState extends State<TextsScreen> {
             if (_currentCollection != null)
               Text(
                 _currentCollection!.name,
-                style: const TextStyle(fontSize: 14),
+                style: const TextStyle(fontSize: AppConstants.fontSizeBody),
               ),
           ],
         ),
@@ -670,7 +707,7 @@ class _TextsScreenState extends State<TextsScreen> {
                           ? Theme.of(context).colorScheme.primary
                           : null,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Expanded(
                       child: Text(
                         option.label,
@@ -687,7 +724,7 @@ class _TextsScreenState extends State<TextsScreen> {
                         _sortAscending
                             ? Icons.arrow_upward
                             : Icons.arrow_downward,
-                        size: 16,
+                        size: _TextsScreenConstants.sortArrowIconSize,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                   ],
@@ -735,7 +772,7 @@ class _TextsScreenState extends State<TextsScreen> {
                 child: Row(
                   children: [
                     const Icon(Icons.link),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Text(l10n.importFromUrl),
                   ],
                 ),
@@ -745,7 +782,7 @@ class _TextsScreenState extends State<TextsScreen> {
                 child: Row(
                   children: [
                     const Icon(Icons.text_snippet),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Text(l10n.importTxt),
                   ],
                 ),
@@ -755,7 +792,7 @@ class _TextsScreenState extends State<TextsScreen> {
                 child: Row(
                   children: [
                     const Icon(Icons.book),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Text(l10n.importEpub),
                   ],
                 ),
@@ -767,14 +804,14 @@ class _TextsScreenState extends State<TextsScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppConstants.spacingL),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: l10n.searchTexts,
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                 ),
               ),
               onChanged: (_) => setState(() {}),
@@ -799,40 +836,44 @@ class _TextsScreenState extends State<TextsScreen> {
   }
 
   Widget _buildSortFilterBar() {
+    final l10n = AppLocalizations.of(context);
     final sortedTexts = _getSortedAndFilteredTexts(_texts);
     final totalTexts = _texts.length;
     final shownTexts = sortedTexts.length;
     final hiddenCount = totalTexts - shownTexts;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacingL, vertical: AppConstants.spacingS),
       child: Row(
         children: [
           Icon(
             _sortOption.icon,
-            size: 16,
+            size: _TextsScreenConstants.sortArrowIconSize,
             color: Theme.of(context).colorScheme.outline,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppConstants.spacingXS),
           Text(
-            '${_sortOption.label} ${_sortAscending ? '↑' : '↓'}',
+            '${_sortOption.label} ${_sortAscending ? '\u2191' : '\u2193'}',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: AppConstants.fontSizeCaption,
               color: Theme.of(context).colorScheme.outline,
             ),
           ),
           if (_hideCompleted && hiddenCount > 0) ...[
-            const SizedBox(width: 12),
+            const SizedBox(width: AppConstants.spacingM),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.spacingS,
+                vertical: _TextsScreenConstants.badgeVerticalPadding,
+              ),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppConstants.borderRadiusL),
               ),
               child: Text(
-                '$hiddenCount completed hidden',
+                l10n.completedHidden(hiddenCount),
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: AppConstants.fontSizeCaption,
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
               ),
@@ -840,9 +881,9 @@ class _TextsScreenState extends State<TextsScreen> {
           ],
           const Spacer(),
           Text(
-            '$shownTexts text${shownTexts == 1 ? '' : 's'}',
+            l10n.textCount(shownTexts),
             style: TextStyle(
-              fontSize: 12,
+              fontSize: AppConstants.fontSizeCaption,
               color: Theme.of(context).colorScheme.outline,
             ),
           ),
@@ -863,18 +904,18 @@ class _TextsScreenState extends State<TextsScreen> {
             children: [
               Icon(
                 Icons.check_circle_outline,
-                size: 64,
+                size: _TextsScreenConstants.emptyStateIconSize,
                 color: Theme.of(context).colorScheme.outline,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingL),
               Text(
                 l10n.allTextsCompleted,
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: AppConstants.fontSizeSubtitle,
                   color: Theme.of(context).colorScheme.outline,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingS),
               TextButton.icon(
                 onPressed: _toggleHideCompleted,
                 icon: const Icon(Icons.visibility),
@@ -892,7 +933,7 @@ class _TextsScreenState extends State<TextsScreen> {
         // Collections first (not affected by text sorting/filtering)
         ..._collections.map(
           (collection) => Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            margin: const EdgeInsets.symmetric(horizontal: AppConstants.spacingL, vertical: AppConstants.spacingXS),
             child: ListTile(
               leading: const CircleAvatar(child: Icon(Icons.folder)),
               title: Tooltip(
@@ -909,7 +950,7 @@ class _TextsScreenState extends State<TextsScreen> {
                     child: Row(
                       children: [
                         const Icon(Icons.edit),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppConstants.spacingS),
                         Text(l10n.edit),
                       ],
                     ),
@@ -918,8 +959,8 @@ class _TextsScreenState extends State<TextsScreen> {
                     value: 'delete',
                     child: Row(
                       children: [
-                        const Icon(Icons.delete, color: Colors.red),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.delete, color: AppConstants.deleteColor),
+                        const SizedBox(width: AppConstants.spacingS),
                         Text(l10n.delete),
                       ],
                     ),
@@ -949,18 +990,18 @@ class _TextsScreenState extends State<TextsScreen> {
               : l10n.unknownWords(unknownCount);
 
           return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            margin: const EdgeInsets.symmetric(horizontal: AppConstants.spacingL, vertical: AppConstants.spacingXS),
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: text.status == TextStatus.finished
-                    ? Colors.green.withValues(alpha: 0.2)
+                    ? AppConstants.successColor.withValues(alpha: _TextsScreenConstants.finishedBackgroundAlpha)
                     : null,
                 child: Icon(
                   text.status == TextStatus.finished
                       ? Icons.check
                       : Icons.article,
                   color: text.status == TextStatus.finished
-                      ? Colors.green
+                      ? AppConstants.successColor
                       : null,
                 ),
               ),
@@ -975,8 +1016,8 @@ class _TextsScreenState extends State<TextsScreen> {
                   Text(
                     unknownLabel,
                     style: TextStyle(
-                      color: unknownCount > 0 ? Colors.orange : Colors.green,
-                      fontSize: 12,
+                      color: unknownCount > 0 ? AppConstants.warningColor : AppConstants.successColor,
+                      fontSize: AppConstants.fontSizeCaption,
                       fontWeight: unknownCount == 0 ? FontWeight.bold : null,
                     ),
                   ),
@@ -989,7 +1030,7 @@ class _TextsScreenState extends State<TextsScreen> {
                     child: Row(
                       children: [
                         const Icon(Icons.image),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppConstants.spacingS),
                         Text(l10n.setCover),
                       ],
                     ),
@@ -999,7 +1040,7 @@ class _TextsScreenState extends State<TextsScreen> {
                     child: Row(
                       children: [
                         const Icon(Icons.edit),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppConstants.spacingS),
                         Text(l10n.edit),
                       ],
                     ),
@@ -1008,8 +1049,8 @@ class _TextsScreenState extends State<TextsScreen> {
                     value: 'delete',
                     child: Row(
                       children: [
-                        const Icon(Icons.delete, color: Colors.red),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.delete, color: AppConstants.deleteColor),
+                        const SizedBox(width: AppConstants.spacingS),
                         Text(l10n.delete),
                       ],
                     ),
@@ -1053,18 +1094,18 @@ class _TextsScreenState extends State<TextsScreen> {
             children: [
               Icon(
                 Icons.check_circle_outline,
-                size: 64,
+                size: _TextsScreenConstants.emptyStateIconSize,
                 color: Theme.of(context).colorScheme.outline,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingL),
               Text(
                 l10n.allTextsCompleted,
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: AppConstants.fontSizeSubtitle,
                   color: Theme.of(context).colorScheme.outline,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingS),
               TextButton.icon(
                 onPressed: _toggleHideCompleted,
                 icon: const Icon(Icons.visibility),
@@ -1083,15 +1124,13 @@ class _TextsScreenState extends State<TextsScreen> {
       ...sortedTexts.map((t) => _GridItem(text: t)),
     ];
 
-    // Max cover height: 256px with 2:3 aspect ratio = ~170px width
-    // Plus ~50px for title/subtitle text
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppConstants.spacingL),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 140,
-        childAspectRatio: 0.45,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        maxCrossAxisExtent: _TextsScreenConstants.gridMaxCrossAxisExtent,
+        childAspectRatio: _TextsScreenConstants.gridChildAspectRatio,
+        crossAxisSpacing: AppConstants.spacingL,
+        mainAxisSpacing: AppConstants.spacingL,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
@@ -1154,8 +1193,8 @@ class _TextsScreenState extends State<TextsScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+              leading: const Icon(Icons.delete, color: AppConstants.deleteColor),
+              title: Text(l10n.delete, style: const TextStyle(color: AppConstants.deleteColor)),
               onTap: () {
                 Navigator.pop(context);
                 _deleteCollection(collection);
@@ -1192,8 +1231,8 @@ class _TextsScreenState extends State<TextsScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+              leading: const Icon(Icons.delete, color: AppConstants.deleteColor),
+              title: Text(l10n.delete, style: const TextStyle(color: AppConstants.deleteColor)),
               onTap: () {
                 Navigator.pop(context);
                 _deleteText(text);
@@ -1344,11 +1383,11 @@ class _CollectionDialogState extends State<_CollectionDialog> {
               GestureDetector(
                 onTap: _pickCoverImage,
                 child: Container(
-                  width: 100,
-                  height: 150,
+                  width: _TextsScreenConstants.coverPickerWidth,
+                  height: _TextsScreenConstants.coverPickerHeight,
                   decoration: BoxDecoration(
                     color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                     border: Border.all(color: Colors.grey[400]!),
                     image: _coverImagePath != null
                         ? DecorationImage(
@@ -1363,15 +1402,15 @@ class _CollectionDialogState extends State<_CollectionDialog> {
                           children: [
                             Icon(
                               Icons.add_photo_alternate,
-                              size: 32,
-                              color: Colors.grey[600],
+                              size: _TextsScreenConstants.coverPickerIconSize,
+                              color: AppConstants.subtitleColor,
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AppConstants.spacingXS),
                             Text(
                               l10n.addCover,
                               style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
+                                fontSize: AppConstants.fontSizeCaption,
+                                color: AppConstants.subtitleColor,
                               ),
                             ),
                           ],
@@ -1384,20 +1423,20 @@ class _CollectionDialogState extends State<_CollectionDialog> {
                   onPressed: _removeCoverImage,
                   child: Text(l10n.removeCover),
                 ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingL),
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(labelText: l10n.name),
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
                 autofocus: !widget.isEditing,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingS),
               TextFormField(
                 controller: _descriptionController,
                 decoration: InputDecoration(
                   labelText: l10n.descriptionOptional,
                 ),
-                maxLines: 2,
+                maxLines: _TextsScreenConstants.descriptionMaxLines,
               ),
             ],
           ),
@@ -1475,14 +1514,14 @@ class _AddTextDialogState extends State<_AddTextDialog> {
                 decoration: InputDecoration(labelText: l10n.title),
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingL),
               TextFormField(
                 controller: _contentController,
                 decoration: InputDecoration(
                   labelText: l10n.textContent,
                   alignLabelWithHint: true,
                 ),
-                maxLines: 10,
+                maxLines: _TextsScreenConstants.contentMaxLines,
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
             ],
@@ -1591,11 +1630,11 @@ class _EditTextDialogState extends State<_EditTextDialog> {
               GestureDetector(
                 onTap: _pickCoverImage,
                 child: Container(
-                  width: 100,
-                  height: 150,
+                  width: _TextsScreenConstants.coverPickerWidth,
+                  height: _TextsScreenConstants.coverPickerHeight,
                   decoration: BoxDecoration(
                     color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                     border: Border.all(color: Colors.grey[400]!),
                     image: _coverImagePath != null
                         ? DecorationImage(
@@ -1610,15 +1649,15 @@ class _EditTextDialogState extends State<_EditTextDialog> {
                           children: [
                             Icon(
                               Icons.add_photo_alternate,
-                              size: 32,
-                              color: Colors.grey[600],
+                              size: _TextsScreenConstants.coverPickerIconSize,
+                              color: AppConstants.subtitleColor,
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AppConstants.spacingXS),
                             Text(
                               l10n.addCover,
                               style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
+                                fontSize: AppConstants.fontSizeCaption,
+                                color: AppConstants.subtitleColor,
                               ),
                             ),
                           ],
@@ -1631,20 +1670,20 @@ class _EditTextDialogState extends State<_EditTextDialog> {
                   onPressed: _removeCoverImage,
                   child: Text(l10n.removeCover),
                 ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingL),
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(labelText: l10n.title),
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingL),
               TextFormField(
                 controller: _contentController,
                 decoration: InputDecoration(
                   labelText: l10n.textContent,
                   alignLabelWithHint: true,
                 ),
-                maxLines: 10,
+                maxLines: _TextsScreenConstants.contentMaxLines,
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
             ],
@@ -1806,11 +1845,13 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                   prefixIcon: const Icon(Icons.link),
                   suffixIcon: _isLoading
                       ? const SizedBox(
-                          width: 20,
-                          height: 20,
+                          width: _TextsScreenConstants.progressIndicatorSize,
+                          height: _TextsScreenConstants.progressIndicatorSize,
                           child: Padding(
-                            padding: EdgeInsets.all(12),
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            padding: EdgeInsets.all(AppConstants.spacingM),
+                            child: CircularProgressIndicator(
+                              strokeWidth: _TextsScreenConstants.progressIndicatorStrokeWidth,
+                            ),
                           ),
                         )
                       : IconButton(
@@ -1824,38 +1865,38 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                 enabled: !_isLoading,
               ),
               if (_error != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppConstants.spacingS),
                 Text(
                   _error!,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
               if (_isFetched) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppConstants.spacingL),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     GestureDetector(
                       onTap: _pickCoverImage,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                         child: _coverImagePath != null
                             ? Image.file(
                                 File(_coverImagePath!),
-                                width: 80,
-                                height: 120,
+                                width: _TextsScreenConstants.urlCoverWidth,
+                                height: _TextsScreenConstants.urlCoverHeight,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>
                                     Container(
-                                      width: 80,
-                                      height: 120,
+                                      width: _TextsScreenConstants.urlCoverWidth,
+                                      height: _TextsScreenConstants.urlCoverHeight,
                                       color: Colors.grey[200],
                                       child: const Icon(Icons.broken_image),
                                     ),
                               )
                             : Container(
-                                width: 80,
-                                height: 120,
+                                width: _TextsScreenConstants.urlCoverWidth,
+                                height: _TextsScreenConstants.urlCoverHeight,
                                 color: Colors.grey[200],
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1864,11 +1905,11 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                                       Icons.add_photo_alternate,
                                       color: Colors.grey[400],
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: AppConstants.spacingXS),
                                     Text(
                                       l10n.addCover,
                                       style: TextStyle(
-                                        fontSize: 10,
+                                        fontSize: AppConstants.fontSizeXS,
                                         color: Colors.grey[500],
                                       ),
                                     ),
@@ -1877,7 +1918,7 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                               ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppConstants.spacingM),
                     Expanded(
                       child: TextField(
                         controller: _titleController,
@@ -1889,25 +1930,25 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppConstants.spacingL),
                 Text(l10n.preview, style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppConstants.spacingS),
                 Container(
-                  height: 200,
+                  height: _TextsScreenConstants.contentPreviewHeight,
                   width: double.infinity,
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppConstants.spacingS),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                   ),
                   child: SingleChildScrollView(
-                    child: Text(_content, style: const TextStyle(fontSize: 12)),
+                    child: Text(_content, style: const TextStyle(fontSize: AppConstants.fontSizeCaption)),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppConstants.spacingS),
                 Text(
                   l10n.wordsCount(_content.split(RegExp(r'\s+')).length),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: AppConstants.fontSizeCaption, color: AppConstants.subtitleColor),
                 ),
               ],
             ],

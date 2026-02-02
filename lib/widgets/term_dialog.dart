@@ -5,8 +5,27 @@ import '../models/dictionary.dart';
 import '../models/language.dart';
 import '../services/database_service.dart';
 import '../services/deepl_service.dart';
+import '../utils/constants.dart';
 import 'base_term_search_dialog.dart';
 import 'deepl_translation_mixin.dart';
+
+abstract class _TermDialogConstants {
+  static const double linkIconSize = 16.0;
+  static const double closeIconSize = 18.0;
+  static const double addLinkIconSize = 18.0;
+  static const double checkIconSize = 16.0;
+  static const double progressSize = 20.0;
+  static const double progressStroke = 2.0;
+  static const int primaryAlpha = 100;
+  static const double chipBackgroundAlpha = 0.2;
+  static const int translationMaxLines = 2;
+  static const int sentenceMaxLines = 3;
+  static final Color ignoredTextColor = Colors.grey.shade600;
+  static final Color ignoredBorderColor = Colors.grey.shade400;
+  static final Color wellKnownTextColor = Colors.blue.shade700;
+  static final Color wellKnownBorderColor = Colors.blue.shade300;
+  static final Color dropdownBorderColor = Colors.grey.shade400;
+}
 
 class TermDialog extends StatefulWidget {
   final Term term;
@@ -88,14 +107,12 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
   }
 
   Future<void> _loadBaseTermAndLinkedTerms() async {
-    // Load base term if this term is linked to one
     if (_baseTermId != null) {
       final baseTerm = await DatabaseService.instance.getTerm(_baseTermId!);
       if (mounted) {
         setState(() => _baseTerm = baseTerm);
       }
     }
-    // Load linked terms if this term IS a base term (has an id)
     if (widget.term.id != null) {
       final linked = await DatabaseService.instance.getLinkedTerms(
         widget.term.id!,
@@ -137,19 +154,29 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Show base term if linked
         if (_baseTerm != null)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.spacingM,
+              vertical: AppConstants.spacingS,
+            ),
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colorScheme.primary.withAlpha(100)),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
+              border: Border.all(
+                color: colorScheme.primary.withAlpha(
+                  _TermDialogConstants.primaryAlpha,
+                ),
+              ),
             ),
             child: Row(
               children: [
-                Icon(Icons.link, size: 16, color: colorScheme.primary),
-                const SizedBox(width: 8),
+                Icon(
+                  Icons.link,
+                  size: _TermDialogConstants.linkIconSize,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: AppConstants.spacingS),
                 Text(
                   l10n.base,
                   style: TextStyle(
@@ -167,7 +194,10 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, size: 18),
+                  icon: const Icon(
+                    Icons.close,
+                    size: _TermDialogConstants.closeIconSize,
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: _removeBaseTerm,
@@ -177,10 +207,12 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
             ),
           )
         else
-          // Show button to link to base term
           OutlinedButton.icon(
             onPressed: _selectBaseTerm,
-            icon: const Icon(Icons.add_link, size: 18),
+            icon: const Icon(
+              Icons.add_link,
+              size: _TermDialogConstants.addLinkIconSize,
+            ),
             label: Text(l10n.linkToBaseForm),
             style: OutlinedButton.styleFrom(
               foregroundColor: colorScheme.primary,
@@ -188,13 +220,12 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
             ),
           ),
 
-        // Show linked terms if this is a base term
         if (_linkedTerms.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppConstants.spacingS),
           Text(
             l10n.forms(_linkedTerms.map((t) => t.lowerText).join(", ")),
             style: TextStyle(
-              fontSize: 12,
+              fontSize: AppConstants.fontSizeCaption,
               color: colorScheme.onSurfaceVariant,
               fontStyle: FontStyle.italic,
             ),
@@ -225,12 +256,15 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
               children: [
                 Text(
                   widget.term.lowerText,
-                  style: const TextStyle(fontSize: 24),
+                  style: const TextStyle(fontSize: AppConstants.fontSizeTitle),
                 ),
                 if (widget.term.text != widget.term.lowerText)
                   Text(
                     l10n.original(widget.term.text),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: AppConstants.fontSizeCaption,
+                      color: AppConstants.subtitleColor,
+                    ),
                   ),
               ],
             ),
@@ -252,7 +286,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
         ],
       ),
       content: SizedBox(
-        width: 736,
+        width: AppConstants.dialogWidth,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -275,61 +309,84 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                       : null,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppConstants.spacingM),
 
               // Base term linking
               _buildBaseTermSection(),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppConstants.spacingM),
 
               // Status selector
               Text(
                 l10n.status,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingS),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: AppConstants.spacingS,
+                runSpacing: AppConstants.spacingS,
                 children: [
-                  _buildStatusChip(0, l10n.statusIgnored, Colors.grey.shade400),
-                  _buildStatusChip(1, l10n.statusUnknown, Colors.red.shade400),
                   _buildStatusChip(
-                    2,
+                    TermStatus.ignored,
+                    l10n.statusIgnored,
+                    TermStatus.colorFor(TermStatus.ignored),
+                  ),
+                  _buildStatusChip(
+                    TermStatus.unknown,
+                    l10n.statusUnknown,
+                    TermStatus.colorFor(TermStatus.unknown),
+                  ),
+                  _buildStatusChip(
+                    TermStatus.learning2,
                     l10n.statusLearning2,
-                    Colors.orange.shade400,
+                    TermStatus.colorFor(TermStatus.learning2),
                   ),
                   _buildStatusChip(
-                    3,
+                    TermStatus.learning3,
                     l10n.statusLearning3,
-                    Colors.yellow.shade700,
+                    TermStatus.colorFor(TermStatus.learning3),
                   ),
                   _buildStatusChip(
-                    4,
+                    TermStatus.learning4,
                     l10n.statusLearning4,
-                    Colors.lightGreen.shade500,
+                    TermStatus.colorFor(TermStatus.learning4),
                   ),
-                  _buildStatusChip(5, l10n.statusKnown, Colors.green.shade600),
                   _buildStatusChip(
-                    99,
+                    TermStatus.known,
+                    l10n.statusKnown,
+                    TermStatus.colorFor(TermStatus.known),
+                  ),
+                  _buildStatusChip(
+                    TermStatus.wellKnown,
                     l10n.statusWellKnown,
-                    Colors.blue.shade400,
+                    TermStatus.colorFor(TermStatus.wellKnown),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingL),
 
-              // Language selector (for saving to different language dictionary)
+              // Language selector
               if (_languages.length > 1) ...[
                 Row(
                   children: [
-                    Text(l10n.language, style: const TextStyle(fontSize: 12)),
-                    const SizedBox(width: 8),
+                    Text(
+                      l10n.language,
+                      style: const TextStyle(
+                        fontSize: AppConstants.fontSizeCaption,
+                      ),
+                    ),
+                    const SizedBox(width: AppConstants.spacingS),
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppConstants.spacingM,
+                        ),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade400),
-                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: _TermDialogConstants.dropdownBorderColor,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.borderRadiusS,
+                          ),
                         ),
                         child: DropdownButton<int>(
                           value: _selectedLanguageId,
@@ -348,7 +405,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                                         ? l10n.noDeepL
                                         : ''),
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: AppConstants.fontSizeBody,
                                   color: hasDeepLKey && !isSupported
                                       ? Colors.grey
                                       : null,
@@ -372,7 +429,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppConstants.spacingM),
               ],
               TextField(
                 controller: _translationController,
@@ -383,10 +440,11 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                       ? IconButton(
                           icon: isTranslating
                               ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
+                                  width: _TermDialogConstants.progressSize,
+                                  height: _TermDialogConstants.progressSize,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                    strokeWidth:
+                                        _TermDialogConstants.progressStroke,
                                   ),
                                 )
                               : const Icon(Icons.translate),
@@ -395,9 +453,9 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                         )
                       : null,
                 ),
-                maxLines: 2,
+                maxLines: _TermDialogConstants.translationMaxLines,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppConstants.spacingM),
 
               // Romanization field
               TextField(
@@ -407,7 +465,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                   border: const OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppConstants.spacingM),
 
               // Sentence field
               TextField(
@@ -417,7 +475,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                   border: const OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
-                maxLines: 3,
+                maxLines: _TermDialogConstants.sentenceMaxLines,
               ),
             ],
           ),
@@ -463,21 +521,23 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
     final isIgnored = status == TermStatus.ignored;
     final isWellKnown = status == TermStatus.wellKnown;
 
-    // For ignored and well-known when not selected, show as plain text
     if ((isIgnored || isWellKnown) && !isSelected) {
       return ChoiceChip(
         label: Text(
           label,
           style: TextStyle(
-            color: isIgnored ? Colors.grey.shade600 : Colors.blue.shade700,
-            fontSize: 12,
+            color: isIgnored
+                ? _TermDialogConstants.ignoredTextColor
+                : _TermDialogConstants.wellKnownTextColor,
+            fontSize: AppConstants.fontSizeCaption,
           ),
         ),
         selected: false,
         backgroundColor: Colors.transparent,
         side: BorderSide(
-          color: isIgnored ? Colors.grey.shade400 : Colors.blue.shade300,
-          width: 1,
+          color: isIgnored
+              ? _TermDialogConstants.ignoredBorderColor
+              : _TermDialogConstants.wellKnownBorderColor,
         ),
         onSelected: (selected) {
           if (selected) {
@@ -492,19 +552,25 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
         label,
         style: TextStyle(
           color: isSelected ? Colors.white : Colors.black87,
-          fontSize: 12,
+          fontSize: AppConstants.fontSizeCaption,
         ),
       ),
       selected: isSelected,
       selectedColor: color,
-      backgroundColor: color.withValues(alpha: 0.2),
+      backgroundColor: color.withValues(
+        alpha: _TermDialogConstants.chipBackgroundAlpha,
+      ),
       onSelected: (selected) {
         if (selected) {
           setState(() => _status = status);
         }
       },
       avatar: isSelected
-          ? const Icon(Icons.check, color: Colors.white, size: 16)
+          ? const Icon(
+              Icons.check,
+              color: Colors.white,
+              size: _TermDialogConstants.checkIconSize,
+            )
           : null,
     );
   }

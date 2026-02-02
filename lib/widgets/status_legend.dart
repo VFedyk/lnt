@@ -1,9 +1,24 @@
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/term.dart';
+import '../utils/constants.dart';
+
+abstract class _StatusLegendConstants {
+  static const double shadowAlpha = 0.1;
+  static const double shadowBlur = 4.0;
+  static const Offset shadowOffset = Offset(0, 2);
+  static const double boxSize = 16.0;
+  static const double borderRadiusXS = 3.0;
+  static const double backgroundAlpha = 0.3;
+  static const double borderAlpha = 0.5;
+  static final Color ignoredBorderColor = Colors.grey.shade400;
+  static final Color ignoredTextColor = Colors.grey.shade600;
+  static final Color wellKnownBorderColor = Colors.blue.shade300;
+  static final Color wellKnownTextColor = Colors.blue.shade700;
+}
 
 class StatusLegend extends StatelessWidget {
-  final Map<int, int>? termCounts; // Optional term counts by status
+  final Map<int, int>? termCounts;
 
   const StatusLegend({super.key, this.termCounts});
 
@@ -32,14 +47,16 @@ class StatusLegend extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppConstants.spacingM),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(
+              alpha: _StatusLegendConstants.shadowAlpha,
+            ),
+            blurRadius: _StatusLegendConstants.shadowBlur,
+            offset: _StatusLegendConstants.shadowOffset,
           ),
         ],
       ),
@@ -52,10 +69,10 @@ class StatusLegend extends StatelessWidget {
               context,
             ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppConstants.spacingS),
           Wrap(
-            spacing: 12,
-            runSpacing: 8,
+            spacing: AppConstants.spacingM,
+            runSpacing: AppConstants.spacingS,
             children: TermStatus.allStatuses
                 .map((status) => _buildLegendItem(
                       _getStatusName(status, l10n),
@@ -76,37 +93,40 @@ class StatusLegend extends StatelessWidget {
     final showCount = termCounts != null;
 
     if (isIgnored || isWellKnown) {
-      // Show as plain text for ignored and well-known
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 16,
-            height: 16,
+            width: _StatusLegendConstants.boxSize,
+            height: _StatusLegendConstants.boxSize,
             decoration: BoxDecoration(
               color: Colors.transparent,
               border: Border.all(
-                color: isIgnored ? Colors.grey.shade400 : Colors.blue.shade300,
+                color: isIgnored
+                    ? _StatusLegendConstants.ignoredBorderColor
+                    : _StatusLegendConstants.wellKnownBorderColor,
               ),
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(
+                _StatusLegendConstants.borderRadiusXS,
+              ),
             ),
             child: Center(
               child: Text(
                 'A',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: AppConstants.fontSizeXS,
                   color: isIgnored
-                      ? Colors.grey.shade600
-                      : Colors.blue.shade700,
+                      ? _StatusLegendConstants.ignoredTextColor
+                      : _StatusLegendConstants.wellKnownTextColor,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppConstants.spacingXS),
           Text(
             showCount ? '$label ($count)' : label,
-            style: const TextStyle(fontSize: 12),
+            style: const TextStyle(fontSize: AppConstants.fontSizeCaption),
           ),
         ],
       );
@@ -116,18 +136,26 @@ class StatusLegend extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 16,
-          height: 16,
+          width: _StatusLegendConstants.boxSize,
+          height: _StatusLegendConstants.boxSize,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.3),
-            border: Border.all(color: color.withValues(alpha: 0.5)),
-            borderRadius: BorderRadius.circular(3),
+            color: color.withValues(
+              alpha: _StatusLegendConstants.backgroundAlpha,
+            ),
+            border: Border.all(
+              color: color.withValues(
+                alpha: _StatusLegendConstants.borderAlpha,
+              ),
+            ),
+            borderRadius: BorderRadius.circular(
+              _StatusLegendConstants.borderRadiusXS,
+            ),
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppConstants.spacingXS),
         Text(
           showCount ? '$label ($count)' : label,
-          style: const TextStyle(fontSize: 12),
+          style: const TextStyle(fontSize: AppConstants.fontSizeCaption),
         ),
       ],
     );

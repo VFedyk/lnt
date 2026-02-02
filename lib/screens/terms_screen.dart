@@ -7,7 +7,15 @@ import '../models/language.dart';
 import '../models/term.dart';
 import '../services/database_service.dart';
 import '../services/import_export_service.dart';
+import '../utils/constants.dart';
 import '../widgets/term_dialog.dart';
+
+abstract class _TermsConstants {
+  static const double filterChipAvatarRadius = 8.0;
+  static const int statusFilterCount = 7;
+  static const int wellKnownStatusIndex = 6;
+  static const int wellKnownStatusValue = 99;
+}
 
 class TermsScreen extends StatefulWidget {
   final Language language;
@@ -182,7 +190,7 @@ class _TermsScreenState extends State<TermsScreen> {
                 child: Row(
                   children: [
                     const Icon(Icons.file_upload),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Text(l10n.importCsv),
                   ],
                 ),
@@ -192,7 +200,7 @@ class _TermsScreenState extends State<TermsScreen> {
                 child: Row(
                   children: [
                     const Icon(Icons.file_download),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Text(l10n.exportCsv),
                   ],
                 ),
@@ -202,7 +210,7 @@ class _TermsScreenState extends State<TermsScreen> {
                 child: Row(
                   children: [
                     const Icon(Icons.file_download),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Text(l10n.exportAnki),
                   ],
                 ),
@@ -214,7 +222,7 @@ class _TermsScreenState extends State<TermsScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppConstants.spacingL),
             child: Column(
               children: [
                 TextField(
@@ -223,12 +231,12 @@ class _TermsScreenState extends State<TermsScreen> {
                     hintText: l10n.searchTerms,
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                     ),
                   ),
                   onChanged: (_) => setState(() => _applyFilters()),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppConstants.spacingS),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -243,13 +251,15 @@ class _TermsScreenState extends State<TermsScreen> {
                           });
                         },
                       ),
-                      const SizedBox(width: 8),
-                      ...List.generate(7, (i) {
-                        final status = i == 6 ? 99 : i;
+                      const SizedBox(width: AppConstants.spacingS),
+                      ...List.generate(_TermsConstants.statusFilterCount, (i) {
+                        final status = i == _TermsConstants.wellKnownStatusIndex
+                            ? _TermsConstants.wellKnownStatusValue
+                            : i;
                         final statusName = _getStatusName(status, l10n);
                         final count = _statusCounts[status] ?? 0;
                         return Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.only(right: AppConstants.spacingS),
                           child: FilterChip(
                             label: Text('$statusName ($count)'),
                             selected: _statusFilter == status,
@@ -261,7 +271,7 @@ class _TermsScreenState extends State<TermsScreen> {
                             },
                             avatar: CircleAvatar(
                               backgroundColor: _getStatusColor(status),
-                              radius: 8,
+                              radius: _TermsConstants.filterChipAvatarRadius,
                             ),
                           ),
                         );
@@ -293,13 +303,19 @@ class _TermsScreenState extends State<TermsScreen> {
       itemBuilder: (context, index) {
         final term = _filteredTerms[index];
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          margin: const EdgeInsets.symmetric(
+            horizontal: AppConstants.spacingL,
+            vertical: AppConstants.spacingXS,
+          ),
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: term.statusColor,
               child: Text(
                 term.status.toString(),
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: AppConstants.fontSizeCaption,
+                ),
               ),
             ),
             title: Text(term.text),
@@ -310,7 +326,10 @@ class _TermsScreenState extends State<TermsScreen> {
                 if (term.romanization.isNotEmpty)
                   Text(
                     term.romanization,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    style: TextStyle(
+                      color: AppConstants.subtitleColor,
+                      fontSize: AppConstants.fontSizeCaption,
+                    ),
                   ),
               ],
             ),
@@ -321,7 +340,7 @@ class _TermsScreenState extends State<TermsScreen> {
                   child: Row(
                     children: [
                       const Icon(Icons.edit),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppConstants.spacingS),
                       Text(l10n.edit),
                     ],
                   ),
@@ -330,9 +349,9 @@ class _TermsScreenState extends State<TermsScreen> {
                   value: 'delete',
                   child: Row(
                     children: [
-                      const Icon(Icons.delete, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+                      const Icon(Icons.delete, color: AppConstants.deleteColor),
+                      const SizedBox(width: AppConstants.spacingS),
+                      Text(l10n.delete, style: const TextStyle(color: AppConstants.deleteColor)),
                     ],
                   ),
                 ),

@@ -3,7 +3,17 @@ import 'package:stemmer/stemmer.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/term.dart';
 import '../services/database_service.dart';
+import '../utils/constants.dart';
 import 'deepl_translation_mixin.dart';
+
+abstract class _BaseTermSearchConstants {
+  static const double statusAvatarRadius = 12.0;
+  static const double progressSizeSmall = 18.0;
+  static const double progressStroke = 2.0;
+  static const double translateIconSize = 20.0;
+  static final Color noResultsColor = Colors.grey.shade600;
+  static final Color sectionHeaderColor = Colors.grey.shade700;
+}
 
 class BaseTermSearchDialog extends StatefulWidget {
   final int languageId;
@@ -118,7 +128,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
     return AlertDialog(
       title: Text(l10n.selectBaseForm),
       content: SizedBox(
-        width: 736,
+        width: AppConstants.dialogWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -132,10 +142,10 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
               onChanged: _search,
               autofocus: true,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppConstants.spacingM),
             if (_isSearching)
               const Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(AppConstants.spacingL),
                 child: CircularProgressIndicator(),
               )
             else ...[
@@ -157,7 +167,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                             : null,
                         leading: CircleAvatar(
                           backgroundColor: term.statusColor,
-                          radius: 12,
+                          radius: _BaseTermSearchConstants.statusAvatarRadius,
                         ),
                         onTap: () => Navigator.pop(context, term),
                       );
@@ -166,16 +176,22 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                 )
               else if (_searchController.text.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppConstants.spacingS,
+                  ),
                   child: Text(
                     l10n.noExistingTermsFound,
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(
+                      color: _BaseTermSearchConstants.noResultsColor,
+                    ),
                   ),
                 ),
               if (_searchController.text.isNotEmpty) ...[
                 const Divider(),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppConstants.spacingS,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -183,10 +199,10 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                         l10n.createNewBaseTerm,
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade700,
+                          color: _BaseTermSearchConstants.sectionHeaderColor,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppConstants.spacingS),
                       TextField(
                         controller: _translationController,
                         decoration: InputDecoration(
@@ -197,13 +213,21 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                               ? IconButton(
                                   icon: isTranslating
                                       ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
+                                          width: _BaseTermSearchConstants
+                                              .progressSizeSmall,
+                                          height: _BaseTermSearchConstants
+                                              .progressSizeSmall,
                                           child: CircularProgressIndicator(
-                                            strokeWidth: 2,
+                                            strokeWidth:
+                                                _BaseTermSearchConstants
+                                                    .progressStroke,
                                           ),
                                         )
-                                      : const Icon(Icons.translate, size: 20),
+                                      : const Icon(
+                                          Icons.translate,
+                                          size: _BaseTermSearchConstants
+                                              .translateIconSize,
+                                        ),
                                   tooltip: l10n.translateWithDeepL,
                                   onPressed: isTranslating
                                       ? null
@@ -212,7 +236,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                               : null,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppConstants.spacingS),
                       ElevatedButton.icon(
                         onPressed: _createNewBaseTerm,
                         icon: const Icon(Icons.add),

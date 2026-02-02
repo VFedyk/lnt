@@ -3,6 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../utils/constants.dart';
+
+abstract class _WebViewConstants {
+  static const double loadingIndicatorSize = 20.0;
+  static const double loadingStrokeWidth = 2.0;
+  static const int frameLoadInterruptedError = 2;
+}
 
 class DictionaryWebViewScreen extends StatefulWidget {
   final String url;
@@ -55,7 +62,7 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
             setState(() => _isLoading = false);
 
             // WKErrorDomain error 2 = frame load interrupted
-            if (error.errorCode == 2) {
+            if (error.errorCode == _WebViewConstants.frameLoadInterruptedError) {
               // This is often a false positive, page may still load
               return;
             }
@@ -90,10 +97,10 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.word, style: const TextStyle(fontSize: 18)),
+            Text(widget.word, style: const TextStyle(fontSize: AppConstants.fontSizeSubtitle)),
             Text(
               l10n.dictionaryLookup,
-              style: TextStyle(fontSize: 12, color: Colors.grey[300]),
+              style: TextStyle(fontSize: AppConstants.fontSizeCaption, color: Colors.grey[300]),
             ),
           ],
         ),
@@ -101,12 +108,12 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
           if (_isLoading)
             const Center(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: AppConstants.spacingL),
                 child: SizedBox(
-                  width: 20,
-                  height: 20,
+                  width: _WebViewConstants.loadingIndicatorSize,
+                  height: _WebViewConstants.loadingIndicatorSize,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2,
+                    strokeWidth: _WebViewConstants.loadingStrokeWidth,
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
@@ -141,7 +148,7 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
                 child: Row(
                   children: [
                     const Icon(Icons.arrow_back),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Text(l10n.back),
                   ],
                 ),
@@ -151,7 +158,7 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
                 child: Row(
                   children: [
                     const Icon(Icons.arrow_forward),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Text(l10n.forward),
                   ],
                 ),
@@ -161,7 +168,7 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
                 child: Row(
                   children: [
                     const Icon(Icons.open_in_browser),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Text(l10n.openInBrowser),
                   ],
                 ),

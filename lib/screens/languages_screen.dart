@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../services/database_service.dart';
+import '../utils/constants.dart';
 import 'dictionaries_screen.dart';
+
+abstract class _LanguagesConstants {
+  static const double emptyStateIconSize = 64.0;
+  static const double infoIconSize = 20.0;
+  static const double infoFontSize = 13.0;
+}
 
 class LanguagesScreen extends StatefulWidget {
   final VoidCallback? onLanguagesChanged;
@@ -111,7 +118,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppConstants.deleteColor),
             child: Text(l10n.delete),
           ),
         ],
@@ -136,10 +143,10 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.language, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
+                  Icon(Icons.language, size: _LanguagesConstants.emptyStateIconSize, color: Colors.grey[400]),
+                  const SizedBox(height: AppConstants.spacingL),
                   Text(l10n.noLanguagesYet),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppConstants.spacingS),
                   ElevatedButton.icon(
                     onPressed: () => _addOrEditLanguage(),
                     icon: const Icon(Icons.add),
@@ -154,8 +161,8 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
                 final lang = _languages[index];
                 return Card(
                   margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: AppConstants.spacingL,
+                    vertical: AppConstants.spacingS,
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
@@ -184,7 +191,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
                         IconButton(
                           icon: const Icon(Icons.delete),
                           onPressed: () => _deleteLanguage(lang),
-                          color: Colors.red,
+                          color: AppConstants.deleteColor,
                         ),
                       ],
                     ),
@@ -253,7 +260,7 @@ class _LanguageDialogState extends State<_LanguageDialog> {
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
                 autofocus: true,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingL),
               SwitchListTile(
                 title: Text(l10n.rightToLeftText),
                 subtitle: Text(l10n.rightToLeftHint),
@@ -275,27 +282,27 @@ class _LanguageDialogState extends State<_LanguageDialog> {
                 onChanged: (v) => setState(() => _splitByCharacter = v),
                 contentPadding: EdgeInsets.zero,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingS),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppConstants.spacingM),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                   border: Border.all(color: Colors.blue.shade200),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.info_outline,
-                      size: 20,
+                      size: _LanguagesConstants.infoIconSize,
                       color: Colors.blue.shade700,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppConstants.spacingS),
                     Expanded(
                       child: Text(
                         l10n.addDictionariesAfterCreating,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: _LanguagesConstants.infoFontSize,
                           color: Colors.blue.shade700,
                         ),
                       ),
