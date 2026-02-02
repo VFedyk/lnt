@@ -447,8 +447,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           term: existingTerm,
           sentence: sentence,
           dictionaries: dictionaries,
-          onLookup: (ctx, dict) =>
-              _dictService.lookupWord(ctx, word, dict.url),
+          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
           languageId: widget.language.id!,
           languageName: widget.language.name,
         ),
@@ -473,8 +472,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           term: newTerm,
           sentence: sentence,
           dictionaries: dictionaries,
-          onLookup: (ctx, dict) =>
-              _dictService.lookupWord(ctx, word, dict.url),
+          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
           languageId: widget.language.id!,
           languageName: widget.language.name,
         ),
@@ -519,9 +517,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     final l10n = AppLocalizations.of(context);
     if (dictionaries.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.noDictionariesConfigured)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.noDictionariesConfigured)));
       return;
     }
 
@@ -738,9 +736,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.allWordsMarkedKnown)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.allWordsMarkedKnown)));
       }
     } catch (e) {
       if (mounted) {
@@ -832,10 +830,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       key: _scaffoldKey,
       endDrawer: _isLoading
           ? null
-          : WordListDrawer(
-              wordTokens: _wordTokens,
-              onWordTap: _handleWordTap,
-            ),
+          : WordListDrawer(wordTokens: _wordTokens, onWordTap: _handleWordTap),
       appBar: AppBar(
         title: Text(_text.title, overflow: TextOverflow.ellipsis),
         actions: [
@@ -867,11 +862,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
             ),
           if (!_isSelectionMode)
             IconButton(
-              icon: const Icon(Icons.list_alt),
-              tooltip: l10n.wordList,
-              onPressed: () {
-                _scaffoldKey.currentState?.openEndDrawer();
-              },
+              icon: Icon(
+                _text.status == TextStatus.finished
+                    ? Icons.check_circle
+                    : Icons.check_circle_outline,
+                color: _text.status == TextStatus.finished
+                    ? _ReaderScreenConstants.successColor
+                    : null,
+              ),
+              tooltip: _text.status == TextStatus.finished
+                  ? l10n.markedAsFinished
+                  : l10n.markAsFinished,
+              onPressed: _markAsFinished,
             ),
           if (!_isSelectionMode)
             PopupMenuButton<String>(
@@ -887,8 +889,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   case 'mark_all_known':
                     _markAllWordsKnown();
                     break;
-                  case 'mark_finished':
-                    _markAsFinished();
+                  case 'open_drawer':
+                    _scaffoldKey.currentState?.openEndDrawer();
                     break;
                 }
               },
@@ -924,23 +926,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                 ),
                 PopupMenuItem(
-                  value: 'mark_finished',
+                  value: 'open_drawer',
                   child: Row(
                     children: [
-                      Icon(
-                        _text.status == TextStatus.finished
-                            ? Icons.check_circle
-                            : Icons.check_circle_outline,
-                        color: _text.status == TextStatus.finished
-                            ? _ReaderScreenConstants.successColor
-                            : null,
-                      ),
+                      const Icon(Icons.list_alt),
                       const SizedBox(width: _ReaderScreenConstants.spacingS),
-                      Text(
-                        _text.status == TextStatus.finished
-                            ? l10n.markedAsFinished
-                            : l10n.markAsFinished,
-                      ),
+                      Text(l10n.wordList),
                     ],
                   ),
                 ),
@@ -965,9 +956,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           Icons.info_outline,
                           color: _ReaderScreenConstants.selectionAccentColor,
                         ),
-                        const SizedBox(
-                          width: _ReaderScreenConstants.spacingS,
-                        ),
+                        const SizedBox(width: _ReaderScreenConstants.spacingS),
                         Expanded(
                           child: Text(
                             l10n.wordsSelected(_selectedWordIndices.length),
