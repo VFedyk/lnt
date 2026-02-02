@@ -620,46 +620,49 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return showDialog<bool>(
       context: context,
       builder: (context) => Dialog(
-        child: Padding(
-          padding: const EdgeInsets.all(_ReaderScreenConstants.spacingL),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                term.text,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              if (term.romanization.isNotEmpty) ...[
-                const SizedBox(height: _ReaderScreenConstants.spacingXS),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 736),
+          child: Padding(
+            padding: const EdgeInsets.all(_ReaderScreenConstants.spacingL),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  term.romanization,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontStyle: FontStyle.italic,
-                    color: _ReaderScreenConstants.subtitleColor,
+                  term.text,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (term.romanization.isNotEmpty) ...[
+                  const SizedBox(height: _ReaderScreenConstants.spacingXS),
+                  Text(
+                    term.romanization,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                      color: _ReaderScreenConstants.subtitleColor,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: _ReaderScreenConstants.spacingS),
+                Text(
+                  term.translation,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: _ReaderScreenConstants.spacingL),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.pop(context, true),
+                    icon: const Icon(
+                      Icons.edit,
+                      size: _ReaderScreenConstants.editIconSize,
+                    ),
+                    label: Text(l10n.edit),
                   ),
                 ),
               ],
-              const SizedBox(height: _ReaderScreenConstants.spacingS),
-              Text(
-                term.translation,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              const SizedBox(height: _ReaderScreenConstants.spacingL),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () => Navigator.pop(context, true),
-                  icon: const Icon(
-                    Icons.edit,
-                    size: _ReaderScreenConstants.editIconSize,
-                  ),
-                  label: Text(l10n.edit),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
