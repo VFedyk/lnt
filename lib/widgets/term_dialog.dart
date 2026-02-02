@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:stemmer/stemmer.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
 import '../models/language.dart';
 import '../services/database_service.dart';
 import '../services/deepl_service.dart';
-import '../services/settings_service.dart';
+import 'base_term_search_dialog.dart';
+import 'deepl_translation_mixin.dart';
 
 class TermDialog extends StatefulWidget {
   final Term term;
@@ -30,7 +30,7 @@ class TermDialog extends StatefulWidget {
   State<TermDialog> createState() => _TermDialogState();
 }
 
-class _TermDialogState extends State<TermDialog> {
+class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
   late int _status;
   late TextEditingController _termController;
   late TextEditingController _translationController;
@@ -42,12 +42,19 @@ class _TermDialogState extends State<TermDialog> {
   Term? _baseTerm;
   List<Term> _linkedTerms = [];
 
-  // Translation and language selection
-  bool _isTranslating = false;
-  bool _hasDeepLKey = false;
+  // Language selection
   List<Language> _languages = [];
   late int _selectedLanguageId;
   late String _selectedLanguageName;
+
+  @override
+  String get languageName => _selectedLanguageName;
+
+  @override
+  TextEditingController get sourceTextController => _termController;
+
+  @override
+  TextEditingController get translationTextController => _translationController;
 
   @override
   void initState() {
@@ -69,7 +76,7 @@ class _TermDialogState extends State<TermDialog> {
     );
     _baseTermId = widget.term.baseTermId;
     _loadBaseTermAndLinkedTerms();
-    _checkDeepLKey();
+    checkDeepLKey();
     _loadLanguages();
   }
 
@@ -77,49 +84,6 @@ class _TermDialogState extends State<TermDialog> {
     final languages = await DatabaseService.instance.getLanguages();
     if (mounted) {
       setState(() => _languages = languages);
-    }
-  }
-
-  Future<void> _checkDeepLKey() async {
-    final hasKey = await SettingsService.instance.hasDeepLApiKey();
-    if (mounted) {
-      setState(() => _hasDeepLKey = hasKey);
-    }
-  }
-
-  Future<void> _translateTerm() async {
-    final sourceCode = DeepLService.getDeepLLanguageCode(_selectedLanguageName);
-    if (sourceCode == null) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.languageNotSupported(_selectedLanguageName)),
-          ),
-        );
-      }
-      return;
-    }
-
-    setState(() => _isTranslating = true);
-
-    final targetLang = await SettingsService.instance.getDeepLTargetLang();
-    final translation = await DeepLService.instance.translate(
-      text: _termController.text.trim(),
-      sourceLang: sourceCode,
-      targetLang: targetLang,
-    );
-
-    if (mounted) {
-      setState(() => _isTranslating = false);
-      if (translation != null) {
-        _translationController.text = translation;
-      } else {
-        final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.translationFailed)));
-      }
     }
   }
 
@@ -145,7 +109,7 @@ class _TermDialogState extends State<TermDialog> {
   Future<void> _selectBaseTerm() async {
     final selectedTerm = await showDialog<Term>(
       context: context,
-      builder: (context) => _BaseTermSearchDialog(
+      builder: (context) => BaseTermSearchDialog(
         languageId: widget.languageId,
         languageName: widget.languageName,
         excludeTermId: widget.term.id,
@@ -380,12 +344,12 @@ class _TermDialogState extends State<TermDialog> {
                               value: lang.id,
                               child: Text(
                                 lang.name +
-                                    (_hasDeepLKey && !isSupported
+                                    (hasDeepLKey && !isSupported
                                         ? l10n.noDeepL
                                         : ''),
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: _hasDeepLKey && !isSupported
+                                  color: hasDeepLKey && !isSupported
                                       ? Colors.grey
                                       : null,
                                 ),
@@ -415,9 +379,9 @@ class _TermDialogState extends State<TermDialog> {
                 decoration: InputDecoration(
                   labelText: l10n.translation,
                   border: const OutlineInputBorder(),
-                  suffixIcon: _hasDeepLKey
+                  suffixIcon: hasDeepLKey
                       ? IconButton(
-                          icon: _isTranslating
+                          icon: isTranslating
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
@@ -427,7 +391,7 @@ class _TermDialogState extends State<TermDialog> {
                                 )
                               : const Icon(Icons.translate),
                           tooltip: l10n.translateWithDeepL,
-                          onPressed: _isTranslating ? null : _translateTerm,
+                          onPressed: isTranslating ? null : translateTerm,
                         )
                       : null,
                 ),
@@ -542,280 +506,6 @@ class _TermDialogState extends State<TermDialog> {
       avatar: isSelected
           ? const Icon(Icons.check, color: Colors.white, size: 16)
           : null,
-    );
-  }
-}
-
-/// Dialog to search and select a base term
-class _BaseTermSearchDialog extends StatefulWidget {
-  final int languageId;
-  final int? excludeTermId;
-  final String languageName;
-  final String? initialWord;
-
-  const _BaseTermSearchDialog({
-    required this.languageId,
-    required this.languageName,
-    this.excludeTermId,
-    this.initialWord,
-  });
-
-  @override
-  State<_BaseTermSearchDialog> createState() => _BaseTermSearchDialogState();
-}
-
-class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
-  final _searchController = TextEditingController();
-  final _translationController = TextEditingController();
-  List<Term> _searchResults = [];
-  bool _isSearching = false;
-  bool _isTranslating = false;
-  bool _hasDeepLKey = false;
-
-  static final _snowballStemmer = SnowballStemmer();
-
-  @override
-  void initState() {
-    super.initState();
-    _checkDeepLKey();
-    _prefillSearch();
-  }
-
-  void _prefillSearch() {
-    if (widget.initialWord == null || widget.initialWord!.isEmpty) return;
-
-    // Stem the word for English, otherwise use as-is
-    final isEnglish = widget.languageName.toLowerCase() == 'english';
-    final searchWord = isEnglish
-        ? _snowballStemmer.stem(widget.initialWord!)
-        : widget.initialWord!;
-
-    _searchController.text = searchWord;
-    // Auto-trigger search after frame renders
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _search(searchWord);
-    });
-  }
-
-  Future<void> _checkDeepLKey() async {
-    final hasKey = await SettingsService.instance.hasDeepLApiKey();
-    if (mounted) {
-      setState(() => _hasDeepLKey = hasKey);
-    }
-  }
-
-  Future<void> _translateTerm() async {
-    final sourceCode = DeepLService.getDeepLLanguageCode(widget.languageName);
-    if (sourceCode == null) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.languageNotSupported(widget.languageName)),
-          ),
-        );
-      }
-      return;
-    }
-
-    setState(() => _isTranslating = true);
-
-    final targetLang = await SettingsService.instance.getDeepLTargetLang();
-    final translation = await DeepLService.instance.translate(
-      text: _searchController.text.trim(),
-      sourceLang: sourceCode,
-      targetLang: targetLang,
-    );
-
-    if (mounted) {
-      setState(() => _isTranslating = false);
-      if (translation != null) {
-        _translationController.text = translation;
-      } else {
-        final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.translationFailed)));
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _translationController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _search(String query) async {
-    if (query.trim().isEmpty) {
-      setState(() => _searchResults = []);
-      return;
-    }
-
-    setState(() => _isSearching = true);
-
-    final results = await DatabaseService.instance.searchTerms(
-      widget.languageId,
-      query.trim(),
-    );
-
-    if (mounted) {
-      setState(() {
-        _searchResults = results
-            .where((t) => t.id != widget.excludeTermId)
-            .toList();
-        _isSearching = false;
-      });
-    }
-  }
-
-  Future<void> _createNewBaseTerm() async {
-    final termText = _searchController.text.trim().toLowerCase();
-    if (termText.isEmpty) return;
-
-    final newTerm = Term(
-      languageId: widget.languageId,
-      text: termText,
-      lowerText: termText,
-      status: TermStatus.unknown,
-      translation: _translationController.text.trim(),
-    );
-
-    final id = await DatabaseService.instance.createTerm(newTerm);
-    final createdTerm = newTerm.copyWith(id: id);
-
-    if (mounted) {
-      Navigator.pop(context, createdTerm);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(l10n.selectBaseForm),
-      content: SizedBox(
-        width: 736,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: l10n.searchTerms,
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-              ),
-              onChanged: _search,
-              autofocus: true,
-            ),
-            const SizedBox(height: 12),
-            if (_isSearching)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              )
-            else ...[
-              // Show search results if any
-              if (_searchResults.isNotEmpty)
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _searchResults.length,
-                    itemBuilder: (context, index) {
-                      final term = _searchResults[index];
-                      return ListTile(
-                        title: Text(term.lowerText),
-                        subtitle: term.translation.isNotEmpty
-                            ? Text(
-                                term.translation,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            : null,
-                        leading: CircleAvatar(
-                          backgroundColor: term.statusColor,
-                          radius: 12,
-                        ),
-                        onTap: () => Navigator.pop(context, term),
-                      );
-                    },
-                  ),
-                )
-              else if (_searchController.text.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    l10n.noExistingTermsFound,
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                ),
-              // Always show create option when there's text
-              if (_searchController.text.isNotEmpty) ...[
-                const Divider(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        l10n.createNewBaseTerm,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _translationController,
-                        decoration: InputDecoration(
-                          labelText: l10n.translationOptional,
-                          border: const OutlineInputBorder(),
-                          isDense: true,
-                          suffixIcon: _hasDeepLKey
-                              ? IconButton(
-                                  icon: _isTranslating
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : const Icon(Icons.translate, size: 20),
-                                  tooltip: l10n.translateWithDeepL,
-                                  onPressed: _isTranslating
-                                      ? null
-                                      : _translateTerm,
-                                )
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton.icon(
-                        onPressed: _createNewBaseTerm,
-                        icon: const Icon(Icons.add),
-                        label: Text(
-                          l10n.createTerm(
-                            _searchController.text.trim().toLowerCase(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-      ],
     );
   }
 }
