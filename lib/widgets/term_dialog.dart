@@ -93,7 +93,9 @@ class _TermDialogState extends State<TermDialog> {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.languageNotSupported(_selectedLanguageName))),
+          SnackBar(
+            content: Text(l10n.languageNotSupported(_selectedLanguageName)),
+          ),
         );
       }
       return;
@@ -114,9 +116,9 @@ class _TermDialogState extends State<TermDialog> {
         _translationController.text = translation;
       } else {
         final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.translationFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.translationFailed)));
       }
     }
   }
@@ -131,7 +133,9 @@ class _TermDialogState extends State<TermDialog> {
     }
     // Load linked terms if this term IS a base term (has an id)
     if (widget.term.id != null) {
-      final linked = await DatabaseService.instance.getLinkedTerms(widget.term.id!);
+      final linked = await DatabaseService.instance.getLinkedTerms(
+        widget.term.id!,
+      );
       if (mounted) {
         setState(() => _linkedTerms = linked);
       }
@@ -283,143 +287,176 @@ class _TermDialogState extends State<TermDialog> {
             ),
         ],
       ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Term field (editable)
-            TextField(
-              controller: _termController,
-              decoration: InputDecoration(
-                labelText: l10n.term,
-                border: const OutlineInputBorder(),
-                suffixIcon: widget.term.text != widget.term.lowerText
-                    ? IconButton(
-                        icon: const Icon(Icons.history),
-                        tooltip: l10n.useOriginal(widget.term.text),
-                        onPressed: () {
-                          _termController.text = widget.term.text;
-                        },
-                      )
-                    : null,
+      content: SizedBox(
+        width: 736,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Term field (editable)
+              TextField(
+                controller: _termController,
+                decoration: InputDecoration(
+                  labelText: l10n.term,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: widget.term.text != widget.term.lowerText
+                      ? IconButton(
+                          icon: const Icon(Icons.history),
+                          tooltip: l10n.useOriginal(widget.term.text),
+                          onPressed: () {
+                            _termController.text = widget.term.text;
+                          },
+                        )
+                      : null,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            // Base term linking
-            _buildBaseTermSection(),
-            const SizedBox(height: 12),
+              // Base term linking
+              _buildBaseTermSection(),
+              const SizedBox(height: 12),
 
-            // Status selector
-            Text(l10n.status, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _buildStatusChip(0, l10n.statusIgnored, Colors.grey.shade400),
-                _buildStatusChip(1, l10n.statusUnknown, Colors.red.shade400),
-                _buildStatusChip(2, l10n.statusLearning2, Colors.orange.shade400),
-                _buildStatusChip(3, l10n.statusLearning3, Colors.yellow.shade700),
-                _buildStatusChip(4, l10n.statusLearning4, Colors.lightGreen.shade500),
-                _buildStatusChip(5, l10n.statusKnown, Colors.green.shade600),
-                _buildStatusChip(99, l10n.statusWellKnown, Colors.blue.shade400),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Language selector (for saving to different language dictionary)
-            if (_languages.length > 1) ...[
-              Row(
+              // Status selector
+              Text(
+                l10n.status,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Text(l10n.language, style: const TextStyle(fontSize: 12)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: DropdownButton<int>(
-                        value: _selectedLanguageId,
-                        isExpanded: true,
-                        isDense: true,
-                        underline: const SizedBox(),
-                        items: _languages.map((lang) {
-                          final isSupported = DeepLService.getDeepLLanguageCode(lang.name) != null;
-                          return DropdownMenuItem(
-                            value: lang.id,
-                            child: Text(
-                              lang.name + (_hasDeepLKey && !isSupported ? l10n.noDeepL : ''),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: _hasDeepLKey && !isSupported ? Colors.grey : null,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            final lang = _languages.firstWhere((l) => l.id == value);
-                            setState(() {
-                              _selectedLanguageId = value;
-                              _selectedLanguageName = lang.name;
-                            });
-                          }
-                        },
-                      ),
-                    ),
+                  _buildStatusChip(0, l10n.statusIgnored, Colors.grey.shade400),
+                  _buildStatusChip(1, l10n.statusUnknown, Colors.red.shade400),
+                  _buildStatusChip(
+                    2,
+                    l10n.statusLearning2,
+                    Colors.orange.shade400,
+                  ),
+                  _buildStatusChip(
+                    3,
+                    l10n.statusLearning3,
+                    Colors.yellow.shade700,
+                  ),
+                  _buildStatusChip(
+                    4,
+                    l10n.statusLearning4,
+                    Colors.lightGreen.shade500,
+                  ),
+                  _buildStatusChip(5, l10n.statusKnown, Colors.green.shade600),
+                  _buildStatusChip(
+                    99,
+                    l10n.statusWellKnown,
+                    Colors.blue.shade400,
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+
+              // Language selector (for saving to different language dictionary)
+              if (_languages.length > 1) ...[
+                Row(
+                  children: [
+                    Text(l10n.language, style: const TextStyle(fontSize: 12)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: DropdownButton<int>(
+                          value: _selectedLanguageId,
+                          isExpanded: true,
+                          isDense: true,
+                          underline: const SizedBox(),
+                          items: _languages.map((lang) {
+                            final isSupported =
+                                DeepLService.getDeepLLanguageCode(lang.name) !=
+                                null;
+                            return DropdownMenuItem(
+                              value: lang.id,
+                              child: Text(
+                                lang.name +
+                                    (_hasDeepLKey && !isSupported
+                                        ? l10n.noDeepL
+                                        : ''),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: _hasDeepLKey && !isSupported
+                                      ? Colors.grey
+                                      : null,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              final lang = _languages.firstWhere(
+                                (l) => l.id == value,
+                              );
+                              setState(() {
+                                _selectedLanguageId = value;
+                                _selectedLanguageName = lang.name;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextField(
+                controller: _translationController,
+                decoration: InputDecoration(
+                  labelText: l10n.translation,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: _hasDeepLKey
+                      ? IconButton(
+                          icon: _isTranslating
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.translate),
+                          tooltip: l10n.translateWithDeepL,
+                          onPressed: _isTranslating ? null : _translateTerm,
+                        )
+                      : null,
+                ),
+                maxLines: 2,
+              ),
               const SizedBox(height: 12),
+
+              // Romanization field
+              TextField(
+                controller: _romanizationController,
+                decoration: InputDecoration(
+                  labelText: l10n.romanizationPronunciation,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Sentence field
+              TextField(
+                controller: _sentenceController,
+                decoration: InputDecoration(
+                  labelText: l10n.exampleSentence,
+                  border: const OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 3,
+              ),
             ],
-            TextField(
-              controller: _translationController,
-              decoration: InputDecoration(
-                labelText: l10n.translation,
-                border: const OutlineInputBorder(),
-                suffixIcon: _hasDeepLKey
-                    ? IconButton(
-                        icon: _isTranslating
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.translate),
-                        tooltip: l10n.translateWithDeepL,
-                        onPressed: _isTranslating ? null : _translateTerm,
-                      )
-                    : null,
-              ),
-              maxLines: 2,
-            ),
-            const SizedBox(height: 12),
-
-            // Romanization field
-            TextField(
-              controller: _romanizationController,
-              decoration: InputDecoration(
-                labelText: l10n.romanizationPronunciation,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Sentence field
-            TextField(
-              controller: _sentenceController,
-              decoration: InputDecoration(
-                labelText: l10n.exampleSentence,
-                border: const OutlineInputBorder(),
-                alignLabelWithHint: true,
-              ),
-              maxLines: 3,
-            ),
-          ],
+          ),
         ),
       ),
       actions: [
@@ -446,7 +483,8 @@ class _TermDialogState extends State<TermDialog> {
               sentence: _sentenceController.text,
               lastAccessed: DateTime.now(),
               baseTermId: _baseTermId,
-              clearBaseTermId: _baseTermId == null && widget.term.baseTermId != null,
+              clearBaseTermId:
+                  _baseTermId == null && widget.term.baseTermId != null,
             );
             Navigator.pop(context, updatedTerm);
           },
@@ -572,7 +610,9 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.languageNotSupported(widget.languageName))),
+          SnackBar(
+            content: Text(l10n.languageNotSupported(widget.languageName)),
+          ),
         );
       }
       return;
@@ -593,9 +633,9 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
         _translationController.text = translation;
       } else {
         final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.translationFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.translationFailed)));
       }
     }
   }
@@ -656,7 +696,7 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
     return AlertDialog(
       title: Text(l10n.selectBaseForm),
       content: SizedBox(
-        width: double.maxFinite,
+        width: 736,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -739,11 +779,15 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
                                       ? const SizedBox(
                                           width: 18,
                                           height: 18,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
                                         )
                                       : const Icon(Icons.translate, size: 20),
                                   tooltip: l10n.translateWithDeepL,
-                                  onPressed: _isTranslating ? null : _translateTerm,
+                                  onPressed: _isTranslating
+                                      ? null
+                                      : _translateTerm,
                                 )
                               : null,
                         ),
@@ -752,7 +796,11 @@ class _BaseTermSearchDialogState extends State<_BaseTermSearchDialog> {
                       ElevatedButton.icon(
                         onPressed: _createNewBaseTerm,
                         icon: const Icon(Icons.add),
-                        label: Text(l10n.createTerm(_searchController.text.trim().toLowerCase())),
+                        label: Text(
+                          l10n.createTerm(
+                            _searchController.text.trim().toLowerCase(),
+                          ),
+                        ),
                       ),
                     ],
                   ),
