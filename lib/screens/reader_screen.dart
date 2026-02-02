@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -6,11 +5,16 @@ import '../models/language.dart';
 import '../models/text_document.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
+import '../models/word_token.dart';
 import '../services/database_service.dart';
 import '../services/dictionary_service.dart';
 import '../services/text_parser_service.dart';
+import '../services/isolate_parser.dart';
 import '../widgets/term_dialog.dart';
 import '../widgets/status_legend.dart';
+import '../widgets/edit_text_dialog.dart';
+import '../widgets/word_list_drawer.dart';
+import '../widgets/paragraph_rich_text.dart';
 
 /// Layout, sizing, and timing constants for the reader screen
 abstract class _ReaderScreenConstants {
@@ -22,7 +26,6 @@ abstract class _ReaderScreenConstants {
 
   // Icon sizes
   static const double editIconSize = 18.0;
-  static const double statusCircleRadius = 8.0;
 
   // Spacing
   static const double spacingXS = 4.0;
@@ -30,223 +33,15 @@ abstract class _ReaderScreenConstants {
   static const double spacingM = 12.0;
   static const double spacingL = 16.0;
 
-  // Word token layout
-  static const double wordPaddingHorizontal = 3.0;
-  static const double wordPaddingVertical = 2.0;
-  static const double wordMarginHorizontal = 1.0;
-  static const double wordBorderRadius = 4.0;
-  static const double wordBorderWidthNormal = 1.0;
-  static const double wordBorderWidthSelected = 2.0;
-
-  // Text layout
-  static const double textLineHeight = 1.6;
-  static const int editDialogMaxLines = 10;
-
-  // Timing
-  static const Duration tooltipWaitDuration = Duration(milliseconds: 300);
-
-  // Opacity values
-  static const double backgroundAlpha = 0.3;
-  static const double borderAlpha = 0.5;
-  static const int chipBackgroundAlpha = 50;
-  static const int chipBorderAlpha = 100;
-
-  // Divider
-  static const double dividerHeight = 1.0;
-
   // Selection mode colors
-  static const Color selectionBackgroundColor = Color(
-    0xFF90CAF9,
-  ); // Colors.blue.shade200
-  static const Color selectionBorderColor = Color(
-    0xFF1E88E5,
-  ); // Colors.blue.shade600
-  static const Color selectionBannerColor = Color(
-    0xFFBBDEFB,
-  ); // Colors.blue.shade100
+  static const Color selectionBannerColor = Color(0xFFBBDEFB);
   static const Color selectionAccentColor = Colors.blue;
-  static const Color selectedTextColor = Colors.black87;
 
   // Status colors
   static const Color successColor = Colors.green;
-  static const Color transparentColor = Colors.transparent;
 
   // Text colors
-  static const Color subtitleColor = Color(0xFF757575); // Colors.grey.shade600
-
-  // Other language words (words that exist in another language's dictionary)
-  static const Color otherLanguageColor = Color(
-    0xFFCE93D8,
-  ); // Colors.purple.shade200
-}
-
-/// Data passed to isolate for parsing
-class _ParseInput {
-  final String content;
-  final bool splitByCharacter;
-  final String characterSubstitutions;
-  final String regexpWordCharacters;
-  final Map<String, Map<String, dynamic>> termsMapData; // Serialized terms
-
-  _ParseInput({
-    required this.content,
-    required this.splitByCharacter,
-    required this.characterSubstitutions,
-    required this.regexpWordCharacters,
-    required this.termsMapData,
-  });
-}
-
-/// Result from isolate parsing
-class _ParsedToken {
-  final String text;
-  final bool isWord;
-  final int position;
-  final String? termLowerText; // Reference to term by lowerText
-
-  _ParsedToken({
-    required this.text,
-    required this.isWord,
-    required this.position,
-    this.termLowerText,
-  });
-}
-
-/// Top-level function for isolate parsing - O(n) algorithm
-List<_ParsedToken> _parseInIsolate(_ParseInput input) {
-  final totalStopwatch = Stopwatch()..start();
-  final stepWatch = Stopwatch();
-
-  final parser = TextParserService();
-  final tokens = <_ParsedToken>[];
-  final content = input.content;
-
-  // Build term keys set for O(1) lookup
-  stepWatch.start();
-  final termKeys = input.termsMapData.keys.toSet();
-  developer.log(
-    '[PARSE] Build termKeys set: ${stepWatch.elapsedMilliseconds}ms (${termKeys.length} terms)',
-  );
-  stepWatch.reset();
-
-  // Create language for word matching
-  final tempLang = Language(
-    name: '',
-    splitByCharacter: input.splitByCharacter,
-    characterSubstitutions: input.characterSubstitutions,
-    regexpWordCharacters: input.regexpWordCharacters,
-  );
-
-  // Get word matches with positions - O(n)
-  stepWatch.start();
-  final wordMatches = parser.getWordMatches(content, tempLang);
-  developer.log(
-    '[PARSE] getWordMatches: ${stepWatch.elapsedMilliseconds}ms (${wordMatches.length} words)',
-  );
-  stepWatch.reset();
-
-  // Get multi-word terms for phrase matching
-  stepWatch.start();
-  final multiWordTerms = <String, String>{}; // lowerText -> originalText
-  for (final entry in input.termsMapData.entries) {
-    if (entry.key.contains(' ') ||
-        (input.splitByCharacter && entry.key.length > 1)) {
-      multiWordTerms[entry.key] = entry.value['text'] as String;
-    }
-  }
-  final sortedMultiWordKeys = multiWordTerms.keys.toList()
-    ..sort((a, b) => b.length.compareTo(a.length));
-  developer.log(
-    '[PARSE] Build multi-word terms: ${stepWatch.elapsedMilliseconds}ms (${sortedMultiWordKeys.length} terms)',
-  );
-  stepWatch.reset();
-
-  // Main parsing loop - O(n)
-  stepWatch.start();
-  int lastEnd = 0;
-  int matchIndex = 0;
-
-  while (matchIndex < wordMatches.length) {
-    final match = wordMatches[matchIndex];
-
-    // Add non-word text before this word
-    if (match.start > lastEnd) {
-      tokens.add(
-        _ParsedToken(
-          text: content.substring(lastEnd, match.start),
-          isWord: false,
-          position: lastEnd,
-        ),
-      );
-    }
-
-    // Check if this word starts a multi-word term
-    bool foundMultiWord = false;
-    for (final termKey in sortedMultiWordKeys) {
-      final termText = multiWordTerms[termKey]!;
-      final endPos = match.start + termText.length;
-
-      if (endPos <= content.length) {
-        final substring = content.substring(match.start, endPos);
-        if (substring.toLowerCase() == termText.toLowerCase()) {
-          tokens.add(
-            _ParsedToken(
-              text: substring,
-              isWord: true,
-              position: match.start,
-              termLowerText: termKey,
-            ),
-          );
-
-          // Skip all word matches that are within this multi-word term
-          lastEnd = endPos;
-          while (matchIndex < wordMatches.length &&
-              wordMatches[matchIndex].start < endPos) {
-            matchIndex++;
-          }
-          foundMultiWord = true;
-          break;
-        }
-      }
-    }
-
-    if (foundMultiWord) continue;
-
-    // Add single word token
-    final lowerWord = parser.normalizeWord(match.word);
-    tokens.add(
-      _ParsedToken(
-        text: match.word,
-        isWord: true,
-        position: match.start,
-        termLowerText: termKeys.contains(lowerWord) ? lowerWord : null,
-      ),
-    );
-
-    lastEnd = match.end;
-    matchIndex++;
-  }
-
-  // Add any remaining text after last word
-  if (lastEnd < content.length) {
-    tokens.add(
-      _ParsedToken(
-        text: content.substring(lastEnd),
-        isWord: false,
-        position: lastEnd,
-      ),
-    );
-  }
-
-  developer.log(
-    '[PARSE] Main loop: ${stepWatch.elapsedMilliseconds}ms (${tokens.length} tokens)',
-  );
-  stepWatch.reset();
-
-  totalStopwatch.stop();
-  developer.log('[PARSE] TOTAL: ${totalStopwatch.elapsedMilliseconds}ms');
-
-  return tokens;
+  static const Color subtitleColor = Color(0xFF757575);
 }
 
 class ReaderScreen extends StatefulWidget {
@@ -266,11 +61,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   late TextDocument _text;
   Map<String, Term> _termsMap = {};
-  Map<String, ({Term term, String languageName})> _otherLanguageTerms =
-      {}; // Terms from other languages
-  List<_WordToken> _wordTokens = [];
-  List<List<_WordToken>> _paragraphs =
-      []; // Tokens grouped by paragraph for lazy rendering
+  Map<String, ({Term term, String languageName})> _otherLanguageTerms = {};
+  List<WordToken> _wordTokens = [];
+  List<List<WordToken>> _paragraphs = [];
   bool _isLoading = true;
   bool _showLegend = false;
   double _fontSize = _ReaderScreenConstants.defaultFontSize;
@@ -291,10 +84,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void initState() {
     super.initState();
     _text = widget.text;
-    // Schedule load after first frame so we have a valid context,
-    // but avoid ModalRoute.of in didChangeDependencies which would
-    // register an InheritedWidget dependency and cause extra rebuilds
-    // during the route transition.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_loadScheduled) {
         _loadScheduled = true;
@@ -304,8 +93,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _waitForAnimationAndLoad() {
-    // Read the route animation directly from the navigator's history
-    // via the element tree, without registering an InheritedWidget dependency.
     final route = ModalRoute.of(context);
     final animation = route?.animation;
 
@@ -329,31 +116,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
     super.dispose();
   }
 
+  // --- Data loading & parsing ---
+
   Future<void> _loadTermsAndParse() async {
-    // _isLoading is already true from field initializer on first load;
-    // only call setState when reloading to avoid a redundant rebuild.
     if (!_isLoading) {
       setState(() => _isLoading = true);
     }
 
     try {
-      // Load all terms for this language
       _termsMap = await DatabaseService.instance.getTermsMap(
         widget.language.id!,
       );
 
-      // Parse text into words (async to prevent UI blocking)
       await _parseTextAsync();
-
-      // Find words that exist in other languages (for distinct styling)
       await _loadOtherLanguageWords();
-
-      // Calculate term counts for this specific text
       _updateTextTermCounts();
 
       setState(() => _isLoading = false);
-
-      // Update last_read timestamp and status after UI is ready (non-critical)
       _updateLastRead();
     } catch (e) {
       setState(() => _isLoading = false);
@@ -366,8 +145,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-  /// Updates last_read timestamp and status in the background.
-  /// This is non-critical metadata, so it runs after the UI has rendered.
   Future<void> _updateLastRead() async {
     final updatedText = _text.copyWith(
       lastRead: DateTime.now(),
@@ -390,7 +167,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (seenWords.contains(normalized)) continue;
       seenWords.add(normalized);
 
-      // Skip words that belong to other languages
       if (_otherLanguageTerms.containsKey(normalized)) continue;
 
       final term = _termsMap[normalized];
@@ -401,13 +177,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _termCounts = counts;
   }
 
-  /// Update a single term in place without reloading everything
   Future<void> _updateTermInPlace(Term term) async {
     final lowerText = term.lowerText;
 
-    // Check if term was saved to a different language
     if (term.languageId != widget.language.id) {
-      // Term belongs to another language - fetch language name and mark
       final lang = await DatabaseService.instance.getLanguage(term.languageId);
       _otherLanguageTerms[lowerText] = (
         term: term,
@@ -415,10 +188,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
       _termsMap.remove(lowerText);
 
-      // Update tokens to have no term (for current language)
       _wordTokens = _wordTokens.map((token) {
         if (token.isWord && token.text.toLowerCase() == lowerText) {
-          return _WordToken(
+          return WordToken(
             text: token.text,
             isWord: true,
             term: null,
@@ -428,13 +200,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         return token;
       }).toList();
     } else {
-      // Term is for current language - update normally
       _termsMap[lowerText] = term;
 
-      // Update all tokens that match this term
       _wordTokens = _wordTokens.map((token) {
         if (token.isWord && token.text.toLowerCase() == lowerText) {
-          return _WordToken(
+          return WordToken(
             text: token.text,
             isWord: true,
             term: term,
@@ -445,17 +215,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
       }).toList();
     }
 
-    // Rebuild paragraphs with updated tokens
     _groupIntoParagraphs();
-
-    // Recalculate term counts
     _updateTextTermCounts();
-
     setState(() {});
   }
 
   Future<void> _parseTextAsync() async {
-    // Serialize terms map for isolate
     final termsMapData = <String, Map<String, dynamic>>{};
     for (final entry in _termsMap.entries) {
       termsMapData[entry.key] = {
@@ -464,8 +229,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       };
     }
 
-    // Run parsing in isolate
-    final input = _ParseInput(
+    final input = ParseInput(
       content: _text.content,
       splitByCharacter: widget.language.splitByCharacter,
       characterSubstitutions: widget.language.characterSubstitutions,
@@ -473,13 +237,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
       termsMapData: termsMapData,
     );
 
-    final parsedTokens = await compute(_parseInIsolate, input);
+    final parsedTokens = await compute(parseInIsolate, input);
 
     if (!mounted) return;
 
-    // Convert parsed tokens back to _WordToken with Term references
     _wordTokens = parsedTokens.map((pt) {
-      return _WordToken(
+      return WordToken(
         text: pt.text,
         isWord: pt.isWord,
         position: pt.position,
@@ -491,12 +254,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Future<void> _loadOtherLanguageWords() async {
-    // Collect all unique words from the text that don't have terms in current language
     final wordsToCheck = <String>{};
     for (final token in _wordTokens) {
       if (token.isWord) {
         final lowerWord = token.text.toLowerCase();
-        // Only check words that aren't already in current language's terms
         if (!_termsMap.containsKey(lowerWord)) {
           wordsToCheck.add(lowerWord);
         }
@@ -508,32 +269,28 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return;
     }
 
-    // Query database for terms that exist in other languages
     _otherLanguageTerms = await DatabaseService.instance
         .getTermsInOtherLanguages(widget.language.id!, wordsToCheck);
   }
 
   void _groupIntoParagraphs() {
-    // First assign global indices to all tokens
     _wordTokens = [
       for (int i = 0; i < _wordTokens.length; i++)
         _wordTokens[i].copyWithIndex(i),
     ];
 
-    // Group tokens by paragraph (split on double newlines or single newlines)
     _paragraphs = [];
-    List<_WordToken> currentParagraph = [];
+    List<WordToken> currentParagraph = [];
 
     for (final token in _wordTokens) {
       if (!token.isWord && token.text.contains('\n')) {
-        // Split: keep text before first newline (e.g. ".") with current paragraph
         final nlIndex = token.text.indexOf('\n');
         final before = token.text.substring(0, nlIndex);
         final nlPart = token.text.substring(nlIndex);
 
         if (before.isNotEmpty) {
           currentParagraph.add(
-            _WordToken(
+            WordToken(
               text: before,
               isWord: false,
               globalIndex: token.globalIndex,
@@ -546,14 +303,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
           currentParagraph = [];
         }
 
-        // Split nlPart into pure newlines and any trailing text (e.g. "'")
         final lastNl = nlPart.lastIndexOf('\n');
         final pureNl = nlPart.substring(0, lastNl + 1);
         final after = nlPart.substring(lastNl + 1);
 
-        // Add the newline portion as spacing paragraph
         currentParagraph.add(
-          _WordToken(
+          WordToken(
             text: pureNl,
             isWord: false,
             globalIndex: token.globalIndex,
@@ -562,10 +317,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
         _paragraphs.add(currentParagraph);
         currentParagraph = [];
 
-        // Any text after the last newline starts the next paragraph
         if (after.isNotEmpty) {
           currentParagraph.add(
-            _WordToken(
+            WordToken(
               text: after,
               isWord: false,
               globalIndex: token.globalIndex,
@@ -582,8 +336,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
+  // --- Word interaction ---
+
   Future<void> _handleWordTap(String word, int position, int tokenIndex) async {
-    // If in selection mode, toggle word selection
     if (_isSelectionMode) {
       setState(() {
         if (_selectedWordIndices.contains(tokenIndex)) {
@@ -598,11 +353,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return;
     }
 
-    // Normal mode - edit/create term
     final lowerWord = _textParser.normalizeWord(word);
     final existingTerm = _termsMap[lowerWord];
 
-    // If term exists and has translation, show quick popup
     if (existingTerm != null && existingTerm.translation.isNotEmpty) {
       final shouldEdit = await _showTranslationPopup(existingTerm);
       if (shouldEdit == true) {
@@ -611,7 +364,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return;
     }
 
-    // No translation - open term dialog directly
     await _openTermDialog(word, position, existingTerm);
   }
 
@@ -676,14 +428,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
   ) async {
     final lowerWord = _textParser.normalizeWord(word);
 
-    // Get sentence context
     final sentence = _textParser.getSentenceAtPosition(
       _text.content,
       position,
       widget.language,
     );
 
-    // Get available dictionaries
     final dictionaries = await _dictService.getActiveDictionaries(
       widget.language.id!,
     );
@@ -691,14 +441,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     Term? result;
     if (existingTerm != null) {
-      // Show term edit dialog
       result = await showDialog<Term?>(
         context: context,
         builder: (context) => TermDialog(
           term: existingTerm,
           sentence: sentence,
           dictionaries: dictionaries,
-          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
+          onLookup: (ctx, dict) =>
+              _dictService.lookupWord(ctx, word, dict.url),
           languageId: widget.language.id!,
           languageName: widget.language.name,
         ),
@@ -709,7 +459,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
         _updateTermInPlace(result);
       }
     } else {
-      // Create new term
       final newTerm = Term(
         languageId: widget.language.id!,
         text: word,
@@ -724,7 +473,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           term: newTerm,
           sentence: sentence,
           dictionaries: dictionaries,
-          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
+          onLookup: (ctx, dict) =>
+              _dictService.lookupWord(ctx, word, dict.url),
           languageId: widget.language.id!,
           languageName: widget.language.name,
         ),
@@ -736,6 +486,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       }
     }
   }
+
+  // --- Selection mode ---
 
   Future<void> _handleWordLongPress(int tokenIndex) async {
     setState(() {
@@ -755,13 +507,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Future<void> _lookupSelectedWords() async {
     if (_selectedWordIndices.isEmpty) return;
 
-    // Get selected word tokens in order
     final selectedTokens = _selectedWordIndices.toList()..sort();
     final selectedWords = selectedTokens
         .map((i) => _wordTokens[i].text)
         .join(' ');
 
-    // Get available dictionaries
     final dictionaries = await _dictService.getActiveDictionaries(
       widget.language.id!,
     );
@@ -769,13 +519,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     final l10n = AppLocalizations.of(context);
     if (dictionaries.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.noDictionariesConfigured)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.noDictionariesConfigured)),
+      );
       return;
     }
 
-    // Show dictionary selection dialog
     final selectedDict = await showDialog<Dictionary?>(
       context: context,
       builder: (context) => AlertDialog(
@@ -810,18 +559,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Future<void> _saveSelectionAsTerm() async {
     if (_selectedWordIndices.isEmpty) return;
 
-    // Get selected word tokens in order
     final selectedTokens = _selectedWordIndices.toList()..sort();
     final selectedWords = selectedTokens
         .map((i) => _wordTokens[i].text)
-        .join(
-          widget.language.splitByCharacter ? '' : ' ',
-        ); // No space for character-based languages
+        .join(widget.language.splitByCharacter ? '' : ' ');
 
     final lowerWords = _textParser.normalizeWord(selectedWords);
     final existingTerm = _termsMap[lowerWords];
 
-    // Get sentence context from first selected word
     final firstToken = _wordTokens[selectedTokens.first];
     final sentence = _textParser.getSentenceAtPosition(
       _text.content,
@@ -829,7 +574,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
       widget.language,
     );
 
-    // Get available dictionaries
     final dictionaries = await _dictService.getActiveDictionaries(
       widget.language.id!,
     );
@@ -837,7 +581,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     Term? result;
     if (existingTerm != null) {
-      // Edit existing term
       result = await showDialog<Term?>(
         context: context,
         builder: (context) => TermDialog(
@@ -855,7 +598,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
         await DatabaseService.instance.updateTerm(result);
       }
     } else {
-      // Create new term
       final newTerm = Term(
         languageId: widget.language.id!,
         text: selectedWords,
@@ -882,19 +624,218 @@ class _ReaderScreenState extends State<ReaderScreen> {
       }
     }
 
-    // Always cancel selection and reload, even if dialog was cancelled
     _cancelSelection();
     if (result != null) {
       await _loadTermsAndParse();
     }
   }
 
+  // --- Text actions ---
+
+  Future<void> _editText() async {
+    final result = await showDialog<TextDocument>(
+      context: context,
+      builder: (context) => EditTextDialog(text: _text),
+    );
+
+    if (result != null) {
+      final contentChanged = result.content != _text.content;
+      await DatabaseService.instance.updateText(result);
+      setState(() {
+        _text = result;
+      });
+      if (contentChanged) {
+        await _loadTermsAndParse();
+      }
+    }
+  }
+
+  void _showFontSizeDialog() {
+    final l10n = AppLocalizations.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.fontSize),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.previewText, style: TextStyle(fontSize: _fontSize)),
+              Slider(
+                value: _fontSize,
+                min: _ReaderScreenConstants.fontSizeMin,
+                max: _ReaderScreenConstants.fontSizeMax,
+                divisions: _ReaderScreenConstants.fontSizeSliderDivisions,
+                label: _fontSize.round().toString(),
+                onChanged: (value) {
+                  setDialogState(() => _fontSize = value);
+                  setState(() {});
+                },
+              ),
+              Text('${_fontSize.round()}pt'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.done),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _markAllWordsKnown() {
+    final l10n = AppLocalizations.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.markAllKnownQuestion),
+        content: Text(l10n.markAllKnownConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _performMarkAllKnown();
+            },
+            child: Text(l10n.markAll),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performMarkAllKnown() async {
+    try {
+      final words = _textParser.splitIntoWords(_text.content, widget.language);
+
+      for (final word in words) {
+        final lowerWord = _textParser.normalizeWord(word);
+        final existingTerm = _termsMap[lowerWord];
+
+        if (existingTerm != null) {
+          await DatabaseService.instance.updateTerm(
+            existingTerm.copyWith(status: TermStatus.wellKnown),
+          );
+        } else {
+          await DatabaseService.instance.createTerm(
+            Term(
+              languageId: widget.language.id!,
+              text: word,
+              lowerText: lowerWord,
+              status: TermStatus.wellKnown,
+            ),
+          );
+        }
+      }
+
+      await _loadTermsAndParse();
+
+      if (mounted) {
+        final l10n = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.allWordsMarkedKnown)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _markAsFinished() async {
+    final newStatus = _text.status == TextStatus.finished
+        ? TextStatus.inProgress
+        : TextStatus.finished;
+
+    final updatedText = _text.copyWith(status: newStatus);
+    await DatabaseService.instance.updateText(updatedText);
+
+    setState(() {
+      _text = updatedText;
+    });
+
+    if (mounted) {
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            newStatus == TextStatus.finished
+                ? l10n.textMarkedFinished
+                : l10n.textMarkedInProgress,
+          ),
+        ),
+      );
+    }
+
+    if (newStatus == TextStatus.finished && _text.collectionId != null) {
+      await _promptForNextText();
+    }
+  }
+
+  Future<void> _promptForNextText() async {
+    final textsInCollection = await DatabaseService.instance
+        .getTextsInCollection(_text.collectionId!);
+
+    final currentIndex = textsInCollection.indexWhere((t) => t.id == _text.id);
+
+    if (currentIndex >= 0 && currentIndex < textsInCollection.length - 1) {
+      final nextText = textsInCollection[currentIndex + 1];
+
+      if (!mounted) return;
+
+      final l10n = AppLocalizations.of(context);
+      final shouldProceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.continueReading),
+          content: Text(l10n.continueReadingPrompt(nextText.title)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.no),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.yes),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldProceed == true && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                ReaderScreen(text: nextText, language: widget.language),
+          ),
+        );
+      }
+    }
+  }
+
+  // --- Build ---
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       key: _scaffoldKey,
-      endDrawer: _isLoading ? null : _buildWordListDrawer(),
+      endDrawer: _isLoading
+          ? null
+          : WordListDrawer(
+              wordTokens: _wordTokens,
+              onWordTap: _handleWordTap,
+            ),
       appBar: AppBar(
         title: Text(_text.title, overflow: TextOverflow.ellipsis),
         actions: [
@@ -1024,7 +965,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           Icons.info_outline,
                           color: _ReaderScreenConstants.selectionAccentColor,
                         ),
-                        const SizedBox(width: _ReaderScreenConstants.spacingS),
+                        const SizedBox(
+                          width: _ReaderScreenConstants.spacingS,
+                        ),
                         Expanded(
                           child: Text(
                             l10n.wordsSelected(_selectedWordIndices.length),
@@ -1050,7 +993,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       itemCount: _paragraphs.length,
                       itemBuilder: (context, index) {
                         final para = _paragraphs[index];
-                        // Newline-only paragraphs act as visual spacers
                         if (para.length == 1 &&
                             !para[0].isWord &&
                             para[0].text.trim().isEmpty) {
@@ -1060,614 +1002,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 : _ReaderScreenConstants.spacingS,
                           );
                         }
-                        return _buildParagraphRichText(para);
+                        return ParagraphRichText(
+                          tokens: para,
+                          fontSize: _fontSize,
+                          selectedWordIndices: _selectedWordIndices,
+                          otherLanguageTerms: _otherLanguageTerms,
+                          onWordTap: _handleWordTap,
+                          onWordLongPress: _handleWordLongPress,
+                        );
                       },
                     ),
                   ),
                 ),
               ],
             ),
-    );
-  }
-
-  static final _leadingPunctuation = RegExp(r'^[\p{P}\p{S}]+', unicode: true);
-
-  Widget _buildParagraphRichText(List<_WordToken> paragraphTokens) {
-    final spans = <InlineSpan>[];
-    final textStyle = TextStyle(
-      fontSize: _fontSize,
-      height: _ReaderScreenConstants.textLineHeight,
-    );
-
-    int skipChars = 0;
-
-    for (int ti = 0; ti < paragraphTokens.length; ti++) {
-      final token = paragraphTokens[ti];
-      final globalIndex = token.globalIndex;
-
-      if (!token.isWord) {
-        var text = token.text;
-        if (skipChars > 0) {
-          text = text.substring(skipChars);
-          skipChars = 0;
-        }
-        // Strip newline characters — paragraph splitting already provides
-        // visual separation, so inline newlines would just add blank lines.
-        text = text.replaceAll('\n', '');
-        if (text.isNotEmpty) {
-          spans.add(TextSpan(text: text, style: textStyle));
-        }
-        continue;
-      }
-
-      // Look ahead: extract leading punctuation from the next non-word
-      // token so we can include it in this word's WidgetSpan, preventing
-      // the line-break algorithm from separating word and punctuation.
-      String trailingPunct = '';
-      if (ti + 1 < paragraphTokens.length && !paragraphTokens[ti + 1].isWord) {
-        final nextText = paragraphTokens[ti + 1].text;
-        final m = _leadingPunctuation.firstMatch(nextText);
-        if (m != null) {
-          trailingPunct = m.group(0)!;
-          skipChars = trailingPunct.length;
-        }
-      }
-
-      final term = token.term;
-      final isSelected = _selectedWordIndices.contains(globalIndex);
-      final isIgnored = term?.status == TermStatus.ignored;
-      final isWellKnown = term?.status == TermStatus.wellKnown;
-      final lowerWord = token.text.toLowerCase();
-      final isOtherLanguage =
-          term == null && _otherLanguageTerms.containsKey(lowerWord);
-
-      Color backgroundColor;
-      if (isSelected) {
-        backgroundColor = _ReaderScreenConstants.selectionBackgroundColor;
-      } else if (isIgnored || isWellKnown || isOtherLanguage) {
-        backgroundColor = _ReaderScreenConstants.transparentColor;
-      } else if (term != null) {
-        backgroundColor = term.statusColor.withValues(
-          alpha: _ReaderScreenConstants.backgroundAlpha,
-        );
-      } else {
-        backgroundColor = TermStatus.colorFor(
-          TermStatus.unknown,
-        ).withValues(alpha: _ReaderScreenConstants.backgroundAlpha);
-      }
-
-      Color borderColor;
-      if (isSelected) {
-        borderColor = _ReaderScreenConstants.selectionBorderColor;
-      } else if (isIgnored || isWellKnown || isOtherLanguage) {
-        borderColor = _ReaderScreenConstants.transparentColor;
-      } else if (term != null) {
-        borderColor = term.statusColor.withValues(
-          alpha: _ReaderScreenConstants.borderAlpha,
-        );
-      } else {
-        borderColor = TermStatus.colorFor(
-          TermStatus.unknown,
-        ).withValues(alpha: _ReaderScreenConstants.borderAlpha);
-      }
-
-      Color? textColor;
-      if (isSelected) {
-        textColor = _ReaderScreenConstants.selectedTextColor;
-      } else if (isOtherLanguage) {
-        textColor = _ReaderScreenConstants.otherLanguageColor;
-      }
-
-      String? tooltipMessage;
-      if (term != null && term.translation.isNotEmpty) {
-        tooltipMessage = term.translation;
-        if (term.romanization.isNotEmpty) {
-          tooltipMessage = '${term.romanization}\n$tooltipMessage';
-        }
-      } else if (isOtherLanguage) {
-        final otherInfo = _otherLanguageTerms[lowerWord]!;
-        final otherTerm = otherInfo.term;
-        final parts = <String>[];
-        if (otherTerm.romanization.isNotEmpty) {
-          parts.add(otherTerm.romanization);
-        }
-        if (otherTerm.translation.isNotEmpty) {
-          parts.add(otherTerm.translation);
-        }
-        if (otherInfo.languageName.isNotEmpty) {
-          parts.add('(${otherInfo.languageName})');
-        }
-        if (parts.isNotEmpty) {
-          tooltipMessage = parts.join('\n');
-        }
-      }
-
-      Widget wordContainer = GestureDetector(
-        onTap: () => _handleWordTap(token.text, token.position, globalIndex),
-        onLongPress: () => _handleWordLongPress(globalIndex),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: _ReaderScreenConstants.wordPaddingHorizontal,
-            vertical: _ReaderScreenConstants.wordPaddingVertical,
-          ),
-          margin: const EdgeInsets.symmetric(
-            horizontal: _ReaderScreenConstants.wordMarginHorizontal,
-          ),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(
-              _ReaderScreenConstants.wordBorderRadius,
-            ),
-            border: Border.all(
-              color: borderColor,
-              width: isSelected
-                  ? _ReaderScreenConstants.wordBorderWidthSelected
-                  : _ReaderScreenConstants.wordBorderWidthNormal,
-            ),
-          ),
-          child: Text(
-            token.text,
-            style: TextStyle(
-              fontSize: _fontSize,
-              height: _ReaderScreenConstants.textLineHeight,
-              color: textColor,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ),
-      );
-
-      if (tooltipMessage != null) {
-        wordContainer = Tooltip(
-          message: tooltipMessage,
-          waitDuration: _ReaderScreenConstants.tooltipWaitDuration,
-          child: wordContainer,
-        );
-      }
-
-      // Combine word and trailing punctuation into a single WidgetSpan
-      // so they are treated as one atomic inline element.
-      final Widget spanChild;
-      if (trailingPunct.isNotEmpty) {
-        spanChild = Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            wordContainer,
-            Text(trailingPunct, style: textStyle),
-          ],
-        );
-      } else {
-        spanChild = wordContainer;
-      }
-
-      spans.add(
-        WidgetSpan(alignment: PlaceholderAlignment.middle, child: spanChild),
-      );
-    }
-
-    return Text.rich(TextSpan(children: spans));
-  }
-
-  Future<void> _editText() async {
-    final result = await showDialog<TextDocument>(
-      context: context,
-      builder: (context) => _EditTextDialog(text: _text),
-    );
-
-    if (result != null) {
-      final contentChanged = result.content != _text.content;
-      await DatabaseService.instance.updateText(result);
-      setState(() {
-        _text = result;
-      });
-      // Re-parse if content changed
-      if (contentChanged) {
-        await _loadTermsAndParse();
-      }
-    }
-  }
-
-  void _showFontSizeDialog() {
-    final l10n = AppLocalizations.of(context);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.fontSize),
-        content: StatefulBuilder(
-          builder: (context, setDialogState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.previewText, style: TextStyle(fontSize: _fontSize)),
-              Slider(
-                value: _fontSize,
-                min: _ReaderScreenConstants.fontSizeMin,
-                max: _ReaderScreenConstants.fontSizeMax,
-                divisions: _ReaderScreenConstants.fontSizeSliderDivisions,
-                label: _fontSize.round().toString(),
-                onChanged: (value) {
-                  setDialogState(() => _fontSize = value);
-                  setState(() {});
-                },
-              ),
-              Text('${_fontSize.round()}pt'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.done),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _markAllWordsKnown() {
-    final l10n = AppLocalizations.of(context);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.markAllKnownQuestion),
-        content: Text(l10n.markAllKnownConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await _performMarkAllKnown();
-            },
-            child: Text(l10n.markAll),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _performMarkAllKnown() async {
-    try {
-      final words = _textParser.splitIntoWords(_text.content, widget.language);
-
-      for (final word in words) {
-        final lowerWord = _textParser.normalizeWord(word);
-        final existingTerm = _termsMap[lowerWord];
-
-        if (existingTerm != null) {
-          await DatabaseService.instance.updateTerm(
-            existingTerm.copyWith(status: TermStatus.wellKnown),
-          );
-        } else {
-          await DatabaseService.instance.createTerm(
-            Term(
-              languageId: widget.language.id!,
-              text: word,
-              lowerText: lowerWord,
-              status: TermStatus.wellKnown,
-            ),
-          );
-        }
-      }
-
-      await _loadTermsAndParse();
-
-      if (mounted) {
-        final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.allWordsMarkedKnown)));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _markAsFinished() async {
-    final newStatus = _text.status == TextStatus.finished
-        ? TextStatus.inProgress
-        : TextStatus.finished;
-
-    final updatedText = _text.copyWith(status: newStatus);
-    await DatabaseService.instance.updateText(updatedText);
-
-    setState(() {
-      _text = updatedText;
-    });
-
-    if (mounted) {
-      final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            newStatus == TextStatus.finished
-                ? l10n.textMarkedFinished
-                : l10n.textMarkedInProgress,
-          ),
-        ),
-      );
-    }
-
-    // If marked as finished and text is in a collection, check for next text
-    if (newStatus == TextStatus.finished && _text.collectionId != null) {
-      await _promptForNextText();
-    }
-  }
-
-  Future<void> _promptForNextText() async {
-    final textsInCollection = await DatabaseService.instance
-        .getTextsInCollection(_text.collectionId!);
-
-    final currentIndex = textsInCollection.indexWhere((t) => t.id == _text.id);
-
-    // Check if there's a next text
-    if (currentIndex >= 0 && currentIndex < textsInCollection.length - 1) {
-      final nextText = textsInCollection[currentIndex + 1];
-
-      if (!mounted) return;
-
-      final l10n = AppLocalizations.of(context);
-      final shouldProceed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(l10n.continueReading),
-          content: Text(l10n.continueReadingPrompt(nextText.title)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(l10n.no),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(l10n.yes),
-            ),
-          ],
-        ),
-      );
-
-      if (shouldProceed == true && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                ReaderScreen(text: nextText, language: widget.language),
-          ),
-        );
-      }
-    }
-  }
-
-  Widget _buildWordListDrawer() {
-    final l10n = AppLocalizations.of(context);
-    // Group unique words by status
-    final wordsByStatus = <int, List<_WordToken>>{};
-    final seenWords = <String>{};
-
-    for (final token in _wordTokens) {
-      if (!token.isWord) continue;
-      final normalized = token.text.toLowerCase();
-      if (seenWords.contains(normalized)) continue;
-      seenWords.add(normalized);
-
-      final status = token.term?.status ?? TermStatus.unknown;
-      wordsByStatus.putIfAbsent(status, () => []).add(token);
-    }
-
-    // Sort words alphabetically within each group
-    for (final list in wordsByStatus.values) {
-      list.sort((a, b) => a.text.toLowerCase().compareTo(b.text.toLowerCase()));
-    }
-
-    // Define status order and labels
-    final statusOrder = [
-      TermStatus.unknown,
-      TermStatus.learning2,
-      TermStatus.learning3,
-      TermStatus.learning4,
-      TermStatus.known,
-      TermStatus.wellKnown,
-      TermStatus.ignored,
-    ];
-
-    final statusLabels = {
-      TermStatus.unknown: l10n.statusUnknown,
-      TermStatus.learning2: l10n.statusLearning2,
-      TermStatus.learning3: l10n.statusLearning3,
-      TermStatus.learning4: l10n.statusLearning4,
-      TermStatus.known: l10n.statusKnown,
-      TermStatus.wellKnown: l10n.statusWellKnown,
-      TermStatus.ignored: l10n.statusIgnored,
-    };
-
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(_ReaderScreenConstants.spacingL),
-              child: Text(
-                l10n.wordList,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            const Divider(height: _ReaderScreenConstants.dividerHeight),
-            Expanded(
-              child: ListView(
-                children: [
-                  for (final status in statusOrder)
-                    if (wordsByStatus.containsKey(status) &&
-                        wordsByStatus[status]!.isNotEmpty)
-                      _buildStatusSection(
-                        statusLabels[status]!,
-                        wordsByStatus[status]!,
-                        TermStatus.colorFor(status),
-                      ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusSection(
-    String label,
-    List<_WordToken> tokens,
-    Color color,
-  ) {
-    final l10n = AppLocalizations.of(context);
-    return ExpansionTile(
-      initiallyExpanded: label == l10n.statusUnknown,
-      leading: CircleAvatar(
-        backgroundColor: color,
-        radius: _ReaderScreenConstants.statusCircleRadius,
-      ),
-      title: Text('$label (${tokens.length})'),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: _ReaderScreenConstants.spacingL,
-            vertical: _ReaderScreenConstants.spacingS,
-          ),
-          child: Wrap(
-            spacing: _ReaderScreenConstants.spacingS,
-            runSpacing: _ReaderScreenConstants.spacingS,
-            children: tokens.map((token) {
-              return ActionChip(
-                label: Text(token.text),
-                backgroundColor: color.withAlpha(
-                  _ReaderScreenConstants.chipBackgroundAlpha,
-                ),
-                side: BorderSide(
-                  color: color.withAlpha(
-                    _ReaderScreenConstants.chipBorderAlpha,
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.pop(context); // Close drawer
-                  _handleWordTap(
-                    token.text,
-                    token.position,
-                    _wordTokens.indexOf(token),
-                  );
-                },
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _WordToken {
-  final String text;
-  final bool isWord;
-  final Term? term;
-  final int position;
-  final int globalIndex; // Index in _wordTokens for selection tracking
-
-  _WordToken({
-    required this.text,
-    required this.isWord,
-    this.term,
-    this.position = 0,
-    this.globalIndex = -1,
-  });
-
-  _WordToken copyWithIndex(int index) => _WordToken(
-    text: text,
-    isWord: isWord,
-    term: term,
-    position: position,
-    globalIndex: index,
-  );
-}
-
-class _EditTextDialog extends StatefulWidget {
-  final TextDocument text;
-
-  const _EditTextDialog({required this.text});
-
-  @override
-  State<_EditTextDialog> createState() => _EditTextDialogState();
-}
-
-class _EditTextDialogState extends State<_EditTextDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _titleController;
-  late final TextEditingController _contentController;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(text: widget.text.title);
-    _contentController = TextEditingController(text: widget.text.content);
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(l10n.editText),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(labelText: l10n.title),
-                validator: (v) => v?.isEmpty == true ? l10n.required : null,
-              ),
-              const SizedBox(height: _ReaderScreenConstants.spacingL),
-              TextFormField(
-                controller: _contentController,
-                decoration: InputDecoration(
-                  labelText: l10n.textContent,
-                  alignLabelWithHint: true,
-                ),
-                maxLines: _ReaderScreenConstants.editDialogMaxLines,
-                validator: (v) => v?.isEmpty == true ? l10n.required : null,
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final updatedText = widget.text.copyWith(
-                title: _titleController.text,
-                content: _contentController.text,
-              );
-              Navigator.pop(context, updatedText);
-            }
-          },
-          child: Text(l10n.save),
-        ),
-      ],
     );
   }
 }
