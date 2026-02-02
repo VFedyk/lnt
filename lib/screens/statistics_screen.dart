@@ -7,13 +7,10 @@ import '../services/database_service.dart';
 import '../utils/constants.dart';
 
 abstract class _StatisticsConstants {
-  static const double iconSize = 32.0;
   static const double progressBarHeight = 10.0;
   static const double statusBarHeight = 8.0;
   static const double progressCardBackgroundOpacity = 0.1;
   static const double progressCardBorderOpacity = 0.3;
-  static const double percentMultiplier = 100.0;
-  static const int percentDecimalPlaces = 1;
   static const Color totalTermsColor = Colors.blue;
   static const Color textsColor = Colors.purple;
 }
@@ -207,7 +204,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(height: AppConstants.spacingS),
                   Text(
                     _totalTerms > 0
-                        ? l10n.percentKnown((knownCount / _totalTerms * _StatisticsConstants.percentMultiplier).toStringAsFixed(_StatisticsConstants.percentDecimalPlaces))
+                        ? l10n.percentKnown((knownCount / _totalTerms * 100).toStringAsFixed(1))
                         : l10n.noTermsYet,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
@@ -248,7 +245,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   ) {
     return Column(
       children: [
-        Icon(icon, size: _StatisticsConstants.iconSize, color: color),
+        Icon(icon, size: AppConstants.iconSizeM, color: color),
         const SizedBox(height: AppConstants.spacingS),
         Text(
           value,
@@ -274,7 +271,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('$label ($count)'),
-              Text('${(percentage * _StatisticsConstants.percentMultiplier).toStringAsFixed(_StatisticsConstants.percentDecimalPlaces)}%'),
+              Text('${(percentage * 100).toStringAsFixed(1)}%'),
             ],
           ),
           const SizedBox(height: AppConstants.spacingXS),

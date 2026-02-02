@@ -11,8 +11,6 @@ abstract class _StatusLegendConstants {
   static const double borderRadiusXS = 3.0;
   static const double backgroundAlpha = 0.3;
   static const double borderAlpha = 0.5;
-  static final Color ignoredBorderColor = Colors.grey.shade400;
-  static final Color ignoredTextColor = Colors.grey.shade600;
   static final Color wellKnownBorderColor = Colors.blue.shade300;
   static final Color wellKnownTextColor = Colors.blue.shade700;
 }
@@ -103,7 +101,7 @@ class StatusLegend extends StatelessWidget {
               color: Colors.transparent,
               border: Border.all(
                 color: isIgnored
-                    ? _StatusLegendConstants.ignoredBorderColor
+                    ? AppConstants.borderColor
                     : _StatusLegendConstants.wellKnownBorderColor,
               ),
               borderRadius: BorderRadius.circular(
@@ -116,7 +114,7 @@ class StatusLegend extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AppConstants.fontSizeXS,
                   color: isIgnored
-                      ? _StatusLegendConstants.ignoredTextColor
+                      ? AppConstants.subtitleColor
                       : _StatusLegendConstants.wellKnownTextColor,
                   fontWeight: FontWeight.w500,
                 ),

@@ -6,7 +6,6 @@ import '../utils/constants.dart';
 import 'dictionaries_screen.dart';
 
 abstract class _LanguagesConstants {
-  static const double emptyStateIconSize = 64.0;
   static const double infoIconSize = 20.0;
   static const double infoFontSize = 13.0;
 }
@@ -143,7 +142,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.language, size: _LanguagesConstants.emptyStateIconSize, color: Colors.grey[400]),
+                  Icon(Icons.language, size: AppConstants.emptyStateIconSize, color: Colors.grey[400]),
                   const SizedBox(height: AppConstants.spacingL),
                   Text(l10n.noLanguagesYet),
                   const SizedBox(height: AppConstants.spacingS),

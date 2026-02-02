@@ -12,14 +12,11 @@ import '../utils/constants.dart';
 import '../utils/helpers.dart';
 
 abstract class _SettingsScreenConstants {
-  static const double progressIndicatorSize = 16.0;
-  static const double progressIndicatorStrokeWidth = 2.0;
   static const double errorIconSize = 20.0;
   static const double progressBarHeight = 8.0;
   static const double usageWarningThreshold = 0.7;
   static const double usageCriticalThreshold = 0.9;
-  static const double percentMultiplier = 100.0;
-  static const int percentDecimalPlaces = 1;
+  // percent formatting: use 100 and 1 literals directly
   static const int millionThreshold = 1000000;
   static const int thousandThreshold = 1000;
   static const int numberDecimalPlacesMillion = 1;
@@ -166,11 +163,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ? Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(
-                    width: _SettingsScreenConstants.progressIndicatorSize,
-                    height: _SettingsScreenConstants.progressIndicatorSize,
-                    child: CircularProgressIndicator(
-                      strokeWidth: _SettingsScreenConstants.progressIndicatorStrokeWidth,
+                  SizedBox(
+                    width: AppConstants.progressIndicatorSizeS,
+                    height: AppConstants.progressIndicatorSizeS,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: AppConstants.progressStrokeWidth,
                     ),
                   ),
                   const SizedBox(width: AppConstants.spacingS),
@@ -204,7 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                           Text(
-                            '${(_usage!.usagePercent * _SettingsScreenConstants.percentMultiplier).toStringAsFixed(_SettingsScreenConstants.percentDecimalPlaces)}%',
+                            '${(_usage!.usagePercent * 100).toStringAsFixed(1)}%',
                             style: TextStyle(
                               color: _usageColor(_usage!.usagePercent),
                               fontWeight: FontWeight.w600,

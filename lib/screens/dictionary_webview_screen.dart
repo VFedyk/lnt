@@ -6,8 +6,6 @@ import '../l10n/generated/app_localizations.dart';
 import '../utils/constants.dart';
 
 abstract class _WebViewConstants {
-  static const double loadingIndicatorSize = 20.0;
-  static const double loadingStrokeWidth = 2.0;
   static const int frameLoadInterruptedError = 2;
 }
 
@@ -62,7 +60,8 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
             setState(() => _isLoading = false);
 
             // WKErrorDomain error 2 = frame load interrupted
-            if (error.errorCode == _WebViewConstants.frameLoadInterruptedError) {
+            if (error.errorCode ==
+                _WebViewConstants.frameLoadInterruptedError) {
               // This is often a false positive, page may still load
               return;
             }
@@ -97,23 +96,31 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.word, style: const TextStyle(fontSize: AppConstants.fontSizeSubtitle)),
+            Text(
+              widget.word,
+              style: const TextStyle(fontSize: AppConstants.fontSizeSubtitle),
+            ),
             Text(
               l10n.dictionaryLookup,
-              style: TextStyle(fontSize: AppConstants.fontSizeCaption, color: Colors.grey[300]),
+              style: TextStyle(
+                fontSize: AppConstants.fontSizeCaption,
+                color: Colors.grey[300],
+              ),
             ),
           ],
         ),
         actions: [
           if (_isLoading)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppConstants.spacingL),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.spacingL,
+                ),
                 child: SizedBox(
-                  width: _WebViewConstants.loadingIndicatorSize,
-                  height: _WebViewConstants.loadingIndicatorSize,
-                  child: CircularProgressIndicator(
-                    strokeWidth: _WebViewConstants.loadingStrokeWidth,
+                  width: AppConstants.progressIndicatorSize,
+                  height: AppConstants.progressIndicatorSize,
+                  child: const CircularProgressIndicator(
+                    strokeWidth: AppConstants.progressStrokeWidth,
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
@@ -196,9 +203,9 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.errorOpeningBrowser(e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errorOpeningBrowser(e.toString()))),
+        );
       }
     }
   }

@@ -14,6 +14,7 @@ import 'texts_screen.dart';
 import 'reader_screen.dart';
 import 'terms_screen.dart';
 import 'statistics_screen.dart';
+import '../utils/constants.dart';
 import 'settings_screen.dart';
 
 /// Navigation tabs for the home screen
@@ -36,20 +37,12 @@ abstract class _HomeScreenConstants {
   static const double thumbnailHeight = 56.0;
   static const double thumbnailBorderRadius = 4.0;
 
-  // Spacing
-  static const double spacingXS = 4.0;
-  static const double spacingS = 8.0;
-  static const double spacingM = 12.0;
-  static const double spacingL = 16.0;
-  static const double spacingXL = 24.0;
-
   // Data limits
   static const int recentTextsLimit = 5;
   static const Duration appStatePollingInterval = Duration(milliseconds: 50);
 
   // Empty state colors
   static const Color emptyStateIconColor = Color(0xFFBDBDBD); // Colors.grey[400]
-  static const Color emptyStateTextColor = Color(0xFF757575); // Colors.grey[600]
 }
 
 class HomeScreen extends StatefulWidget {
@@ -153,19 +146,19 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.language, size: _HomeScreenConstants.emptyStateIconSize, color: _HomeScreenConstants.emptyStateIconColor),
-          const SizedBox(height: _HomeScreenConstants.spacingL),
+          const SizedBox(height: AppConstants.spacingL),
           Text(
             l10n.noLanguagesYet,
             style: Theme.of(
               context,
-            ).textTheme.headlineSmall?.copyWith(color: _HomeScreenConstants.emptyStateTextColor),
+            ).textTheme.headlineSmall?.copyWith(color: AppConstants.subtitleColor),
           ),
-          const SizedBox(height: _HomeScreenConstants.spacingS),
+          const SizedBox(height: AppConstants.spacingS),
           Text(
             l10n.addLanguageToStart,
-            style: const TextStyle(color: _HomeScreenConstants.emptyStateTextColor),
+            style: TextStyle(color: AppConstants.subtitleColor),
           ),
-          const SizedBox(height: _HomeScreenConstants.spacingXL),
+          const SizedBox(height: AppConstants.spacingXL),
           ElevatedButton.icon(
             onPressed: () async {
               await Navigator.push(
@@ -207,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (lang.id == _selectedLanguage?.id)
                             const Icon(Icons.check, size: _HomeScreenConstants.checkIconSize),
                           if (lang.id == _selectedLanguage?.id)
-                            const SizedBox(width: _HomeScreenConstants.spacingS),
+                            const SizedBox(width: AppConstants.spacingS),
                           Text(lang.name),
                         ],
                       ),
@@ -380,11 +373,11 @@ class _DashboardTabState extends State<_DashboardTab> {
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView(
-        padding: const EdgeInsets.all(_HomeScreenConstants.spacingL),
+        padding: const EdgeInsets.all(AppConstants.spacingL),
         children: [
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(_HomeScreenConstants.spacingL),
+              padding: const EdgeInsets.all(AppConstants.spacingL),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -394,24 +387,24 @@ class _DashboardTabState extends State<_DashboardTab> {
                         Icons.language,
                         color: Theme.of(context).colorScheme.primary,
                       ),
-                      const SizedBox(width: _HomeScreenConstants.spacingS),
+                      const SizedBox(width: AppConstants.spacingS),
                       Text(
                         widget.language.name,
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                     ],
                   ),
-                  const SizedBox(height: _HomeScreenConstants.spacingL),
+                  const SizedBox(height: AppConstants.spacingL),
                   _buildStatsRow(),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: _HomeScreenConstants.spacingL),
+          const SizedBox(height: AppConstants.spacingL),
           _buildQuickActions(),
-          const SizedBox(height: _HomeScreenConstants.spacingL),
+          const SizedBox(height: AppConstants.spacingL),
           _buildRecentlyReadTexts(),
-          const SizedBox(height: _HomeScreenConstants.spacingL),
+          const SizedBox(height: AppConstants.spacingL),
           _buildRecentlyAddedTexts(),
         ],
       ),
@@ -441,7 +434,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     return Column(
       children: [
         Icon(icon, color: Theme.of(context).colorScheme.secondary),
-        const SizedBox(height: _HomeScreenConstants.spacingXS),
+        const SizedBox(height: AppConstants.spacingXS),
         Text(
           value,
           style: Theme.of(
@@ -472,7 +465,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(_HomeScreenConstants.spacingL),
+        padding: const EdgeInsets.all(AppConstants.spacingL),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -480,10 +473,10 @@ class _DashboardTabState extends State<_DashboardTab> {
               l10n.quickActions,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: _HomeScreenConstants.spacingM),
+            const SizedBox(height: AppConstants.spacingM),
             Wrap(
-              spacing: _HomeScreenConstants.spacingS,
-              runSpacing: _HomeScreenConstants.spacingS,
+              spacing: AppConstants.spacingS,
+              runSpacing: AppConstants.spacingS,
               children: [
                 ActionChip(
                   avatar: const Icon(Icons.add),
@@ -521,7 +514,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(_HomeScreenConstants.spacingL),
+        padding: const EdgeInsets.all(AppConstants.spacingL),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -529,10 +522,10 @@ class _DashboardTabState extends State<_DashboardTab> {
               l10n.recentlyRead,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: _HomeScreenConstants.spacingM),
+            const SizedBox(height: AppConstants.spacingM),
             if (_recentlyReadTexts.isEmpty)
               Padding(
-                padding: const EdgeInsets.all(_HomeScreenConstants.spacingL),
+                padding: const EdgeInsets.all(AppConstants.spacingL),
                 child: Text(l10n.noTextsReadYet),
               )
             else
@@ -568,7 +561,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(_HomeScreenConstants.spacingL),
+        padding: const EdgeInsets.all(AppConstants.spacingL),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -576,10 +569,10 @@ class _DashboardTabState extends State<_DashboardTab> {
               l10n.recentlyAdded,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: _HomeScreenConstants.spacingM),
+            const SizedBox(height: AppConstants.spacingM),
             if (_recentlyAddedTexts.isEmpty)
               Padding(
-                padding: const EdgeInsets.all(_HomeScreenConstants.spacingL),
+                padding: const EdgeInsets.all(AppConstants.spacingL),
                 child: Text(l10n.noTextsYetAddOne),
               )
             else

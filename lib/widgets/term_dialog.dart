@@ -10,21 +10,14 @@ import 'base_term_search_dialog.dart';
 import 'deepl_translation_mixin.dart';
 
 abstract class _TermDialogConstants {
-  static const double linkIconSize = 16.0;
   static const double closeIconSize = 18.0;
   static const double addLinkIconSize = 18.0;
-  static const double checkIconSize = 16.0;
-  static const double progressSize = 20.0;
-  static const double progressStroke = 2.0;
   static const int primaryAlpha = 100;
   static const double chipBackgroundAlpha = 0.2;
   static const int translationMaxLines = 2;
   static const int sentenceMaxLines = 3;
-  static final Color ignoredTextColor = Colors.grey.shade600;
-  static final Color ignoredBorderColor = Colors.grey.shade400;
   static final Color wellKnownTextColor = Colors.blue.shade700;
   static final Color wellKnownBorderColor = Colors.blue.shade300;
-  static final Color dropdownBorderColor = Colors.grey.shade400;
 }
 
 class TermDialog extends StatefulWidget {
@@ -173,7 +166,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
               children: [
                 Icon(
                   Icons.link,
-                  size: _TermDialogConstants.linkIconSize,
+                  size: AppConstants.iconSizeS,
                   color: colorScheme.primary,
                 ),
                 const SizedBox(width: AppConstants.spacingS),
@@ -382,7 +375,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                         ),
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: _TermDialogConstants.dropdownBorderColor,
+                            color: AppConstants.borderColor,
                           ),
                           borderRadius: BorderRadius.circular(
                             AppConstants.borderRadiusS,
@@ -440,11 +433,11 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                       ? IconButton(
                           icon: isTranslating
                               ? const SizedBox(
-                                  width: _TermDialogConstants.progressSize,
-                                  height: _TermDialogConstants.progressSize,
+                                  width: AppConstants.progressIndicatorSize,
+                                  height: AppConstants.progressIndicatorSize,
                                   child: CircularProgressIndicator(
                                     strokeWidth:
-                                        _TermDialogConstants.progressStroke,
+                                        AppConstants.progressStrokeWidth,
                                   ),
                                 )
                               : const Icon(Icons.translate),
@@ -527,7 +520,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
           label,
           style: TextStyle(
             color: isIgnored
-                ? _TermDialogConstants.ignoredTextColor
+                ? AppConstants.subtitleColor
                 : _TermDialogConstants.wellKnownTextColor,
             fontSize: AppConstants.fontSizeCaption,
           ),
@@ -536,7 +529,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
         backgroundColor: Colors.transparent,
         side: BorderSide(
           color: isIgnored
-              ? _TermDialogConstants.ignoredBorderColor
+              ? AppConstants.borderColor
               : _TermDialogConstants.wellKnownBorderColor,
         ),
         onSelected: (selected) {
@@ -569,7 +562,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
           ? const Icon(
               Icons.check,
               color: Colors.white,
-              size: _TermDialogConstants.checkIconSize,
+              size: AppConstants.iconSizeS,
             )
           : null,
     );

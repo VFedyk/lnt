@@ -15,6 +15,7 @@ import '../widgets/status_legend.dart';
 import '../widgets/edit_text_dialog.dart';
 import '../widgets/word_list_drawer.dart';
 import '../widgets/paragraph_rich_text.dart';
+import '../utils/constants.dart';
 
 /// Layout, sizing, and timing constants for the reader screen
 abstract class _ReaderScreenConstants {
@@ -27,21 +28,9 @@ abstract class _ReaderScreenConstants {
   // Icon sizes
   static const double editIconSize = 18.0;
 
-  // Spacing
-  static const double spacingXS = 4.0;
-  static const double spacingS = 8.0;
-  static const double spacingM = 12.0;
-  static const double spacingL = 16.0;
-
   // Selection mode colors
   static const Color selectionBannerColor = Color(0xFFBBDEFB);
   static const Color selectionAccentColor = Colors.blue;
-
-  // Status colors
-  static const Color successColor = Colors.green;
-
-  // Text colors
-  static const Color subtitleColor = Color(0xFF757575);
 }
 
 class ReaderScreen extends StatefulWidget {
@@ -375,7 +364,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 736),
           child: Padding(
-            padding: const EdgeInsets.all(_ReaderScreenConstants.spacingL),
+            padding: const EdgeInsets.all(AppConstants.spacingL),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -387,21 +376,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                 ),
                 if (term.romanization.isNotEmpty) ...[
-                  const SizedBox(height: _ReaderScreenConstants.spacingXS),
+                  const SizedBox(height: AppConstants.spacingXS),
                   Text(
                     term.romanization,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontStyle: FontStyle.italic,
-                      color: _ReaderScreenConstants.subtitleColor,
+                      color: AppConstants.subtitleColor,
                     ),
                   ),
                 ],
-                const SizedBox(height: _ReaderScreenConstants.spacingS),
+                const SizedBox(height: AppConstants.spacingS),
                 Text(
                   term.translation,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
-                const SizedBox(height: _ReaderScreenConstants.spacingL),
+                const SizedBox(height: AppConstants.spacingL),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton.icon(
@@ -867,7 +856,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     ? Icons.check_circle
                     : Icons.check_circle_outline,
                 color: _text.status == TextStatus.finished
-                    ? _ReaderScreenConstants.successColor
+                    ? AppConstants.successColor
                     : null,
               ),
               tooltip: _text.status == TextStatus.finished
@@ -900,7 +889,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: Row(
                     children: [
                       const Icon(Icons.edit),
-                      const SizedBox(width: _ReaderScreenConstants.spacingS),
+                      const SizedBox(width: AppConstants.spacingS),
                       Text(l10n.editText),
                     ],
                   ),
@@ -910,7 +899,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: Row(
                     children: [
                       const Icon(Icons.text_fields),
-                      const SizedBox(width: _ReaderScreenConstants.spacingS),
+                      const SizedBox(width: AppConstants.spacingS),
                       Text(l10n.fontSize),
                     ],
                   ),
@@ -920,7 +909,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: Row(
                     children: [
                       const Icon(Icons.done_all),
-                      const SizedBox(width: _ReaderScreenConstants.spacingS),
+                      const SizedBox(width: AppConstants.spacingS),
                       Text(l10n.markAllKnown),
                     ],
                   ),
@@ -930,7 +919,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: Row(
                     children: [
                       const Icon(Icons.list_alt),
-                      const SizedBox(width: _ReaderScreenConstants.spacingS),
+                      const SizedBox(width: AppConstants.spacingS),
                       Text(l10n.wordList),
                     ],
                   ),
@@ -947,7 +936,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 if (_isSelectionMode)
                   Container(
                     padding: const EdgeInsets.all(
-                      _ReaderScreenConstants.spacingM,
+                      AppConstants.spacingM,
                     ),
                     color: _ReaderScreenConstants.selectionBannerColor,
                     child: Row(
@@ -956,7 +945,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           Icons.info_outline,
                           color: _ReaderScreenConstants.selectionAccentColor,
                         ),
-                        const SizedBox(width: _ReaderScreenConstants.spacingS),
+                        const SizedBox(width: AppConstants.spacingS),
                         Expanded(
                           child: Text(
                             l10n.wordsSelected(_selectedWordIndices.length),
@@ -977,7 +966,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     child: ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.all(
-                        _ReaderScreenConstants.spacingL,
+                        AppConstants.spacingL,
                       ),
                       itemCount: _paragraphs.length,
                       itemBuilder: (context, index) {
@@ -987,8 +976,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             para[0].text.trim().isEmpty) {
                           return SizedBox(
                             height: para[0].text.contains('\n\n')
-                                ? _ReaderScreenConstants.spacingL
-                                : _ReaderScreenConstants.spacingS,
+                                ? AppConstants.spacingL
+                                : AppConstants.spacingS,
                           );
                         }
                         return ParagraphRichText(

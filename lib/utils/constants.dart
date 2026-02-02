@@ -56,8 +56,20 @@ class AppConstants {
   static const double borderRadiusM = 8.0;
   static const double borderRadiusL = 12.0;
 
+  // UI: Progress indicators
+  static const double progressIndicatorSize = 20.0;
+  static const double progressIndicatorSizeS = 16.0;
+  static const double progressStrokeWidth = 2.0;
+
+  // UI: Icon sizes
+  static const double iconSizeS = 16.0;
+  static const double iconSizeM = 32.0;
+  static const double emptyStateIconSize = 64.0;
+
   // UI: Colors
   static final Color subtitleColor = Colors.grey.shade600;
+  static final Color borderColor = Colors.grey.shade400;
+  static final Color sectionHeaderColor = Colors.grey.shade700;
   static const Color deleteColor = Colors.red;
   static const Color successColor = Colors.green;
   static const Color warningColor = Colors.orange;

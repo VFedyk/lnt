@@ -9,10 +9,6 @@ import 'deepl_translation_mixin.dart';
 abstract class _BaseTermSearchConstants {
   static const double statusAvatarRadius = 12.0;
   static const double progressSizeSmall = 18.0;
-  static const double progressStroke = 2.0;
-  static const double translateIconSize = 20.0;
-  static final Color noResultsColor = Colors.grey.shade600;
-  static final Color sectionHeaderColor = Colors.grey.shade700;
 }
 
 class BaseTermSearchDialog extends StatefulWidget {
@@ -182,7 +178,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                   child: Text(
                     l10n.noExistingTermsFound,
                     style: TextStyle(
-                      color: _BaseTermSearchConstants.noResultsColor,
+                      color: AppConstants.subtitleColor,
                     ),
                   ),
                 ),
@@ -199,7 +195,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                         l10n.createNewBaseTerm,
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
-                          color: _BaseTermSearchConstants.sectionHeaderColor,
+                          color: AppConstants.sectionHeaderColor,
                         ),
                       ),
                       const SizedBox(height: AppConstants.spacingS),
@@ -219,14 +215,12 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                                               .progressSizeSmall,
                                           child: CircularProgressIndicator(
                                             strokeWidth:
-                                                _BaseTermSearchConstants
-                                                    .progressStroke,
+                                                AppConstants.progressStrokeWidth,
                                           ),
                                         )
                                       : const Icon(
                                           Icons.translate,
-                                          size: _BaseTermSearchConstants
-                                              .translateIconSize,
+                                          size: AppConstants.progressIndicatorSize,
                                         ),
                                   tooltip: l10n.translateWithDeepL,
                                   onPressed: isTranslating

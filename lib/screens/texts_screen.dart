@@ -24,7 +24,6 @@ abstract class _TextsScreenConstants {
   static const double gridChildAspectRatio = 0.45;
 
   // Icon sizes
-  static const double emptyStateIconSize = 64.0;
   static const double sortArrowIconSize = 16.0;
   static const double coverPickerIconSize = 32.0;
 
@@ -36,9 +35,7 @@ abstract class _TextsScreenConstants {
   static const double urlCoverWidth = 80.0;
   static const double urlCoverHeight = 120.0;
 
-  // URL import progress indicator
-  static const double progressIndicatorSize = 20.0;
-  static const double progressIndicatorStrokeWidth = 2.0;
+  // progressIndicatorSize/strokeWidth use AppConstants
 
   // Content preview
   static const double contentPreviewHeight = 200.0;
@@ -904,7 +901,7 @@ class _TextsScreenState extends State<TextsScreen> {
             children: [
               Icon(
                 Icons.check_circle_outline,
-                size: _TextsScreenConstants.emptyStateIconSize,
+                size: AppConstants.emptyStateIconSize,
                 color: Theme.of(context).colorScheme.outline,
               ),
               const SizedBox(height: AppConstants.spacingL),
@@ -1094,7 +1091,7 @@ class _TextsScreenState extends State<TextsScreen> {
             children: [
               Icon(
                 Icons.check_circle_outline,
-                size: _TextsScreenConstants.emptyStateIconSize,
+                size: AppConstants.emptyStateIconSize,
                 color: Theme.of(context).colorScheme.outline,
               ),
               const SizedBox(height: AppConstants.spacingL),
@@ -1844,13 +1841,13 @@ class _UrlImportDialogState extends State<_UrlImportDialog> {
                   hintText: l10n.urlHint,
                   prefixIcon: const Icon(Icons.link),
                   suffixIcon: _isLoading
-                      ? const SizedBox(
-                          width: _TextsScreenConstants.progressIndicatorSize,
-                          height: _TextsScreenConstants.progressIndicatorSize,
-                          child: Padding(
+                      ? SizedBox(
+                          width: AppConstants.progressIndicatorSize,
+                          height: AppConstants.progressIndicatorSize,
+                          child: const Padding(
                             padding: EdgeInsets.all(AppConstants.spacingM),
                             child: CircularProgressIndicator(
-                              strokeWidth: _TextsScreenConstants.progressIndicatorStrokeWidth,
+                              strokeWidth: AppConstants.progressStrokeWidth,
                             ),
                           ),
                         )
