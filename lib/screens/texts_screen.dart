@@ -47,13 +47,23 @@ abstract class _TextsScreenConstants {
 
 /// Sorting options for texts
 enum TextSortOption {
-  name('Name', Icons.sort_by_alpha),
-  dateAdded('Date Added', Icons.calendar_today),
-  lastRead('Last Read', Icons.history);
+  name(Icons.sort_by_alpha),
+  dateAdded(Icons.calendar_today),
+  lastRead(Icons.history);
 
-  final String label;
   final IconData icon;
-  const TextSortOption(this.label, this.icon);
+  const TextSortOption(this.icon);
+
+  String localizedLabel(AppLocalizations l10n) {
+    switch (this) {
+      case TextSortOption.name:
+        return l10n.sortByName;
+      case TextSortOption.dateAdded:
+        return l10n.sortByDateAdded;
+      case TextSortOption.lastRead:
+        return l10n.sortByLastRead;
+    }
+  }
 }
 
 /// View mode for texts screen
@@ -692,7 +702,7 @@ class _TextsScreenState extends State<TextsScreen> {
                     const SizedBox(width: AppConstants.spacingS),
                     Expanded(
                       child: Text(
-                        option.label,
+                        option.localizedLabel(l10n),
                         style: TextStyle(
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
@@ -835,7 +845,7 @@ class _TextsScreenState extends State<TextsScreen> {
           ),
           const SizedBox(width: AppConstants.spacingXS),
           Text(
-            '${_sortOption.label} ${_sortAscending ? '\u2191' : '\u2193'}',
+            '${_sortOption.localizedLabel(l10n)} ${_sortAscending ? '\u2191' : '\u2193'}',
             style: TextStyle(
               fontSize: AppConstants.fontSizeCaption,
               color: Theme.of(context).colorScheme.outline,
