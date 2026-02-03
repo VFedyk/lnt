@@ -252,9 +252,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importComplete => 'Import Complete';
 
   @override
-  String importFailed(String error) {
-    return 'Import failed: $error';
-  }
+  String get importFailedTitle => 'Import Failed';
 
   @override
   String couldNotImportEpub(String error) {
@@ -439,6 +437,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String importedTerms(int count) {
     return 'Imported $count terms';
+  }
+
+  @override
+  String importFailed(String error) {
+    return 'Import failed: $error';
   }
 
   @override

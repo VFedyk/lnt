@@ -87,7 +87,7 @@
   "importEpub": "Імпорт EPUB",
   "importingEpub": "Імпорт EPUB...",
   "importComplete": "Імпорт завершено",
-  "importFailed": "Помилка імпорту",
+  "importFailedTitle": "Помилка імпорту",
   "couldNotImportEpub": "Не вдалося імпортувати EPUB: {error}",
 
   "newCollection": "Нова колекція",

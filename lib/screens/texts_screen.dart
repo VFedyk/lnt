@@ -39,11 +39,23 @@ abstract class _TextsScreenConstants {
   // Max warnings shown in import result
   static const int maxWarningsShown = 3;
 
+  // FAB menu vertical offset
+  static const double fabMenuVerticalOffset = 200.0;
+
   // Preference keys
   static const String sortOptionKey = 'texts_sort_option';
   static const String sortAscendingKey = 'texts_sort_ascending';
   static const String hideCompletedKey = 'texts_hide_completed';
   static const String viewModeKey = 'texts_view_mode';
+
+  // Menu action values
+  static const String actionAdd = 'add';
+  static const String actionUrl = 'url';
+  static const String actionTxt = 'txt';
+  static const String actionEpub = 'epub';
+  static const String actionCover = 'cover';
+  static const String actionEdit = 'edit';
+  static const String actionDelete = 'delete';
 }
 
 /// Sorting options for texts
@@ -93,6 +105,7 @@ class _TextsScreenState extends State<TextsScreen> {
   bool _sortAscending = false;
   bool _hideCompleted = false; // Hide texts with 0 unknown words
   TextViewMode _viewMode = TextViewMode.list;
+  bool _showSearch = false;
 
   // Static cache for unknown counts - persists across folder navigations
   // Key: languageId -> (textId -> unknownCount)
@@ -461,6 +474,72 @@ class _TextsScreenState extends State<TextsScreen> {
     }
   }
 
+  void _showAddMenu(BuildContext context, Offset position) {
+    final l10n = AppLocalizations.of(context);
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
+      items: [
+        PopupMenuItem(
+          value: _TextsScreenConstants.actionAdd,
+          child: Row(
+            children: [
+              const Icon(Icons.edit),
+              const SizedBox(width: AppConstants.spacingS),
+              Text(l10n.addText),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _TextsScreenConstants.actionUrl,
+          child: Row(
+            children: [
+              const Icon(Icons.link),
+              const SizedBox(width: AppConstants.spacingS),
+              Text(l10n.importFromUrl),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _TextsScreenConstants.actionTxt,
+          child: Row(
+            children: [
+              const Icon(Icons.text_snippet),
+              const SizedBox(width: AppConstants.spacingS),
+              Text(l10n.importTxt),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _TextsScreenConstants.actionEpub,
+          child: Row(
+            children: [
+              const Icon(Icons.book),
+              const SizedBox(width: AppConstants.spacingS),
+              Text(l10n.importEpub),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == null) return;
+      switch (value) {
+        case _TextsScreenConstants.actionAdd:
+          _addText();
+          break;
+        case _TextsScreenConstants.actionTxt:
+          _importFromTextFile();
+          break;
+        case _TextsScreenConstants.actionEpub:
+          _importFromEpub();
+          break;
+        case _TextsScreenConstants.actionUrl:
+          _importFromUrl();
+          break;
+      }
+    });
+  }
+
   Future<void> _importFromTextFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -568,7 +647,7 @@ class _TextsScreenState extends State<TextsScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Import Failed'),
+          title: Text(l10n.importFailedTitle),
           content: Text(l10n.couldNotImportEpub(e.toString())),
           actions: [
             TextButton(
@@ -690,6 +769,22 @@ class _TextsScreenState extends State<TextsScreen> {
             ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: _goBack)
             : null,
         actions: [
+          // Search toggle
+          IconButton(
+            icon: Icon(
+              _showSearch ? Icons.search_off : Icons.search,
+              color: _showSearch ? Theme.of(context).colorScheme.primary : null,
+            ),
+            tooltip: l10n.search,
+            onPressed: () {
+              setState(() {
+                _showSearch = !_showSearch;
+                if (!_showSearch) {
+                  _searchController.clear();
+                }
+              });
+            },
+          ),
           // View mode toggle
           IconButton(
             icon: Icon(
@@ -765,20 +860,20 @@ class _TextsScreenState extends State<TextsScreen> {
             tooltip: l10n.import,
             onSelected: (value) {
               switch (value) {
-                case 'txt':
+                case _TextsScreenConstants.actionTxt:
                   _importFromTextFile();
                   break;
-                case 'epub':
+                case _TextsScreenConstants.actionEpub:
                   _importFromEpub();
                   break;
-                case 'url':
+                case _TextsScreenConstants.actionUrl:
                   _importFromUrl();
                   break;
               }
             },
             itemBuilder: (context) => [
               PopupMenuItem(
-                value: 'url',
+                value: _TextsScreenConstants.actionUrl,
                 child: Row(
                   children: [
                     const Icon(Icons.link),
@@ -788,7 +883,7 @@ class _TextsScreenState extends State<TextsScreen> {
                 ),
               ),
               PopupMenuItem(
-                value: 'txt',
+                value: _TextsScreenConstants.actionTxt,
                 child: Row(
                   children: [
                     const Icon(Icons.text_snippet),
@@ -798,7 +893,7 @@ class _TextsScreenState extends State<TextsScreen> {
                 ),
               ),
               PopupMenuItem(
-                value: 'epub',
+                value: _TextsScreenConstants.actionEpub,
                 child: Row(
                   children: [
                     const Icon(Icons.book),
@@ -813,20 +908,32 @@ class _TextsScreenState extends State<TextsScreen> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(AppConstants.spacingL),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: l10n.searchTexts,
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
+          if (_showSearch)
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.spacingL),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: l10n.searchTexts,
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              _searchController.clear();
+                            });
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
+                  ),
                 ),
+                onChanged: (_) => setState(() {}),
               ),
-              onChanged: (_) => setState(() {}),
             ),
-          ),
           // Sort/Filter info bar
           _buildSortFilterBar(),
           Expanded(
@@ -838,9 +945,15 @@ class _TextsScreenState extends State<TextsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addText,
-        child: const Icon(Icons.add),
+      floatingActionButton: Builder(
+        builder: (context) => FloatingActionButton(
+          onPressed: () {
+            final RenderBox button = context.findRenderObject() as RenderBox;
+            final Offset position = button.localToGlobal(Offset.zero);
+            _showAddMenu(context, Offset(position.dx, position.dy - _TextsScreenConstants.fabMenuVerticalOffset));
+          },
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -956,7 +1069,7 @@ class _TextsScreenState extends State<TextsScreen> {
               trailing: PopupMenuButton(
                 itemBuilder: (context) => [
                   PopupMenuItem(
-                    value: 'edit',
+                    value: _TextsScreenConstants.actionEdit,
                     child: Row(
                       children: [
                         const Icon(Icons.edit),
@@ -966,7 +1079,7 @@ class _TextsScreenState extends State<TextsScreen> {
                     ),
                   ),
                   PopupMenuItem(
-                    value: 'delete',
+                    value: _TextsScreenConstants.actionDelete,
                     child: Row(
                       children: [
                         const Icon(Icons.delete, color: AppConstants.deleteColor),
@@ -977,9 +1090,9 @@ class _TextsScreenState extends State<TextsScreen> {
                   ),
                 ],
                 onSelected: (value) {
-                  if (value == 'edit') {
+                  if (value == _TextsScreenConstants.actionEdit) {
                     _editCollection(collection);
-                  } else if (value == 'delete') {
+                  } else if (value == _TextsScreenConstants.actionDelete) {
                     _deleteCollection(collection);
                   }
                 },
@@ -1036,7 +1149,7 @@ class _TextsScreenState extends State<TextsScreen> {
               trailing: PopupMenuButton(
                 itemBuilder: (context) => [
                   PopupMenuItem(
-                    value: 'cover',
+                    value: _TextsScreenConstants.actionCover,
                     child: Row(
                       children: [
                         const Icon(Icons.image),
@@ -1046,7 +1159,7 @@ class _TextsScreenState extends State<TextsScreen> {
                     ),
                   ),
                   PopupMenuItem(
-                    value: 'edit',
+                    value: _TextsScreenConstants.actionEdit,
                     child: Row(
                       children: [
                         const Icon(Icons.edit),
@@ -1056,7 +1169,7 @@ class _TextsScreenState extends State<TextsScreen> {
                     ),
                   ),
                   PopupMenuItem(
-                    value: 'delete',
+                    value: _TextsScreenConstants.actionDelete,
                     child: Row(
                       children: [
                         const Icon(Icons.delete, color: AppConstants.deleteColor),
@@ -1067,11 +1180,11 @@ class _TextsScreenState extends State<TextsScreen> {
                   ),
                 ],
                 onSelected: (value) {
-                  if (value == 'cover') {
+                  if (value == _TextsScreenConstants.actionCover) {
                     _setCoverImage(text);
-                  } else if (value == 'edit') {
+                  } else if (value == _TextsScreenConstants.actionEdit) {
                     _editText(text);
-                  } else if (value == 'delete') {
+                  } else if (value == _TextsScreenConstants.actionDelete) {
                     _deleteText(text);
                   }
                 },

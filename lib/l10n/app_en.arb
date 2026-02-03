@@ -121,7 +121,7 @@
   "importEpub": "Import EPUB",
   "importingEpub": "Importing EPUB...",
   "importComplete": "Import Complete",
-  "importFailed": "Import Failed",
+  "importFailedTitle": "Import Failed",
   "couldNotImportEpub": "Could not import EPUB: {error}",
   "@couldNotImportEpub": {
     "placeholders": {

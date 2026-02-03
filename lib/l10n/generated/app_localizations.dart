@@ -560,11 +560,11 @@ abstract class AppLocalizations {
   /// **'Import Complete'**
   String get importComplete;
 
-  /// No description provided for @importFailed.
+  /// No description provided for @importFailedTitle.
   ///
   /// In en, this message translates to:
-  /// **'Import failed: {error}'**
-  String importFailed(String error);
+  /// **'Import Failed'**
+  String get importFailedTitle;
 
   /// No description provided for @couldNotImportEpub.
   ///
@@ -871,6 +871,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Imported {count} terms'**
   String importedTerms(int count);
+
+  /// No description provided for @importFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {error}'**
+  String importFailed(String error);
 
   /// No description provided for @all.
   ///

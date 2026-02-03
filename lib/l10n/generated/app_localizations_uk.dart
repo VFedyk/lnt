@@ -252,9 +252,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get importComplete => 'Імпорт завершено';
 
   @override
-  String importFailed(String error) {
-    return 'Помилка імпорту: $error';
-  }
+  String get importFailedTitle => 'Помилка імпорту';
 
   @override
   String couldNotImportEpub(String error) {
@@ -440,6 +438,11 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String importedTerms(int count) {
     return 'Імпортовано $count термінів';
+  }
+
+  @override
+  String importFailed(String error) {
+    return 'Помилка імпорту: $error';
   }
 
   @override
