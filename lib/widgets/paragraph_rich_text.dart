@@ -9,6 +9,8 @@ class ParagraphRichText extends StatelessWidget {
   final Set<int> selectedWordIndices;
   final Map<String, ({Term term, String languageName})> otherLanguageTerms;
   final Map<int, List<Translation>> translationsMap;
+  final Map<int, Translation> translationsById;
+  final Map<int, Term> termsById;
   final void Function(String word, int position, int globalIndex) onWordTap;
   final void Function(int globalIndex) onWordLongPress;
 
@@ -38,6 +40,8 @@ class ParagraphRichText extends StatelessWidget {
     required this.selectedWordIndices,
     required this.otherLanguageTerms,
     required this.translationsMap,
+    required this.translationsById,
+    required this.termsById,
     required this.onWordTap,
     required this.onWordLongPress,
   });
@@ -124,10 +128,20 @@ class ParagraphRichText extends StatelessWidget {
         String translationText;
         if (translations != null && translations.isNotEmpty) {
           translationText = translations.map((t) {
+            final parts = <String>[t.meaning];
             if (t.partOfSpeech != null) {
-              return '${t.meaning} (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})';
+              parts.add('(${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})');
             }
-            return t.meaning;
+            if (t.baseTranslationId != null) {
+              final baseTranslation = translationsById[t.baseTranslationId!];
+              if (baseTranslation != null) {
+                final baseTerm = termsById[baseTranslation.termId];
+                if (baseTerm != null) {
+                  parts.add('← ${baseTerm.lowerText} (${baseTranslation.meaning})');
+                }
+              }
+            }
+            return parts.join(' ');
           }).join('\n');
         } else {
           translationText = term.translation;
