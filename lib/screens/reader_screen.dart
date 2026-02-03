@@ -50,6 +50,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   late TextDocument _text;
   Map<String, Term> _termsMap = {};
+  Map<int, List<Translation>> _translationsMap = {};
   Map<String, ({Term term, String languageName})> _otherLanguageTerms = {};
   List<WordToken> _wordTokens = [];
   List<List<WordToken>> _paragraphs = [];
@@ -116,6 +117,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       _termsMap = await DatabaseService.instance.getTermsMap(
         widget.language.id!,
       );
+      // Preload translations for all terms
+      final termIds = _termsMap.values.where((t) => t.id != null).map((t) => t.id!).toList();
+      _translationsMap = await DatabaseService.instance.translations.getByTermIds(termIds);
 
       await _parseTextAsync();
       await _loadOtherLanguageWords();
@@ -143,6 +147,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
     await DatabaseService.instance.updateText(updatedText);
     _text = updatedText;
+  }
+
+  bool _hasTranslations(Term term) {
+    if (term.translation.isNotEmpty) return true;
+    if (term.id == null) return false;
+    final translations = _translationsMap[term.id!];
+    return translations != null && translations.isNotEmpty;
   }
 
   void _updateTextTermCounts() {
@@ -345,7 +356,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final lowerWord = _textParser.normalizeWord(word);
     final existingTerm = _termsMap[lowerWord];
 
-    if (existingTerm != null && existingTerm.translation.isNotEmpty) {
+    if (existingTerm != null && _hasTranslations(existingTerm)) {
       final shouldEdit = await _showTranslationPopup(existingTerm);
       if (shouldEdit == true) {
         await _openTermDialog(word, position, existingTerm);
@@ -358,6 +369,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Future<bool?> _showTranslationPopup(Term term) async {
     final l10n = AppLocalizations.of(context);
+    // Load translations for this term
+    List<Translation> translations = [];
+    if (term.id != null) {
+      translations = await DatabaseService.instance.translations.getByTermId(term.id!);
+    }
+    // If no translations in new table, use legacy translation field
+    if (translations.isEmpty && term.translation.isNotEmpty) {
+      translations = [Translation(termId: term.id ?? 0, meaning: term.translation)];
+    }
+    if (!mounted) return null;
+
     return showDialog<bool>(
       context: context,
       builder: (context) => Dialog(
@@ -386,10 +408,37 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                 ],
                 const SizedBox(height: AppConstants.spacingS),
-                Text(
-                  term.translation,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
+                ...translations.map((t) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppConstants.spacingXS),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (t.partOfSpeech != null) ...[
+                        Text(
+                          PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppConstants.subtitleColor,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                        const SizedBox(width: AppConstants.spacingS),
+                      ],
+                      Expanded(
+                        child: Text(
+                          t.meaning,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ),
+                      if (t.baseForm != null && t.baseForm!.isNotEmpty)
+                        Text(
+                          '(${t.baseForm})',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppConstants.subtitleColor,
+                          ),
+                        ),
+                    ],
+                  ),
+                )),
                 const SizedBox(height: AppConstants.spacingL),
                 Align(
                   alignment: Alignment.centerRight,
@@ -428,9 +477,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
     if (!mounted) return;
 
-    Term? result;
+    TermDialogResult? dialogResult;
     if (existingTerm != null) {
-      result = await showDialog<Term?>(
+      dialogResult = await showDialog<TermDialogResult?>(
         context: context,
         builder: (context) => TermDialog(
           term: existingTerm,
@@ -442,9 +491,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
       );
 
-      if (result != null) {
-        await DatabaseService.instance.updateTerm(result);
-        _updateTermInPlace(result);
+      if (dialogResult != null) {
+        await DatabaseService.instance.updateTerm(dialogResult.term);
+        await DatabaseService.instance.translations.replaceForTerm(
+          dialogResult.term.id!,
+          dialogResult.translations,
+        );
+        _updateTermInPlace(dialogResult.term);
       }
     } else {
       final newTerm = Term(
@@ -455,7 +508,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         sentence: sentence,
       );
 
-      result = await showDialog<Term?>(
+      dialogResult = await showDialog<TermDialogResult?>(
         context: context,
         builder: (context) => TermDialog(
           term: newTerm,
@@ -467,9 +520,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
       );
 
-      if (result != null) {
-        await DatabaseService.instance.createTerm(result);
-        _updateTermInPlace(result);
+      if (dialogResult != null) {
+        final termId = await DatabaseService.instance.createTerm(dialogResult.term);
+        final termWithId = dialogResult.term.copyWith(id: termId);
+        await DatabaseService.instance.translations.replaceForTerm(
+          termId,
+          dialogResult.translations,
+        );
+        _updateTermInPlace(termWithId);
       }
     }
   }
@@ -566,9 +624,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
     if (!mounted) return;
 
-    Term? result;
+    TermDialogResult? dialogResult;
     if (existingTerm != null) {
-      result = await showDialog<Term?>(
+      dialogResult = await showDialog<TermDialogResult?>(
         context: context,
         builder: (context) => TermDialog(
           term: existingTerm,
@@ -581,8 +639,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
       );
 
-      if (result != null) {
-        await DatabaseService.instance.updateTerm(result);
+      if (dialogResult != null) {
+        await DatabaseService.instance.updateTerm(dialogResult.term);
+        await DatabaseService.instance.translations.replaceForTerm(
+          dialogResult.term.id!,
+          dialogResult.translations,
+        );
       }
     } else {
       final newTerm = Term(
@@ -593,7 +655,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         sentence: sentence,
       );
 
-      result = await showDialog<Term?>(
+      dialogResult = await showDialog<TermDialogResult?>(
         context: context,
         builder: (context) => TermDialog(
           term: newTerm,
@@ -606,13 +668,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
       );
 
-      if (result != null) {
-        await DatabaseService.instance.createTerm(result);
+      if (dialogResult != null) {
+        final termId = await DatabaseService.instance.createTerm(dialogResult.term);
+        await DatabaseService.instance.translations.replaceForTerm(
+          termId,
+          dialogResult.translations,
+        );
       }
     }
 
     _cancelSelection();
-    if (result != null) {
+    if (dialogResult != null) {
       await _loadTermsAndParse();
     }
   }
@@ -985,6 +1051,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           fontSize: _fontSize,
                           selectedWordIndices: _selectedWordIndices,
                           otherLanguageTerms: _otherLanguageTerms,
+                          translationsMap: _translationsMap,
                           onWordTap: _handleWordTap,
                           onWordLongPress: _handleWordLongPress,
                         );

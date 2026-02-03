@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../models/term.dart';
 import '../models/word_token.dart';
 
@@ -7,6 +8,7 @@ class ParagraphRichText extends StatelessWidget {
   final double fontSize;
   final Set<int> selectedWordIndices;
   final Map<String, ({Term term, String languageName})> otherLanguageTerms;
+  final Map<int, List<Translation>> translationsMap;
   final void Function(String word, int position, int globalIndex) onWordTap;
   final void Function(int globalIndex) onWordLongPress;
 
@@ -35,12 +37,14 @@ class ParagraphRichText extends StatelessWidget {
     required this.fontSize,
     required this.selectedWordIndices,
     required this.otherLanguageTerms,
+    required this.translationsMap,
     required this.onWordTap,
     required this.onWordLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final spans = <InlineSpan>[];
     final textStyle = TextStyle(fontSize: fontSize, height: _lineHeight);
 
@@ -114,10 +118,25 @@ class ParagraphRichText extends StatelessWidget {
       }
 
       String? tooltipMessage;
-      if (term != null && term.translation.isNotEmpty) {
-        tooltipMessage = term.translation;
-        if (term.romanization.isNotEmpty) {
-          tooltipMessage = '${term.romanization}\n$tooltipMessage';
+      if (term != null) {
+        // Get translations from map, fall back to legacy field
+        final translations = term.id != null ? translationsMap[term.id!] : null;
+        String translationText;
+        if (translations != null && translations.isNotEmpty) {
+          translationText = translations.map((t) {
+            if (t.partOfSpeech != null) {
+              return '${t.meaning} (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})';
+            }
+            return t.meaning;
+          }).join('\n');
+        } else {
+          translationText = term.translation;
+        }
+        if (translationText.isNotEmpty) {
+          tooltipMessage = translationText;
+          if (term.romanization.isNotEmpty) {
+            tooltipMessage = '${term.romanization}\n$tooltipMessage';
+          }
         }
       } else if (isOtherLanguage) {
         final otherInfo = otherLanguageTerms[lowerWord]!;

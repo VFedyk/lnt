@@ -830,4 +830,55 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get databaseChangedMessage =>
       'Базу даних змінено. Програма зараз закриється. Будь ласка, відкрийте її знову для використання нової бази даних.';
+
+  @override
+  String get posNoun => 'Іменник';
+
+  @override
+  String get posVerb => 'Дієслово';
+
+  @override
+  String get posAdjective => 'Прикметник';
+
+  @override
+  String get posAdverb => 'Прислівник';
+
+  @override
+  String get posPronoun => 'Займенник';
+
+  @override
+  String get posPreposition => 'Прийменник';
+
+  @override
+  String get posConjunction => 'Сполучник';
+
+  @override
+  String get posInterjection => 'Вигук';
+
+  @override
+  String get posArticle => 'Артикль';
+
+  @override
+  String get posNumeral => 'Числівник';
+
+  @override
+  String get posParticle => 'Частка';
+
+  @override
+  String get posOther => 'Інше';
+
+  @override
+  String get partOfSpeech => 'Частина мови';
+
+  @override
+  String get baseForm => 'Базова форма';
+
+  @override
+  String get meaning => 'Значення';
+
+  @override
+  String get addTranslation => 'Додати переклад';
+
+  @override
+  String get translations => 'Переклади';
 }

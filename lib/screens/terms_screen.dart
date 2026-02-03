@@ -29,6 +29,7 @@ class TermsScreen extends StatefulWidget {
 class _TermsScreenState extends State<TermsScreen> {
   List<Term> _terms = [];
   List<Term> _filteredTerms = [];
+  Map<int, List<Translation>> _translationsMap = {};
   bool _isLoading = true;
   final _searchController = TextEditingController();
   final _importService = ImportExportService();
@@ -45,8 +46,12 @@ class _TermsScreenState extends State<TermsScreen> {
     final terms = await DatabaseService.instance.getTerms(
       languageId: widget.language.id!,
     );
+    // Batch load translations for all terms
+    final termIds = terms.where((t) => t.id != null).map((t) => t.id!).toList();
+    final translationsMap = await DatabaseService.instance.translations.getByTermIds(termIds);
     setState(() {
       _terms = terms;
+      _translationsMap = translationsMap;
       _applyFilters();
       _isLoading = false;
     });
@@ -67,7 +72,8 @@ class _TermsScreenState extends State<TermsScreen> {
           .where(
             (t) =>
                 t.text.toLowerCase().contains(query) ||
-                t.translation.toLowerCase().contains(query),
+                t.translation.toLowerCase().contains(query) ||
+                _translationsContainQuery(t.id, query),
           )
           .toList();
     }
@@ -144,7 +150,7 @@ class _TermsScreenState extends State<TermsScreen> {
   }
 
   Future<void> _editTerm(Term term) async {
-    final result = await showDialog<Term?>(
+    final dialogResult = await showDialog<TermDialogResult?>(
       context: context,
       builder: (dialogContext) => TermDialog(
         term: term,
@@ -156,8 +162,12 @@ class _TermsScreenState extends State<TermsScreen> {
       ),
     );
 
-    if (result != null) {
-      await DatabaseService.instance.updateTerm(result);
+    if (dialogResult != null) {
+      await DatabaseService.instance.updateTerm(dialogResult.term);
+      await DatabaseService.instance.translations.replaceForTerm(
+        dialogResult.term.id!,
+        dialogResult.translations,
+      );
       _loadTerms();
     }
   }
@@ -319,20 +329,7 @@ class _TermsScreenState extends State<TermsScreen> {
               ),
             ),
             title: Text(term.text),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (term.translation.isNotEmpty) Text(term.translation),
-                if (term.romanization.isNotEmpty)
-                  Text(
-                    term.romanization,
-                    style: TextStyle(
-                      color: AppConstants.subtitleColor,
-                      fontSize: AppConstants.fontSizeCaption,
-                    ),
-                  ),
-              ],
-            ),
+            subtitle: _buildTermSubtitle(term, l10n),
             trailing: PopupMenuButton(
               itemBuilder: (context) => [
                 PopupMenuItem(
@@ -371,6 +368,46 @@ class _TermsScreenState extends State<TermsScreen> {
     );
   }
 
+
+  bool _translationsContainQuery(int? termId, String query) {
+    if (termId == null) return false;
+    final translations = _translationsMap[termId];
+    if (translations == null) return false;
+    return translations.any((t) => t.meaning.toLowerCase().contains(query));
+  }
+
+  Widget? _buildTermSubtitle(Term term, AppLocalizations l10n) {
+    final translations = term.id != null ? _translationsMap[term.id!] : null;
+    final hasTranslations = translations != null && translations.isNotEmpty;
+    final hasLegacyTranslation = term.translation.isNotEmpty;
+    final hasRomanization = term.romanization.isNotEmpty;
+
+    if (!hasTranslations && !hasLegacyTranslation && !hasRomanization) {
+      return null;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (hasTranslations)
+          ...translations.map((t) => Text(
+            t.partOfSpeech != null
+                ? '${t.meaning} (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})'
+                : t.meaning,
+          ))
+        else if (hasLegacyTranslation)
+          Text(term.translation),
+        if (hasRomanization)
+          Text(
+            term.romanization,
+            style: TextStyle(
+              color: AppConstants.subtitleColor,
+              fontSize: AppConstants.fontSizeCaption,
+            ),
+          ),
+      ],
+    );
+  }
 
   Color _getStatusColor(int status) {
     switch (status) {

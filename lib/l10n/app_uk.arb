@@ -270,5 +270,24 @@
   "openDatabaseDirectory": "Відкрити директорію",
   "changeDatabase": "Змінити базу даних",
   "restartRequired": "Потрібен перезапуск",
-  "databaseChangedMessage": "Базу даних змінено. Програма зараз закриється. Будь ласка, відкрийте її знову для використання нової бази даних."
+  "databaseChangedMessage": "Базу даних змінено. Програма зараз закриється. Будь ласка, відкрийте її знову для використання нової бази даних.",
+
+  "posNoun": "Іменник",
+  "posVerb": "Дієслово",
+  "posAdjective": "Прикметник",
+  "posAdverb": "Прислівник",
+  "posPronoun": "Займенник",
+  "posPreposition": "Прийменник",
+  "posConjunction": "Сполучник",
+  "posInterjection": "Вигук",
+  "posArticle": "Артикль",
+  "posNumeral": "Числівник",
+  "posParticle": "Частка",
+  "posOther": "Інше",
+
+  "partOfSpeech": "Частина мови",
+  "baseForm": "Базова форма",
+  "meaning": "Значення",
+  "addTranslation": "Додати переклад",
+  "translations": "Переклади"
 }

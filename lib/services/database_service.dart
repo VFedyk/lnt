@@ -11,6 +11,7 @@ import '../repositories/text_repository.dart';
 import '../repositories/term_repository.dart';
 import '../repositories/collection_repository.dart';
 import '../repositories/dictionary_repository.dart';
+import '../repositories/translation_repository.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
@@ -23,6 +24,7 @@ class DatabaseService {
   late final TermRepository terms;
   late final CollectionRepository collections;
   late final DictionaryRepository dictionaries;
+  late final TranslationRepository translations;
 
   DatabaseService._init() {
     languages = LanguageRepository(() => database);
@@ -30,6 +32,7 @@ class DatabaseService {
     terms = TermRepository(() => database);
     collections = CollectionRepository(() => database);
     dictionaries = DictionaryRepository(() => database);
+    translations = TranslationRepository(() => database);
   }
 
   Future<Database> get database async {
@@ -51,7 +54,7 @@ class DatabaseService {
 
     return await openDatabase(
       _dbPath!,
-      version: 6,
+      version: 7,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -85,6 +88,26 @@ class DatabaseService {
     }
     if (oldVersion < 6) {
       await db.execute('ALTER TABLE texts ADD COLUMN status INTEGER DEFAULT 0');
+    }
+    if (oldVersion < 7) {
+      await db.execute('''
+        CREATE TABLE translations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          term_id INTEGER NOT NULL,
+          meaning TEXT NOT NULL,
+          part_of_speech TEXT,
+          base_form TEXT,
+          sort_order INTEGER DEFAULT 0,
+          FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('CREATE INDEX idx_translations_term ON translations(term_id)');
+
+      // Migrate existing translations from terms table
+      await db.execute('''
+        INSERT INTO translations (term_id, meaning, sort_order)
+        SELECT id, translation, 0 FROM terms WHERE translation IS NOT NULL AND translation != ''
+      ''');
     }
   }
 
@@ -145,6 +168,19 @@ class DatabaseService {
     await db.execute('CREATE INDEX idx_terms_language ON terms(language_id)');
     await db.execute('CREATE INDEX idx_terms_base ON terms(base_term_id)');
     await db.execute('CREATE INDEX idx_texts_language ON texts(language_id)');
+
+    await db.execute('''
+      CREATE TABLE translations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        term_id INTEGER NOT NULL,
+        meaning TEXT NOT NULL,
+        part_of_speech TEXT,
+        base_form TEXT,
+        sort_order INTEGER DEFAULT 0,
+        FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_translations_term ON translations(term_id)');
 
     await db.execute('''
       CREATE TABLE collections (
