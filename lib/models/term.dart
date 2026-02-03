@@ -247,8 +247,7 @@ class Term {
   String get statusName => TermStatus.nameFor(status);
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+    final map = <String, dynamic>{
       'language_id': languageId,
       'text': text,
       'lower_text': lowerText,
@@ -260,6 +259,10 @@ class Term {
       'last_accessed': lastAccessed.toIso8601String(),
       'base_term_id': baseTermId,
     };
+    if (id != null) {
+      map['id'] = id;
+    }
+    return map;
   }
 
   factory Term.fromMap(Map<String, dynamic> map) {

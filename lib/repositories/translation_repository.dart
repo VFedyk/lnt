@@ -83,17 +83,42 @@ class TranslationRepository extends BaseRepository {
     return result;
   }
 
-  /// Replace all translations for a term (delete existing, insert new)
+  /// Update translations for a term, preserving IDs where possible
+  /// to maintain baseTranslationId references from other translations
   Future<void> replaceForTerm(int termId, List<Translation> translations) async {
     final db = await getDatabase();
     await db.transaction((txn) async {
-      await txn.delete('translations', where: 'term_id = ?', whereArgs: [termId]);
+      // Get existing translation IDs for this term
+      final existingMaps = await txn.query(
+        'translations',
+        columns: ['id'],
+        where: 'term_id = ?',
+        whereArgs: [termId],
+      );
+      final existingIds = existingMaps.map((m) => m['id'] as int).toSet();
+
+      // Track which existing IDs we're keeping
+      final keptIds = <int>{};
+
       for (var i = 0; i < translations.length; i++) {
-        // Clear the id to let SQLite auto-generate new IDs
         final t = translations[i].copyWith(termId: termId, sortOrder: i);
         final map = t.toMap();
-        map.remove('id'); // Don't reuse old IDs
-        await txn.insert('translations', map);
+
+        if (t.id != null && existingIds.contains(t.id)) {
+          // Update existing translation (preserves ID for baseTranslationId refs)
+          await txn.update('translations', map, where: 'id = ?', whereArgs: [t.id]);
+          keptIds.add(t.id!);
+        } else {
+          // Insert new translation
+          map.remove('id');
+          await txn.insert('translations', map);
+        }
+      }
+
+      // Delete translations that were removed
+      final toDelete = existingIds.difference(keptIds);
+      for (final id in toDelete) {
+        await txn.delete('translations', where: 'id = ?', whereArgs: [id]);
       }
     });
   }

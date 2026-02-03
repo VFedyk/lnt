@@ -519,6 +519,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
           dialogResult.term.id!,
           dialogResult.translations,
         );
+        // Reload translations to get new IDs and update in-memory maps
+        final newTranslations = await DatabaseService.instance.translations
+            .getByTermId(dialogResult.term.id!);
+        _translationsMap[dialogResult.term.id!] = newTranslations;
+        for (final t in newTranslations) {
+          if (t.id != null) _translationsById[t.id!] = t;
+        }
         _updateTermInPlace(dialogResult.term);
       }
     } else {
@@ -549,6 +556,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
           termId,
           dialogResult.translations,
         );
+        // Reload translations to get new IDs and update in-memory maps
+        final newTranslations = await DatabaseService.instance.translations
+            .getByTermId(termId);
+        _translationsMap[termId] = newTranslations;
+        for (final t in newTranslations) {
+          if (t.id != null) _translationsById[t.id!] = t;
+        }
+        _termsById[termId] = termWithId;
         _updateTermInPlace(termWithId);
       }
     }

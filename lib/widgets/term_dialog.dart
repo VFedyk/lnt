@@ -19,8 +19,6 @@ class TermDialogResult {
 
 abstract class _TermDialogConstants {
   static const double closeIconSize = 18.0;
-  static const double addLinkIconSize = 18.0;
-  static const int primaryAlpha = 100;
   static const double chipBackgroundAlpha = 0.2;
   static const int sentenceMaxLines = 3;
   static final Color wellKnownTextColor = Colors.blue.shade700;
@@ -61,11 +59,6 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
   final Map<int, ({Translation translation, Term term})> _baseTranslations = {};
   late TextEditingController _translationController;
 
-  // Base term linking
-  int? _baseTermId;
-  Term? _baseTerm;
-  List<Term> _linkedTerms = [];
-
   // Language selection
   List<Language> _languages = [];
   late int _selectedLanguageId;
@@ -96,8 +89,6 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
           ? widget.sentence
           : widget.term.sentence,
     );
-    _baseTermId = widget.term.baseTermId;
-    _loadBaseTermAndLinkedTerms();
     _loadTranslations();
     checkDeepLKey();
     _loadLanguages();
@@ -153,8 +144,6 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
   }
 
   Future<void> _selectBaseTranslationForTranslation(int index) async {
-    final currentTranslation = _translations[index];
-
     // First, select a term
     final selectedTerm = await showDialog<Term?>(
       context: context,
@@ -168,29 +157,46 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
     if (selectedTerm == null || !mounted) return;
 
     // Load translations for the selected term
-    final termTranslations = await DatabaseService.instance.translations.getByTermId(selectedTerm.id!);
+    var termTranslations = await DatabaseService.instance.translations.getByTermId(selectedTerm.id!);
 
     if (!mounted) return;
 
-    // If term has only one translation, use it directly
-    if (termTranslations.length == 1) {
-      final baseTranslation = termTranslations.first;
-      setState(() {
-        _translations[index] = currentTranslation.copyWith(
-          baseTranslationId: baseTranslation.id,
-        );
-        _baseTranslations[baseTranslation.id!] = (translation: baseTranslation, term: selectedTerm);
-      });
-      return;
+    // If no translations in DB but term has legacy translation, create one and save it
+    if (termTranslations.isEmpty && selectedTerm.translation.isNotEmpty) {
+      final legacyTranslation = Translation(
+        termId: selectedTerm.id!,
+        meaning: selectedTerm.translation,
+      );
+      // Save the legacy translation to the translations table
+      await DatabaseService.instance.translations.replaceForTerm(
+        selectedTerm.id!,
+        [legacyTranslation],
+      );
+      // Reload to get the saved translation with its new ID
+      termTranslations = await DatabaseService.instance.translations.getByTermId(selectedTerm.id!);
+      if (!mounted) return;
     }
 
-    // If no translations saved, can't link
+    // If still no translations, can't link
     if (termTranslations.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No translations available for this term')),
         );
       }
+      return;
+    }
+
+    // If term has only one translation, use it directly
+    if (termTranslations.length == 1) {
+      final baseTranslation = termTranslations.first;
+      setState(() {
+        // Read current translation at setState time to preserve any changes made during dialog
+        _translations[index] = _translations[index].copyWith(
+          baseTranslationId: baseTranslation.id,
+        );
+        _baseTranslations[baseTranslation.id!] = (translation: baseTranslation, term: selectedTerm);
+      });
       return;
     }
 
@@ -205,7 +211,8 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
 
     if (selectedTranslation != null && mounted) {
       setState(() {
-        _translations[index] = currentTranslation.copyWith(
+        // Read current translation at setState time to preserve any changes made during dialog
+        _translations[index] = _translations[index].copyWith(
           baseTranslationId: selectedTranslation.id,
         );
         _baseTranslations[selectedTranslation.id!] = (translation: selectedTranslation, term: selectedTerm);
@@ -322,135 +329,6 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
     }
   }
 
-  Future<void> _loadBaseTermAndLinkedTerms() async {
-    if (_baseTermId != null) {
-      final baseTerm = await DatabaseService.instance.getTerm(_baseTermId!);
-      if (mounted) {
-        setState(() => _baseTerm = baseTerm);
-      }
-    }
-    if (widget.term.id != null) {
-      final linked = await DatabaseService.instance.getLinkedTerms(
-        widget.term.id!,
-      );
-      if (mounted) {
-        setState(() => _linkedTerms = linked);
-      }
-    }
-  }
-
-  Future<void> _selectBaseTerm() async {
-    final selectedTerm = await showDialog<Term>(
-      context: context,
-      builder: (context) => BaseTermSearchDialog(
-        languageId: widget.languageId,
-        languageName: widget.languageName,
-        excludeTermId: widget.term.id,
-        initialWord: widget.term.lowerText,
-      ),
-    );
-    if (selectedTerm != null && mounted) {
-      setState(() {
-        _baseTermId = selectedTerm.id;
-        _baseTerm = selectedTerm;
-      });
-    }
-  }
-
-  void _removeBaseTerm() {
-    setState(() {
-      _baseTermId = null;
-      _baseTerm = null;
-    });
-  }
-
-  Widget _buildBaseTermSection() {
-    final l10n = AppLocalizations.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_baseTerm != null)
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.spacingM,
-              vertical: AppConstants.spacingS,
-            ),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
-              border: Border.all(
-                color: colorScheme.primary.withAlpha(
-                  _TermDialogConstants.primaryAlpha,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.link,
-                  size: AppConstants.iconSizeS,
-                  color: colorScheme.primary,
-                ),
-                const SizedBox(width: AppConstants.spacingS),
-                Text(
-                  l10n.base,
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    _baseTerm!.lowerText,
-                    style: TextStyle(
-                      color: colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    size: _TermDialogConstants.closeIconSize,
-                  ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: _removeBaseTerm,
-                  tooltip: l10n.removeLink,
-                ),
-              ],
-            ),
-          )
-        else
-          OutlinedButton.icon(
-            onPressed: _selectBaseTerm,
-            icon: const Icon(
-              Icons.add_link,
-              size: _TermDialogConstants.addLinkIconSize,
-            ),
-            label: Text(l10n.linkToBaseForm),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: colorScheme.primary,
-              side: BorderSide(color: colorScheme.outline),
-            ),
-          ),
-
-        if (_linkedTerms.isNotEmpty) ...[
-          const SizedBox(height: AppConstants.spacingS),
-          Text(
-            l10n.forms(_linkedTerms.map((t) => t.lowerText).join(", ")),
-            style: TextStyle(
-              fontSize: AppConstants.fontSizeCaption,
-              color: colorScheme.onSurfaceVariant,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
   Widget _buildTranslationsSection(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,9 +420,10 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                     contentPadding: EdgeInsets.zero,
                   ),
                   onChanged: (value) {
+                    // Use current list value to preserve baseTranslationId and other fields
                     _updateTranslation(
                       index,
-                      translation.copyWith(meaning: value),
+                      _translations[index].copyWith(meaning: value),
                     );
                   },
                 ),
@@ -581,9 +460,10 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                         )),
                   ],
                   onChanged: (value) {
+                    // Use current list value to preserve baseTranslationId and other fields
                     _updateTranslation(
                       index,
-                      translation.copyWith(
+                      _translations[index].copyWith(
                         partOfSpeech: value,
                         clearPartOfSpeech: value == null,
                       ),
@@ -691,10 +571,6 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                       : null,
                 ),
               ),
-              const SizedBox(height: AppConstants.spacingM),
-
-              // Base term linking
-              _buildBaseTermSection(),
               const SizedBox(height: AppConstants.spacingM),
 
               // Status selector
@@ -868,9 +744,6 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
               romanization: _romanizationController.text,
               sentence: _sentenceController.text,
               lastAccessed: DateTime.now(),
-              baseTermId: _baseTermId,
-              clearBaseTermId:
-                  _baseTermId == null && widget.term.baseTermId != null,
             );
             Navigator.pop(
               context,
