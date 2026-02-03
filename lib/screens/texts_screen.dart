@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -218,28 +219,45 @@ class _TextsScreenState extends State<TextsScreen> {
         ? texts.where((t) => t.collectionId == null).toList()
         : texts.where((t) => t.collectionId == _currentCollection!.id).toList();
 
-    // Find texts that need unknown count calculation (not in cache)
-    final textsToCalculate = filteredTexts
-        .where((t) => !_unknownCounts.containsKey(t.id!))
-        .toList();
-
-    // Only load terms map if we have texts to calculate
-    if (textsToCalculate.isNotEmpty) {
-      final termsMap = await DatabaseService.instance.getTermsMap(
-        widget.language.id!,
-      );
-
-      // Calculate unknown counts only for texts not in cache
-      for (final text in textsToCalculate) {
-        _unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
-      }
-    }
-
+    // Show UI immediately, calculate unknown counts in background
     setState(() {
       _collections = collections;
       _texts = filteredTexts;
       _isLoading = false;
     });
+
+    // Calculate unknown counts asynchronously to avoid blocking UI
+    _calculateUnknownCountsAsync(filteredTexts);
+  }
+
+  /// Calculate unknown counts in batches to keep UI responsive
+  Future<void> _calculateUnknownCountsAsync(List<TextDocument> texts) async {
+    // Find texts that need calculation (not in cache)
+    final textsToCalculate = texts
+        .where((t) => !_unknownCounts.containsKey(t.id!))
+        .toList();
+
+    if (textsToCalculate.isEmpty) return;
+
+    // Load terms map
+    final termsMap = await DatabaseService.instance.getTermsMap(
+      widget.language.id!,
+    );
+
+    // Process in batches, yielding between each to keep UI responsive
+    for (final text in textsToCalculate) {
+      if (!mounted) return;
+
+      _unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
+
+      // Yield to allow UI updates after each calculation
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    // Trigger rebuild to show updated counts
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   int _calculateUnknownCount(TextDocument text, Map<String, Term> termsMap) {
