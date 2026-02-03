@@ -89,8 +89,11 @@ class TranslationRepository extends BaseRepository {
     await db.transaction((txn) async {
       await txn.delete('translations', where: 'term_id = ?', whereArgs: [termId]);
       for (var i = 0; i < translations.length; i++) {
+        // Clear the id to let SQLite auto-generate new IDs
         final t = translations[i].copyWith(termId: termId, sortOrder: i);
-        await txn.insert('translations', t.toMap());
+        final map = t.toMap();
+        map.remove('id'); // Don't reuse old IDs
+        await txn.insert('translations', map);
       }
     });
   }

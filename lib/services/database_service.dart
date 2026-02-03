@@ -54,7 +54,7 @@ class DatabaseService {
 
     return await openDatabase(
       _dbPath!,
-      version: 7,
+      version: 8,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -108,6 +108,10 @@ class DatabaseService {
         INSERT INTO translations (term_id, meaning, sort_order)
         SELECT id, translation, 0 FROM terms WHERE translation IS NOT NULL AND translation != ''
       ''');
+    }
+    if (oldVersion < 8) {
+      // Add base_translation_id column (replaces base_form TEXT which is left unused)
+      await db.execute('ALTER TABLE translations ADD COLUMN base_translation_id INTEGER');
     }
   }
 
@@ -175,7 +179,7 @@ class DatabaseService {
         term_id INTEGER NOT NULL,
         meaning TEXT NOT NULL,
         part_of_speech TEXT,
-        base_form TEXT,
+        base_translation_id INTEGER,
         sort_order INTEGER DEFAULT 0,
         FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
       )

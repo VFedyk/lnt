@@ -57,6 +57,8 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
 
   // Multiple translations support
   List<Translation> _translations = [];
+  // baseTranslationId -> (translation, its parent term)
+  final Map<int, ({Translation translation, Term term})> _baseTranslations = {};
   late TextEditingController _translationController;
 
   // Base term linking
@@ -118,6 +120,8 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
             ];
           }
         });
+        // Load base translations
+        _loadBaseTranslations();
       }
     } else if (widget.term.translation.isNotEmpty) {
       // New term with pre-filled translation
@@ -127,6 +131,161 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
         ];
       });
     }
+  }
+
+  Future<void> _loadBaseTranslations() async {
+    final baseTranslationIds = _translations
+        .where((t) => t.baseTranslationId != null)
+        .map((t) => t.baseTranslationId!)
+        .toSet();
+
+    for (final translationId in baseTranslationIds) {
+      if (!_baseTranslations.containsKey(translationId)) {
+        final translation = await DatabaseService.instance.translations.getById(translationId);
+        if (translation != null && mounted) {
+          final term = await DatabaseService.instance.getTerm(translation.termId);
+          if (term != null && mounted) {
+            setState(() => _baseTranslations[translationId] = (translation: translation, term: term));
+          }
+        }
+      }
+    }
+  }
+
+  Future<void> _selectBaseTranslationForTranslation(int index) async {
+    final currentTranslation = _translations[index];
+
+    // First, select a term
+    final selectedTerm = await showDialog<Term?>(
+      context: context,
+      builder: (ctx) => BaseTermSearchDialog(
+        languageId: _selectedLanguageId,
+        languageName: _selectedLanguageName,
+        excludeTermId: widget.term.id,
+      ),
+    );
+
+    if (selectedTerm == null || !mounted) return;
+
+    // Load translations for the selected term
+    final termTranslations = await DatabaseService.instance.translations.getByTermId(selectedTerm.id!);
+
+    if (!mounted) return;
+
+    // If term has only one translation, use it directly
+    if (termTranslations.length == 1) {
+      final baseTranslation = termTranslations.first;
+      setState(() {
+        _translations[index] = currentTranslation.copyWith(
+          baseTranslationId: baseTranslation.id,
+        );
+        _baseTranslations[baseTranslation.id!] = (translation: baseTranslation, term: selectedTerm);
+      });
+      return;
+    }
+
+    // If no translations saved, can't link
+    if (termTranslations.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No translations available for this term')),
+        );
+      }
+      return;
+    }
+
+    // Show picker for multiple translations
+    final selectedTranslation = await showDialog<Translation?>(
+      context: context,
+      builder: (ctx) => _TranslationPickerDialog(
+        term: selectedTerm,
+        translations: termTranslations,
+      ),
+    );
+
+    if (selectedTranslation != null && mounted) {
+      setState(() {
+        _translations[index] = currentTranslation.copyWith(
+          baseTranslationId: selectedTranslation.id,
+        );
+        _baseTranslations[selectedTranslation.id!] = (translation: selectedTranslation, term: selectedTerm);
+      });
+    }
+  }
+
+  void _removeBaseTranslationFromTranslation(int index) {
+    final translation = _translations[index];
+    setState(() {
+      _translations[index] = translation.copyWith(
+        clearBaseTranslationId: true,
+      );
+    });
+  }
+
+  Widget _buildBaseTermSelector(AppLocalizations l10n, int index, Translation translation) {
+    final baseInfo = translation.baseTranslationId != null
+        ? _baseTranslations[translation.baseTranslationId!]
+        : null;
+
+    if (baseInfo != null) {
+      return Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.baseForm,
+                  style: TextStyle(
+                    fontSize: AppConstants.fontSizeCaption,
+                    color: AppConstants.subtitleColor,
+                  ),
+                ),
+                Text(
+                  baseInfo.term.lowerText,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  baseInfo.translation.meaning,
+                  style: TextStyle(
+                    fontSize: AppConstants.fontSizeCaption,
+                    color: AppConstants.subtitleColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.close,
+              size: _TermDialogConstants.closeIconSize,
+              color: AppConstants.subtitleColor,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () => _removeBaseTranslationFromTranslation(index),
+          ),
+        ],
+      );
+    }
+
+    return InkWell(
+      onTap: () => _selectBaseTranslationForTranslation(index),
+      child: Row(
+        children: [
+          Icon(
+            Icons.add_link,
+            size: AppConstants.iconSizeS,
+            color: AppConstants.subtitleColor,
+          ),
+          const SizedBox(width: AppConstants.spacingXS),
+          Text(
+            l10n.baseForm,
+            style: TextStyle(color: AppConstants.subtitleColor),
+          ),
+        ],
+      ),
+    );
   }
 
   void _addTranslation() {
@@ -435,24 +594,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
               ),
               const SizedBox(width: AppConstants.spacingM),
               Expanded(
-                child: TextFormField(
-                  initialValue: translation.baseForm,
-                  decoration: InputDecoration(
-                    labelText: l10n.baseForm,
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: (value) {
-                    _updateTranslation(
-                      index,
-                      translation.copyWith(
-                        baseForm: value.isEmpty ? null : value,
-                        clearBaseForm: value.isEmpty,
-                      ),
-                    );
-                  },
-                ),
+                child: _buildBaseTermSelector(l10n, index, translation),
               ),
             ],
           ),
@@ -800,6 +942,46 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
               size: AppConstants.iconSizeS,
             )
           : null,
+    );
+  }
+}
+
+/// Dialog for picking a translation from a term
+class _TranslationPickerDialog extends StatelessWidget {
+  final Term term;
+  final List<Translation> translations;
+
+  const _TranslationPickerDialog({
+    required this.term,
+    required this.translations,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(term.lowerText),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: translations.map((t) {
+            return ListTile(
+              title: Text(t.meaning),
+              subtitle: t.partOfSpeech != null
+                  ? Text(PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n))
+                  : null,
+              onTap: () => Navigator.pop(context, t),
+            );
+          }).toList(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+      ],
     );
   }
 }

@@ -154,7 +154,7 @@ class Translation {
   final int termId;
   final String meaning;
   final String? partOfSpeech;
-  final String? baseForm;
+  final int? baseTranslationId;
   final int sortOrder;
 
   Translation({
@@ -162,7 +162,7 @@ class Translation {
     required this.termId,
     required this.meaning,
     this.partOfSpeech,
-    this.baseForm,
+    this.baseTranslationId,
     this.sortOrder = 0,
   });
 
@@ -171,7 +171,7 @@ class Translation {
       'term_id': termId,
       'meaning': meaning,
       'part_of_speech': partOfSpeech,
-      'base_form': baseForm,
+      'base_translation_id': baseTranslationId,
       'sort_order': sortOrder,
     };
     if (id != null) {
@@ -186,7 +186,7 @@ class Translation {
       termId: map['term_id'],
       meaning: map['meaning'] ?? '',
       partOfSpeech: map['part_of_speech'],
-      baseForm: map['base_form'],
+      baseTranslationId: map['base_translation_id'] as int?,
       sortOrder: map['sort_order'] ?? 0,
     );
   }
@@ -196,10 +196,10 @@ class Translation {
     int? termId,
     String? meaning,
     String? partOfSpeech,
-    String? baseForm,
+    int? baseTranslationId,
     int? sortOrder,
     bool clearPartOfSpeech = false,
-    bool clearBaseForm = false,
+    bool clearBaseTranslationId = false,
   }) {
     return Translation(
       id: id ?? this.id,
@@ -207,7 +207,7 @@ class Translation {
       meaning: meaning ?? this.meaning,
       partOfSpeech:
           clearPartOfSpeech ? null : (partOfSpeech ?? this.partOfSpeech),
-      baseForm: clearBaseForm ? null : (baseForm ?? this.baseForm),
+      baseTranslationId: clearBaseTranslationId ? null : (baseTranslationId ?? this.baseTranslationId),
       sortOrder: sortOrder ?? this.sortOrder,
     );
   }

@@ -50,7 +50,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   late TextDocument _text;
   Map<String, Term> _termsMap = {};
+  Map<int, Term> _termsById = {};
   Map<int, List<Translation>> _translationsMap = {};
+  Map<int, Translation> _translationsById = {};
   Map<String, ({Term term, String languageName})> _otherLanguageTerms = {};
   List<WordToken> _wordTokens = [];
   List<List<WordToken>> _paragraphs = [];
@@ -117,9 +119,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
       _termsMap = await DatabaseService.instance.getTermsMap(
         widget.language.id!,
       );
+      // Build termsById map for looking up base terms
+      _termsById = {
+        for (final term in _termsMap.values)
+          if (term.id != null) term.id!: term,
+      };
       // Preload translations for all terms
       final termIds = _termsMap.values.where((t) => t.id != null).map((t) => t.id!).toList();
       _translationsMap = await DatabaseService.instance.translations.getByTermIds(termIds);
+      // Build translationsById map for looking up base translations
+      _translationsById = {
+        for (final translations in _translationsMap.values)
+          for (final t in translations)
+            if (t.id != null) t.id!: t,
+      };
 
       await _parseTextAsync();
       await _loadOtherLanguageWords();
@@ -429,13 +442,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ),
-                      if (t.baseForm != null && t.baseForm!.isNotEmpty)
-                        Text(
-                          '(${t.baseForm})',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppConstants.subtitleColor,
-                          ),
-                        ),
+                      if (t.baseTranslationId != null && _translationsById.containsKey(t.baseTranslationId!)) ...[
+                        const SizedBox(width: AppConstants.spacingS),
+                        Builder(builder: (context) {
+                          final baseTranslation = _translationsById[t.baseTranslationId!]!;
+                          final baseTerm = _termsById[baseTranslation.termId];
+                          final baseText = baseTerm != null
+                              ? '${baseTerm.lowerText} (${baseTranslation.meaning})'
+                              : baseTranslation.meaning;
+                          return Text(
+                            '← $baseText',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppConstants.subtitleColor,
+                            ),
+                          );
+                        }),
+                      ],
                     ],
                   ),
                 )),
@@ -1052,6 +1074,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           selectedWordIndices: _selectedWordIndices,
                           otherLanguageTerms: _otherLanguageTerms,
                           translationsMap: _translationsMap,
+                          translationsById: _translationsById,
+                          termsById: _termsById,
                           onWordTap: _handleWordTap,
                           onWordLongPress: _handleWordLongPress,
                         );
