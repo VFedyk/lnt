@@ -465,5 +465,24 @@
   "openDatabaseDirectory": "Open Directory",
   "changeDatabase": "Change Database",
   "restartRequired": "Restart Required",
-  "databaseChangedMessage": "The database has been changed. The application will now close. Please reopen it to use the new database."
+  "databaseChangedMessage": "The database has been changed. The application will now close. Please reopen it to use the new database.",
+
+  "posNoun": "Noun",
+  "posVerb": "Verb",
+  "posAdjective": "Adjective",
+  "posAdverb": "Adverb",
+  "posPronoun": "Pronoun",
+  "posPreposition": "Preposition",
+  "posConjunction": "Conjunction",
+  "posInterjection": "Interjection",
+  "posArticle": "Article",
+  "posNumeral": "Numeral",
+  "posParticle": "Particle",
+  "posOther": "Other",
+
+  "partOfSpeech": "Part of speech",
+  "baseForm": "Base form",
+  "meaning": "Meaning",
+  "addTranslation": "Add translation",
+  "translations": "Translations"
 }

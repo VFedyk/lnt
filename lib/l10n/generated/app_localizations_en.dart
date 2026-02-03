@@ -827,4 +827,55 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get databaseChangedMessage =>
       'The database has been changed. The application will now close. Please reopen it to use the new database.';
+
+  @override
+  String get posNoun => 'Noun';
+
+  @override
+  String get posVerb => 'Verb';
+
+  @override
+  String get posAdjective => 'Adjective';
+
+  @override
+  String get posAdverb => 'Adverb';
+
+  @override
+  String get posPronoun => 'Pronoun';
+
+  @override
+  String get posPreposition => 'Preposition';
+
+  @override
+  String get posConjunction => 'Conjunction';
+
+  @override
+  String get posInterjection => 'Interjection';
+
+  @override
+  String get posArticle => 'Article';
+
+  @override
+  String get posNumeral => 'Numeral';
+
+  @override
+  String get posParticle => 'Particle';
+
+  @override
+  String get posOther => 'Other';
+
+  @override
+  String get partOfSpeech => 'Part of speech';
+
+  @override
+  String get baseForm => 'Base form';
+
+  @override
+  String get meaning => 'Meaning';
+
+  @override
+  String get addTranslation => 'Add translation';
+
+  @override
+  String get translations => 'Translations';
 }

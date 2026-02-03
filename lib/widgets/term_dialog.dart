@@ -9,12 +9,19 @@ import '../utils/constants.dart';
 import 'base_term_search_dialog.dart';
 import 'deepl_translation_mixin.dart';
 
+/// Result returned from TermDialog containing both term and translations
+class TermDialogResult {
+  final Term term;
+  final List<Translation> translations;
+
+  TermDialogResult({required this.term, required this.translations});
+}
+
 abstract class _TermDialogConstants {
   static const double closeIconSize = 18.0;
   static const double addLinkIconSize = 18.0;
   static const int primaryAlpha = 100;
   static const double chipBackgroundAlpha = 0.2;
-  static const int translationMaxLines = 2;
   static const int sentenceMaxLines = 3;
   static final Color wellKnownTextColor = Colors.blue.shade700;
   static final Color wellKnownBorderColor = Colors.blue.shade300;
@@ -45,9 +52,12 @@ class TermDialog extends StatefulWidget {
 class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
   late int _status;
   late TextEditingController _termController;
-  late TextEditingController _translationController;
   late TextEditingController _romanizationController;
   late TextEditingController _sentenceController;
+
+  // Multiple translations support
+  List<Translation> _translations = [];
+  late TextEditingController _translationController;
 
   // Base term linking
   int? _baseTermId;
@@ -75,9 +85,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
     _selectedLanguageId = widget.languageId;
     _selectedLanguageName = widget.languageName;
     _termController = TextEditingController(text: widget.term.lowerText);
-    _translationController = TextEditingController(
-      text: widget.term.translation,
-    );
+    _translationController = TextEditingController();
     _romanizationController = TextEditingController(
       text: widget.term.romanization,
     );
@@ -88,8 +96,64 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
     );
     _baseTermId = widget.term.baseTermId;
     _loadBaseTermAndLinkedTerms();
+    _loadTranslations();
     checkDeepLKey();
     _loadLanguages();
+  }
+
+  Future<void> _loadTranslations() async {
+    if (widget.term.id != null) {
+      final translations = await DatabaseService.instance.translations
+          .getByTermId(widget.term.id!);
+      if (mounted) {
+        setState(() {
+          _translations = translations;
+          // If no translations but old translation field has data, create one
+          if (_translations.isEmpty && widget.term.translation.isNotEmpty) {
+            _translations = [
+              Translation(
+                termId: widget.term.id!,
+                meaning: widget.term.translation,
+              ),
+            ];
+          }
+        });
+      }
+    } else if (widget.term.translation.isNotEmpty) {
+      // New term with pre-filled translation
+      setState(() {
+        _translations = [
+          Translation(termId: 0, meaning: widget.term.translation),
+        ];
+      });
+    }
+  }
+
+  void _addTranslation() {
+    setState(() {
+      _translations.add(Translation(
+        termId: widget.term.id ?? 0,
+        meaning: '',
+        sortOrder: _translations.length,
+      ));
+    });
+  }
+
+  void _removeTranslation(int index) {
+    setState(() {
+      _translations.removeAt(index);
+    });
+  }
+
+  void _updateTranslation(int index, Translation updated, {bool rebuild = false}) {
+    if (rebuild) {
+      setState(() {
+        _translations[index] = updated;
+      });
+    } else {
+      // Don't call setState for text changes - it would reset the TextFormField
+      _translations[index] = updated;
+    }
   }
 
   Future<void> _loadLanguages() async {
@@ -226,6 +290,189 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
         ],
       ],
     );
+  }
+
+  Widget _buildTranslationsSection(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              l10n.translations,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasDeepLKey)
+                  IconButton(
+                    icon: isTranslating
+                        ? const SizedBox(
+                            width: AppConstants.progressIndicatorSizeS,
+                            height: AppConstants.progressIndicatorSizeS,
+                            child: CircularProgressIndicator(
+                              strokeWidth: AppConstants.progressStrokeWidth,
+                            ),
+                          )
+                        : const Icon(Icons.translate, size: AppConstants.iconSizeS),
+                    tooltip: l10n.translateWithDeepL,
+                    onPressed: isTranslating ? null : _translateAndAddFirst,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                const SizedBox(width: AppConstants.spacingS),
+                IconButton(
+                  icon: const Icon(Icons.add, size: AppConstants.iconSizeS),
+                  tooltip: l10n.addTranslation,
+                  onPressed: _addTranslation,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: AppConstants.spacingS),
+        if (_translations.isEmpty)
+          Text(
+            l10n.addTranslation,
+            style: TextStyle(
+              color: AppConstants.subtitleColor,
+              fontStyle: FontStyle.italic,
+            ),
+          )
+        else
+          ..._translations.asMap().entries.map((entry) {
+            final index = entry.key;
+            final translation = entry.value;
+            return _buildTranslationItem(l10n, index, translation);
+          }),
+      ],
+    );
+  }
+
+  Widget _buildTranslationItem(
+    AppLocalizations l10n,
+    int index,
+    Translation translation,
+  ) {
+    // Use a stable key based on the translation's id or index
+    final itemKey = ValueKey(translation.id ?? 'new_$index');
+    return Container(
+      key: itemKey,
+      margin: const EdgeInsets.only(bottom: AppConstants.spacingS),
+      padding: const EdgeInsets.all(AppConstants.spacingS),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppConstants.borderColor),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: translation.meaning,
+                  decoration: InputDecoration(
+                    labelText: l10n.meaning,
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: (value) {
+                    _updateTranslation(
+                      index,
+                      translation.copyWith(meaning: value),
+                    );
+                  },
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.close,
+                  size: _TermDialogConstants.closeIconSize,
+                  color: AppConstants.subtitleColor,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () => _removeTranslation(index),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.spacingXS),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButton<String?>(
+                  value: translation.partOfSpeech,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  hint: Text(l10n.partOfSpeech, style: TextStyle(color: AppConstants.subtitleColor)),
+                  items: [
+                    DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('—', style: TextStyle(color: AppConstants.subtitleColor)),
+                    ),
+                    ...PartOfSpeech.all.map((pos) => DropdownMenuItem(
+                          value: pos,
+                          child: Text(PartOfSpeech.localizedNameFor(pos, l10n)),
+                        )),
+                  ],
+                  onChanged: (value) {
+                    _updateTranslation(
+                      index,
+                      translation.copyWith(
+                        partOfSpeech: value,
+                        clearPartOfSpeech: value == null,
+                      ),
+                      rebuild: true,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: AppConstants.spacingM),
+              Expanded(
+                child: TextFormField(
+                  initialValue: translation.baseForm,
+                  decoration: InputDecoration(
+                    labelText: l10n.baseForm,
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: (value) {
+                    _updateTranslation(
+                      index,
+                      translation.copyWith(
+                        baseForm: value.isEmpty ? null : value,
+                        clearBaseForm: value.isEmpty,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _translateAndAddFirst() async {
+    _translationController.text = '';
+    await translateTerm();
+    if (_translationController.text.isNotEmpty) {
+      setState(() {
+        _translations.add(Translation(
+          termId: widget.term.id ?? 0,
+          meaning: _translationController.text,
+          sortOrder: 0,
+        ));
+      });
+    }
   }
 
   @override
@@ -424,30 +671,8 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                 ),
                 const SizedBox(height: AppConstants.spacingM),
               ],
-              TextField(
-                controller: _translationController,
-                decoration: InputDecoration(
-                  labelText: l10n.translation,
-                  border: const OutlineInputBorder(),
-                  suffixIcon: hasDeepLKey
-                      ? IconButton(
-                          icon: isTranslating
-                              ? const SizedBox(
-                                  width: AppConstants.progressIndicatorSize,
-                                  height: AppConstants.progressIndicatorSize,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth:
-                                        AppConstants.progressStrokeWidth,
-                                  ),
-                                )
-                              : const Icon(Icons.translate),
-                          tooltip: l10n.translateWithDeepL,
-                          onPressed: isTranslating ? null : translateTerm,
-                        )
-                      : null,
-                ),
-                maxLines: _TermDialogConstants.translationMaxLines,
-              ),
+              // Translations section
+              _buildTranslationsSection(l10n),
               const SizedBox(height: AppConstants.spacingM),
 
               // Romanization field
@@ -488,12 +713,16 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
         TextButton(
           onPressed: () {
             final editedTerm = _termController.text.trim().toLowerCase();
+            // Use first translation meaning for legacy translation field
+            final legacyTranslation = _translations.isNotEmpty
+                ? _translations.first.meaning
+                : '';
             final updatedTerm = widget.term.copyWith(
               languageId: _selectedLanguageId,
               text: editedTerm,
               lowerText: editedTerm,
               status: _status,
-              translation: _translationController.text,
+              translation: legacyTranslation,
               romanization: _romanizationController.text,
               sentence: _sentenceController.text,
               lastAccessed: DateTime.now(),
@@ -501,7 +730,13 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
               clearBaseTermId:
                   _baseTermId == null && widget.term.baseTermId != null,
             );
-            Navigator.pop(context, updatedTerm);
+            Navigator.pop(
+              context,
+              TermDialogResult(
+                term: updatedTerm,
+                translations: _translations,
+              ),
+            );
           },
           child: Text(l10n.save),
         ),

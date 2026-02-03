@@ -86,6 +86,133 @@ class TermStatus {
   }
 }
 
+/// Part of speech categories
+class PartOfSpeech {
+  static const String noun = 'noun';
+  static const String verb = 'verb';
+  static const String adjective = 'adjective';
+  static const String adverb = 'adverb';
+  static const String pronoun = 'pronoun';
+  static const String preposition = 'preposition';
+  static const String conjunction = 'conjunction';
+  static const String interjection = 'interjection';
+  static const String article = 'article';
+  static const String numeral = 'numeral';
+  static const String particle = 'particle';
+  static const String other = 'other';
+
+  static const List<String> all = [
+    noun,
+    verb,
+    adjective,
+    adverb,
+    pronoun,
+    preposition,
+    conjunction,
+    interjection,
+    article,
+    numeral,
+    particle,
+    other,
+  ];
+
+  static String localizedNameFor(String pos, AppLocalizations l10n) {
+    switch (pos) {
+      case noun:
+        return l10n.posNoun;
+      case verb:
+        return l10n.posVerb;
+      case adjective:
+        return l10n.posAdjective;
+      case adverb:
+        return l10n.posAdverb;
+      case pronoun:
+        return l10n.posPronoun;
+      case preposition:
+        return l10n.posPreposition;
+      case conjunction:
+        return l10n.posConjunction;
+      case interjection:
+        return l10n.posInterjection;
+      case article:
+        return l10n.posArticle;
+      case numeral:
+        return l10n.posNumeral;
+      case particle:
+        return l10n.posParticle;
+      case other:
+        return l10n.posOther;
+      default:
+        return pos;
+    }
+  }
+}
+
+/// A single translation/meaning for a term
+class Translation {
+  final int? id;
+  final int termId;
+  final String meaning;
+  final String? partOfSpeech;
+  final String? baseForm;
+  final int sortOrder;
+
+  Translation({
+    this.id,
+    required this.termId,
+    required this.meaning,
+    this.partOfSpeech,
+    this.baseForm,
+    this.sortOrder = 0,
+  });
+
+  Map<String, dynamic> toMap() {
+    final map = <String, dynamic>{
+      'term_id': termId,
+      'meaning': meaning,
+      'part_of_speech': partOfSpeech,
+      'base_form': baseForm,
+      'sort_order': sortOrder,
+    };
+    if (id != null) {
+      map['id'] = id;
+    }
+    return map;
+  }
+
+  factory Translation.fromMap(Map<String, dynamic> map) {
+    return Translation(
+      id: map['id'],
+      termId: map['term_id'],
+      meaning: map['meaning'] ?? '',
+      partOfSpeech: map['part_of_speech'],
+      baseForm: map['base_form'],
+      sortOrder: map['sort_order'] ?? 0,
+    );
+  }
+
+  Translation copyWith({
+    int? id,
+    int? termId,
+    String? meaning,
+    String? partOfSpeech,
+    String? baseForm,
+    int? sortOrder,
+    bool clearPartOfSpeech = false,
+    bool clearBaseForm = false,
+  }) {
+    return Translation(
+      id: id ?? this.id,
+      termId: termId ?? this.termId,
+      meaning: meaning ?? this.meaning,
+      partOfSpeech:
+          clearPartOfSpeech ? null : (partOfSpeech ?? this.partOfSpeech),
+      baseForm: clearBaseForm ? null : (baseForm ?? this.baseForm),
+      sortOrder: sortOrder ?? this.sortOrder,
+    );
+  }
+}
+
 class Term {
   final int? id;
   final int languageId;

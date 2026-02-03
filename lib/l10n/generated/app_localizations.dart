@@ -1555,6 +1555,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The database has been changed. The application will now close. Please reopen it to use the new database.'**
   String get databaseChangedMessage;
+
+  /// No description provided for @posNoun.
+  ///
+  /// In en, this message translates to:
+  /// **'Noun'**
+  String get posNoun;
+
+  /// No description provided for @posVerb.
+  ///
+  /// In en, this message translates to:
+  /// **'Verb'**
+  String get posVerb;
+
+  /// No description provided for @posAdjective.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjective'**
+  String get posAdjective;
+
+  /// No description provided for @posAdverb.
+  ///
+  /// In en, this message translates to:
+  /// **'Adverb'**
+  String get posAdverb;
+
+  /// No description provided for @posPronoun.
+  ///
+  /// In en, this message translates to:
+  /// **'Pronoun'**
+  String get posPronoun;
+
+  /// No description provided for @posPreposition.
+  ///
+  /// In en, this message translates to:
+  /// **'Preposition'**
+  String get posPreposition;
+
+  /// No description provided for @posConjunction.
+  ///
+  /// In en, this message translates to:
+  /// **'Conjunction'**
+  String get posConjunction;
+
+  /// No description provided for @posInterjection.
+  ///
+  /// In en, this message translates to:
+  /// **'Interjection'**
+  String get posInterjection;
+
+  /// No description provided for @posArticle.
+  ///
+  /// In en, this message translates to:
+  /// **'Article'**
+  String get posArticle;
+
+  /// No description provided for @posNumeral.
+  ///
+  /// In en, this message translates to:
+  /// **'Numeral'**
+  String get posNumeral;
+
+  /// No description provided for @posParticle.
+  ///
+  /// In en, this message translates to:
+  /// **'Particle'**
+  String get posParticle;
+
+  /// No description provided for @posOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get posOther;
+
+  /// No description provided for @partOfSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of speech'**
+  String get partOfSpeech;
+
+  /// No description provided for @baseForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Base form'**
+  String get baseForm;
+
+  /// No description provided for @meaning.
+  ///
+  /// In en, this message translates to:
+  /// **'Meaning'**
+  String get meaning;
+
+  /// No description provided for @addTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Add translation'**
+  String get addTranslation;
+
+  /// No description provided for @translations.
+  ///
+  /// In en, this message translates to:
+  /// **'Translations'**
+  String get translations;
 }
 
 class _AppLocalizationsDelegate
