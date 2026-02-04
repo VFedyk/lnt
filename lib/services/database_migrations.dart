@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 8;
+const int databaseVersion = 9;
 
 /// Handle database upgrades from older versions
 Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -48,6 +48,22 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
   if (oldVersion < 8) {
     // Add base_translation_id column (replaces base_form TEXT which is left unused)
     await db.execute('ALTER TABLE translations ADD COLUMN base_translation_id INTEGER');
+  }
+  if (oldVersion < 9) {
+    await db.execute('''
+      CREATE TABLE text_foreign_words (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        text_id INTEGER NOT NULL,
+        lower_text TEXT NOT NULL,
+        language_id INTEGER NOT NULL,
+        term_id INTEGER,
+        FOREIGN KEY (text_id) REFERENCES texts (id) ON DELETE CASCADE,
+        FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE,
+        FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE SET NULL,
+        UNIQUE(text_id, lower_text)
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_tfw_text ON text_foreign_words(text_id)');
   }
 }
 
@@ -160,4 +176,19 @@ Future<void> onCreate(Database db, int version) async {
   await db.execute(
     'CREATE INDEX idx_dictionaries_language ON dictionaries(language_id)',
   );
+
+  await db.execute('''
+    CREATE TABLE text_foreign_words (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      text_id INTEGER NOT NULL,
+      lower_text TEXT NOT NULL,
+      language_id INTEGER NOT NULL,
+      term_id INTEGER,
+      FOREIGN KEY (text_id) REFERENCES texts (id) ON DELETE CASCADE,
+      FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE,
+      FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE SET NULL,
+      UNIQUE(text_id, lower_text)
+    )
+  ''');
+  await db.execute('CREATE INDEX idx_tfw_text ON text_foreign_words(text_id)');
 }

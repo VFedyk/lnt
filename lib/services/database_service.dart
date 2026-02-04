@@ -13,6 +13,7 @@ import '../repositories/term_repository.dart';
 import '../repositories/collection_repository.dart';
 import '../repositories/dictionary_repository.dart';
 import '../repositories/translation_repository.dart';
+import '../repositories/text_foreign_word_repository.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
@@ -26,6 +27,7 @@ class DatabaseService {
   late final CollectionRepository collections;
   late final DictionaryRepository dictionaries;
   late final TranslationRepository translations;
+  late final TextForeignWordRepository textForeignWords;
 
   DatabaseService._init() {
     languages = LanguageRepository(() => database);
@@ -34,6 +36,7 @@ class DatabaseService {
     collections = CollectionRepository(() => database);
     dictionaries = DictionaryRepository(() => database);
     translations = TranslationRepository(() => database);
+    textForeignWords = TextForeignWordRepository(() => database);
   }
 
   Future<Database> get database async {
@@ -131,11 +134,6 @@ class DatabaseService {
   Future<Term?> getTerm(int id) => terms.getById(id);
   Future<List<Term>> getLinkedTerms(int baseTermId) =>
       terms.getLinkedTerms(baseTermId);
-  Future<Map<String, ({Term term, String languageName})>> getTermsInOtherLanguages(
-    int excludeLanguageId,
-    Set<String> words,
-  ) =>
-      terms.getTermsInOtherLanguages(excludeLanguageId, words);
 
   // Collection
   Future<int> createCollection(Collection collection) =>

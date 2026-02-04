@@ -53,7 +53,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Map<int, Term> _termsById = {};
   Map<int, List<Translation>> _translationsMap = {};
   Map<int, Translation> _translationsById = {};
-  Map<String, ({Term term, String languageName})> _otherLanguageTerms = {};
+  Map<String, ({Term? term, List<Translation> translations, String languageName, int languageId})> _otherLanguageTerms = {};
   List<WordToken> _wordTokens = [];
   List<List<WordToken>> _paragraphs = [];
   bool _isLoading = true;
@@ -135,7 +135,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       };
 
       await _parseTextAsync();
-      await _loadOtherLanguageWords();
+      await _loadForeignWords();
       _updateTextTermCounts();
 
       setState(() => _isLoading = false);
@@ -195,11 +195,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     if (term.languageId != widget.language.id) {
       final lang = await DatabaseService.instance.getLanguage(term.languageId);
+      final termTranslations = term.id != null
+          ? (await DatabaseService.instance.translations.getByTermIds([term.id!]))[term.id!] ?? []
+          : <Translation>[];
       _otherLanguageTerms[lowerText] = (
         term: term,
+        translations: termTranslations,
         languageName: lang?.name ?? '',
+        languageId: term.languageId,
       );
       _termsMap.remove(lowerText);
+
+      // Persist foreign word assignment so it survives reopening the text
+      await DatabaseService.instance.textForeignWords.saveWords(
+        _text.id!,
+        term.languageId,
+        {lowerText: term.id},
+      );
 
       _wordTokens = _wordTokens.map((token) {
         if (token.isWord && token.text.toLowerCase() == lowerText) {
@@ -266,24 +278,57 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _groupIntoParagraphs();
   }
 
-  Future<void> _loadOtherLanguageWords() async {
-    final wordsToCheck = <String>{};
-    for (final token in _wordTokens) {
-      if (token.isWord) {
-        final lowerWord = token.text.toLowerCase();
-        if (!_termsMap.containsKey(lowerWord)) {
-          wordsToCheck.add(lowerWord);
-        }
-      }
-    }
+  Future<void> _loadForeignWords() async {
+    final records = await DatabaseService.instance.textForeignWords
+        .getByTextId(_text.id!);
 
-    if (wordsToCheck.isEmpty) {
+    if (records.isEmpty) {
       _otherLanguageTerms = {};
       return;
     }
 
-    _otherLanguageTerms = await DatabaseService.instance
-        .getTermsInOtherLanguages(widget.language.id!, wordsToCheck);
+    // Collect term IDs and language IDs for batch loading
+    final termIds = records
+        .where((r) => r.termId != null)
+        .map((r) => r.termId!)
+        .toList();
+    final languageIds = records.map((r) => r.languageId).toSet();
+
+    // Batch load translations for all referenced terms
+    final foreignTranslations = termIds.isNotEmpty
+        ? await DatabaseService.instance.translations.getByTermIds(termIds)
+        : <int, List<Translation>>{};
+
+    // Batch load terms by ID
+    final foreignTerms = <int, Term>{};
+    for (final id in termIds) {
+      final term = await DatabaseService.instance.getTerm(id);
+      if (term != null) foreignTerms[id] = term;
+    }
+
+    // Cache language names
+    final languageNames = <int, String>{};
+    for (final langId in languageIds) {
+      final lang = await DatabaseService.instance.getLanguage(langId);
+      languageNames[langId] = lang?.name ?? '';
+    }
+
+    // Build the map
+    final result = <String, ({Term? term, List<Translation> translations, String languageName, int languageId})>{};
+    for (final record in records) {
+      final term = record.termId != null ? foreignTerms[record.termId!] : null;
+      final translations = record.termId != null
+          ? (foreignTranslations[record.termId!] ?? <Translation>[])
+          : <Translation>[];
+      result[record.lowerText] = (
+        term: term,
+        translations: translations,
+        languageName: languageNames[record.languageId] ?? '',
+        languageId: record.languageId,
+      );
+    }
+
+    _otherLanguageTerms = result;
   }
 
   void _groupIntoParagraphs() {
@@ -367,6 +412,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
 
     final lowerWord = _textParser.normalizeWord(word);
+
+    // Check if this is a foreign-marked word
+    if (_otherLanguageTerms.containsKey(lowerWord)) {
+      final info = _otherLanguageTerms[lowerWord]!;
+      final shouldRemove = await _showForeignWordPopup(lowerWord, info);
+      if (shouldRemove == true) {
+        await DatabaseService.instance.textForeignWords.deleteWord(
+          _text.id!,
+          lowerWord,
+        );
+        _otherLanguageTerms.remove(lowerWord);
+        _updateTextTermCounts();
+        setState(() {});
+      }
+      return;
+    }
+
     final existingTerm = _termsMap[lowerWord];
 
     if (existingTerm != null && _hasTranslations(existingTerm)) {
@@ -481,6 +543,99 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
+  Future<bool?> _showForeignWordPopup(
+    String lowerWord,
+    ({Term? term, List<Translation> translations, String languageName, int languageId}) info,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 736),
+          child: Padding(
+            padding: const EdgeInsets.all(AppConstants.spacingL),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  lowerWord,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacingXS),
+                Text(
+                  info.languageName,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppConstants.subtitleColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                if (info.term != null && info.term!.romanization.isNotEmpty) ...[
+                  const SizedBox(height: AppConstants.spacingXS),
+                  Text(
+                    info.term!.romanization,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                      color: AppConstants.subtitleColor,
+                    ),
+                  ),
+                ],
+                if (info.translations.isNotEmpty) ...[
+                  const SizedBox(height: AppConstants.spacingS),
+                  ...info.translations.map((t) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppConstants.spacingXS),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (t.partOfSpeech != null) ...[
+                          Text(
+                            PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppConstants.subtitleColor,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          const SizedBox(width: AppConstants.spacingS),
+                        ],
+                        Expanded(
+                          child: Text(
+                            t.meaning,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+                ] else if (info.term != null && info.term!.translation.isNotEmpty) ...[
+                  const SizedBox(height: AppConstants.spacingS),
+                  Text(
+                    info.term!.translation,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ],
+                const SizedBox(height: AppConstants.spacingL),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.pop(context, true),
+                    icon: const Icon(
+                      Icons.remove_circle_outline,
+                      size: _ReaderScreenConstants.editIconSize,
+                    ),
+                    label: Text(l10n.removeForeignMarking),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _openTermDialog(
     String word,
     int position,
@@ -527,6 +682,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
           if (t.id != null) _translationsById[t.id!] = t;
         }
         _updateTermInPlace(dialogResult.term);
+        // Auto-remove foreign marking if word was previously marked
+        if (_otherLanguageTerms.containsKey(lowerWord)) {
+          await DatabaseService.instance.textForeignWords.deleteWord(
+            _text.id!, lowerWord);
+          _otherLanguageTerms.remove(lowerWord);
+        }
       }
     } else {
       final newTerm = Term(
@@ -565,6 +726,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
         }
         _termsById[termId] = termWithId;
         _updateTermInPlace(termWithId);
+        // Auto-remove foreign marking if word was previously marked
+        if (_otherLanguageTerms.containsKey(lowerWord)) {
+          await DatabaseService.instance.textForeignWords.deleteWord(
+            _text.id!, lowerWord);
+          _otherLanguageTerms.remove(lowerWord);
+        }
       }
     }
   }
@@ -584,6 +751,79 @@ class _ReaderScreenState extends State<ReaderScreen> {
       _isSelectionMode = false;
       _selectedWordIndices.clear();
     });
+  }
+
+  Future<void> _assignForeignLanguage() async {
+    if (_selectedWordIndices.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
+
+    // Load all languages except current
+    final allLanguages = await DatabaseService.instance.getLanguages();
+    final otherLanguages = allLanguages
+        .where((lang) => lang.id != widget.language.id)
+        .toList();
+
+    if (!mounted) return;
+
+    if (otherLanguages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.noOtherLanguages)),
+      );
+      return;
+    }
+
+    // Show language picker dialog
+    final selectedLanguage = await showDialog<Language>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.assignForeignLanguage),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: otherLanguages.map((lang) => ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(lang.name),
+            onTap: () => Navigator.pop(context, lang),
+          )).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+        ],
+      ),
+    );
+
+    if (selectedLanguage == null || !mounted) return;
+
+    // Collect selected words (lowercased, unique)
+    final selectedTokens = _selectedWordIndices.toList()..sort();
+    final lowerWords = selectedTokens
+        .map((i) => _wordTokens[i].text.toLowerCase())
+        .toSet()
+        .toList();
+
+    // Look up matching terms in target language to resolve term_ids
+    final targetTermsMap = await DatabaseService.instance.getTermsMap(
+      selectedLanguage.id!,
+    );
+    final wordsWithTermIds = <String, int?>{};
+    for (final word in lowerWords) {
+      final term = targetTermsMap[word];
+      wordsWithTermIds[word] = term?.id;
+    }
+
+    // Save to DB
+    await DatabaseService.instance.textForeignWords.saveWords(
+      _text.id!,
+      selectedLanguage.id!,
+      wordsWithTermIds,
+    );
+
+    // Reload foreign words and refresh
+    await _loadForeignWords();
+    _updateTextTermCounts();
+    _cancelSelection();
   }
 
   Future<void> _lookupSelectedWords() async {
@@ -716,6 +956,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     _cancelSelection();
     if (dialogResult != null) {
+      // Remove foreign marking only for the actual saved term text
+      if (_otherLanguageTerms.containsKey(lowerWords)) {
+        await DatabaseService.instance.textForeignWords.deleteWord(
+          _text.id!, lowerWords);
+      }
       await _loadTermsAndParse();
     }
   }
@@ -937,6 +1182,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
               icon: const Icon(Icons.add),
               tooltip: l10n.saveAsTerm,
               onPressed: _saveSelectionAsTerm,
+            ),
+          if (_isSelectionMode)
+            IconButton(
+              icon: const Icon(Icons.language),
+              tooltip: l10n.assignForeignLanguage,
+              onPressed: _assignForeignLanguage,
             ),
           if (_isSelectionMode)
             IconButton(

@@ -549,6 +549,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveAsTerm => 'Save as Term';
 
   @override
+  String get assignForeignLanguage => 'Assign foreign language';
+
+  @override
+  String get removeForeignMarking => 'Remove foreign marking';
+
+  @override
+  String get noOtherLanguages => 'No other languages configured';
+
+  @override
   String get lookupInDictionary => 'Lookup in Dictionary';
 
   @override

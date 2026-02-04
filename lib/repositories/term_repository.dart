@@ -164,43 +164,4 @@ class TermRepository extends BaseRepository {
     return maps.map((map) => Term.fromMap(map)).toList();
   }
 
-  /// Get terms that exist in any language OTHER than the specified one,
-  /// along with the language name. Returns a map from lowercase word to
-  /// a record containing the Term and language name.
-  Future<Map<String, ({Term term, String languageName})>> getTermsInOtherLanguages(
-    int excludeLanguageId,
-    Set<String> words,
-  ) async {
-    if (words.isEmpty) return {};
-
-    final db = await getDatabase();
-    final result = <String, ({Term term, String languageName})>{};
-    final wordList = words.toList();
-    const batchSize = 500;
-
-    for (var i = 0; i < wordList.length; i += batchSize) {
-      final batch = wordList.skip(i).take(batchSize).toList();
-      final placeholders = List.filled(batch.length, '?').join(',');
-      final maps = await db.rawQuery(
-        '''
-        SELECT t.*, l.name AS language_name
-        FROM terms t
-        JOIN languages l ON l.id = t.language_id
-        WHERE t.language_id != ? AND t.lower_text IN ($placeholders)
-        ''',
-        [excludeLanguageId, ...batch],
-      );
-      for (final map in maps) {
-        final lowerText = map['lower_text'] as String;
-        // Keep first match per word (or could prefer by status)
-        if (!result.containsKey(lowerText)) {
-          result[lowerText] = (
-            term: Term.fromMap(map),
-            languageName: map['language_name'] as String,
-          );
-        }
-      }
-    }
-    return result;
-  }
 }
