@@ -34,6 +34,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
   final _searchController = TextEditingController();
   final _translationController = TextEditingController();
   List<Term> _searchResults = [];
+  Map<int, List<Translation>> _translationsMap = {};
   bool _isSearching = false;
 
   static final _snowballStemmer = SnowballStemmer();
@@ -89,10 +90,29 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
     );
 
     if (mounted) {
+      final lowerQuery = query.trim().toLowerCase();
+      final filtered = results
+          .where((t) => t.id != widget.excludeTermId)
+          .toList();
+      filtered.sort((a, b) {
+        final aStarts = a.lowerText.startsWith(lowerQuery);
+        final bStarts = b.lowerText.startsWith(lowerQuery);
+        if (aStarts != bStarts) return aStarts ? -1 : 1;
+        return 0;
+      });
+
+      final termIds = filtered
+          .where((t) => t.id != null)
+          .map((t) => t.id!)
+          .toList();
+      final translations = termIds.isNotEmpty
+          ? await DatabaseService.instance.translations.getByTermIds(termIds)
+          : <int, List<Translation>>{};
+
+      if (!mounted) return;
       setState(() {
-        _searchResults = results
-            .where((t) => t.id != widget.excludeTermId)
-            .toList();
+        _searchResults = filtered;
+        _translationsMap = translations;
         _isSearching = false;
       });
     }
@@ -152,12 +172,18 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                     itemCount: _searchResults.length,
                     itemBuilder: (context, index) {
                       final term = _searchResults[index];
+                      final translations = term.id != null
+                          ? _translationsMap[term.id!]
+                          : null;
+                      final subtitle = translations != null && translations.isNotEmpty
+                          ? translations.map((t) => t.meaning).join(', ')
+                          : term.translation;
                       return ListTile(
                         title: Text(term.lowerText),
-                        subtitle: term.translation.isNotEmpty
+                        subtitle: subtitle.isNotEmpty
                             ? Text(
-                                term.translation,
-                                maxLines: 1,
+                                subtitle,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               )
                             : null,
