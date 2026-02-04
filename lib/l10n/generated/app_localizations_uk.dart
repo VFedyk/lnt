@@ -551,6 +551,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get saveAsTerm => 'Зберегти як термін';
 
   @override
+  String get assignForeignLanguage => 'Призначити іноземну мову';
+
+  @override
+  String get removeForeignMarking => 'Видалити позначку іноземного слова';
+
+  @override
+  String get noOtherLanguages => 'Інші мови не налаштовані';
+
+  @override
   String get lookupInDictionary => 'Шукати у словнику';
 
   @override

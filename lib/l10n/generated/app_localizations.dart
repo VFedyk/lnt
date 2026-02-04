@@ -1052,6 +1052,24 @@ abstract class AppLocalizations {
   /// **'Save as Term'**
   String get saveAsTerm;
 
+  /// No description provided for @assignForeignLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign foreign language'**
+  String get assignForeignLanguage;
+
+  /// No description provided for @removeForeignMarking.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove foreign marking'**
+  String get removeForeignMarking;
+
+  /// No description provided for @noOtherLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'No other languages configured'**
+  String get noOtherLanguages;
+
   /// No description provided for @lookupInDictionary.
   ///
   /// In en, this message translates to:

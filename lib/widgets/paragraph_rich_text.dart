@@ -7,7 +7,7 @@ class ParagraphRichText extends StatelessWidget {
   final List<WordToken> tokens;
   final double fontSize;
   final Set<int> selectedWordIndices;
-  final Map<String, ({Term term, String languageName})> otherLanguageTerms;
+  final Map<String, ({Term? term, List<Translation> translations, String languageName, int languageId})> otherLanguageTerms;
   final Map<int, List<Translation>> translationsMap;
   final Map<int, Translation> translationsById;
   final Map<int, Term> termsById;
@@ -156,10 +156,17 @@ class ParagraphRichText extends StatelessWidget {
         final otherInfo = otherLanguageTerms[lowerWord]!;
         final otherTerm = otherInfo.term;
         final parts = <String>[];
-        if (otherTerm.romanization.isNotEmpty) {
+        if (otherTerm != null && otherTerm.romanization.isNotEmpty) {
           parts.add(otherTerm.romanization);
         }
-        if (otherTerm.translation.isNotEmpty) {
+        if (otherInfo.translations.isNotEmpty) {
+          for (final t in otherInfo.translations) {
+            final line = t.partOfSpeech != null
+                ? '${t.meaning} (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})'
+                : t.meaning;
+            parts.add(line);
+          }
+        } else if (otherTerm != null && otherTerm.translation.isNotEmpty) {
           parts.add(otherTerm.translation);
         }
         if (otherInfo.languageName.isNotEmpty) {
