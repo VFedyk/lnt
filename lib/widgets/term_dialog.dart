@@ -151,6 +151,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
         languageId: _selectedLanguageId,
         languageName: _selectedLanguageName,
         excludeTermId: widget.term.id,
+        initialWord: _termController.text,
       ),
     );
 
