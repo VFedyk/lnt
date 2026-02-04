@@ -206,6 +206,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
       _termsMap.remove(lowerText);
 
+      // Persist foreign word assignment so it survives reopening the text
+      await DatabaseService.instance.textForeignWords.saveWords(
+        _text.id!,
+        term.languageId,
+        {lowerText: term.id},
+      );
+
       _wordTokens = _wordTokens.map((token) {
         if (token.isWord && token.text.toLowerCase() == lowerText) {
           return WordToken(
@@ -949,13 +956,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     _cancelSelection();
     if (dialogResult != null) {
-      // Remove foreign markings for the saved words
-      final wordsToClean = selectedTokens
-          .map((i) => _wordTokens[i].text.toLowerCase())
-          .toSet()
-          .toList();
-      await DatabaseService.instance.textForeignWords.deleteWords(
-        _text.id!, wordsToClean);
+      // Remove foreign marking only for the actual saved term text
+      if (_otherLanguageTerms.containsKey(lowerWords)) {
+        await DatabaseService.instance.textForeignWords.deleteWord(
+          _text.id!, lowerWords);
+      }
       await _loadTermsAndParse();
     }
   }
