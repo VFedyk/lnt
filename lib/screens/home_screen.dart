@@ -42,7 +42,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with RouteAware {
   HomeTab _selectedTab = HomeTab.dashboard;
   List<Language> _languages = [];
   Language? _selectedLanguage;
@@ -56,6 +56,23 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadLanguages();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    _refreshDueCount();
   }
 
   Future<void> _loadLanguages() async {
@@ -108,6 +125,15 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).errorLoadingLanguages(e.toString()))));
       }
+    }
+  }
+
+  Future<void> _refreshDueCount() async {
+    if (_selectedLanguage == null) return;
+    final dueCount = await DatabaseService.instance.reviewCards
+        .getDueCount(_selectedLanguage!.id!);
+    if (mounted && dueCount != _dueCount) {
+      setState(() => _dueCount = dueCount);
     }
   }
 
@@ -225,6 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
               selectedIndex: _selectedTab.index,
               onDestinationSelected: (index) {
                 setState(() => _selectedTab = HomeTab.values[index]);
+                _refreshDueCount();
               },
               destinations: [
                 NavigationDestination(

@@ -12,6 +12,8 @@ import 'services/review_service.dart';
 import 'services/settings_service.dart';
 import 'utils/helpers.dart';
 
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseService.instance.database;
@@ -139,6 +141,7 @@ class _LNTAppState extends State<LNTApp> with WindowListener {
                 brightness: Brightness.dark,
               ),
             ),
+            navigatorObservers: [routeObserver],
             home: const HomeScreen(),
             debugShowCheckedModeBanner: false,
           );
