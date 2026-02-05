@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
@@ -39,11 +40,61 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
   bool _isAnswerRevealed = false;
   bool _isSeeding = false;
   Map<fsrs.Rating, Duration>? _nextIntervals;
+  final _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _loadDueCards();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    // When answer is not yet revealed, any rating key reveals it first
+    if (!_isAnswerRevealed) {
+      if (key == LogicalKeyboardKey.space ||
+          key == LogicalKeyboardKey.enter ||
+          key == LogicalKeyboardKey.digit1 ||
+          key == LogicalKeyboardKey.digit2 ||
+          key == LogicalKeyboardKey.digit3 ||
+          key == LogicalKeyboardKey.digit4 ||
+          key == LogicalKeyboardKey.keyA ||
+          key == LogicalKeyboardKey.keyS ||
+          key == LogicalKeyboardKey.keyD ||
+          key == LogicalKeyboardKey.keyF) {
+        _revealAnswer();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
+
+    // Answer is revealed — rate the card
+    if (key == LogicalKeyboardKey.digit1 || key == LogicalKeyboardKey.keyA) {
+      _rateCard(fsrs.Rating.again);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.digit2 || key == LogicalKeyboardKey.keyS) {
+      _rateCard(fsrs.Rating.hard);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.digit3 || key == LogicalKeyboardKey.keyD) {
+      _rateCard(fsrs.Rating.good);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.digit4 || key == LogicalKeyboardKey.keyF) {
+      _rateCard(fsrs.Rating.easy);
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -173,11 +224,16 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
       body = _buildReviewCard(l10n);
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.flashcardReview),
+    return Focus(
+      focusNode: _focusNode,
+      autofocus: true,
+      onKeyEvent: _handleKeyEvent,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.flashcardReview),
+        ),
+        body: body,
       ),
-      body: body,
     );
   }
 
