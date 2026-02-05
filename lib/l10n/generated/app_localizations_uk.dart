@@ -893,4 +893,67 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get translations => 'Переклади';
+
+  @override
+  String get review => 'Повторення';
+
+  @override
+  String get showAnswer => 'Показати відповідь';
+
+  @override
+  String get rateAgain => 'Знову';
+
+  @override
+  String get rateHard => 'Складно';
+
+  @override
+  String get rateGood => 'Добре';
+
+  @override
+  String get rateEasy => 'Легко';
+
+  @override
+  String get noCardsDue => 'Немає карток для повторення';
+
+  @override
+  String get reviewComplete => 'Повторення завершено!';
+
+  @override
+  String reviewedCount(int count) {
+    return 'Повторено $count карток';
+  }
+
+  @override
+  String reviewProgress(int current, int total) {
+    return '$current з $total';
+  }
+
+  @override
+  String get refresh => 'Оновити';
+
+  @override
+  String get ignore => 'Ігнорувати';
+
+  @override
+  String get unignore => 'Не ігнорувати';
+
+  @override
+  String get markWellKnown => 'Позначити як добре відоме';
+
+  @override
+  String get flashcardReview => 'Повторення карток';
+
+  @override
+  String get flashcardReviewDescription =>
+      'Повторюйте картки за методом інтервального повторення';
+
+  @override
+  String get statisticsDescription =>
+      'Переглядайте прогрес словника та розподіл за статусами';
+
+  @override
+  String get cardsDue => 'Карток до повторення';
+
+  @override
+  String get reviewedToday => 'Повторено сьогодні';
 }

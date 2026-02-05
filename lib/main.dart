@@ -8,12 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 import 'screens/home_screen.dart';
 import 'services/database_service.dart';
+import 'services/review_service.dart';
 import 'services/settings_service.dart';
 import 'utils/helpers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseService.instance.database;
+  ReviewService.instance.initialize();
 
   if (PlatformHelper.isDesktop) {
     await windowManager.ensureInitialized();

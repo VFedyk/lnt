@@ -1681,6 +1681,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Translations'**
   String get translations;
+
+  /// No description provided for @review.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get review;
+
+  /// No description provided for @showAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Answer'**
+  String get showAnswer;
+
+  /// No description provided for @rateAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Again'**
+  String get rateAgain;
+
+  /// No description provided for @rateHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get rateHard;
+
+  /// No description provided for @rateGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get rateGood;
+
+  /// No description provided for @rateEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get rateEasy;
+
+  /// No description provided for @noCardsDue.
+  ///
+  /// In en, this message translates to:
+  /// **'No cards due for review'**
+  String get noCardsDue;
+
+  /// No description provided for @reviewComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Review Complete!'**
+  String get reviewComplete;
+
+  /// No description provided for @reviewedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed {count} cards'**
+  String reviewedCount(int count);
+
+  /// No description provided for @reviewProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {total}'**
+  String reviewProgress(int current, int total);
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// No description provided for @ignore.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignore'**
+  String get ignore;
+
+  /// No description provided for @unignore.
+  ///
+  /// In en, this message translates to:
+  /// **'Unignore'**
+  String get unignore;
+
+  /// No description provided for @markWellKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as Well Known'**
+  String get markWellKnown;
+
+  /// No description provided for @flashcardReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcard Review'**
+  String get flashcardReview;
+
+  /// No description provided for @flashcardReviewDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Review due cards with spaced repetition'**
+  String get flashcardReviewDescription;
+
+  /// No description provided for @statisticsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'View vocabulary progress and status breakdown'**
+  String get statisticsDescription;
+
+  /// No description provided for @cardsDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards due'**
+  String get cardsDue;
+
+  /// No description provided for @reviewedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed today'**
+  String get reviewedToday;
 }
 
 class _AppLocalizationsDelegate

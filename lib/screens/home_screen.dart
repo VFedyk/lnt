@@ -10,7 +10,7 @@ import 'dashboard_tab.dart';
 import 'languages_screen.dart';
 import 'texts_screen.dart';
 import 'terms_screen.dart';
-import 'statistics_screen.dart';
+import 'review_screen.dart';
 import 'settings_screen.dart';
 
 /// Navigation tabs for the home screen
@@ -18,7 +18,7 @@ enum HomeTab {
   dashboard,
   texts,
   terms,
-  statistics,
+  review,
   languages,
 }
 
@@ -47,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Language> _languages = [];
   Language? _selectedLanguage;
   bool _isLoading = true;
+  int _dueCount = 0;
 
   @override
   void initState() {
@@ -92,7 +93,14 @@ class _HomeScreenState extends State<HomeScreen> {
         await appState.setSelectedLanguage(_languages.first.id);
       }
 
-      setState(() => _isLoading = false);
+      final dueCount = _selectedLanguage != null
+          ? await DatabaseService.instance.reviewCards.getDueCount(_selectedLanguage!.id!)
+          : 0;
+
+      setState(() {
+        _dueCount = dueCount;
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -122,8 +130,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return TextsScreen(language: _selectedLanguage!);
       case HomeTab.terms:
         return TermsScreen(language: _selectedLanguage!);
-      case HomeTab.statistics:
-        return StatisticsScreen(language: _selectedLanguage!);
+      case HomeTab.review:
+        return ReviewScreen(language: _selectedLanguage!);
       case HomeTab.languages:
         return LanguagesScreen(onLanguagesChanged: _loadLanguages);
     }
@@ -235,9 +243,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   label: l10n.vocabulary,
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.bar_chart_outlined),
-                  selectedIcon: const Icon(Icons.bar_chart),
-                  label: l10n.stats,
+                  icon: Badge(
+                    isLabelVisible: _dueCount > 0,
+                    label: Text(_dueCount.toString()),
+                    child: const Icon(Icons.school_outlined),
+                  ),
+                  selectedIcon: Badge(
+                    isLabelVisible: _dueCount > 0,
+                    label: Text(_dueCount.toString()),
+                    child: const Icon(Icons.school),
+                  ),
+                  label: l10n.review,
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.settings_outlined),

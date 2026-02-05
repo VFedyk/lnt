@@ -487,5 +487,36 @@
   "baseForm": "Base form",
   "meaning": "Meaning",
   "addTranslation": "Add translation",
-  "translations": "Translations"
+  "translations": "Translations",
+
+  "review": "Review",
+  "showAnswer": "Show Answer",
+  "rateAgain": "Again",
+  "rateHard": "Hard",
+  "rateGood": "Good",
+  "rateEasy": "Easy",
+  "noCardsDue": "No cards due for review",
+  "reviewComplete": "Review Complete!",
+  "reviewedCount": "Reviewed {count} cards",
+  "@reviewedCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "reviewProgress": "{current} of {total}",
+  "@reviewProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "refresh": "Refresh",
+  "ignore": "Ignore",
+  "unignore": "Unignore",
+  "markWellKnown": "Mark as Well Known",
+  "flashcardReview": "Flashcard Review",
+  "flashcardReviewDescription": "Review due cards with spaced repetition",
+  "statisticsDescription": "View vocabulary progress and status breakdown",
+  "cardsDue": "Cards due",
+  "reviewedToday": "Reviewed today"
 }
