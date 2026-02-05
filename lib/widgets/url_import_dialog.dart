@@ -7,6 +7,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/text_document.dart';
 import '../services/url_import_service.dart';
 import '../utils/constants.dart';
+import '../utils/cover_image_helper.dart';
 
 abstract class _UrlImportDialogConstants {
   static const double urlCoverWidth = 80.0;
@@ -122,7 +123,9 @@ class _UrlImportDialogState extends State<UrlImportDialog> {
       title: _titleController.text,
       content: _content,
       sourceUri: _urlController.text.trim(),
-      coverImage: _coverImagePath,
+      coverImage: _coverImagePath != null
+          ? CoverImageHelper.toRelative(_coverImagePath!)
+          : null,
     );
     Navigator.pop(context, text);
   }

@@ -4,6 +4,7 @@ import 'package:epubx/epubx.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/text_document.dart';
 import '../models/collection.dart';
+import '../utils/cover_image_helper.dart';
 import 'database_service.dart';
 
 /// Result of an EPUB import operation
@@ -209,7 +210,7 @@ class EpubImportService {
       final file = File(coverPath);
       await file.writeAsBytes(coverFile.Content!);
 
-      return coverPath;
+      return CoverImageHelper.toRelative(coverPath);
     } catch (e) {
       // Cover extraction failed, but don't fail the whole import
       return null;

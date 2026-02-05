@@ -7,6 +7,7 @@ import '../models/term.dart';
 import '../services/database_service.dart';
 import '../services/text_parser_service.dart';
 import '../utils/constants.dart';
+import '../utils/cover_image_helper.dart';
 import 'reader_screen.dart';
 import 'texts_screen.dart';
 import 'terms_screen.dart';
@@ -203,11 +204,12 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Widget _buildTextThumbnail(TextDocument text, IconData fallbackIcon) {
-    if (text.coverImage != null && File(text.coverImage!).existsSync()) {
+    final resolvedCover = CoverImageHelper.resolve(text.coverImage);
+    if (resolvedCover != null && File(resolvedCover).existsSync()) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(_DashboardConstants.thumbnailBorderRadius),
         child: Image.file(
-          File(text.coverImage!),
+          File(resolvedCover),
           width: _DashboardConstants.thumbnailWidth,
           height: _DashboardConstants.thumbnailHeight,
           fit: BoxFit.cover,

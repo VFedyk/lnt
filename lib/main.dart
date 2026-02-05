@@ -10,6 +10,7 @@ import 'screens/home_screen.dart';
 import 'services/database_service.dart';
 import 'services/review_service.dart';
 import 'services/settings_service.dart';
+import 'utils/cover_image_helper.dart';
 import 'utils/helpers.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
@@ -17,6 +18,7 @@ final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<v
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseService.instance.database;
+  await CoverImageHelper.initialize();
   ReviewService.instance.initialize();
 
   if (PlatformHelper.isDesktop) {

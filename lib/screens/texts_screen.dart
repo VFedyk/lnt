@@ -20,6 +20,7 @@ import '../widgets/collection_dialog.dart';
 import '../widgets/text_edit_dialog.dart';
 import '../widgets/url_import_dialog.dart';
 import '../utils/constants.dart';
+import '../utils/cover_image_helper.dart';
 import 'reader_screen.dart';
 
 abstract class _TextsScreenConstants {
@@ -1388,7 +1389,7 @@ class _TextsScreenState extends State<TextsScreen> {
 
       await sourceFile.copy(newPath);
 
-      final updatedText = text.copyWith(coverImage: newPath);
+      final updatedText = text.copyWith(coverImage: CoverImageHelper.toRelative(newPath));
       await DatabaseService.instance.updateText(updatedText);
       _loadData();
     }

@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/collection.dart';
 import '../utils/constants.dart';
+import '../utils/cover_image_helper.dart';
 
 abstract class _CollectionDialogConstants {
   static const double coverPickerWidth = 100.0;
@@ -44,7 +45,7 @@ class _CollectionDialogState extends State<CollectionDialog> {
     if (widget.existingCollection != null) {
       _nameController.text = widget.existingCollection!.name;
       _descriptionController.text = widget.existingCollection!.description;
-      _coverImagePath = widget.existingCollection!.coverImage;
+      _coverImagePath = CoverImageHelper.resolve(widget.existingCollection!.coverImage);
     }
   }
 
@@ -167,11 +168,14 @@ class _CollectionDialogState extends State<CollectionDialog> {
         TextButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
+              final relativeCover = _coverImagePath != null
+                  ? CoverImageHelper.toRelative(_coverImagePath!)
+                  : null;
               final collection = widget.isEditing
                   ? widget.existingCollection!.copyWith(
                       name: _nameController.text,
                       description: _descriptionController.text,
-                      coverImage: _coverImagePath,
+                      coverImage: relativeCover,
                       clearCoverImage:
                           _coverImagePath == null &&
                           widget.existingCollection!.coverImage != null,
@@ -181,7 +185,7 @@ class _CollectionDialogState extends State<CollectionDialog> {
                       parentId: widget.parentId,
                       name: _nameController.text,
                       description: _descriptionController.text,
-                      coverImage: _coverImagePath,
+                      coverImage: relativeCover,
                     );
               Navigator.pop(context, collection);
             }
