@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
+import '../utils/cover_image_helper.dart';
 
 abstract class _BookCoverConstants {
   // Layout
@@ -135,8 +136,9 @@ class BookCover extends StatelessWidget {
 
   Widget _buildCover(BuildContext context) {
     // If there's a custom image, use it
-    if (imagePath != null && imagePath!.isNotEmpty) {
-      final file = File(imagePath!);
+    final resolvedPath = CoverImageHelper.resolve(imagePath);
+    if (resolvedPath != null && resolvedPath.isNotEmpty) {
+      final file = File(resolvedPath);
       if (file.existsSync()) {
         return Stack(
           fit: StackFit.expand,

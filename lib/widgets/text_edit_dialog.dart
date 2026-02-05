@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/text_document.dart';
 import '../utils/constants.dart';
+import '../utils/cover_image_helper.dart';
 
 abstract class _TextEditDialogConstants {
   static const double coverPickerWidth = 100.0;
@@ -34,7 +35,7 @@ class _TextEditDialogState extends State<TextEditDialog> {
     super.initState();
     _titleController = TextEditingController(text: widget.text.title);
     _contentController = TextEditingController(text: widget.text.content);
-    _coverImagePath = widget.text.coverImage;
+    _coverImagePath = CoverImageHelper.resolve(widget.text.coverImage);
   }
 
   @override
@@ -157,10 +158,13 @@ class _TextEditDialogState extends State<TextEditDialog> {
         TextButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
+              final relativeCover = _coverImagePath != null
+                  ? CoverImageHelper.toRelative(_coverImagePath!)
+                  : null;
               final updatedText = widget.text.copyWith(
                 title: _titleController.text,
                 content: _contentController.text,
-                coverImage: _coverImagePath,
+                coverImage: relativeCover,
                 clearCoverImage:
                     _coverImagePath == null && widget.text.coverImage != null,
               );
