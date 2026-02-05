@@ -890,4 +890,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get translations => 'Translations';
+
+  @override
+  String get review => 'Review';
+
+  @override
+  String get showAnswer => 'Show Answer';
+
+  @override
+  String get rateAgain => 'Again';
+
+  @override
+  String get rateHard => 'Hard';
+
+  @override
+  String get rateGood => 'Good';
+
+  @override
+  String get rateEasy => 'Easy';
+
+  @override
+  String get noCardsDue => 'No cards due for review';
+
+  @override
+  String get reviewComplete => 'Review Complete!';
+
+  @override
+  String reviewedCount(int count) {
+    return 'Reviewed $count cards';
+  }
+
+  @override
+  String reviewProgress(int current, int total) {
+    return '$current of $total';
+  }
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get ignore => 'Ignore';
+
+  @override
+  String get unignore => 'Unignore';
+
+  @override
+  String get markWellKnown => 'Mark as Well Known';
+
+  @override
+  String get flashcardReview => 'Flashcard Review';
+
+  @override
+  String get flashcardReviewDescription =>
+      'Review due cards with spaced repetition';
+
+  @override
+  String get statisticsDescription =>
+      'View vocabulary progress and status breakdown';
+
+  @override
+  String get cardsDue => 'Cards due';
+
+  @override
+  String get reviewedToday => 'Reviewed today';
 }

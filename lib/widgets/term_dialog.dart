@@ -19,10 +19,7 @@ class TermDialogResult {
 
 abstract class _TermDialogConstants {
   static const double closeIconSize = 18.0;
-  static const double chipBackgroundAlpha = 0.2;
   static const int sentenceMaxLines = 3;
-  static final Color wellKnownTextColor = Colors.blue.shade700;
-  static final Color wellKnownBorderColor = Colors.blue.shade300;
 }
 
 class TermDialog extends StatefulWidget {
@@ -574,51 +571,41 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
               ),
               const SizedBox(height: AppConstants.spacingM),
 
-              // Status selector
-              Text(
-                l10n.status,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: AppConstants.spacingS),
-              Wrap(
-                spacing: AppConstants.spacingS,
-                runSpacing: AppConstants.spacingS,
+              // Status display (read-only) with ignore/well-known actions
+              Row(
                 children: [
-                  _buildStatusChip(
-                    TermStatus.ignored,
-                    l10n.statusIgnored,
-                    TermStatus.colorFor(TermStatus.ignored),
+                  Text(
+                    l10n.status,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  _buildStatusChip(
-                    TermStatus.unknown,
-                    l10n.statusUnknown,
-                    TermStatus.colorFor(TermStatus.unknown),
+                  const SizedBox(width: AppConstants.spacingS),
+                  Chip(
+                    avatar: CircleAvatar(
+                      backgroundColor: TermStatus.colorFor(_status),
+                      radius: AppConstants.spacingS,
+                    ),
+                    label: Text(
+                      TermStatus.localizedNameFor(_status, l10n),
+                      style: const TextStyle(fontSize: AppConstants.fontSizeCaption),
+                    ),
                   ),
-                  _buildStatusChip(
-                    TermStatus.learning2,
-                    l10n.statusLearning2,
-                    TermStatus.colorFor(TermStatus.learning2),
-                  ),
-                  _buildStatusChip(
-                    TermStatus.learning3,
-                    l10n.statusLearning3,
-                    TermStatus.colorFor(TermStatus.learning3),
-                  ),
-                  _buildStatusChip(
-                    TermStatus.learning4,
-                    l10n.statusLearning4,
-                    TermStatus.colorFor(TermStatus.learning4),
-                  ),
-                  _buildStatusChip(
-                    TermStatus.known,
-                    l10n.statusKnown,
-                    TermStatus.colorFor(TermStatus.known),
-                  ),
-                  _buildStatusChip(
-                    TermStatus.wellKnown,
-                    l10n.statusWellKnown,
-                    TermStatus.colorFor(TermStatus.wellKnown),
-                  ),
+                  const Spacer(),
+                  if (_status == TermStatus.ignored)
+                    TextButton(
+                      onPressed: () => setState(() => _status = TermStatus.unknown),
+                      child: Text(l10n.unignore),
+                    )
+                  else ...[
+                    if (_status != TermStatus.wellKnown)
+                      TextButton(
+                        onPressed: () => setState(() => _status = TermStatus.wellKnown),
+                        child: Text(l10n.markWellKnown),
+                      ),
+                    TextButton(
+                      onPressed: () => setState(() => _status = TermStatus.ignored),
+                      child: Text(l10n.ignore),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: AppConstants.spacingL),
@@ -760,64 +747,6 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
     );
   }
 
-  Widget _buildStatusChip(int status, String label, Color color) {
-    final isSelected = _status == status;
-    final isIgnored = status == TermStatus.ignored;
-    final isWellKnown = status == TermStatus.wellKnown;
-
-    if ((isIgnored || isWellKnown) && !isSelected) {
-      return ChoiceChip(
-        label: Text(
-          label,
-          style: TextStyle(
-            color: isIgnored
-                ? AppConstants.subtitleColor
-                : _TermDialogConstants.wellKnownTextColor,
-            fontSize: AppConstants.fontSizeCaption,
-          ),
-        ),
-        selected: false,
-        backgroundColor: Colors.transparent,
-        side: BorderSide(
-          color: isIgnored
-              ? AppConstants.borderColor
-              : _TermDialogConstants.wellKnownBorderColor,
-        ),
-        onSelected: (selected) {
-          if (selected) {
-            setState(() => _status = status);
-          }
-        },
-      );
-    }
-
-    return ChoiceChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : Colors.black87,
-          fontSize: AppConstants.fontSizeCaption,
-        ),
-      ),
-      selected: isSelected,
-      selectedColor: color,
-      backgroundColor: color.withValues(
-        alpha: _TermDialogConstants.chipBackgroundAlpha,
-      ),
-      onSelected: (selected) {
-        if (selected) {
-          setState(() => _status = status);
-        }
-      },
-      avatar: isSelected
-          ? const Icon(
-              Icons.check,
-              color: Colors.white,
-              size: AppConstants.iconSizeS,
-            )
-          : null,
-    );
-  }
 }
 
 /// Dialog for picking a translation from a term

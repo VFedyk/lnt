@@ -688,6 +688,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
             _text.id!, lowerWord);
           _otherLanguageTerms.remove(lowerWord);
         }
+        // Manage review card based on status change
+        if (dialogResult.term.status == TermStatus.ignored ||
+            dialogResult.term.status == TermStatus.wellKnown) {
+          await DatabaseService.instance.reviewCards
+              .deleteByTermId(dialogResult.term.id!);
+        } else {
+          await DatabaseService.instance.reviewCards
+              .getOrCreate(dialogResult.term.id!);
+        }
       }
     } else {
       final newTerm = Term(
@@ -731,6 +740,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
           await DatabaseService.instance.textForeignWords.deleteWord(
             _text.id!, lowerWord);
           _otherLanguageTerms.remove(lowerWord);
+        }
+        // Create review card for new term (unless ignored or well known)
+        if (dialogResult.term.status != TermStatus.ignored &&
+            dialogResult.term.status != TermStatus.wellKnown) {
+          await DatabaseService.instance.reviewCards.getOrCreate(termId);
         }
       }
     }
@@ -951,6 +965,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
           termId,
           dialogResult.translations,
         );
+        // Create review card for new term (unless ignored or well known)
+        if (dialogResult.term.status != TermStatus.ignored &&
+            dialogResult.term.status != TermStatus.wellKnown) {
+          await DatabaseService.instance.reviewCards.getOrCreate(termId);
+        }
       }
     }
 

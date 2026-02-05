@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 9;
+const int databaseVersion = 10;
 
 /// Handle database upgrades from older versions
 Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -64,6 +64,33 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
       )
     ''');
     await db.execute('CREATE INDEX idx_tfw_text ON text_foreign_words(text_id)');
+  }
+  if (oldVersion < 10) {
+    await db.execute('''
+      CREATE TABLE review_cards (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        term_id INTEGER NOT NULL UNIQUE,
+        card_data TEXT NOT NULL,
+        next_due TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_review_cards_term ON review_cards(term_id)');
+    await db.execute('CREATE INDEX idx_review_cards_due ON review_cards(next_due)');
+
+    await db.execute('''
+      CREATE TABLE review_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        term_id INTEGER NOT NULL,
+        log_data TEXT NOT NULL,
+        reviewed_at TEXT NOT NULL,
+        FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_review_logs_term ON review_logs(term_id)');
+    await db.execute('CREATE INDEX idx_review_logs_date ON review_logs(reviewed_at)');
   }
 }
 
@@ -191,4 +218,30 @@ Future<void> onCreate(Database db, int version) async {
     )
   ''');
   await db.execute('CREATE INDEX idx_tfw_text ON text_foreign_words(text_id)');
+
+  await db.execute('''
+    CREATE TABLE review_cards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      term_id INTEGER NOT NULL UNIQUE,
+      card_data TEXT NOT NULL,
+      next_due TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
+    )
+  ''');
+  await db.execute('CREATE INDEX idx_review_cards_term ON review_cards(term_id)');
+  await db.execute('CREATE INDEX idx_review_cards_due ON review_cards(next_due)');
+
+  await db.execute('''
+    CREATE TABLE review_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      term_id INTEGER NOT NULL,
+      log_data TEXT NOT NULL,
+      reviewed_at TEXT NOT NULL,
+      FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
+    )
+  ''');
+  await db.execute('CREATE INDEX idx_review_logs_term ON review_logs(term_id)');
+  await db.execute('CREATE INDEX idx_review_logs_date ON review_logs(reviewed_at)');
 }

@@ -292,5 +292,36 @@
   "baseForm": "Базова форма",
   "meaning": "Значення",
   "addTranslation": "Додати переклад",
-  "translations": "Переклади"
+  "translations": "Переклади",
+
+  "review": "Повторення",
+  "showAnswer": "Показати відповідь",
+  "rateAgain": "Знову",
+  "rateHard": "Складно",
+  "rateGood": "Добре",
+  "rateEasy": "Легко",
+  "noCardsDue": "Немає карток для повторення",
+  "reviewComplete": "Повторення завершено!",
+  "reviewedCount": "Повторено {count} карток",
+  "@reviewedCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "reviewProgress": "{current} з {total}",
+  "@reviewProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "refresh": "Оновити",
+  "ignore": "Ігнорувати",
+  "unignore": "Не ігнорувати",
+  "markWellKnown": "Позначити як добре відоме",
+  "flashcardReview": "Повторення карток",
+  "flashcardReviewDescription": "Повторюйте картки за методом інтервального повторення",
+  "statisticsDescription": "Переглядайте прогрес словника та розподіл за статусами",
+  "cardsDue": "Карток до повторення",
+  "reviewedToday": "Повторено сьогодні"
 }

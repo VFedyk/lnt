@@ -14,6 +14,8 @@ import '../repositories/collection_repository.dart';
 import '../repositories/dictionary_repository.dart';
 import '../repositories/translation_repository.dart';
 import '../repositories/text_foreign_word_repository.dart';
+import '../repositories/review_card_repository.dart';
+import '../repositories/review_log_repository.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
@@ -28,6 +30,8 @@ class DatabaseService {
   late final DictionaryRepository dictionaries;
   late final TranslationRepository translations;
   late final TextForeignWordRepository textForeignWords;
+  late final ReviewCardRepository reviewCards;
+  late final ReviewLogRepository reviewLogs;
 
   DatabaseService._init() {
     languages = LanguageRepository(() => database);
@@ -37,6 +41,8 @@ class DatabaseService {
     dictionaries = DictionaryRepository(() => database);
     translations = TranslationRepository(() => database);
     textForeignWords = TextForeignWordRepository(() => database);
+    reviewCards = ReviewCardRepository(() => database);
+    reviewLogs = ReviewLogRepository(() => database);
   }
 
   Future<Database> get database async {

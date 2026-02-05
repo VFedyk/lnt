@@ -72,7 +72,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.stats)),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     final knownCount = (_statusCounts[5] ?? 0) + (_statusCounts[99] ?? 0);
@@ -83,11 +86,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         (_statusCounts[4] ?? 0);
     final ignoredCount = _statusCounts[0] ?? 0;
 
-    return RefreshIndicator(
-      onRefresh: _loadStatistics,
-      child: ListView(
-        padding: const EdgeInsets.all(AppConstants.spacingL),
-        children: [
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.stats)),
+      body: RefreshIndicator(
+        onRefresh: _loadStatistics,
+        child: ListView(
+          padding: const EdgeInsets.all(AppConstants.spacingL),
+          children: [
           Card(
             child: Padding(
               padding: const EdgeInsets.all(AppConstants.spacingL),
@@ -233,6 +238,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
