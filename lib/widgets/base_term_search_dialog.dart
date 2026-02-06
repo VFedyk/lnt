@@ -4,7 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/term.dart';
 import '../services/database_service.dart';
 import '../utils/constants.dart';
-import 'deepl_translation_mixin.dart';
+import 'translation_mixin.dart';
 
 abstract class _BaseTermSearchConstants {
   static const double statusAvatarRadius = 12.0;
@@ -30,7 +30,7 @@ class BaseTermSearchDialog extends StatefulWidget {
 }
 
 class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
-    with DeepLTranslationMixin {
+    with TranslationMixin {
   final _searchController = TextEditingController();
   final _translationController = TextEditingController();
   List<Term> _searchResults = [];
@@ -51,7 +51,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
   @override
   void initState() {
     super.initState();
-    checkDeepLKey();
+    checkTranslationProviders();
     _prefillSearch();
   }
 
@@ -231,28 +231,32 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                           labelText: l10n.translationOptional,
                           border: const OutlineInputBorder(),
                           isDense: true,
-                          suffixIcon: hasDeepLKey
-                              ? IconButton(
-                                  icon: isTranslating
-                                      ? const SizedBox(
-                                          width: _BaseTermSearchConstants
-                                              .progressSizeSmall,
-                                          height: _BaseTermSearchConstants
-                                              .progressSizeSmall,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth:
-                                                AppConstants.progressStrokeWidth,
-                                          ),
-                                        )
-                                      : const Icon(
-                                          Icons.translate,
-                                          size: AppConstants.progressIndicatorSize,
-                                        ),
-                                  tooltip: l10n.translateWithDeepL,
-                                  onPressed: isTranslating
-                                      ? null
-                                      : translateTerm,
-                                )
+                          suffixIcon: hasAnyTranslationProvider
+                              ? isTranslating
+                                  ? const SizedBox(
+                                      width: _BaseTermSearchConstants
+                                          .progressSizeSmall,
+                                      height: _BaseTermSearchConstants
+                                          .progressSizeSmall,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth:
+                                            AppConstants.progressStrokeWidth,
+                                      ),
+                                    )
+                                  : IconButton(
+                                      icon: const Icon(
+                                        Icons.translate,
+                                        size: AppConstants.progressIndicatorSize,
+                                      ),
+                                      tooltip: hasDeepL
+                                          ? l10n.translateWithDeepL
+                                          : l10n.translateWithLibreTranslate,
+                                      onPressed: () => translateWithProvider(
+                                        hasDeepL
+                                            ? TranslationProvider.deepL
+                                            : TranslationProvider.libreTranslate,
+                                      ),
+                                    )
                               : null,
                         ),
                       ),

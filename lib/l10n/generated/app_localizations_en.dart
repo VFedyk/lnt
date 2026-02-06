@@ -126,6 +126,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageForTranslations => 'Language for translations';
 
   @override
+  String get libreTranslate => 'LibreTranslate';
+
+  @override
+  String get libreTranslateHint =>
+      'Connect to a LibreTranslate server for translations';
+
+  @override
+  String get libreTranslateServerUrl => 'Server URL';
+
+  @override
+  String get libreTranslateApiKey => 'API Key';
+
+  @override
+  String get libreTranslateApiKeyOptional =>
+      'API key is only required if the server needs authentication';
+
+  @override
   String get saveSettings => 'Save Settings';
 
   @override
@@ -782,7 +799,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get translation => 'Translation';
 
   @override
+  String get translate => 'Translate';
+
+  @override
   String get translateWithDeepL => 'Translate with DeepL';
+
+  @override
+  String get translateWithLibreTranslate => 'Translate with LibreTranslate';
 
   @override
   String get romanizationPronunciation => 'Romanization / Pronunciation';
@@ -791,11 +814,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exampleSentence => 'Example Sentence';
 
   @override
-  String get translationFailed => 'Translation failed. Check your API key.';
+  String get translationFailed =>
+      'Translation failed. Check your API key and settings.';
 
   @override
   String languageNotSupported(String name) {
-    return 'Language \"$name\" not supported by DeepL';
+    return 'Language \"$name\" is not supported';
   }
 
   @override

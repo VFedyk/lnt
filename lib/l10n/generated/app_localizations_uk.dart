@@ -126,6 +126,23 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languageForTranslations => 'Мова для перекладів';
 
   @override
+  String get libreTranslate => 'LibreTranslate';
+
+  @override
+  String get libreTranslateHint =>
+      'Підключіться до сервера LibreTranslate для перекладів';
+
+  @override
+  String get libreTranslateServerUrl => 'URL сервера';
+
+  @override
+  String get libreTranslateApiKey => 'API ключ';
+
+  @override
+  String get libreTranslateApiKeyOptional =>
+      'API ключ потрібен лише якщо сервер вимагає автентифікації';
+
+  @override
   String get saveSettings => 'Зберегти налаштування';
 
   @override
@@ -785,7 +802,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String get translation => 'Переклад';
 
   @override
+  String get translate => 'Перекласти';
+
+  @override
   String get translateWithDeepL => 'Перекласти з DeepL';
+
+  @override
+  String get translateWithLibreTranslate => 'Перекласти з LibreTranslate';
 
   @override
   String get romanizationPronunciation => 'Романізація / Вимова';
@@ -794,11 +817,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get exampleSentence => 'Приклад речення';
 
   @override
-  String get translationFailed => 'Помилка перекладу. Перевірте API ключ.';
+  String get translationFailed =>
+      'Помилка перекладу. Перевірте API ключ та налаштування.';
 
   @override
   String languageNotSupported(String name) {
-    return 'Мова \"$name\" не підтримується DeepL';
+    return 'Мова \"$name\" не підтримується';
   }
 
   @override

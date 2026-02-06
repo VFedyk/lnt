@@ -332,6 +332,36 @@ abstract class AppLocalizations {
   /// **'Language for translations'**
   String get languageForTranslations;
 
+  /// No description provided for @libreTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'LibreTranslate'**
+  String get libreTranslate;
+
+  /// No description provided for @libreTranslateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to a LibreTranslate server for translations'**
+  String get libreTranslateHint;
+
+  /// No description provided for @libreTranslateServerUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Server URL'**
+  String get libreTranslateServerUrl;
+
+  /// No description provided for @libreTranslateApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get libreTranslateApiKey;
+
+  /// No description provided for @libreTranslateApiKeyOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'API key is only required if the server needs authentication'**
+  String get libreTranslateApiKeyOptional;
+
   /// No description provided for @saveSettings.
   ///
   /// In en, this message translates to:
@@ -1472,11 +1502,23 @@ abstract class AppLocalizations {
   /// **'Translation'**
   String get translation;
 
+  /// No description provided for @translate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate'**
+  String get translate;
+
   /// No description provided for @translateWithDeepL.
   ///
   /// In en, this message translates to:
   /// **'Translate with DeepL'**
   String get translateWithDeepL;
+
+  /// No description provided for @translateWithLibreTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate with LibreTranslate'**
+  String get translateWithLibreTranslate;
 
   /// No description provided for @romanizationPronunciation.
   ///
@@ -1493,13 +1535,13 @@ abstract class AppLocalizations {
   /// No description provided for @translationFailed.
   ///
   /// In en, this message translates to:
-  /// **'Translation failed. Check your API key.'**
+  /// **'Translation failed. Check your API key and settings.'**
   String get translationFailed;
 
   /// No description provided for @languageNotSupported.
   ///
   /// In en, this message translates to:
-  /// **'Language \"{name}\" not supported by DeepL'**
+  /// **'Language \"{name}\" is not supported'**
   String languageNotSupported(String name);
 
   /// No description provided for @noDeepL.

@@ -40,6 +40,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isLoadingUsage = false;
   String? _dbPath;
 
+  // LibreTranslate
+  final _ltUrlController = TextEditingController();
+  final _ltApiKeyController = TextEditingController();
+  bool _obscureLtApiKey = true;
+
   static bool get _isDesktop => PlatformHelper.isDesktop;
 
   // Supported DeepL target languages
@@ -86,6 +91,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isFree = await SettingsService.instance.isDeepLApiFree();
     final targetLang = await SettingsService.instance.getDeepLTargetLang();
 
+    // LibreTranslate settings
+    final ltUrl = await SettingsService.instance.getLibreTranslateUrl();
+    final ltApiKey = await SettingsService.instance.getLibreTranslateApiKey();
+
     // Load DB path on desktop
     String? dbPath;
     if (_isDesktop) {
@@ -98,6 +107,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _apiKeyController.text = apiKey ?? '';
         _isApiFree = isFree;
         _targetLang = targetLang;
+        _ltUrlController.text = ltUrl ?? '';
+        _ltApiKeyController.text = ltApiKey ?? '';
         _dbPath = dbPath;
         _isLoading = false;
       });
@@ -126,6 +137,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     await SettingsService.instance.setDeepLApiFree(_isApiFree);
     await SettingsService.instance.setDeepLTargetLang(_targetLang);
+    await SettingsService.instance.setLibreTranslateUrl(
+      _ltUrlController.text.trim(),
+    );
+    await SettingsService.instance.setLibreTranslateApiKey(
+      _ltApiKeyController.text.trim(),
+    );
 
     if (mounted) {
       ScaffoldMessenger.of(
@@ -137,6 +154,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _apiKeyController.dispose();
+    _ltUrlController.dispose();
+    _ltApiKeyController.dispose();
     super.dispose();
   }
 
@@ -517,6 +536,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: AppConstants.spacingS),
                         Text(
                           AppLocalizations.of(context).languageForTranslations,
+                          style: TextStyle(
+                            color: AppConstants.subtitleColor,
+                            fontSize: AppConstants.fontSizeCaption,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacingL),
+                // LibreTranslate Section
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppConstants.spacingL),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.g_translate),
+                            const SizedBox(width: AppConstants.spacingS),
+                            Text(
+                              AppLocalizations.of(context).libreTranslate,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppConstants.spacingS),
+                        Text(
+                          AppLocalizations.of(context).libreTranslateHint,
+                          style: TextStyle(
+                            color: AppConstants.subtitleColor,
+                            fontSize: AppConstants.fontSizeCaption,
+                          ),
+                        ),
+                        const SizedBox(height: AppConstants.spacingL),
+                        TextField(
+                          controller: _ltUrlController,
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context).libreTranslateServerUrl,
+                            border: const OutlineInputBorder(),
+                            hintText: 'https://libretranslate.com',
+                          ),
+                        ),
+                        const SizedBox(height: AppConstants.spacingL),
+                        TextField(
+                          controller: _ltApiKeyController,
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context).libreTranslateApiKey,
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureLtApiKey
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(
+                                  () => _obscureLtApiKey = !_obscureLtApiKey,
+                                );
+                              },
+                            ),
+                          ),
+                          obscureText: _obscureLtApiKey,
+                        ),
+                        const SizedBox(height: AppConstants.spacingS),
+                        Text(
+                          AppLocalizations.of(context).libreTranslateApiKeyOptional,
                           style: TextStyle(
                             color: AppConstants.subtitleColor,
                             fontSize: AppConstants.fontSizeCaption,
