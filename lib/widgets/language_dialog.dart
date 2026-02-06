@@ -87,16 +87,16 @@ class _LanguageDialogState extends State<LanguageDialog> {
               Container(
                 padding: const EdgeInsets.all(AppConstants.spacingM),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: Theme.of(context).colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
-                  border: Border.all(color: Colors.blue.shade200),
+                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.info_outline,
                       size: _LanguageDialogConstants.infoIconSize,
-                      color: Colors.blue.shade700,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
                     const SizedBox(width: AppConstants.spacingS),
                     Expanded(
@@ -104,7 +104,7 @@ class _LanguageDialogState extends State<LanguageDialog> {
                         l10n.addDictionariesAfterCreating,
                         style: TextStyle(
                           fontSize: _LanguageDialogConstants.infoFontSize,
-                          color: Colors.blue.shade700,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
                         ),
                       ),
                     ),
