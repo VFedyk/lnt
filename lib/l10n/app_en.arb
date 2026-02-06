@@ -47,6 +47,11 @@
   "proApiPayPerUse": "Pro API: Pay per usage",
   "targetLanguage": "Target Language",
   "languageForTranslations": "Language for translations",
+  "libreTranslate": "LibreTranslate",
+  "libreTranslateHint": "Connect to a LibreTranslate server for translations",
+  "libreTranslateServerUrl": "Server URL",
+  "libreTranslateApiKey": "API Key",
+  "libreTranslateApiKeyOptional": "API key is only required if the server needs authentication",
   "saveSettings": "Save Settings",
   "settingsSaved": "Settings saved",
   "monthlyUsage": "Monthly Usage",
@@ -440,11 +445,13 @@
   "status": "Status",
   "language": "Language: ",
   "translation": "Translation",
+  "translate": "Translate",
   "translateWithDeepL": "Translate with DeepL",
+  "translateWithLibreTranslate": "Translate with LibreTranslate",
   "romanizationPronunciation": "Romanization / Pronunciation",
   "exampleSentence": "Example Sentence",
-  "translationFailed": "Translation failed. Check your API key.",
-  "languageNotSupported": "Language \"{name}\" not supported by DeepL",
+  "translationFailed": "Translation failed. Check your API key and settings.",
+  "languageNotSupported": "Language \"{name}\" is not supported",
   "@languageNotSupported": {
     "placeholders": {
       "name": {"type": "String"}

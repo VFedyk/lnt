@@ -16,6 +16,11 @@ class SettingsService {
   static const double defaultWindowWidth = 1280;
   static const double defaultWindowHeight = 720;
 
+  // LibreTranslate settings
+  static const String _libreTranslateUrlKey = 'libretranslate_url';
+  static const String _libreTranslateApiKeyKey = 'libretranslate_api_key';
+  static const String defaultLibreTranslateUrl = 'https://libretranslate.com';
+
   // Custom database path
   static const String _customDbPathKey = 'custom_db_path';
 
@@ -73,6 +78,41 @@ class SettingsService {
   Future<bool> getWindowMaximized() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_windowMaximizedKey) ?? false;
+  }
+
+  // LibreTranslate settings
+
+  Future<String?> getLibreTranslateUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_libreTranslateUrlKey) ?? defaultLibreTranslateUrl;
+  }
+
+  Future<void> setLibreTranslateUrl(String? url) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (url == null || url.isEmpty) {
+      await prefs.remove(_libreTranslateUrlKey);
+    } else {
+      await prefs.setString(_libreTranslateUrlKey, url);
+    }
+  }
+
+  Future<String?> getLibreTranslateApiKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_libreTranslateApiKeyKey);
+  }
+
+  Future<void> setLibreTranslateApiKey(String? apiKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (apiKey == null || apiKey.isEmpty) {
+      await prefs.remove(_libreTranslateApiKeyKey);
+    } else {
+      await prefs.setString(_libreTranslateApiKeyKey, apiKey);
+    }
+  }
+
+  Future<bool> hasLibreTranslateApiKey() async {
+    final key = await getLibreTranslateApiKey();
+    return key != null && key.isNotEmpty;
   }
 
   // Custom database path

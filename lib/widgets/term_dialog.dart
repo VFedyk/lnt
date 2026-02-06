@@ -5,9 +5,10 @@ import '../models/dictionary.dart';
 import '../models/language.dart';
 import '../services/database_service.dart';
 import '../services/deepl_service.dart';
+import '../services/libretranslate_service.dart';
 import '../utils/constants.dart';
 import 'base_term_search_dialog.dart';
-import 'deepl_translation_mixin.dart';
+import 'translation_mixin.dart';
 
 /// Result returned from TermDialog containing both term and translations
 class TermDialogResult {
@@ -44,7 +45,7 @@ class TermDialog extends StatefulWidget {
   State<TermDialog> createState() => _TermDialogState();
 }
 
-class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
+class _TermDialogState extends State<TermDialog> with TranslationMixin {
   late int _status;
   late TextEditingController _termController;
   late TextEditingController _romanizationController;
@@ -87,7 +88,7 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
           : widget.term.sentence,
     );
     _loadTranslations();
-    checkDeepLKey();
+    checkTranslationProviders();
     _loadLanguages();
   }
 
@@ -341,22 +342,43 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (hasDeepLKey)
-                  IconButton(
-                    icon: isTranslating
-                        ? const SizedBox(
-                            width: AppConstants.progressIndicatorSizeS,
-                            height: AppConstants.progressIndicatorSizeS,
-                            child: CircularProgressIndicator(
-                              strokeWidth: AppConstants.progressStrokeWidth,
-                            ),
-                          )
-                        : const Icon(Icons.translate, size: AppConstants.iconSizeS),
-                    tooltip: l10n.translateWithDeepL,
-                    onPressed: isTranslating ? null : _translateAndAddFirst,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
+                if (hasAnyTranslationProvider)
+                  if (isTranslating)
+                    const SizedBox(
+                      width: AppConstants.progressIndicatorSizeS,
+                      height: AppConstants.progressIndicatorSizeS,
+                      child: CircularProgressIndicator(
+                        strokeWidth: AppConstants.progressStrokeWidth,
+                      ),
+                    )
+                  else if (hasMultipleTranslationProviders)
+                    PopupMenuButton<TranslationProvider>(
+                      icon: const Icon(Icons.translate, size: AppConstants.iconSizeS),
+                      tooltip: l10n.translate,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onSelected: _translateAndAddFirstWithProvider,
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: TranslationProvider.deepL,
+                          child: Text(l10n.translateWithDeepL),
+                        ),
+                        PopupMenuItem(
+                          value: TranslationProvider.libreTranslate,
+                          child: Text(l10n.translateWithLibreTranslate),
+                        ),
+                      ],
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.translate, size: AppConstants.iconSizeS),
+                      tooltip: hasDeepL ? l10n.translateWithDeepL : l10n.translateWithLibreTranslate,
+                      onPressed: () => _translateAndAddFirstWithProvider(
+                        hasDeepL ? TranslationProvider.deepL : TranslationProvider.libreTranslate,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
                 const SizedBox(width: AppConstants.spacingS),
                 IconButton(
                   icon: const Icon(Icons.add, size: AppConstants.iconSizeS),
@@ -481,9 +503,9 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
     );
   }
 
-  Future<void> _translateAndAddFirst() async {
+  Future<void> _translateAndAddFirstWithProvider(TranslationProvider provider) async {
     _translationController.text = '';
-    await translateTerm();
+    await translateWithProvider(provider);
     if (_translationController.text.isNotEmpty) {
       setState(() {
         _translations.add(Translation(
@@ -640,19 +662,23 @@ class _TermDialogState extends State<TermDialog> with DeepLTranslationMixin {
                           isDense: true,
                           underline: const SizedBox(),
                           items: _languages.map((lang) {
+                            final isDeepLSupported =
+                                DeepLService.getDeepLLanguageCode(lang.name) != null;
+                            final isLTSupported =
+                                LibreTranslateService.getLanguageCode(lang.name) != null;
                             final isSupported =
-                                DeepLService.getDeepLLanguageCode(lang.name) !=
-                                null;
+                                (hasDeepL && isDeepLSupported) ||
+                                (hasLibreTranslate && isLTSupported);
                             return DropdownMenuItem(
                               value: lang.id,
                               child: Text(
                                 lang.name +
-                                    (hasDeepLKey && !isSupported
+                                    (hasAnyTranslationProvider && !isSupported
                                         ? l10n.noDeepL
                                         : ''),
                                 style: TextStyle(
                                   fontSize: AppConstants.fontSizeBody,
-                                  color: hasDeepLKey && !isSupported
+                                  color: hasAnyTranslationProvider && !isSupported
                                       ? Colors.grey
                                       : null,
                                 ),
