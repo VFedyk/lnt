@@ -1,13 +1,27 @@
 # LNT - Language Nerd Tools
 
-Application for learning languages through reading.
+Yet another language learning application
 
-## Requirements
+## Features
+
+- Import texts from URL, TXT, or EPUB (with cover extraction)
+- Track vocabulary with status levels (Unknown → Known)
+- Review vocabulary through flashcards (should be more tools for review in the future)
+- Link word forms to base terms
+- Color-coded reader with multi-word selection
+- DeepL/LibreTranslate translation integration
+- Character-based language support (Chinese, Japanese)
+- Export vocabulary to CSV or Anki
+
+
+## Development guide
+
+### Requirements
 
 - Flutter SDK ^3.10.7
 - Dart SDK ^3.10.7
 
-## Getting Started
+### Getting Started
 
 1. Clone the repository:
 
@@ -38,7 +52,7 @@ Application for learning languages through reading.
    flutter run -d chrome
    ```
 
-## Build
+### Build
 
 ```bash
 # Build for macOS
@@ -54,18 +68,9 @@ flutter build apk
 flutter build web
 ```
 
-## Features
-
-- Import texts from URL, TXT, or EPUB (with cover extraction)
-- Organize texts in collections with grid/list views
-- Track vocabulary with status levels (Unknown → Known)
-- Link word forms to base terms
-- Color-coded reader with multi-word selection
-- DeepL translation integration
-- Character-based language support (Chinese, Japanese)
-- Export vocabulary to CSV or Anki
-
 ## Gratitude and recognition
 
 - FLTR
 - LingQ
+- Anki
+- Memrise
