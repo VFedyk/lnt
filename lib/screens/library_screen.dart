@@ -23,7 +23,7 @@ import '../utils/constants.dart';
 import '../utils/cover_image_helper.dart';
 import 'reader_screen.dart';
 
-abstract class _TextsScreenConstants {
+abstract class _LibraryScreenConstants {
   // Grid layout
   static const double gridMaxCrossAxisExtent = 140.0;
   static const double gridChildAspectRatio = 0.45;
@@ -83,16 +83,16 @@ enum TextSortOption {
 /// View mode for texts screen
 enum TextViewMode { list, grid }
 
-class TextsScreen extends StatefulWidget {
+class LibraryScreen extends StatefulWidget {
   final Language language;
 
-  const TextsScreen({super.key, required this.language});
+  const LibraryScreen({super.key, required this.language});
 
   @override
-  State<TextsScreen> createState() => _TextsScreenState();
+  State<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _TextsScreenState extends State<TextsScreen> {
+class _LibraryScreenState extends State<LibraryScreen> {
   List<TextDocument> _texts = [];
   List<Collection> _collections = [];
   Collection? _currentCollection;
@@ -132,13 +132,13 @@ class _TextsScreenState extends State<TextsScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       final sortIndex =
-          prefs.getInt(_TextsScreenConstants.sortOptionKey) ?? TextSortOption.lastRead.index;
+          prefs.getInt(_LibraryScreenConstants.sortOptionKey) ?? TextSortOption.lastRead.index;
       _sortOption = TextSortOption
           .values[sortIndex.clamp(0, TextSortOption.values.length - 1)];
-      _sortAscending = prefs.getBool(_TextsScreenConstants.sortAscendingKey) ?? false;
-      _hideCompleted = prefs.getBool(_TextsScreenConstants.hideCompletedKey) ?? false;
+      _sortAscending = prefs.getBool(_LibraryScreenConstants.sortAscendingKey) ?? false;
+      _hideCompleted = prefs.getBool(_LibraryScreenConstants.hideCompletedKey) ?? false;
       final viewModeIndex =
-          prefs.getInt(_TextsScreenConstants.viewModeKey) ?? TextViewMode.list.index;
+          prefs.getInt(_LibraryScreenConstants.viewModeKey) ?? TextViewMode.list.index;
       _viewMode = TextViewMode
           .values[viewModeIndex.clamp(0, TextViewMode.values.length - 1)];
     });
@@ -146,10 +146,10 @@ class _TextsScreenState extends State<TextsScreen> {
 
   Future<void> _savePreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_TextsScreenConstants.sortOptionKey, _sortOption.index);
-    await prefs.setBool(_TextsScreenConstants.sortAscendingKey, _sortAscending);
-    await prefs.setBool(_TextsScreenConstants.hideCompletedKey, _hideCompleted);
-    await prefs.setInt(_TextsScreenConstants.viewModeKey, _viewMode.index);
+    await prefs.setInt(_LibraryScreenConstants.sortOptionKey, _sortOption.index);
+    await prefs.setBool(_LibraryScreenConstants.sortAscendingKey, _sortAscending);
+    await prefs.setBool(_LibraryScreenConstants.hideCompletedKey, _hideCompleted);
+    await prefs.setInt(_LibraryScreenConstants.viewModeKey, _viewMode.index);
   }
 
   void _toggleViewMode() {
@@ -482,7 +482,7 @@ class _TextsScreenState extends State<TextsScreen> {
       position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
       items: [
         PopupMenuItem(
-          value: _TextsScreenConstants.actionAdd,
+          value: _LibraryScreenConstants.actionAdd,
           child: Row(
             children: [
               const Icon(Icons.edit),
@@ -492,7 +492,7 @@ class _TextsScreenState extends State<TextsScreen> {
           ),
         ),
         PopupMenuItem(
-          value: _TextsScreenConstants.actionUrl,
+          value: _LibraryScreenConstants.actionUrl,
           child: Row(
             children: [
               const Icon(Icons.link),
@@ -502,7 +502,7 @@ class _TextsScreenState extends State<TextsScreen> {
           ),
         ),
         PopupMenuItem(
-          value: _TextsScreenConstants.actionTxt,
+          value: _LibraryScreenConstants.actionTxt,
           child: Row(
             children: [
               const Icon(Icons.text_snippet),
@@ -512,7 +512,7 @@ class _TextsScreenState extends State<TextsScreen> {
           ),
         ),
         PopupMenuItem(
-          value: _TextsScreenConstants.actionEpub,
+          value: _LibraryScreenConstants.actionEpub,
           child: Row(
             children: [
               const Icon(Icons.book),
@@ -525,16 +525,16 @@ class _TextsScreenState extends State<TextsScreen> {
     ).then((value) {
       if (value == null) return;
       switch (value) {
-        case _TextsScreenConstants.actionAdd:
+        case _LibraryScreenConstants.actionAdd:
           _addText();
           break;
-        case _TextsScreenConstants.actionTxt:
+        case _LibraryScreenConstants.actionTxt:
           _importFromTextFile();
           break;
-        case _TextsScreenConstants.actionEpub:
+        case _LibraryScreenConstants.actionEpub:
           _importFromEpub();
           break;
-        case _TextsScreenConstants.actionUrl:
+        case _LibraryScreenConstants.actionUrl:
           _importFromUrl();
           break;
       }
@@ -623,9 +623,9 @@ class _TextsScreenState extends State<TextsScreen> {
                   '${l10n.notes}:',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                ...importResult.warnings.take(_TextsScreenConstants.maxWarningsShown).map((w) => Text('\u2022 $w')),
-                if (importResult.warnings.length > _TextsScreenConstants.maxWarningsShown)
-                  Text('... and ${importResult.warnings.length - _TextsScreenConstants.maxWarningsShown} more'),
+                ...importResult.warnings.take(_LibraryScreenConstants.maxWarningsShown).map((w) => Text('\u2022 $w')),
+                if (importResult.warnings.length > _LibraryScreenConstants.maxWarningsShown)
+                  Text('... and ${importResult.warnings.length - _LibraryScreenConstants.maxWarningsShown} more'),
               ],
             ],
           ),
@@ -830,7 +830,7 @@ class _TextsScreenState extends State<TextsScreen> {
                         _sortAscending
                             ? Icons.arrow_upward
                             : Icons.arrow_downward,
-                        size: _TextsScreenConstants.sortArrowIconSize,
+                        size: _LibraryScreenConstants.sortArrowIconSize,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                   ],
@@ -861,20 +861,20 @@ class _TextsScreenState extends State<TextsScreen> {
             tooltip: l10n.import,
             onSelected: (value) {
               switch (value) {
-                case _TextsScreenConstants.actionTxt:
+                case _LibraryScreenConstants.actionTxt:
                   _importFromTextFile();
                   break;
-                case _TextsScreenConstants.actionEpub:
+                case _LibraryScreenConstants.actionEpub:
                   _importFromEpub();
                   break;
-                case _TextsScreenConstants.actionUrl:
+                case _LibraryScreenConstants.actionUrl:
                   _importFromUrl();
                   break;
               }
             },
             itemBuilder: (context) => [
               PopupMenuItem(
-                value: _TextsScreenConstants.actionUrl,
+                value: _LibraryScreenConstants.actionUrl,
                 child: Row(
                   children: [
                     const Icon(Icons.link),
@@ -884,7 +884,7 @@ class _TextsScreenState extends State<TextsScreen> {
                 ),
               ),
               PopupMenuItem(
-                value: _TextsScreenConstants.actionTxt,
+                value: _LibraryScreenConstants.actionTxt,
                 child: Row(
                   children: [
                     const Icon(Icons.text_snippet),
@@ -894,7 +894,7 @@ class _TextsScreenState extends State<TextsScreen> {
                 ),
               ),
               PopupMenuItem(
-                value: _TextsScreenConstants.actionEpub,
+                value: _LibraryScreenConstants.actionEpub,
                 child: Row(
                   children: [
                     const Icon(Icons.book),
@@ -951,7 +951,7 @@ class _TextsScreenState extends State<TextsScreen> {
           onPressed: () {
             final RenderBox button = context.findRenderObject() as RenderBox;
             final Offset position = button.localToGlobal(Offset.zero);
-            _showAddMenu(context, Offset(position.dx, position.dy - _TextsScreenConstants.fabMenuVerticalOffset));
+            _showAddMenu(context, Offset(position.dx, position.dy - _LibraryScreenConstants.fabMenuVerticalOffset));
           },
           child: const Icon(Icons.add),
         ),
@@ -972,7 +972,7 @@ class _TextsScreenState extends State<TextsScreen> {
         children: [
           Icon(
             _sortOption.icon,
-            size: _TextsScreenConstants.sortArrowIconSize,
+            size: _LibraryScreenConstants.sortArrowIconSize,
             color: Theme.of(context).colorScheme.outline,
           ),
           const SizedBox(width: AppConstants.spacingXS),
@@ -988,7 +988,7 @@ class _TextsScreenState extends State<TextsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppConstants.spacingS,
-                vertical: _TextsScreenConstants.badgeVerticalPadding,
+                vertical: _LibraryScreenConstants.badgeVerticalPadding,
               ),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,
@@ -1070,7 +1070,7 @@ class _TextsScreenState extends State<TextsScreen> {
               trailing: PopupMenuButton(
                 itemBuilder: (context) => [
                   PopupMenuItem(
-                    value: _TextsScreenConstants.actionEdit,
+                    value: _LibraryScreenConstants.actionEdit,
                     child: Row(
                       children: [
                         const Icon(Icons.edit),
@@ -1080,7 +1080,7 @@ class _TextsScreenState extends State<TextsScreen> {
                     ),
                   ),
                   PopupMenuItem(
-                    value: _TextsScreenConstants.actionDelete,
+                    value: _LibraryScreenConstants.actionDelete,
                     child: Row(
                       children: [
                         const Icon(Icons.delete, color: AppConstants.deleteColor),
@@ -1091,9 +1091,9 @@ class _TextsScreenState extends State<TextsScreen> {
                   ),
                 ],
                 onSelected: (value) {
-                  if (value == _TextsScreenConstants.actionEdit) {
+                  if (value == _LibraryScreenConstants.actionEdit) {
                     _editCollection(collection);
-                  } else if (value == _TextsScreenConstants.actionDelete) {
+                  } else if (value == _LibraryScreenConstants.actionDelete) {
                     _deleteCollection(collection);
                   }
                 },
@@ -1118,7 +1118,7 @@ class _TextsScreenState extends State<TextsScreen> {
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: text.status == TextStatus.finished
-                    ? AppConstants.successColor.withValues(alpha: _TextsScreenConstants.finishedBackgroundAlpha)
+                    ? AppConstants.successColor.withValues(alpha: _LibraryScreenConstants.finishedBackgroundAlpha)
                     : null,
                 child: Icon(
                   text.status == TextStatus.finished
@@ -1150,7 +1150,7 @@ class _TextsScreenState extends State<TextsScreen> {
               trailing: PopupMenuButton(
                 itemBuilder: (context) => [
                   PopupMenuItem(
-                    value: _TextsScreenConstants.actionCover,
+                    value: _LibraryScreenConstants.actionCover,
                     child: Row(
                       children: [
                         const Icon(Icons.image),
@@ -1160,7 +1160,7 @@ class _TextsScreenState extends State<TextsScreen> {
                     ),
                   ),
                   PopupMenuItem(
-                    value: _TextsScreenConstants.actionEdit,
+                    value: _LibraryScreenConstants.actionEdit,
                     child: Row(
                       children: [
                         const Icon(Icons.edit),
@@ -1170,7 +1170,7 @@ class _TextsScreenState extends State<TextsScreen> {
                     ),
                   ),
                   PopupMenuItem(
-                    value: _TextsScreenConstants.actionDelete,
+                    value: _LibraryScreenConstants.actionDelete,
                     child: Row(
                       children: [
                         const Icon(Icons.delete, color: AppConstants.deleteColor),
@@ -1181,11 +1181,11 @@ class _TextsScreenState extends State<TextsScreen> {
                   ),
                 ],
                 onSelected: (value) {
-                  if (value == _TextsScreenConstants.actionCover) {
+                  if (value == _LibraryScreenConstants.actionCover) {
                     _setCoverImage(text);
-                  } else if (value == _TextsScreenConstants.actionEdit) {
+                  } else if (value == _LibraryScreenConstants.actionEdit) {
                     _editText(text);
-                  } else if (value == _TextsScreenConstants.actionDelete) {
+                  } else if (value == _LibraryScreenConstants.actionDelete) {
                     _deleteText(text);
                   }
                 },
@@ -1251,8 +1251,8 @@ class _TextsScreenState extends State<TextsScreen> {
     return GridView.builder(
       padding: const EdgeInsets.all(AppConstants.spacingL),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: _TextsScreenConstants.gridMaxCrossAxisExtent,
-        childAspectRatio: _TextsScreenConstants.gridChildAspectRatio,
+        maxCrossAxisExtent: _LibraryScreenConstants.gridMaxCrossAxisExtent,
+        childAspectRatio: _LibraryScreenConstants.gridChildAspectRatio,
         crossAxisSpacing: AppConstants.spacingL,
         mainAxisSpacing: AppConstants.spacingL,
       ),

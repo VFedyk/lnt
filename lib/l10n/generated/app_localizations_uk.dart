@@ -15,6 +15,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get home => 'Головна';
 
   @override
+  String get libraryTab => 'Бібліотека';
+
+  @override
   String get texts => 'Тексти';
 
   @override

@@ -12,7 +12,7 @@ import '../utils/cover_image_helper.dart';
 import '../utils/helpers.dart';
 import '../widgets/activity_heatmap.dart';
 import 'reader_screen.dart';
-import 'texts_screen.dart';
+import 'library_screen.dart';
 import 'terms_screen.dart';
 
 abstract class _DashboardConstants {
@@ -329,7 +329,7 @@ class _DashboardTabState extends State<DashboardTab> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => TextsScreen(language: widget.language),
+                        builder: (_) => LibraryScreen(language: widget.language),
                       ),
                     );
                   },
