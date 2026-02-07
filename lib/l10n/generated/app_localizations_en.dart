@@ -15,6 +15,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get home => 'Home';
 
   @override
+  String get libraryTab => 'Library';
+
+  @override
   String get texts => 'Texts';
 
   @override

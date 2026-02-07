@@ -110,6 +110,12 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get home;
 
+  /// No description provided for @libraryTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get libraryTab;
+
   /// No description provided for @texts.
   ///
   /// In en, this message translates to:

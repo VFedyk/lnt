@@ -8,7 +8,7 @@ import '../services/database_service.dart';
 import '../utils/constants.dart';
 import 'dashboard_tab.dart';
 import 'languages_screen.dart';
-import 'texts_screen.dart';
+import 'library_screen.dart';
 import 'terms_screen.dart';
 import 'review_screen.dart';
 import 'settings_screen.dart';
@@ -153,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           onRefresh: _loadLanguages,
         );
       case HomeTab.texts:
-        return TextsScreen(language: _selectedLanguage!);
+        return LibraryScreen(language: _selectedLanguage!);
       case HomeTab.terms:
         return TermsScreen(language: _selectedLanguage!);
       case HomeTab.review:
@@ -262,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 NavigationDestination(
                   icon: const Icon(Icons.article_outlined),
                   selectedIcon: const Icon(Icons.article),
-                  label: l10n.texts,
+                  label: l10n.libraryTab,
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.book_outlined),
