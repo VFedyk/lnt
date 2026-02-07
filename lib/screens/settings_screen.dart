@@ -40,7 +40,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   DeepLUsage? _usage;
   bool _isLoadingUsage = false;
   String? _dbPath;
-  DateTime? _googleDriveLastBackup;
   DateTime? _icloudLastBackup;
   bool _isBackingUp = false;
   bool _isRestoring = false;
@@ -107,8 +106,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       dbPath = DatabaseService.instance.currentDbPath;
     }
 
-    final googleBackup =
-        await SettingsService.instance.getGoogleDriveLastBackup();
     final icloudBackup = await BackupService.instance.getICloudBackupDate();
 
     if (mounted) {
@@ -119,7 +116,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _ltUrlController.text = ltUrl ?? '';
         _ltApiKeyController.text = ltApiKey ?? '';
         _dbPath = dbPath;
-        _googleDriveLastBackup = googleBackup;
         _icloudLastBackup = icloudBackup;
         _isLoading = false;
       });
@@ -405,39 +401,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ],
             ),
-            const SizedBox(height: 16),
-            // Google Drive
-            Text(
-              'Google Drive',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _googleDriveLastBackup != null
-                  ? l10n.lastBackup(dateHelper(_googleDriveLastBackup!))
-                  : l10n.noBackupYet,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: busy ? null : _backupToGoogleDrive,
-                  icon: const Icon(Icons.cloud_upload),
-                  label: Text(l10n.backupToGoogleDrive),
-                ),
-                OutlinedButton.icon(
-                  onPressed: busy ? null : _restoreFromGoogleDrive,
-                  icon: const Icon(Icons.cloud_download),
-                  label: Text(l10n.restoreFromGoogleDrive),
-                ),
-              ],
-            ),
             // iCloud (Apple only)
             if (PlatformHelper.isApple) ...[
               const SizedBox(height: 16),
@@ -477,56 +440,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _backupToGoogleDrive() async {
-    setState(() => _isBackingUp = true);
-    try {
-      final date = await BackupService.instance.backupToGoogleDrive();
-      if (mounted) {
-        setState(() {
-          _googleDriveLastBackup = date;
-          _isBackingUp = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).backupSuccess)),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isBackingUp = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).backupFailed(e.toString()),
-            ),
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _restoreFromGoogleDrive() async {
-    final confirmed = await _confirmRestore();
-    if (confirmed != true) return;
-    setState(() => _isRestoring = true);
-    try {
-      await BackupService.instance.restoreFromGoogleDrive();
-      if (mounted) {
-        _showRestoreSuccessAndExit();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isRestoring = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).restoreFailed(e.toString()),
-            ),
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _backupToICloud() async {

@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
@@ -9,8 +11,10 @@ import 'package:path_provider/path_provider.dart';
 import 'database_service.dart';
 import 'settings_service.dart';
 
-const _backupFileName = 'lnt_backup.db';
+const _backupFileName = 'lnt_backup.zip';
 const _icloudContainerId = 'iCloud.lnt-db-backup';
+const _dbEntryName = 'lnt.db';
+const _coversDirName = 'covers';
 
 class BackupService {
   static final BackupService instance = BackupService._();
@@ -25,14 +29,75 @@ class BackupService {
     return DatabaseService.instance.currentDbPath!;
   }
 
-  Future<void> _restoreFromFile(File downloaded) async {
+  Future<String> _getCoversDir() async {
+    final docs = await getApplicationDocumentsDirectory();
+    return '${docs.path}/$_coversDirName';
+  }
+
+  Future<File> _createBackupArchive() async {
     final dbPath = await _getDbPath();
+    final coversDir = await _getCoversDir();
+    final tempDir = await getTemporaryDirectory();
+    final archiveFile = File('${tempDir.path}/$_backupFileName');
+
+    final archive = Archive();
+
+    // Add database file
+    final dbBytes = await File(dbPath).readAsBytes();
+    archive.addFile(ArchiveFile(_dbEntryName, dbBytes.length, dbBytes));
+
+    // Add cover images
+    final coversDirObj = Directory(coversDir);
+    if (await coversDirObj.exists()) {
+      await for (final entity in coversDirObj.list()) {
+        if (entity is File) {
+          final name = entity.path.split('/').last;
+          final bytes = await entity.readAsBytes();
+          archive.addFile(
+            ArchiveFile('$_coversDirName/$name', bytes.length, bytes),
+          );
+        }
+      }
+    }
+
+    final encoded = ZipEncoder().encode(archive);
+    if (encoded == null) throw Exception('Failed to create backup archive');
+    await archiveFile.writeAsBytes(encoded);
+    return archiveFile;
+  }
+
+  Future<void> _restoreFromArchive(File archiveFile) async {
+    final bytes = await archiveFile.readAsBytes();
+    final archive = ZipDecoder().decodeBytes(bytes);
+    final dbPath = await _getDbPath();
+    final coversDir = await _getCoversDir();
+
+    // Extract database
+    final dbEntry = archive.findFile(_dbEntryName);
+    if (dbEntry == null) throw Exception('Backup archive has no database');
+
     await DatabaseService.instance.closeDatabase();
     final dbDir = Directory(dbPath).parent;
     if (!await dbDir.exists()) {
       await dbDir.create(recursive: true);
     }
-    await downloaded.copy(dbPath);
+    await File(dbPath).writeAsBytes(dbEntry.content as List<int>);
+
+    // Extract cover images
+    final coversDirObj = Directory(coversDir);
+    if (!await coversDirObj.exists()) {
+      await coversDirObj.create(recursive: true);
+    }
+    for (final file in archive) {
+      if (file.isFile && file.name.startsWith('$_coversDirName/')) {
+        final name = file.name.substring('$_coversDirName/'.length);
+        if (name.isNotEmpty) {
+          await File(
+            '$coversDir/$name',
+          ).writeAsBytes(file.content as List<int>);
+        }
+      }
+    }
   }
 
   // ── Google Drive ──
@@ -46,7 +111,7 @@ class BackupService {
   }
 
   Future<DateTime> backupToGoogleDrive() async {
-    final dbPath = await _getDbPath();
+    final archive = await _createBackupArchive();
     final api = await _googleDriveApi();
 
     // Check for existing backup to update
@@ -56,10 +121,7 @@ class BackupService {
       $fields: 'files(id)',
     );
 
-    final media = drive.Media(
-      File(dbPath).openRead(),
-      File(dbPath).lengthSync(),
-    );
+    final media = drive.Media(archive.openRead(), archive.lengthSync());
 
     if (existing.files != null && existing.files!.isNotEmpty) {
       await api.files.update(
@@ -106,7 +168,7 @@ class BackupService {
     await response.stream.pipe(sink);
     await sink.close();
 
-    await _restoreFromFile(tempFile);
+    await _restoreFromArchive(tempFile);
   }
 
   Future<DateTime?> getGoogleDriveBackupDate() async {
@@ -129,34 +191,69 @@ class BackupService {
   // ── iCloud ──
 
   Future<void> backupToICloud() async {
-    final dbPath = await _getDbPath();
+    final archive = await _createBackupArchive();
     await ICloudStorage.upload(
       containerId: _icloudContainerId,
-      filePath: dbPath,
+      filePath: archive.path,
       destinationRelativePath: _backupFileName,
     );
     await SettingsService.instance.setICloudLastBackup(DateTime.now());
   }
 
   Future<void> restoreFromICloud() async {
+    final files = await ICloudStorage.gather(containerId: _icloudContainerId);
+    final hasBackup = files.any((f) => f.relativePath == _backupFileName);
+    if (!hasBackup) {
+      throw Exception('No backup found on iCloud');
+    }
+
     final tempDir = await getTemporaryDirectory();
     final tempFile = File('${tempDir.path}/$_backupFileName');
     if (tempFile.existsSync()) tempFile.deleteSync();
 
+    final completer = Completer<void>();
     await ICloudStorage.download(
       containerId: _icloudContainerId,
       relativePath: _backupFileName,
       destinationFilePath: tempFile.path,
+      onProgress: (stream) {
+        stream.listen(
+          (progress) {
+            if (progress >= 1.0 && !completer.isCompleted) {
+              completer.complete();
+            }
+          },
+          onError: (e) {
+            if (!completer.isCompleted) {
+              completer.completeError(e);
+            }
+          },
+          onDone: () {
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          },
+        );
+      },
     );
+    await completer.future;
 
-    await _restoreFromFile(tempFile);
+    // The native layer may not have flushed the file yet — poll briefly.
+    for (var i = 0; i < 10; i++) {
+      if (tempFile.existsSync() && tempFile.lengthSync() > 0) break;
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    if (!tempFile.existsSync() || tempFile.lengthSync() == 0) {
+      throw Exception('Download from iCloud failed');
+    }
+
+    await _restoreFromArchive(tempFile);
   }
 
   Future<DateTime?> getICloudBackupDate() async {
     try {
-      final files = await ICloudStorage.gather(
-        containerId: _icloudContainerId,
-      );
+      final files = await ICloudStorage.gather(containerId: _icloudContainerId);
       final backup = files.where((f) => f.relativePath == _backupFileName);
       if (backup.isNotEmpty) {
         return backup.first.contentChangeDate;
