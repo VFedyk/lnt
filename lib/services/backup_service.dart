@@ -153,6 +153,17 @@ class BackupService {
   }
 
   Future<DateTime?> getICloudBackupDate() async {
+    try {
+      final files = await ICloudStorage.gather(
+        containerId: _icloudContainerId,
+      );
+      final backup = files.where((f) => f.relativePath == _backupFileName);
+      if (backup.isNotEmpty) {
+        return backup.first.contentChangeDate;
+      }
+    } catch (_) {
+      // Fall back to local timestamp
+    }
     return SettingsService.instance.getICloudLastBackup();
   }
 }

@@ -109,7 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final googleBackup =
         await SettingsService.instance.getGoogleDriveLastBackup();
-    final icloudBackup = await SettingsService.instance.getICloudLastBackup();
+    final icloudBackup = await BackupService.instance.getICloudBackupDate();
 
     if (mounted) {
       setState(() {
