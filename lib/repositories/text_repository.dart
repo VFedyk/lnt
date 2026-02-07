@@ -104,6 +104,20 @@ class TextRepository extends BaseRepository {
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
+  Future<Map<String, int>> getCompletedCountsByDay(int languageId, String sinceIso) async {
+    final db = await getDatabase();
+    final result = await db.rawQuery(
+      '''
+      SELECT DATE(last_read) as date, COUNT(*) as cnt
+      FROM texts
+      WHERE language_id = ? AND status = 2 AND last_read >= ?
+      GROUP BY DATE(last_read)
+      ''',
+      [languageId, sinceIso],
+    );
+    return {for (var row in result) row['date'] as String: row['cnt'] as int};
+  }
+
   Future<List<TextDocument>> getRecentlyAdded(int languageId, {int limit = 5}) async {
     final db = await getDatabase();
     final maps = await db.query(

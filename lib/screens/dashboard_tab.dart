@@ -6,8 +6,11 @@ import '../models/text_document.dart';
 import '../models/term.dart';
 import '../services/database_service.dart';
 import '../services/text_parser_service.dart';
+import '../models/day_activity.dart';
 import '../utils/constants.dart';
 import '../utils/cover_image_helper.dart';
+import '../utils/helpers.dart';
+import '../widgets/activity_heatmap.dart';
 import 'reader_screen.dart';
 import 'texts_screen.dart';
 import 'terms_screen.dart';
@@ -17,6 +20,8 @@ abstract class _DashboardConstants {
   static const double thumbnailWidth = 40.0;
   static const double thumbnailHeight = 56.0;
   static const double thumbnailBorderRadius = 4.0;
+  // 28 (day labels) + 52 weeks * 14 (cell + spacing) + 2 * 16 (card padding)
+  static const double desktopHeatmapWidth = 788.0;
 }
 
 class DashboardTab extends StatefulWidget {
@@ -35,6 +40,7 @@ class _DashboardTabState extends State<DashboardTab> {
   Map<int, int> _termCounts = {};
   Map<int, int> _unknownCounts = {};
   Map<int, String> _collectionNames = {};
+  Map<String, DayActivity> _activityData = {};
   bool _isLoading = true;
   final _textParser = TextParserService();
 
@@ -89,12 +95,41 @@ class _DashboardTabState extends State<DashboardTab> {
         }
       }
 
+      // Load activity heatmap data (52 weeks on desktop, 26 on mobile)
+      final heatmapWeeks = PlatformHelper.isDesktop ? 52 : 26;
+      final now = DateTime.now();
+      final sinceDate = now.subtract(Duration(days: heatmapWeeks * 7));
+      final sinceIso =
+          '${sinceDate.year}-${sinceDate.month.toString().padLeft(2, '0')}-${sinceDate.day.toString().padLeft(2, '0')}';
+
+      final wordsAddedByDay = await DatabaseService.instance.terms
+          .getCreatedCountsByDay(widget.language.id!, sinceIso);
+      final textsCompletedByDay = await DatabaseService.instance.texts
+          .getCompletedCountsByDay(widget.language.id!, sinceIso);
+      final wordsReviewedByDay = await DatabaseService.instance.reviewLogs
+          .getReviewCountsByDay(widget.language.id!, sinceIso);
+
+      final allDates = <String>{
+        ...wordsAddedByDay.keys,
+        ...textsCompletedByDay.keys,
+        ...wordsReviewedByDay.keys,
+      };
+      final activityData = <String, DayActivity>{};
+      for (final date in allDates) {
+        activityData[date] = DayActivity(
+          textsCompleted: textsCompletedByDay[date] ?? 0,
+          wordsAdded: wordsAddedByDay[date] ?? 0,
+          wordsReviewed: wordsReviewedByDay[date] ?? 0,
+        );
+      }
+
       setState(() {
         _recentlyReadTexts = recentlyRead;
         _recentlyAddedTexts = recentlyAdded;
         _termCounts = counts;
         _unknownCounts = unknownCounts;
         _collectionNames = collectionNames;
+        _activityData = activityData;
         _isLoading = false;
       });
     } catch (e) {
@@ -132,31 +167,82 @@ class _DashboardTabState extends State<DashboardTab> {
       child: ListView(
         padding: const EdgeInsets.all(AppConstants.spacingL),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppConstants.spacingL),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          if (PlatformHelper.isDesktop)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.language,
-                        color: Theme.of(context).colorScheme.primary,
+                  Expanded(
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppConstants.spacingL),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.language,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: AppConstants.spacingS),
+                                Text(
+                                  widget.language.name,
+                                  style: Theme.of(context).textTheme.headlineSmall,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppConstants.spacingL),
+                            _buildStatsRow(),
+                          ],
+                        ),
                       ),
-                      const SizedBox(width: AppConstants.spacingS),
-                      Text(
-                        widget.language.name,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: AppConstants.spacingL),
-                  _buildStatsRow(),
+                  const SizedBox(width: AppConstants.spacingL),
+                  SizedBox(
+                    width: _DashboardConstants.desktopHeatmapWidth,
+                    child: ActivityHeatmap(
+                      activityData: _activityData,
+                      weeksToShow: 52,
+                      useTooltip: true,
+                    ),
+                  ),
                 ],
               ),
+            )
+          else ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.spacingL),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.language,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: AppConstants.spacingS),
+                        Text(
+                          widget.language.name,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppConstants.spacingL),
+                    _buildStatsRow(),
+                  ],
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: AppConstants.spacingL),
+            ActivityHeatmap(
+              activityData: _activityData,
+              weeksToShow: 26,
+            ),
+          ],
           const SizedBox(height: AppConstants.spacingL),
           _buildQuickActions(),
           const SizedBox(height: AppConstants.spacingL),

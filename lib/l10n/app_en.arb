@@ -100,6 +100,14 @@
   },
   "completed": "Completed!",
 
+  "activityHeatmap": "Activity",
+  "less": "Less",
+  "more": "More",
+  "textsCompleted": "Texts completed",
+  "wordsAdded": "Words added",
+  "wordsReviewed": "Words reviewed",
+  "noActivity": "No activity",
+
   "quickActions": "Quick Actions",
   "addText": "Add Text",
   "importVocabulary": "Import Vocabulary",

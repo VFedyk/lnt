@@ -210,6 +210,27 @@ class AppLocalizationsUk extends AppLocalizations {
   String get completed => 'Завершено!';
 
   @override
+  String get activityHeatmap => 'Активність';
+
+  @override
+  String get less => 'Менше';
+
+  @override
+  String get more => 'Більше';
+
+  @override
+  String get textsCompleted => 'Текстів завершено';
+
+  @override
+  String get wordsAdded => 'Слів додано';
+
+  @override
+  String get wordsReviewed => 'Слів повторено';
+
+  @override
+  String get noActivity => 'Немає активності';
+
+  @override
   String get quickActions => 'Швидкі дії';
 
   @override

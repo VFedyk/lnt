@@ -148,6 +148,20 @@ class TermRepository extends BaseRepository {
     await batch.commit(noResult: true);
   }
 
+  Future<Map<String, int>> getCreatedCountsByDay(int languageId, String sinceIso) async {
+    final db = await getDatabase();
+    final result = await db.rawQuery(
+      '''
+      SELECT DATE(created_at) as date, COUNT(*) as cnt
+      FROM terms
+      WHERE language_id = ? AND created_at >= ?
+      GROUP BY DATE(created_at)
+      ''',
+      [languageId, sinceIso],
+    );
+    return {for (var row in result) row['date'] as String: row['cnt'] as int};
+  }
+
   Future<List<Term>> search(int languageId, String query) async {
     final db = await getDatabase();
     // Search in terms table and also in translations table

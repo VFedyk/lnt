@@ -71,6 +71,14 @@
   "unknownCharacters": "{count} невідомих символів",
   "completed": "Завершено!",
 
+  "activityHeatmap": "Активність",
+  "less": "Менше",
+  "more": "Більше",
+  "textsCompleted": "Текстів завершено",
+  "wordsAdded": "Слів додано",
+  "wordsReviewed": "Слів повторено",
+  "noActivity": "Немає активності",
+
   "quickActions": "Швидкі дії",
   "addText": "Додати текст",
   "importVocabulary": "Імпортувати словник",
