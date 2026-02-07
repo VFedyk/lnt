@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 class PlatformHelper {
   static bool get isDesktop =>
       Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+
+  static bool get isApple => Platform.isMacOS || Platform.isIOS;
 }
 
 class DateHelper {

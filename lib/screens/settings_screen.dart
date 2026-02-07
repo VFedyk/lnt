@@ -7,6 +7,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../main.dart';
 import '../services/database_service.dart';
 import '../services/settings_service.dart';
+import '../services/backup_service.dart';
 import '../services/deepl_service.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
@@ -39,6 +40,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   DeepLUsage? _usage;
   bool _isLoadingUsage = false;
   String? _dbPath;
+  DateTime? _icloudLastBackup;
+  bool _isBackingUp = false;
+  bool _isRestoring = false;
 
   // LibreTranslate
   final _ltUrlController = TextEditingController();
@@ -102,6 +106,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       dbPath = DatabaseService.instance.currentDbPath;
     }
 
+    final icloudBackup = await BackupService.instance.getICloudBackupDate();
+
     if (mounted) {
       setState(() {
         _apiKeyController.text = apiKey ?? '';
@@ -110,6 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _ltUrlController.text = ltUrl ?? '';
         _ltApiKeyController.text = ltApiKey ?? '';
         _dbPath = dbPath;
+        _icloudLastBackup = icloudBackup;
         _isLoading = false;
       });
     }
@@ -365,6 +372,166 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildBackupSection() {
+    final l10n = AppLocalizations.of(context);
+    final dateHelper = DateHelper.formatDateTime;
+    final busy = _isBackingUp || _isRestoring;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.cloud),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.backupRestore,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                if (busy) ...[
+                  const SizedBox(width: 12),
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ],
+              ],
+            ),
+            // iCloud (Apple only)
+            if (PlatformHelper.isApple) ...[
+              const SizedBox(height: 16),
+              Text(
+                'iCloud',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _icloudLastBackup != null
+                    ? l10n.lastBackup(dateHelper(_icloudLastBackup!))
+                    : l10n.noBackupYet,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: busy ? null : _backupToICloud,
+                    icon: const Icon(Icons.cloud_upload),
+                    label: Text(l10n.backupToICloud),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: busy ? null : _restoreFromICloud,
+                    icon: const Icon(Icons.cloud_download),
+                    label: Text(l10n.restoreFromICloud),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _backupToICloud() async {
+    setState(() => _isBackingUp = true);
+    try {
+      await BackupService.instance.backupToICloud();
+      final date = DateTime.now();
+      if (mounted) {
+        setState(() {
+          _icloudLastBackup = date;
+          _isBackingUp = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).backupSuccess)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isBackingUp = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).backupFailed(e.toString()),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _restoreFromICloud() async {
+    final confirmed = await _confirmRestore();
+    if (confirmed != true) return;
+    setState(() => _isRestoring = true);
+    try {
+      await BackupService.instance.restoreFromICloud();
+      if (mounted) {
+        _showRestoreSuccessAndExit();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isRestoring = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).restoreFailed(e.toString()),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<bool?> _confirmRestore() {
+    final l10n = AppLocalizations.of(context);
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.restoreConfirmTitle),
+        content: Text(l10n.restoreConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(l10n.restore),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRestoreSuccessAndExit() {
+    final l10n = AppLocalizations.of(context);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.restoreSuccess),
+        actions: [
+          TextButton(
+            onPressed: () => exit(0),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _formatNumber(int number) {
     if (number >= _SettingsScreenConstants.millionThreshold) {
       return '${(number / _SettingsScreenConstants.millionThreshold).toStringAsFixed(_SettingsScreenConstants.numberDecimalPlacesMillion)}M';
@@ -428,6 +595,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: AppConstants.spacingL),
                   _buildDatabaseSection(),
                 ],
+                const SizedBox(height: AppConstants.spacingL),
+                _buildBackupSection(),
                 const SizedBox(height: AppConstants.spacingL),
                 // DeepL API Section
                 Card(

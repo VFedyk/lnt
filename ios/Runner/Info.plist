@@ -45,6 +45,20 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.lnt-db-backup</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>None</string>
+			<key>NSUbiquitousContainerName</key>
+			<string>LNT Backup</string>
+		</dict>
+	</dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSPhotoLibraryUsageDescription</key>
   <string>This app needs access to your photo library to let you select files.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

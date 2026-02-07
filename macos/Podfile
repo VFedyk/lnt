@@ -39,4 +39,25 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
   end
+
+  # Fix sqlite3 framework symlinks for App Store validation.
+  # The sqlite3 native asset ships Resources -> Versions/A/Resources,
+  # but Apple requires Resources -> Versions/Current/Resources.
+  main_project = installer.aggregate_targets.first.user_project
+  runner_target = main_project.targets.find { |t| t.name == 'Runner' }
+  if runner_target
+    phase_name = 'Fix Framework Symlinks'
+    unless runner_target.shell_script_build_phases.any? { |p| p.name == phase_name }
+      phase = runner_target.new_shell_script_build_phase(phase_name)
+      phase.shell_script = <<~SCRIPT
+        for fw in "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}"/*.framework; do
+          if [ -d "$fw/Versions/Current/Resources" ] && [ -L "$fw/Resources" ]; then
+            rm "$fw/Resources"
+            ln -s Versions/Current/Resources "$fw/Resources"
+          fi
+        done
+      SCRIPT
+    end
+    main_project.save
+  end
 end

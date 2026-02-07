@@ -339,5 +339,22 @@
   "flashcardReviewDescription": "Повторюйте картки за методом інтервального повторення",
   "statisticsDescription": "Переглядайте прогрес словника та розподіл за статусами",
   "cardsDue": "Карток до повторення",
-  "reviewedToday": "Повторено сьогодні"
+  "reviewedToday": "Повторено сьогодні",
+
+  "backupRestore": "Резервне копіювання",
+  "backupToGoogleDrive": "Зберегти в Google Drive",
+  "restoreFromGoogleDrive": "Відновити з Google Drive",
+  "backupToICloud": "Зберегти в iCloud",
+  "restoreFromICloud": "Відновити з iCloud",
+  "lastBackup": "Останнє: {date}",
+  "noBackupYet": "Резервної копії ще немає",
+  "backupSuccess": "Резервне копіювання завершено",
+  "restoreSuccess": "Відновлено. Програма зараз закриється.",
+  "restoreConfirmTitle": "Відновити резервну копію?",
+  "restoreConfirmMessage": "Це замінить усі поточні дані резервною копією. Цю дію неможливо скасувати. Продовжити?",
+  "restore": "Відновити",
+  "backupFailed": "Помилка резервного копіювання: {error}",
+  "restoreFailed": "Помилка відновлення: {error}",
+  "noBackupFound": "Резервну копію не знайдено",
+  "signInCancelled": "Вхід скасовано"
 }

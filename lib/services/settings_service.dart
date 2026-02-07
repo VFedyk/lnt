@@ -24,6 +24,10 @@ class SettingsService {
   // Custom database path
   static const String _customDbPathKey = 'custom_db_path';
 
+  // Backup timestamps
+  static const String _googleDriveLastBackupKey = 'google_drive_last_backup';
+  static const String _icloudLastBackupKey = 'icloud_last_backup';
+
   Future<String?> getDeepLApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_deepLApiKeyKey);
@@ -129,6 +133,33 @@ class SettingsService {
     } else {
       await prefs.setString(_customDbPathKey, path);
     }
+  }
+
+  // Backup timestamps
+
+  Future<DateTime?> getGoogleDriveLastBackup() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ms = prefs.getInt(_googleDriveLastBackupKey);
+    return ms != null ? DateTime.fromMillisecondsSinceEpoch(ms) : null;
+  }
+
+  Future<void> setGoogleDriveLastBackup(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      _googleDriveLastBackupKey,
+      date.millisecondsSinceEpoch,
+    );
+  }
+
+  Future<DateTime?> getICloudLastBackup() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ms = prefs.getInt(_icloudLastBackupKey);
+    return ms != null ? DateTime.fromMillisecondsSinceEpoch(ms) : null;
+  }
+
+  Future<void> setICloudLastBackup(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_icloudLastBackupKey, date.millisecondsSinceEpoch);
   }
 
   Future<void> saveWindowState({

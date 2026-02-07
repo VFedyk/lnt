@@ -1885,6 +1885,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reviewed today'**
   String get reviewedToday;
+
+  /// No description provided for @backupRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup & Restore'**
+  String get backupRestore;
+
+  /// No description provided for @backupToGoogleDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up to Google Drive'**
+  String get backupToGoogleDrive;
+
+  /// No description provided for @restoreFromGoogleDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from Google Drive'**
+  String get restoreFromGoogleDrive;
+
+  /// No description provided for @backupToICloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up to iCloud'**
+  String get backupToICloud;
+
+  /// No description provided for @restoreFromICloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from iCloud'**
+  String get restoreFromICloud;
+
+  /// No description provided for @lastBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Last backup: {date}'**
+  String lastBackup(String date);
+
+  /// No description provided for @noBackupYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No backup yet'**
+  String get noBackupYet;
+
+  /// No description provided for @backupSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup completed successfully'**
+  String get backupSuccess;
+
+  /// No description provided for @restoreSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore completed. The app will now close.'**
+  String get restoreSuccess;
+
+  /// No description provided for @restoreConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Backup?'**
+  String get restoreConfirmTitle;
+
+  /// No description provided for @restoreConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will replace all current data with the backup. This cannot be undone. Continue?'**
+  String get restoreConfirmMessage;
+
+  /// No description provided for @restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restore;
+
+  /// No description provided for @backupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup failed: {error}'**
+  String backupFailed(String error);
+
+  /// No description provided for @restoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore failed: {error}'**
+  String restoreFailed(String error);
+
+  /// No description provided for @noBackupFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No backup found'**
+  String get noBackupFound;
+
+  /// No description provided for @signInCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in was cancelled'**
+  String get signInCancelled;
 }
 
 class _AppLocalizationsDelegate
