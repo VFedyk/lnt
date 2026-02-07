@@ -210,6 +210,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completed => 'Completed!';
 
   @override
+  String get activityHeatmap => 'Activity';
+
+  @override
+  String get less => 'Less';
+
+  @override
+  String get more => 'More';
+
+  @override
+  String get textsCompleted => 'Texts completed';
+
+  @override
+  String get wordsAdded => 'Words added';
+
+  @override
+  String get wordsReviewed => 'Words reviewed';
+
+  @override
+  String get noActivity => 'No activity';
+
+  @override
   String get quickActions => 'Quick Actions';
 
   @override

@@ -31,4 +31,19 @@ class ReviewLogRepository extends BaseRepository {
     );
     return result.first['cnt'] as int;
   }
+
+  Future<Map<String, int>> getReviewCountsByDay(int languageId, String sinceIso) async {
+    final db = await getDatabase();
+    final result = await db.rawQuery(
+      '''
+      SELECT DATE(reviewed_at) as date, COUNT(*) as cnt
+      FROM review_logs rl
+      INNER JOIN terms t ON t.id = rl.term_id
+      WHERE t.language_id = ? AND rl.reviewed_at >= ?
+      GROUP BY DATE(reviewed_at)
+      ''',
+      [languageId, sinceIso],
+    );
+    return {for (var row in result) row['date'] as String: row['cnt'] as int};
+  }
 }

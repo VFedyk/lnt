@@ -476,6 +476,48 @@ abstract class AppLocalizations {
   /// **'Completed!'**
   String get completed;
 
+  /// No description provided for @activityHeatmap.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get activityHeatmap;
+
+  /// No description provided for @less.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get less;
+
+  /// No description provided for @more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get more;
+
+  /// No description provided for @textsCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Texts completed'**
+  String get textsCompleted;
+
+  /// No description provided for @wordsAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Words added'**
+  String get wordsAdded;
+
+  /// No description provided for @wordsReviewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Words reviewed'**
+  String get wordsReviewed;
+
+  /// No description provided for @noActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity'**
+  String get noActivity;
+
   /// No description provided for @quickActions.
   ///
   /// In en, this message translates to:
