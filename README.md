@@ -2,6 +2,9 @@
 
 Yet another language learning application
 
+<img width="1840" height="1196" alt="image" src="https://github.com/user-attachments/assets/261a8d77-37f3-4ac8-9d05-4b7c620be2d8" />
+
+
 ## Features
 
 - Import texts from URL, TXT, or EPUB (with cover extraction)
