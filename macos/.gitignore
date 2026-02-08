@@ -1,5 +1,7 @@
 # Flutter-related
-**/Flutter/ephemeral/
+**/Flutter/ephemeral/*
+!**/Flutter/ephemeral/FlutterInputs.xcfilelist
+!**/Flutter/ephemeral/FlutterOutputs.xcfilelist
 **/Pods/
 
 # Xcode-related
