@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 ///
 /// BackupService creates zip archives with this structure:
 ///   lnt.db            – the SQLite database
-///   covers/<name>.jpg – cover images (optional)
+///   covers/name.jpg   – cover images (optional)
 ///
 /// These tests verify the contract without touching the filesystem,
 /// Google Drive, or iCloud.
