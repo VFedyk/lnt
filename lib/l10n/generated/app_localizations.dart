@@ -1937,7 +1937,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Restore completed. The app will now close.'**
+  /// **'Restore completed successfully.'**
   String get restoreSuccess;
 
   /// No description provided for @restoreConfirmTitle.

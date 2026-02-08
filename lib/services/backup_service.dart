@@ -98,6 +98,9 @@ class BackupService {
         }
       }
     }
+
+    // Reopen the database so the app can continue without restart
+    await DatabaseService.instance.database;
   }
 
   // ── Google Drive ──

@@ -1032,7 +1032,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get backupSuccess => 'Резервне копіювання завершено';
 
   @override
-  String get restoreSuccess => 'Відновлено. Програма зараз закриється.';
+  String get restoreSuccess => 'Відновлення завершено успішно.';
 
   @override
   String get restoreConfirmTitle => 'Відновити резервну копію?';

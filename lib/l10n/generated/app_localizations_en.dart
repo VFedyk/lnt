@@ -1029,7 +1029,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupSuccess => 'Backup completed successfully';
 
   @override
-  String get restoreSuccess => 'Restore completed. The app will now close.';
+  String get restoreSuccess => 'Restore completed successfully.';
 
   @override
   String get restoreConfirmTitle => 'Restore Backup?';

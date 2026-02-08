@@ -477,7 +477,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await BackupService.instance.restoreFromICloud();
       if (mounted) {
-        _showRestoreSuccessAndExit();
+        _showRestoreSuccess();
       }
     } catch (e) {
       if (mounted) {
@@ -515,21 +515,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showRestoreSuccessAndExit() {
+  void _showRestoreSuccess() {
     final l10n = AppLocalizations.of(context);
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.restoreSuccess),
-        actions: [
-          TextButton(
-            onPressed: () => exit(0),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+    context.read<AppState>().notifyDataChanged();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.restoreSuccess)),
     );
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   String _formatNumber(int number) {
