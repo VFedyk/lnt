@@ -20,7 +20,8 @@ class BackupService {
   static final BackupService instance = BackupService._();
   BackupService._();
 
-  final _googleSignIn = GoogleSignIn(scopes: [drive.DriveApi.driveFileScope]);
+  static const _driveScopes = [drive.DriveApi.driveFileScope];
+  bool _googleSignInInitialized = false;
 
   // ── helpers ──
 
@@ -104,11 +105,17 @@ class BackupService {
   // ── Google Drive ──
 
   Future<drive.DriveApi> _googleDriveApi() async {
-    final account = await _googleSignIn.signIn();
-    if (account == null) throw Exception('Google sign-in cancelled');
-    final client = await _googleSignIn.authenticatedClient();
-    if (client == null) throw Exception('Failed to get auth client');
-    return drive.DriveApi(client);
+    if (!_googleSignInInitialized) {
+      await GoogleSignIn.instance.initialize();
+      _googleSignInInitialized = true;
+    }
+    final account = await GoogleSignIn.instance.authenticate(
+      scopeHint: _driveScopes,
+    );
+    final authz = await account.authorizationClient.authorizeScopes(
+      _driveScopes,
+    );
+    return drive.DriveApi(authz.authClient(scopes: _driveScopes));
   }
 
   Future<DateTime> backupToGoogleDrive() async {
