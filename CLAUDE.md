@@ -9,7 +9,8 @@ Flutter language learning app: import texts (URL, TXT, EPUB), track vocabulary w
 - **Flutter** (stable channel), Dart SDK ^3.10.7
 - **State management**: Provider + ChangeNotifier (`AppState` in `main.dart`)
 - **Database**: SQLite via `sqflite` (+ `sqflite_common_ffi` for Linux/Windows)
-- **Architecture**: Repository pattern → Service singletons → Screens/Widgets
+- **DI / Service locator**: `get_it` — registered in `lib/service_locator.dart`
+- **Architecture**: Repository pattern → Services (via get_it) → Screens/Widgets
 - **Localization**: ARB files (`app_en.arb`, `app_uk.arb`) → `flutter gen-l10n`
 - **Platforms**: iOS, macOS, Android, Linux, Windows, Web
 
@@ -18,9 +19,10 @@ Flutter language learning app: import texts (URL, TXT, EPUB), track vocabulary w
 ```
 lib/
 ├── main.dart              # Entry point, AppState provider
+├── service_locator.dart   # get_it registrations + convenience getters
 ├── models/                # Data models (Term, TextDocument, Language, etc.)
 ├── repositories/          # DB access layer (BaseRepository pattern)
-├── services/              # Business logic singletons
+├── services/              # Business logic (registered via get_it)
 ├── screens/               # Full-page UI screens
 ├── widgets/               # Reusable UI components and dialogs
 ├── utils/                 # Helpers, constants, CoverImageHelper
@@ -39,8 +41,8 @@ flutter build macos          # Build macOS
 
 ## Key conventions
 
-- **Singletons** for all services: `ServiceName.instance`
-- **Repository pattern**: `DatabaseService.instance.terms.getAll()` etc.
+- **Service locator**: `setupServiceLocator()` in `main.dart` registers all services. Access via top-level getters: `db`, `settings`, `backupService`, `reviewService`, `deepLService`, `libreTranslateService`
+- **Repository pattern**: `db.terms.getAll()` etc.
 - Repositories use lazy `() => database` callback — DB can be closed and reopened
 - **Localization**: Always add strings to both `app_en.arb` and `app_uk.arb`, then run `flutter gen-l10n`
 - **Cover images**: stored as relative paths (`covers/<name>.jpg`) in documents dir, resolved at runtime by `CoverImageHelper`
