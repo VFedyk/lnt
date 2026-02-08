@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:epub_pro/epub_pro.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import '../models/text_document.dart';
 import '../models/collection.dart';
@@ -239,13 +240,13 @@ class EpubImportService {
 
       // Extract text content from HTML
       final htmlContent = chapter.htmlContent ?? '';
-      final plainText = _htmlToPlainText(htmlContent);
+      final plainText = htmlToPlainText(htmlContent);
 
       if (plainText.trim().isNotEmpty) {
         totalChaptersRef.value++;
 
         // Process and potentially split the chapter
-        final parts = _processChapter(
+        final parts = processChapter(
           title: fullTitle,
           content: plainText,
           chapterIndex: totalChaptersRef.value - 1,
@@ -293,18 +294,19 @@ class EpubImportService {
   }
 
   /// Process a chapter and split if necessary
-  List<ProcessedChapter> _processChapter({
+  @visibleForTesting
+  List<ProcessedChapter> processChapter({
     required String title,
     required String content,
     required int chapterIndex,
   }) {
-    final cleanContent = _cleanContent(content);
+    final cleaned = cleanContent(content);
 
-    if (cleanContent.length <= maxChapterLength) {
+    if (cleaned.length <= maxChapterLength) {
       return [
         ProcessedChapter(
           title: title,
-          content: cleanContent,
+          content: cleaned,
           originalIndex: chapterIndex,
           partNumber: 0,
           totalParts: 1,
@@ -314,7 +316,7 @@ class EpubImportService {
 
     // Content exceeds limit - split at sentence boundaries
     final parts = <ProcessedChapter>[];
-    String remaining = cleanContent;
+    String remaining = cleaned;
     int partNum = 1;
 
     while (remaining.isNotEmpty) {
@@ -330,7 +332,7 @@ class EpubImportService {
       }
 
       // Find split point near maxChapterLength but at sentence end
-      final splitPoint = _findSplitPoint(remaining, maxChapterLength);
+      final splitPoint = findSplitPoint(remaining, maxChapterLength);
 
       parts.add(ProcessedChapter(
         title: '$title (Part $partNum)',
@@ -357,7 +359,8 @@ class EpubImportService {
   }
 
   /// Find a safe split point at a sentence boundary
-  int _findSplitPoint(String text, int targetPosition) {
+  @visibleForTesting
+  int findSplitPoint(String text, int targetPosition) {
     // Sentence-ending punctuation patterns (includes smart quotes)
     final sentenceEnders = RegExp('[.!?]["\u2018\u2019\u201C\u201D]?\\s');
 
@@ -390,7 +393,8 @@ class EpubImportService {
   }
 
   /// Convert HTML content to plain text
-  String _htmlToPlainText(String html) {
+  @visibleForTesting
+  String htmlToPlainText(String html) {
     if (html.isEmpty) return '';
 
     var text = html;
@@ -421,7 +425,7 @@ class EpubImportService {
     text = text.replaceAll(RegExp(r'<[^>]+>'), '');
 
     // Decode HTML entities
-    text = _decodeHtmlEntities(text);
+    text = decodeHtmlEntities(text);
 
     // Normalize whitespace
     text = text.replaceAll(RegExp(r'[ \t]+'), ' ');
@@ -433,7 +437,8 @@ class EpubImportService {
   }
 
   /// Decode common HTML entities
-  String _decodeHtmlEntities(String text) {
+  @visibleForTesting
+  String decodeHtmlEntities(String text) {
     const entities = {
       '&nbsp;': ' ',
       '&amp;': '&',
@@ -488,7 +493,8 @@ class EpubImportService {
   }
 
   /// Clean and normalize content
-  String _cleanContent(String content) {
+  @visibleForTesting
+  String cleanContent(String content) {
     var text = content;
 
     // Normalize whitespace
