@@ -10,7 +10,7 @@ import '../models/language.dart';
 import '../models/text_document.dart';
 import '../models/collection.dart';
 import '../models/term.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../services/import_export_service.dart';
 import '../services/epub_import_service.dart';
 import '../services/text_parser_service.dart';
@@ -219,12 +219,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
 
-    final collections = await DatabaseService.instance.getCollections(
+    final collections = await db.getCollections(
       languageId: widget.language.id!,
       parentId: _currentCollection?.id,
     );
 
-    final texts = await DatabaseService.instance.getTexts(
+    final texts = await db.getTexts(
       languageId: widget.language.id!,
     );
 
@@ -254,7 +254,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (textsToCalculate.isEmpty) return;
 
     // Load terms map
-    final termsMap = await DatabaseService.instance.getTermsMap(
+    final termsMap = await db.getTermsMap(
       widget.language.id!,
     );
 
@@ -417,7 +417,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _recalculateUnknownCountForText(TextDocument text) async {
-    final termsMap = await DatabaseService.instance.getTermsMap(
+    final termsMap = await db.getTermsMap(
       widget.language.id!,
     );
     final newCount = _calculateUnknownCount(text, termsMap);
@@ -434,7 +434,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Future<void> _goBack() async {
     if (_currentCollection != null) {
       if (_currentCollection!.parentId != null) {
-        final parent = await DatabaseService.instance.getCollection(
+        final parent = await db.getCollection(
           _currentCollection!.parentId!,
         );
         setState(() => _currentCollection = parent);
@@ -455,7 +455,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
 
     if (result != null) {
-      await DatabaseService.instance.createCollection(result);
+      await db.createCollection(result);
       _loadData();
     }
   }
@@ -470,7 +470,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
 
     if (result != null) {
-      await DatabaseService.instance.createText(result);
+      await db.createText(result);
       _loadData();
     }
   }
@@ -558,7 +558,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         content: _importService.cleanTextForImport(content),
       );
 
-      await DatabaseService.instance.createText(text);
+      await db.createText(text);
       _loadData();
     }
   }
@@ -671,7 +671,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
 
     if (result != null) {
-      await DatabaseService.instance.createText(result);
+      await db.createText(result);
       _loadData();
     }
   }
@@ -697,7 +697,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
 
     if (confirm == true) {
-      await DatabaseService.instance.deleteText(text.id!);
+      await db.deleteText(text.id!);
       _loadData();
     }
   }
@@ -709,14 +709,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
 
     if (result != null) {
-      await DatabaseService.instance.updateText(result);
+      await db.updateText(result);
       _loadData();
     }
   }
 
   Future<void> _deleteCollection(Collection collection) async {
     final l10n = AppLocalizations.of(context);
-    final textCount = await DatabaseService.instance.getTextCountInCollection(
+    final textCount = await db.getTextCountInCollection(
       collection.id!,
     );
     if (!mounted) return;
@@ -745,7 +745,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
 
     if (confirm == true) {
-      await DatabaseService.instance.deleteCollection(collection.id!);
+      await db.deleteCollection(collection.id!);
       _loadData();
     }
   }
@@ -1390,7 +1390,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       await sourceFile.copy(newPath);
 
       final updatedText = text.copyWith(coverImage: CoverImageHelper.toRelative(newPath));
-      await DatabaseService.instance.updateText(updatedText);
+      await db.updateText(updatedText);
       _loadData();
     }
   }
@@ -1406,7 +1406,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
 
     if (result != null) {
-      await DatabaseService.instance.updateCollection(result);
+      await db.updateCollection(result);
       _loadData();
     }
   }

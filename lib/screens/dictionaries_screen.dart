@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/dictionary.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../widgets/dictionary_dialog.dart';
 
 class _DictionariesScreenConstants {
@@ -41,7 +41,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
 
   Future<void> _loadDictionaries() async {
     setState(() => _isLoading = true);
-    final dicts = await DatabaseService.instance.getDictionaries(
+    final dicts = await db.getDictionaries(
       languageId: widget.language.id!,
     );
     setState(() {
@@ -61,9 +61,9 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
 
     if (result != null) {
       if (dictionary == null) {
-        await DatabaseService.instance.createDictionary(result);
+        await db.createDictionary(result);
       } else {
-        await DatabaseService.instance.updateDictionary(result);
+        await db.updateDictionary(result);
       }
       _loadDictionaries();
     }
@@ -92,14 +92,14 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
     );
 
     if (confirm == true) {
-      await DatabaseService.instance.deleteDictionary(dictionary.id!);
+      await db.deleteDictionary(dictionary.id!);
       _loadDictionaries();
     }
   }
 
   Future<void> _toggleActive(Dictionary dictionary) async {
     final updated = dictionary.copyWith(isActive: !dictionary.isActive);
-    await DatabaseService.instance.updateDictionary(updated);
+    await db.updateDictionary(updated);
     _loadDictionaries();
   }
 
@@ -112,7 +112,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
       _dictionaries.insert(newIndex, item);
     });
 
-    await DatabaseService.instance.reorderDictionaries(_dictionaries);
+    await db.reorderDictionaries(_dictionaries);
     _loadDictionaries();
   }
 

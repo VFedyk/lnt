@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'database_migrations.dart' as migrations;
-import 'settings_service.dart';
+import '../service_locator.dart';
 import '../models/language.dart';
 import '../models/term.dart';
 import '../models/text_document.dart';
@@ -18,9 +18,8 @@ import '../repositories/review_card_repository.dart';
 import '../repositories/review_log_repository.dart';
 
 class DatabaseService {
-  static final DatabaseService instance = DatabaseService._init();
-  static Database? _database;
-  static String? _dbPath;
+  Database? _database;
+  String? _dbPath;
 
   // Repositories
   late final LanguageRepository languages;
@@ -33,7 +32,7 @@ class DatabaseService {
   late final ReviewCardRepository reviewCards;
   late final ReviewLogRepository reviewLogs;
 
-  DatabaseService._init() {
+  DatabaseService() {
     languages = LanguageRepository(() => database);
     texts = TextRepository(() => database);
     terms = TermRepository(() => database);
@@ -54,7 +53,7 @@ class DatabaseService {
   String? get currentDbPath => _dbPath;
 
   Future<Database> _initDB() async {
-    final customPath = await SettingsService.instance.getCustomDbPath();
+    final customPath = await settings.getCustomDbPath();
     if (customPath != null && customPath.isNotEmpty) {
       _dbPath = customPath;
     } else {

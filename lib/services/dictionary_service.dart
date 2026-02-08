@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 // import '../models/language.dart';
 import '../models/dictionary.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../screens/dictionary_webview_screen.dart';
 
 class DictionaryService {
@@ -57,7 +57,7 @@ class DictionaryService {
 
   // Get active dictionaries for a language
   Future<List<Dictionary>> getActiveDictionaries(int languageId) async {
-    return await DatabaseService.instance.getDictionaries(
+    return await db.getDictionaries(
       languageId: languageId,
       activeOnly: true,
     );
@@ -65,7 +65,7 @@ class DictionaryService {
 
   // Get all dictionaries for a language
   Future<List<Dictionary>> getAllDictionaries(int languageId) async {
-    return await DatabaseService.instance.getDictionaries(
+    return await db.getDictionaries(
       languageId: languageId,
     );
   }

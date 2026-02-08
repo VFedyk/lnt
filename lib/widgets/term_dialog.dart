@@ -3,7 +3,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
 import '../models/language.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../services/deepl_service.dart';
 import '../services/libretranslate_service.dart';
 import '../utils/constants.dart';
@@ -94,7 +94,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
 
   Future<void> _loadTranslations() async {
     if (widget.term.id != null) {
-      final translations = await DatabaseService.instance.translations
+      final translations = await db.translations
           .getByTermId(widget.term.id!);
       if (mounted) {
         setState(() {
@@ -130,9 +130,9 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
 
     for (final translationId in baseTranslationIds) {
       if (!_baseTranslations.containsKey(translationId)) {
-        final translation = await DatabaseService.instance.translations.getById(translationId);
+        final translation = await db.translations.getById(translationId);
         if (translation != null && mounted) {
-          final term = await DatabaseService.instance.getTerm(translation.termId);
+          final term = await db.getTerm(translation.termId);
           if (term != null && mounted) {
             setState(() => _baseTranslations[translationId] = (translation: translation, term: term));
           }
@@ -156,7 +156,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     if (selectedTerm == null || !mounted) return;
 
     // Load translations for the selected term
-    var termTranslations = await DatabaseService.instance.translations.getByTermId(selectedTerm.id!);
+    var termTranslations = await db.translations.getByTermId(selectedTerm.id!);
 
     if (!mounted) return;
 
@@ -167,12 +167,12 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
         meaning: selectedTerm.translation,
       );
       // Save the legacy translation to the translations table
-      await DatabaseService.instance.translations.replaceForTerm(
+      await db.translations.replaceForTerm(
         selectedTerm.id!,
         [legacyTranslation],
       );
       // Reload to get the saved translation with its new ID
-      termTranslations = await DatabaseService.instance.translations.getByTermId(selectedTerm.id!);
+      termTranslations = await db.translations.getByTermId(selectedTerm.id!);
       if (!mounted) return;
     }
 
@@ -322,7 +322,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
   }
 
   Future<void> _loadLanguages() async {
-    final languages = await DatabaseService.instance.getLanguages();
+    final languages = await db.getLanguages();
     if (mounted) {
       setState(() => _languages = languages);
     }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../utils/constants.dart';
 import 'flashcard_review_screen.dart';
 import 'statistics_screen.dart';
@@ -37,9 +37,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Future<void> _loadStats() async {
     setState(() => _isLoading = true);
     try {
-      final dueCount = await DatabaseService.instance.reviewCards
+      final dueCount = await db.reviewCards
           .getDueCount(widget.language.id!);
-      final reviewedToday = await DatabaseService.instance.reviewLogs
+      final reviewedToday = await db.reviewLogs
           .getReviewCountToday(widget.language.id!);
 
       if (mounted) {

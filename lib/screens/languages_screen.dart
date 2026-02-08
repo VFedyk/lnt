@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../utils/constants.dart';
 import '../widgets/language_dialog.dart';
 import 'dictionaries_screen.dart';
@@ -27,7 +27,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
 
   Future<void> _loadLanguages() async {
     setState(() => _isLoading = true);
-    final languages = await DatabaseService.instance.getLanguages();
+    final languages = await db.getLanguages();
     setState(() {
       _languages = languages;
       _isLoading = false;
@@ -45,7 +45,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
 
     if (result != null) {
       if (language == null) {
-        final langId = await DatabaseService.instance.createLanguage(result);
+        final langId = await db.createLanguage(result);
         // After creating language, prompt to add dictionaries
         if (mounted) {
           final l10n = AppLocalizations.of(context);
@@ -78,7 +78,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
           }
         }
       } else {
-        await DatabaseService.instance.updateLanguage(result);
+        await db.updateLanguage(result);
       }
       _loadLanguages();
     }
@@ -93,7 +93,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
   }
 
   Future<int> _getDictionaryCount(int languageId) async {
-    final dicts = await DatabaseService.instance.getDictionaries(
+    final dicts = await db.getDictionaries(
       languageId: languageId,
     );
     return dicts.length;
@@ -121,7 +121,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
     );
 
     if (confirm == true) {
-      await DatabaseService.instance.deleteLanguage(language.id!);
+      await db.deleteLanguage(language.id!);
       _loadLanguages();
     }
   }

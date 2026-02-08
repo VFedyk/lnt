@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/term.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../utils/constants.dart';
 
 abstract class _StatisticsConstants {
@@ -47,13 +47,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Future<void> _loadStatistics() async {
     setState(() => _isLoading = true);
     try {
-      final counts = await DatabaseService.instance.getTermCountsByStatus(
+      final counts = await db.getTermCountsByStatus(
         widget.language.id!,
       );
-      final termCount = await DatabaseService.instance.getTotalTermCount(
+      final termCount = await db.getTotalTermCount(
         widget.language.id!,
       );
-      final textCount = await DatabaseService.instance.getTotalTextCount(
+      final textCount = await db.getTotalTextCount(
         widget.language.id!,
       );
 

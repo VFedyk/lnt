@@ -6,7 +6,7 @@ import '../models/text_document.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
 import '../models/word_token.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../services/dictionary_service.dart';
 import '../services/text_parser_service.dart';
 import '../services/isolate_parser.dart';
@@ -116,7 +116,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
 
     try {
-      _termsMap = await DatabaseService.instance.getTermsMap(
+      _termsMap = await db.getTermsMap(
         widget.language.id!,
       );
       // Build termsById map for looking up base terms
@@ -126,7 +126,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       };
       // Preload translations for all terms
       final termIds = _termsMap.values.where((t) => t.id != null).map((t) => t.id!).toList();
-      _translationsMap = await DatabaseService.instance.translations.getByTermIds(termIds);
+      _translationsMap = await db.translations.getByTermIds(termIds);
       // Build translationsById map for looking up base translations
       _translationsById = {
         for (final translations in _translationsMap.values)
@@ -158,7 +158,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ? TextStatus.inProgress
           : _text.status,
     );
-    await DatabaseService.instance.updateText(updatedText);
+    await db.updateText(updatedText);
     _text = updatedText;
   }
 
@@ -194,9 +194,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final lowerText = term.lowerText;
 
     if (term.languageId != widget.language.id) {
-      final lang = await DatabaseService.instance.getLanguage(term.languageId);
+      final lang = await db.getLanguage(term.languageId);
       final termTranslations = term.id != null
-          ? (await DatabaseService.instance.translations.getByTermIds([term.id!]))[term.id!] ?? []
+          ? (await db.translations.getByTermIds([term.id!]))[term.id!] ?? []
           : <Translation>[];
       _otherLanguageTerms[lowerText] = (
         term: term,
@@ -207,7 +207,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       _termsMap.remove(lowerText);
 
       // Persist foreign word assignment so it survives reopening the text
-      await DatabaseService.instance.textForeignWords.saveWords(
+      await db.textForeignWords.saveWords(
         _text.id!,
         term.languageId,
         {lowerText: term.id},
@@ -279,7 +279,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Future<void> _loadForeignWords() async {
-    final records = await DatabaseService.instance.textForeignWords
+    final records = await db.textForeignWords
         .getByTextId(_text.id!);
 
     if (records.isEmpty) {
@@ -296,20 +296,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     // Batch load translations for all referenced terms
     final foreignTranslations = termIds.isNotEmpty
-        ? await DatabaseService.instance.translations.getByTermIds(termIds)
+        ? await db.translations.getByTermIds(termIds)
         : <int, List<Translation>>{};
 
     // Batch load terms by ID
     final foreignTerms = <int, Term>{};
     for (final id in termIds) {
-      final term = await DatabaseService.instance.getTerm(id);
+      final term = await db.getTerm(id);
       if (term != null) foreignTerms[id] = term;
     }
 
     // Cache language names
     final languageNames = <int, String>{};
     for (final langId in languageIds) {
-      final lang = await DatabaseService.instance.getLanguage(langId);
+      final lang = await db.getLanguage(langId);
       languageNames[langId] = lang?.name ?? '';
     }
 
@@ -418,7 +418,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       final info = _otherLanguageTerms[lowerWord]!;
       final shouldRemove = await _showForeignWordPopup(lowerWord, info);
       if (shouldRemove == true) {
-        await DatabaseService.instance.textForeignWords.deleteWord(
+        await db.textForeignWords.deleteWord(
           _text.id!,
           lowerWord,
         );
@@ -447,7 +447,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     // Load translations for this term
     List<Translation> translations = [];
     if (term.id != null) {
-      translations = await DatabaseService.instance.translations.getByTermId(term.id!);
+      translations = await db.translations.getByTermId(term.id!);
     }
     // If no translations in new table, use legacy translation field
     if (translations.isEmpty && term.translation.isNotEmpty) {
@@ -669,13 +669,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
 
       if (dialogResult != null) {
-        await DatabaseService.instance.updateTerm(dialogResult.term);
-        await DatabaseService.instance.translations.replaceForTerm(
+        await db.updateTerm(dialogResult.term);
+        await db.translations.replaceForTerm(
           dialogResult.term.id!,
           dialogResult.translations,
         );
         // Reload translations to get new IDs and update in-memory maps
-        final newTranslations = await DatabaseService.instance.translations
+        final newTranslations = await db.translations
             .getByTermId(dialogResult.term.id!);
         _translationsMap[dialogResult.term.id!] = newTranslations;
         for (final t in newTranslations) {
@@ -684,17 +684,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
         _updateTermInPlace(dialogResult.term);
         // Auto-remove foreign marking if word was previously marked
         if (_otherLanguageTerms.containsKey(lowerWord)) {
-          await DatabaseService.instance.textForeignWords.deleteWord(
+          await db.textForeignWords.deleteWord(
             _text.id!, lowerWord);
           _otherLanguageTerms.remove(lowerWord);
         }
         // Manage review card based on status change
         if (dialogResult.term.status == TermStatus.ignored ||
             dialogResult.term.status == TermStatus.wellKnown) {
-          await DatabaseService.instance.reviewCards
+          await db.reviewCards
               .deleteByTermId(dialogResult.term.id!);
         } else {
-          await DatabaseService.instance.reviewCards
+          await db.reviewCards
               .getOrCreate(dialogResult.term.id!);
         }
       }
@@ -720,14 +720,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
 
       if (dialogResult != null) {
-        final termId = await DatabaseService.instance.createTerm(dialogResult.term);
+        final termId = await db.createTerm(dialogResult.term);
         final termWithId = dialogResult.term.copyWith(id: termId);
-        await DatabaseService.instance.translations.replaceForTerm(
+        await db.translations.replaceForTerm(
           termId,
           dialogResult.translations,
         );
         // Reload translations to get new IDs and update in-memory maps
-        final newTranslations = await DatabaseService.instance.translations
+        final newTranslations = await db.translations
             .getByTermId(termId);
         _translationsMap[termId] = newTranslations;
         for (final t in newTranslations) {
@@ -737,14 +737,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
         _updateTermInPlace(termWithId);
         // Auto-remove foreign marking if word was previously marked
         if (_otherLanguageTerms.containsKey(lowerWord)) {
-          await DatabaseService.instance.textForeignWords.deleteWord(
+          await db.textForeignWords.deleteWord(
             _text.id!, lowerWord);
           _otherLanguageTerms.remove(lowerWord);
         }
         // Create review card for new term (unless ignored or well known)
         if (dialogResult.term.status != TermStatus.ignored &&
             dialogResult.term.status != TermStatus.wellKnown) {
-          await DatabaseService.instance.reviewCards.getOrCreate(termId);
+          await db.reviewCards.getOrCreate(termId);
         }
       }
     }
@@ -772,7 +772,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final l10n = AppLocalizations.of(context);
 
     // Load all languages except current
-    final allLanguages = await DatabaseService.instance.getLanguages();
+    final allLanguages = await db.getLanguages();
     final otherLanguages = allLanguages
         .where((lang) => lang.id != widget.language.id)
         .toList();
@@ -818,7 +818,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         .toList();
 
     // Look up matching terms in target language to resolve term_ids
-    final targetTermsMap = await DatabaseService.instance.getTermsMap(
+    final targetTermsMap = await db.getTermsMap(
       selectedLanguage.id!,
     );
     final wordsWithTermIds = <String, int?>{};
@@ -828,7 +828,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
 
     // Save to DB
-    await DatabaseService.instance.textForeignWords.saveWords(
+    await db.textForeignWords.saveWords(
       _text.id!,
       selectedLanguage.id!,
       wordsWithTermIds,
@@ -931,8 +931,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
 
       if (dialogResult != null) {
-        await DatabaseService.instance.updateTerm(dialogResult.term);
-        await DatabaseService.instance.translations.replaceForTerm(
+        await db.updateTerm(dialogResult.term);
+        await db.translations.replaceForTerm(
           dialogResult.term.id!,
           dialogResult.translations,
         );
@@ -960,15 +960,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
 
       if (dialogResult != null) {
-        final termId = await DatabaseService.instance.createTerm(dialogResult.term);
-        await DatabaseService.instance.translations.replaceForTerm(
+        final termId = await db.createTerm(dialogResult.term);
+        await db.translations.replaceForTerm(
           termId,
           dialogResult.translations,
         );
         // Create review card for new term (unless ignored or well known)
         if (dialogResult.term.status != TermStatus.ignored &&
             dialogResult.term.status != TermStatus.wellKnown) {
-          await DatabaseService.instance.reviewCards.getOrCreate(termId);
+          await db.reviewCards.getOrCreate(termId);
         }
       }
     }
@@ -977,7 +977,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (dialogResult != null) {
       // Remove foreign marking only for the actual saved term text
       if (_otherLanguageTerms.containsKey(lowerWords)) {
-        await DatabaseService.instance.textForeignWords.deleteWord(
+        await db.textForeignWords.deleteWord(
           _text.id!, lowerWords);
       }
       await _loadTermsAndParse();
@@ -994,7 +994,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     if (result != null) {
       final contentChanged = result.content != _text.content;
-      await DatabaseService.instance.updateText(result);
+      await db.updateText(result);
       setState(() {
         _text = result;
       });
@@ -1073,11 +1073,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final existingTerm = _termsMap[lowerWord];
 
         if (existingTerm != null) {
-          await DatabaseService.instance.updateTerm(
+          await db.updateTerm(
             existingTerm.copyWith(status: TermStatus.wellKnown),
           );
         } else {
-          await DatabaseService.instance.createTerm(
+          await db.createTerm(
             Term(
               languageId: widget.language.id!,
               text: word,
@@ -1111,7 +1111,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         : TextStatus.finished;
 
     final updatedText = _text.copyWith(status: newStatus);
-    await DatabaseService.instance.updateText(updatedText);
+    await db.updateText(updatedText);
 
     setState(() {
       _text = updatedText;
@@ -1136,7 +1136,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Future<void> _promptForNextText() async {
-    final textsInCollection = await DatabaseService.instance
+    final textsInCollection = await db
         .getTextsInCollection(_text.collectionId!);
 
     final currentIndex = textsInCollection.indexWhere((t) => t.id == _text.id);
