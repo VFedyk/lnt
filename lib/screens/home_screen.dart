@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../main.dart';
 import '../models/language.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../utils/constants.dart';
 import 'dashboard_tab.dart';
 import 'languages_screen.dart';
@@ -84,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         await Future.delayed(_HomeScreenConstants.appStatePollingInterval);
       }
 
-      final languages = await DatabaseService.instance.getLanguages();
+      final languages = await db.getLanguages();
 
       setState(() {
         _languages = languages;
@@ -111,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       }
 
       final dueCount = _selectedLanguage != null
-          ? await DatabaseService.instance.reviewCards.getDueCount(_selectedLanguage!.id!)
+          ? await db.reviewCards.getDueCount(_selectedLanguage!.id!)
           : 0;
 
       setState(() {
@@ -130,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
   Future<void> _refreshDueCount() async {
     if (_selectedLanguage == null) return;
-    final dueCount = await DatabaseService.instance.reviewCards
+    final dueCount = await db.reviewCards
         .getDueCount(_selectedLanguage!.id!);
     if (mounted && dueCount != _dueCount) {
       setState(() => _dueCount = dueCount);

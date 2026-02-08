@@ -4,7 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/text_document.dart';
 import '../models/term.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../services/text_parser_service.dart';
 import '../models/day_activity.dart';
 import '../utils/constants.dart';
@@ -61,17 +61,17 @@ class _DashboardTabState extends State<DashboardTab> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final recentlyRead = await DatabaseService.instance.getRecentlyReadTexts(
+      final recentlyRead = await db.getRecentlyReadTexts(
         widget.language.id!,
         limit: _DashboardConstants.recentTextsLimit,
       );
-      final recentlyAdded = await DatabaseService.instance
+      final recentlyAdded = await db
           .getRecentlyAddedTexts(widget.language.id!, limit: _DashboardConstants.recentTextsLimit);
-      final counts = await DatabaseService.instance.getTermCountsByStatus(
+      final counts = await db.getTermCountsByStatus(
         widget.language.id!,
       );
 
-      final termsMap = await DatabaseService.instance.getTermsMap(
+      final termsMap = await db.getTermsMap(
         widget.language.id!,
       );
 
@@ -87,7 +87,7 @@ class _DashboardTabState extends State<DashboardTab> {
           .map((t) => t.collectionId!)
           .toSet();
       for (final collectionId in collectionIds) {
-        final collection = await DatabaseService.instance.getCollection(
+        final collection = await db.getCollection(
           collectionId,
         );
         if (collection != null) {
@@ -102,11 +102,11 @@ class _DashboardTabState extends State<DashboardTab> {
       final sinceIso =
           '${sinceDate.year}-${sinceDate.month.toString().padLeft(2, '0')}-${sinceDate.day.toString().padLeft(2, '0')}';
 
-      final wordsAddedByDay = await DatabaseService.instance.terms
+      final wordsAddedByDay = await db.terms
           .getCreatedCountsByDay(widget.language.id!, sinceIso);
-      final textsCompletedByDay = await DatabaseService.instance.texts
+      final textsCompletedByDay = await db.texts
           .getCompletedCountsByDay(widget.language.id!, sinceIso);
-      final wordsReviewedByDay = await DatabaseService.instance.reviewLogs
+      final wordsReviewedByDay = await db.reviewLogs
           .getReviewCountsByDay(widget.language.id!, sinceIso);
 
       final allDates = <String>{

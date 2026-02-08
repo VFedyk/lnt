@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../service_locator.dart';
 import '../services/deepl_service.dart';
 import '../services/libretranslate_service.dart';
-import '../services/settings_service.dart';
 
 enum TranslationProvider { deepL, libreTranslate }
 
@@ -22,8 +22,8 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
   TextEditingController get translationTextController;
 
   Future<void> checkTranslationProviders() async {
-    final hasDeepL = await SettingsService.instance.hasDeepLApiKey();
-    final hasLT = await SettingsService.instance.hasLibreTranslateApiKey();
+    final hasDeepL = await settings.hasDeepLApiKey();
+    final hasLT = await settings.hasLibreTranslateApiKey();
     if (mounted) {
       setState(() {
         _hasDeepL = hasDeepL;
@@ -35,7 +35,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
   Future<void> translateWithProvider(TranslationProvider provider) async {
     setState(() => _isTranslating = true);
 
-    final targetLang = await SettingsService.instance.getDeepLTargetLang();
+    final targetLang = await settings.getDeepLTargetLang();
     String? translation;
 
     if (provider == TranslationProvider.deepL) {
@@ -45,7 +45,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
         setState(() => _isTranslating = false);
         return;
       }
-      translation = await DeepLService.instance.translate(
+      translation = await deepLService.translate(
         text: sourceTextController.text.trim(),
         sourceLang: sourceCode,
         targetLang: targetLang,
@@ -57,7 +57,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
         setState(() => _isTranslating = false);
         return;
       }
-      translation = await LibreTranslateService.instance.translate(
+      translation = await libreTranslateService.translate(
         text: sourceTextController.text.trim(),
         sourceLang: sourceCode,
         targetLang: targetLang.toLowerCase(),

@@ -1,8 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
-  static final SettingsService instance = SettingsService._init();
-  SettingsService._init();
+  SettingsService();
 
   static const String _deepLApiKeyKey = 'deepl_api_key';
   static const String _deepLApiTypeKey = 'deepl_api_type'; // 'free' or 'pro'

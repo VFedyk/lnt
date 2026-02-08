@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'settings_service.dart';
+import '../service_locator.dart';
 
 class LibreTranslateService {
-  static final LibreTranslateService instance = LibreTranslateService._init();
-  LibreTranslateService._init();
+  LibreTranslateService();
 
   /// Translates text using LibreTranslate API
   /// Returns the translated text or null if translation fails
@@ -13,10 +12,10 @@ class LibreTranslateService {
     required String sourceLang,
     required String targetLang,
   }) async {
-    final serverUrl = await SettingsService.instance.getLibreTranslateUrl();
+    final serverUrl = await settings.getLibreTranslateUrl();
     if (serverUrl == null || serverUrl.isEmpty) return null;
 
-    final apiKey = await SettingsService.instance.getLibreTranslateApiKey();
+    final apiKey = await settings.getLibreTranslateApiKey();
 
     try {
       final body = <String, dynamic>{

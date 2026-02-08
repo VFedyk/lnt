@@ -5,8 +5,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/review_card.dart';
 import '../models/term.dart';
-import '../services/database_service.dart';
-import '../services/review_service.dart';
+import '../service_locator.dart';
 import '../utils/constants.dart';
 
 abstract class _FlashcardReviewConstants {
@@ -117,18 +116,18 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
     // Ensure all eligible terms have review cards (lazy seeding)
     await _ensureCardsSeeded();
 
-    final dueCards = await DatabaseService.instance.reviewCards
+    final dueCards = await db.reviewCards
         .getDueCards(widget.language.id!);
 
     // Batch load terms and translations
     final items = <_ReviewItem>[];
     for (final rc in dueCards) {
-      final term = await DatabaseService.instance.getTerm(rc.termId);
+      final term = await db.getTerm(rc.termId);
       if (term == null) continue;
 
       List<Translation> translations = [];
       if (term.id != null) {
-        translations = await DatabaseService.instance.translations
+        translations = await db.translations
             .getByTermId(term.id!);
       }
       // Fallback to legacy translation field
@@ -152,7 +151,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
   Future<void> _ensureCardsSeeded() async {
     setState(() => _isSeeding = true);
 
-    final allTerms = await DatabaseService.instance.getTerms(
+    final allTerms = await db.getTerms(
       languageId: widget.language.id!,
     );
     final eligibleIds = allTerms
@@ -164,7 +163,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
         .toList();
 
     if (eligibleIds.isNotEmpty) {
-      await DatabaseService.instance.reviewCards.ensureCardsExist(eligibleIds);
+      await db.reviewCards.ensureCardsExist(eligibleIds);
     }
 
     if (mounted) {
@@ -176,7 +175,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
     if (_currentIndex >= _dueItems.length) return;
 
     final item = _dueItems[_currentIndex];
-    await ReviewService.instance.reviewTerm(item.reviewCard, rating);
+    await reviewService.reviewTerm(item.reviewCard, rating);
 
     setState(() {
       _reviewedCount++;
@@ -191,7 +190,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
 
     final item = _dueItems[_currentIndex];
     final intervals =
-        ReviewService.instance.getNextIntervals(item.reviewCard.card);
+        reviewService.getNextIntervals(item.reviewCard.card);
 
     setState(() {
       _isAnswerRevealed = true;

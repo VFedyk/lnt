@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'settings_service.dart';
+import '../service_locator.dart';
 
 class DeepLUsage {
   final int characterCount;
@@ -13,8 +13,7 @@ class DeepLUsage {
 }
 
 class DeepLService {
-  static final DeepLService instance = DeepLService._init();
-  DeepLService._init();
+  DeepLService();
 
   static const String _freeApiUrl = 'https://api-free.deepl.com/v2/translate';
   static const String _proApiUrl = 'https://api.deepl.com/v2/translate';
@@ -28,12 +27,12 @@ class DeepLService {
     required String sourceLang,
     required String targetLang,
   }) async {
-    final apiKey = await SettingsService.instance.getDeepLApiKey();
+    final apiKey = await settings.getDeepLApiKey();
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }
 
-    final isFree = await SettingsService.instance.isDeepLApiFree();
+    final isFree = await settings.isDeepLApiFree();
     final apiUrl = isFree ? _freeApiUrl : _proApiUrl;
 
     try {
@@ -65,12 +64,12 @@ class DeepLService {
 
   /// Gets usage statistics from DeepL API
   Future<DeepLUsage?> getUsage() async {
-    final apiKey = await SettingsService.instance.getDeepLApiKey();
+    final apiKey = await settings.getDeepLApiKey();
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }
 
-    final isFree = await SettingsService.instance.isDeepLApiFree();
+    final isFree = await settings.isDeepLApiFree();
     final usageUrl = isFree ? _freeUsageUrl : _proUsageUrl;
 
     try {

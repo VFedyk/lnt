@@ -9,8 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 import 'screens/home_screen.dart';
-import 'services/database_service.dart';
-import 'services/review_service.dart';
+import 'service_locator.dart';
 import 'services/settings_service.dart';
 import 'utils/cover_image_helper.dart';
 import 'utils/helpers.dart';
@@ -26,14 +25,14 @@ void main() async {
     databaseFactory = databaseFactoryFfi;
   }
 
-  await DatabaseService.instance.database;
+  setupServiceLocator();
+  await db.database;
   await CoverImageHelper.initialize();
-  ReviewService.instance.initialize();
+  reviewService.initialize();
 
   if (PlatformHelper.isDesktop) {
     await windowManager.ensureInitialized();
 
-    final settings = SettingsService.instance;
     final width = await settings.getWindowWidth();
     final height = await settings.getWindowHeight();
     final maximized = await settings.getWindowMaximized();
@@ -91,7 +90,7 @@ class _LNTAppState extends State<LNTApp> with WindowListener {
     _resizeDebounce = Timer(const Duration(milliseconds: 500), () async {
       if (await windowManager.isMaximized()) return;
       final size = await windowManager.getSize();
-      await SettingsService.instance.saveWindowState(
+      await settings.saveWindowState(
         width: size.width,
         height: size.height,
         isMaximized: false,
@@ -101,7 +100,7 @@ class _LNTAppState extends State<LNTApp> with WindowListener {
 
   @override
   void onWindowMaximize() {
-    SettingsService.instance.saveWindowState(
+    settings.saveWindowState(
       width: SettingsService.defaultWindowWidth,
       height: SettingsService.defaultWindowHeight,
       isMaximized: true,
@@ -111,7 +110,7 @@ class _LNTAppState extends State<LNTApp> with WindowListener {
   @override
   void onWindowUnmaximize() async {
     final size = await windowManager.getSize();
-    await SettingsService.instance.saveWindowState(
+    await settings.saveWindowState(
       width: size.width,
       height: size.height,
       isMaximized: false,

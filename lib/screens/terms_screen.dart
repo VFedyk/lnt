@@ -5,7 +5,7 @@ import 'dart:io';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/term.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../services/import_export_service.dart';
 import '../utils/constants.dart';
 import '../widgets/term_dialog.dart';
@@ -43,12 +43,12 @@ class _TermsScreenState extends State<TermsScreen> {
 
   Future<void> _loadTerms() async {
     setState(() => _isLoading = true);
-    final terms = await DatabaseService.instance.getTerms(
+    final terms = await db.getTerms(
       languageId: widget.language.id!,
     );
     // Batch load translations for all terms
     final termIds = terms.where((t) => t.id != null).map((t) => t.id!).toList();
-    final translationsMap = await DatabaseService.instance.translations.getByTermIds(termIds);
+    final translationsMap = await db.translations.getByTermIds(termIds);
     setState(() {
       _terms = terms;
       _translationsMap = translationsMap;
@@ -124,7 +124,7 @@ class _TermsScreenState extends State<TermsScreen> {
         );
 
         for (final term in importedTerms) {
-          await DatabaseService.instance.createTerm(term);
+          await db.createTerm(term);
         }
 
         _loadTerms();
@@ -145,7 +145,7 @@ class _TermsScreenState extends State<TermsScreen> {
   }
 
   Future<void> _deleteTerm(Term term) async {
-    await DatabaseService.instance.deleteTerm(term.id!);
+    await db.deleteTerm(term.id!);
     _loadTerms();
   }
 
@@ -163,8 +163,8 @@ class _TermsScreenState extends State<TermsScreen> {
     );
 
     if (dialogResult != null) {
-      await DatabaseService.instance.updateTerm(dialogResult.term);
-      await DatabaseService.instance.translations.replaceForTerm(
+      await db.updateTerm(dialogResult.term);
+      await db.translations.replaceForTerm(
         dialogResult.term.id!,
         dialogResult.translations,
       );

@@ -8,8 +8,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:icloud_storage/icloud_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'database_service.dart';
-import 'settings_service.dart';
+import '../service_locator.dart';
 
 const _backupFileName = 'lnt_backup.zip';
 const _icloudContainerId = 'iCloud.lnt-db-backup';
@@ -17,8 +16,7 @@ const _dbEntryName = 'lnt.db';
 const _coversDirName = 'covers';
 
 class BackupService {
-  static final BackupService instance = BackupService._();
-  BackupService._();
+  BackupService();
 
   static const _driveScopes = [drive.DriveApi.driveFileScope];
   bool _googleSignInInitialized = false;
@@ -26,8 +24,8 @@ class BackupService {
   // ── helpers ──
 
   Future<String> _getDbPath() async {
-    await DatabaseService.instance.database;
-    return DatabaseService.instance.currentDbPath!;
+    await db.database;
+    return db.currentDbPath!;
   }
 
   Future<String> _getCoversDir() async {
@@ -75,7 +73,7 @@ class BackupService {
     final dbEntry = archive.findFile(_dbEntryName);
     if (dbEntry == null) throw Exception('Backup archive has no database');
 
-    await DatabaseService.instance.closeDatabase();
+    await db.closeDatabase();
     final dbDir = Directory(dbPath).parent;
     if (!await dbDir.exists()) {
       await dbDir.create(recursive: true);
@@ -99,7 +97,7 @@ class BackupService {
     }
 
     // Reopen the database so the app can continue without restart
-    await DatabaseService.instance.database;
+    await db.database;
   }
 
   // ── Google Drive ──
@@ -145,7 +143,7 @@ class BackupService {
     }
 
     final now = DateTime.now();
-    await SettingsService.instance.setGoogleDriveLastBackup(now);
+    await settings.setGoogleDriveLastBackup(now);
     return now;
   }
 
@@ -193,7 +191,7 @@ class BackupService {
     } catch (_) {
       // Fall back to local timestamp
     }
-    return SettingsService.instance.getGoogleDriveLastBackup();
+    return settings.getGoogleDriveLastBackup();
   }
 
   // ── iCloud ──
@@ -205,7 +203,7 @@ class BackupService {
       filePath: archive.path,
       destinationRelativePath: _backupFileName,
     );
-    await SettingsService.instance.setICloudLastBackup(DateTime.now());
+    await settings.setICloudLastBackup(DateTime.now());
   }
 
   Future<void> restoreFromICloud() async {
@@ -269,6 +267,6 @@ class BackupService {
     } catch (_) {
       // Fall back to local timestamp
     }
-    return SettingsService.instance.getICloudLastBackup();
+    return settings.getICloudLastBackup();
   }
 }

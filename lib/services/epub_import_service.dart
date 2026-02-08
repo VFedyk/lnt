@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/text_document.dart';
 import '../models/collection.dart';
 import '../utils/cover_image_helper.dart';
-import 'database_service.dart';
+import '../service_locator.dart';
 
 /// Result of an EPUB import operation
 class EpubImportResult {
@@ -77,7 +77,7 @@ class EpubImportService {
       parentId: parentCollectionId,
     );
 
-    final collectionId = await DatabaseService.instance.createCollection(collection);
+    final collectionId = await db.createCollection(collection);
 
     // Extract and save cover image
     final coverImagePath = await _extractCoverImage(epubBook, collectionId);
@@ -87,7 +87,7 @@ class EpubImportService {
         id: collectionId,
         coverImage: coverImagePath,
       );
-      await DatabaseService.instance.updateCollection(updatedCollection);
+      await db.updateCollection(updatedCollection);
     }
 
     try {
@@ -135,7 +135,7 @@ class EpubImportService {
 
       // Batch insert all texts
       if (textsToCreate.isNotEmpty) {
-        await DatabaseService.instance.batchCreateTexts(textsToCreate);
+        await db.batchCreateTexts(textsToCreate);
       }
 
       return EpubImportResult(
@@ -150,7 +150,7 @@ class EpubImportService {
       );
     } catch (e) {
       // If import fails, delete the created collection
-      await DatabaseService.instance.deleteCollection(collectionId);
+      await db.deleteCollection(collectionId);
       rethrow;
     }
   }

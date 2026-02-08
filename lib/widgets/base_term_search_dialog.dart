@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stemmer/stemmer.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/term.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../utils/constants.dart';
 import 'translation_mixin.dart';
 
@@ -84,7 +84,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
 
     setState(() => _isSearching = true);
 
-    final results = await DatabaseService.instance.searchTerms(
+    final results = await db.searchTerms(
       widget.languageId,
       query.trim(),
     );
@@ -106,7 +106,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
           .map((t) => t.id!)
           .toList();
       final translations = termIds.isNotEmpty
-          ? await DatabaseService.instance.translations.getByTermIds(termIds)
+          ? await db.translations.getByTermIds(termIds)
           : <int, List<Translation>>{};
 
       if (!mounted) return;
@@ -130,7 +130,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
       translation: _translationController.text.trim(),
     );
 
-    final id = await DatabaseService.instance.createTerm(newTerm);
+    final id = await db.createTerm(newTerm);
     final createdTerm = newTerm.copyWith(id: id);
 
     if (mounted) {

@@ -5,9 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../main.dart';
-import '../services/database_service.dart';
+import '../service_locator.dart';
 import '../services/settings_service.dart';
-import '../services/backup_service.dart';
 import '../services/deepl_service.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
@@ -91,22 +90,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadSettings() async {
-    final apiKey = await SettingsService.instance.getDeepLApiKey();
-    final isFree = await SettingsService.instance.isDeepLApiFree();
-    final targetLang = await SettingsService.instance.getDeepLTargetLang();
+    final apiKey = await settings.getDeepLApiKey();
+    final isFree = await settings.isDeepLApiFree();
+    final targetLang = await settings.getDeepLTargetLang();
 
     // LibreTranslate settings
-    final ltUrl = await SettingsService.instance.getLibreTranslateUrl();
-    final ltApiKey = await SettingsService.instance.getLibreTranslateApiKey();
+    final ltUrl = await settings.getLibreTranslateUrl();
+    final ltApiKey = await settings.getLibreTranslateApiKey();
 
     // Load DB path on desktop
     String? dbPath;
     if (_isDesktop) {
-      await DatabaseService.instance.database; // ensure initialized
-      dbPath = DatabaseService.instance.currentDbPath;
+      await db.database; // ensure initialized
+      dbPath = db.currentDbPath;
     }
 
-    final icloudBackup = await BackupService.instance.getICloudBackupDate();
+    final icloudBackup = await backupService.getICloudBackupDate();
 
     if (mounted) {
       setState(() {
@@ -129,7 +128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadUsage() async {
     setState(() => _isLoadingUsage = true);
-    final usage = await DeepLService.instance.getUsage();
+    final usage = await deepLService.getUsage();
     if (mounted) {
       setState(() {
         _usage = usage;
@@ -139,15 +138,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _saveSettings() async {
-    await SettingsService.instance.setDeepLApiKey(
+    await settings.setDeepLApiKey(
       _apiKeyController.text.trim(),
     );
-    await SettingsService.instance.setDeepLApiFree(_isApiFree);
-    await SettingsService.instance.setDeepLTargetLang(_targetLang);
-    await SettingsService.instance.setLibreTranslateUrl(
+    await settings.setDeepLApiFree(_isApiFree);
+    await settings.setDeepLTargetLang(_targetLang);
+    await settings.setLibreTranslateUrl(
       _ltUrlController.text.trim(),
     );
-    await SettingsService.instance.setLibreTranslateApiKey(
+    await settings.setLibreTranslateApiKey(
       _ltApiKeyController.text.trim(),
     );
 
@@ -352,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final newPath = result.files.single.path;
     if (newPath == null) return;
 
-    await SettingsService.instance.setCustomDbPath(newPath);
+    await settings.setCustomDbPath(newPath);
 
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
@@ -445,7 +444,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _backupToICloud() async {
     setState(() => _isBackingUp = true);
     try {
-      await BackupService.instance.backupToICloud();
+      await backupService.backupToICloud();
       final date = DateTime.now();
       if (mounted) {
         setState(() {
@@ -475,7 +474,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirmed != true) return;
     setState(() => _isRestoring = true);
     try {
-      await BackupService.instance.restoreFromICloud();
+      await backupService.restoreFromICloud();
       if (mounted) {
         _showRestoreSuccess();
       }

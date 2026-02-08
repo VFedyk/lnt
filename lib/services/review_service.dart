@@ -2,11 +2,10 @@ import 'dart:convert';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import '../models/review_card.dart';
 import '../models/term.dart';
-import 'database_service.dart';
+import '../service_locator.dart';
 
 class ReviewService {
-  static final ReviewService instance = ReviewService._init();
-  ReviewService._init();
+  ReviewService();
 
   late final fsrs.Scheduler _scheduler;
 
@@ -31,7 +30,7 @@ class ReviewService {
     final now = DateTime.now().toUtc();
 
     // Save review log
-    await DatabaseService.instance.reviewLogs.create(
+    await db.reviewLogs.create(
       record.termId,
       jsonEncode(reviewLog.toMap()),
       now,
@@ -46,12 +45,12 @@ class ReviewService {
       createdAt: record.createdAt,
       updatedAt: now,
     );
-    await DatabaseService.instance.reviewCards.update(updatedRecord);
+    await db.reviewCards.update(updatedRecord);
 
     // Update term status
-    final term = await DatabaseService.instance.getTerm(record.termId);
+    final term = await db.getTerm(record.termId);
     if (term != null && term.status != TermStatus.ignored) {
-      await DatabaseService.instance.updateTerm(
+      await db.updateTerm(
         term.copyWith(status: newStatus, lastAccessed: DateTime.now()),
       );
     }
