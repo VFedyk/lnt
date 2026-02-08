@@ -60,9 +60,7 @@ class BackupService {
       }
     }
 
-    final encoded = ZipEncoder().encode(archive);
-    if (encoded == null) throw Exception('Failed to create backup archive');
-    await archiveFile.writeAsBytes(encoded);
+    await archiveFile.writeAsBytes(ZipEncoder().encode(archive));
     return archiveFile;
   }
 

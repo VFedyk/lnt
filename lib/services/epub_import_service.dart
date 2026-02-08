@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:epubx/epubx.dart';
+import 'package:epub_pro/epub_pro.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/text_document.dart';
 import '../models/collection.dart';
@@ -65,8 +65,8 @@ class EpubImportService {
       throw EpubImportException('Failed to parse EPUB file: $e');
     }
 
-    final title = epubBook.Title ?? 'Unknown Title';
-    final author = epubBook.Author;
+    final title = epubBook.title ?? 'Unknown Title';
+    final author = epubBook.author;
     final warnings = <String>[];
 
     // Create collection for the book
@@ -92,8 +92,8 @@ class EpubImportService {
 
     try {
       // Process chapters
-      final chapters = epubBook.Chapters;
-      if (chapters == null || chapters.isEmpty) {
+      final chapters = epubBook.chapters;
+      if (chapters.isEmpty) {
         warnings.add('No chapters found in EPUB');
         return EpubImportResult(
           collectionId: collectionId,
@@ -159,12 +159,12 @@ class EpubImportService {
   Future<String?> _extractCoverImage(EpubBook epubBook, int collectionId) async {
     try {
       // Try to find cover image in EPUB content
-      final content = epubBook.Content;
-      if (content == null || content.Images == null || content.Images!.isEmpty) {
+      final content = epubBook.content;
+      if (content == null || content.images.isEmpty) {
         return null;
       }
 
-      final images = content.Images!;
+      final images = content.images;
       EpubByteContentFile? coverFile;
 
       // Look for common cover image patterns in filenames
@@ -181,13 +181,13 @@ class EpubImportService {
       // If still not found, just take the first image
       coverFile ??= images.values.first;
 
-      if (coverFile.Content == null) {
+      if (coverFile.content == null) {
         return null;
       }
 
       // Determine file extension from filename
       String extension = 'jpg';
-      final fileName = coverFile.FileName?.toLowerCase() ?? '';
+      final fileName = coverFile.fileName?.toLowerCase() ?? '';
 
       if (fileName.endsWith('.png')) {
         extension = 'png';
@@ -208,7 +208,7 @@ class EpubImportService {
 
       final coverPath = '${coverDir.path}/cover_$collectionId.$extension';
       final file = File(coverPath);
-      await file.writeAsBytes(coverFile.Content!);
+      await file.writeAsBytes(coverFile.content!);
 
       return CoverImageHelper.toRelative(coverPath);
     } catch (e) {
@@ -232,13 +232,13 @@ class EpubImportService {
     String titlePrefix = '',
   }) async {
     for (final chapter in chapters) {
-      final chapterTitle = chapter.Title ?? 'Chapter ${totalChaptersRef.value + 1}';
+      final chapterTitle = chapter.title ?? 'Chapter ${totalChaptersRef.value + 1}';
       final fullTitle = titlePrefix.isNotEmpty
           ? '$titlePrefix - $chapterTitle'
           : chapterTitle;
 
       // Extract text content from HTML
-      final htmlContent = chapter.HtmlContent ?? '';
+      final htmlContent = chapter.htmlContent ?? '';
       final plainText = _htmlToPlainText(htmlContent);
 
       if (plainText.trim().isNotEmpty) {
@@ -273,9 +273,9 @@ class EpubImportService {
       }
 
       // Process subchapters recursively
-      if (chapter.SubChapters != null && chapter.SubChapters!.isNotEmpty) {
+      if (chapter.subChapters.isNotEmpty) {
         await _processChaptersRecursively(
-          chapters: chapter.SubChapters!,
+          chapters: chapter.subChapters,
           languageId: languageId,
           collectionId: collectionId,
           sourceUri: sourceUri,
@@ -445,21 +445,21 @@ class EpubImportService {
       '&mdash;': '—',
       '&ndash;': '–',
       '&hellip;': '…',
-      '&ldquo;': '"',
-      '&rdquo;': '"',
-      '&lsquo;': ''',
-      '&rsquo;': ''',
-      '&copy;': '©',
-      '&reg;': '®',
-      '&trade;': '™',
-      '&deg;': '°',
-      '&plusmn;': '±',
-      '&times;': '×',
-      '&divide;': '÷',
-      '&euro;': '€',
-      '&pound;': '£',
-      '&yen;': '¥',
-      '&cent;': '¢',
+      '&ldquo;': '\u201C',
+      '&rdquo;': '\u201D',
+      '&lsquo;': '\u2018',
+      '&rsquo;': '\u2019',
+      '&copy;': '\u00A9',
+      '&reg;': '\u00AE',
+      '&trade;': '\u2122',
+      '&deg;': '\u00B0',
+      '&plusmn;': '\u00B1',
+      '&times;': '\u00D7',
+      '&divide;': '\u00F7',
+      '&euro;': '\u20AC',
+      '&pound;': '\u00A3',
+      '&yen;': '\u00A5',
+      '&cent;': '\u00A2',
     };
 
     var result = text;
