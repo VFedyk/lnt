@@ -118,6 +118,31 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
     }
   }
 
+  Future<void> _addTranslationToTerm(Term term) async {
+    if (term.id == null) return;
+
+    final result = await showDialog<Translation>(
+      context: context,
+      builder: (ctx) => _AddTranslationDialog(
+        term: term,
+        languageName: widget.languageName,
+      ),
+    );
+
+    if (result == null || !mounted) return;
+
+    final saved = result.copyWith(termId: term.id!);
+    await db.translations.create(saved);
+
+    // Refresh translations for this term
+    final updated = await db.translations.getByTermId(term.id!);
+    if (mounted) {
+      setState(() {
+        _translationsMap[term.id!] = updated;
+      });
+    }
+  }
+
   Future<void> _createNewBaseTerm() async {
     final termText = _searchController.text.trim().toLowerCase();
     if (termText.isEmpty) return;
@@ -190,6 +215,11 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                         leading: CircleAvatar(
                           backgroundColor: term.statusColor,
                           radius: _BaseTermSearchConstants.statusAvatarRadius,
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.add, size: AppConstants.iconSizeS),
+                          tooltip: l10n.addTranslation,
+                          onPressed: () => _addTranslationToTerm(term),
                         ),
                         onTap: () => Navigator.pop(context, term),
                       );
@@ -282,6 +312,151 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(l10n.cancel),
+        ),
+      ],
+    );
+  }
+}
+
+/// Compact dialog for adding a translation to an existing term.
+class _AddTranslationDialog extends StatefulWidget {
+  final Term term;
+  final String languageName;
+
+  const _AddTranslationDialog({
+    required this.term,
+    required this.languageName,
+  });
+
+  @override
+  State<_AddTranslationDialog> createState() => _AddTranslationDialogState();
+}
+
+class _AddTranslationDialogState extends State<_AddTranslationDialog>
+    with TranslationMixin {
+  final _meaningController = TextEditingController();
+  final _sourceController = TextEditingController();
+  String? _partOfSpeech;
+
+  @override
+  String get languageName => widget.languageName;
+
+  @override
+  TextEditingController get sourceTextController => _sourceController;
+
+  @override
+  TextEditingController get translationTextController => _meaningController;
+
+  @override
+  void initState() {
+    super.initState();
+    _sourceController.text = widget.term.lowerText;
+    checkTranslationProviders();
+  }
+
+  @override
+  void dispose() {
+    _meaningController.dispose();
+    _sourceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l10n.addTranslation),
+      content: SizedBox(
+        width: AppConstants.dialogWidth,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.term.lowerText,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: AppConstants.fontSizeTitle,
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacingM),
+            TextField(
+              controller: _meaningController,
+              decoration: InputDecoration(
+                labelText: l10n.meaning,
+                border: const OutlineInputBorder(),
+                suffixIcon: hasAnyTranslationProvider
+                    ? isTranslating
+                        ? const SizedBox(
+                            width: _BaseTermSearchConstants.progressSizeSmall,
+                            height: _BaseTermSearchConstants.progressSizeSmall,
+                            child: CircularProgressIndicator(
+                              strokeWidth: AppConstants.progressStrokeWidth,
+                            ),
+                          )
+                        : IconButton(
+                            icon: const Icon(
+                              Icons.translate,
+                              size: AppConstants.progressIndicatorSize,
+                            ),
+                            tooltip: hasDeepL
+                                ? l10n.translateWithDeepL
+                                : l10n.translateWithLibreTranslate,
+                            onPressed: () => translateWithProvider(
+                              hasDeepL
+                                  ? TranslationProvider.deepL
+                                  : TranslationProvider.libreTranslate,
+                            ),
+                          )
+                    : null,
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: AppConstants.spacingM),
+            DropdownButtonFormField<String?>(
+              initialValue: _partOfSpeech,
+              decoration: InputDecoration(
+                labelText: l10n.partOfSpeech,
+                border: const OutlineInputBorder(),
+              ),
+              items: [
+                DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text(
+                    '\u2014',
+                    style: TextStyle(color: AppConstants.subtitleColor),
+                  ),
+                ),
+                ...PartOfSpeech.all.map(
+                  (pos) => DropdownMenuItem(
+                    value: pos,
+                    child: Text(PartOfSpeech.localizedNameFor(pos, l10n)),
+                  ),
+                ),
+              ],
+              onChanged: (value) => setState(() => _partOfSpeech = value),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          onPressed: () {
+            final meaning = _meaningController.text.trim();
+            if (meaning.isEmpty) return;
+            Navigator.pop(
+              context,
+              Translation(
+                termId: widget.term.id ?? 0,
+                meaning: meaning,
+                partOfSpeech: _partOfSpeech,
+              ),
+            );
+          },
+          child: Text(l10n.save),
         ),
       ],
     );
