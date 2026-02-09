@@ -68,7 +68,7 @@ flutter build macos          # Build macOS
 
 ## CI/CD
 
-- **GitHub Actions**: `.github/workflows/ci.yml` — runs `flutter analyze` and `flutter test` on push/PR to main
+- **GitHub Actions**: `.github/workflows/ci.yml` — runs `flutter analyze` and `flutter test` on push/PR to main; only triggers on changes to `lib/`, `test/`, platform dirs, or `pubspec.*`
 - Xcode Cloud: `ios/ci_scripts/ci_post_clone.sh` and `macos/ci_scripts/ci_post_clone.sh`
 - macOS ephemeral xcfilelists must be committed (excluded from gitignore via negation pattern)
 
