@@ -1,15 +1,13 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../controllers/reader_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/text_document.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
-import '../models/word_token.dart';
 import '../service_locator.dart';
 import '../services/dictionary_service.dart';
-import '../services/text_parser_service.dart';
-import '../services/isolate_parser.dart';
 import '../widgets/term_dialog.dart';
 import '../widgets/status_legend.dart';
 import '../widgets/edit_text_dialog.dart';
@@ -20,7 +18,6 @@ import '../utils/constants.dart';
 /// Layout, sizing, and timing constants for the reader screen
 abstract class _ReaderScreenConstants {
   // Font sizes
-  static const double defaultFontSize = 18.0;
   static const double fontSizeMin = 12.0;
   static const double fontSizeMax = 32.0;
   static const int fontSizeSliderDivisions = 20;
@@ -33,49 +30,37 @@ abstract class _ReaderScreenConstants {
   static const Color selectionAccentColor = Colors.blue;
 }
 
-class ReaderScreen extends StatefulWidget {
+class ReaderScreen extends StatelessWidget {
   final TextDocument text;
   final Language language;
 
   const ReaderScreen({super.key, required this.text, required this.language});
 
   @override
-  State<ReaderScreen> createState() => _ReaderScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => ReaderController(text: text, language: language),
+      child: const _ReaderScreenBody(),
+    );
+  }
 }
 
-class _ReaderScreenState extends State<ReaderScreen> {
+class _ReaderScreenBody extends StatefulWidget {
+  const _ReaderScreenBody();
+
+  @override
+  State<_ReaderScreenBody> createState() => _ReaderScreenBodyState();
+}
+
+class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
   final _scrollController = ScrollController();
-  final _textParser = TextParserService();
   final _dictService = DictionaryService();
-
-  late TextDocument _text;
-  Map<String, Term> _termsMap = {};
-  Map<int, Term> _termsById = {};
-  Map<int, List<Translation>> _translationsMap = {};
-  Map<int, Translation> _translationsById = {};
-  Map<String, ({Term? term, List<Translation> translations, String languageName, int languageId})> _otherLanguageTerms = {};
-  List<WordToken> _wordTokens = [];
-  List<List<WordToken>> _paragraphs = [];
-  bool _isLoading = true;
-  bool _showLegend = false;
-  double _fontSize = _ReaderScreenConstants.defaultFontSize;
-
-  // Multi-word selection state
-  final Set<int> _selectedWordIndices = {};
-  bool _isSelectionMode = false;
-
-  // Term counts by status
-  Map<int, int> _termCounts = {};
-
-  // Sidebar
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _loadScheduled = false;
 
   @override
   void initState() {
     super.initState();
-    _text = widget.text;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_loadScheduled) {
         _loadScheduled = true;
@@ -84,17 +69,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   void _waitForAnimationAndLoad() {
     final route = ModalRoute.of(context);
     final animation = route?.animation;
 
     if (animation == null || animation.isCompleted) {
-      _loadTermsAndParse();
+      _loadData();
     } else {
       void onComplete(AnimationStatus status) {
         if (status == AnimationStatus.completed) {
           animation.removeStatusListener(onComplete);
-          if (mounted) _loadTermsAndParse();
+          if (mounted) _loadData();
         }
       }
 
@@ -102,46 +93,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  // --- Data loading & parsing ---
-
-  Future<void> _loadTermsAndParse() async {
-    if (!_isLoading) {
-      setState(() => _isLoading = true);
-    }
-
+  Future<void> _loadData() async {
     try {
-      _termsMap = await db.getTermsMap(
-        widget.language.id!,
-      );
-      // Build termsById map for looking up base terms
-      _termsById = {
-        for (final term in _termsMap.values)
-          if (term.id != null) term.id!: term,
-      };
-      // Preload translations for all terms
-      final termIds = _termsMap.values.where((t) => t.id != null).map((t) => t.id!).toList();
-      _translationsMap = await db.translations.getByTermIds(termIds);
-      // Build translationsById map for looking up base translations
-      _translationsById = {
-        for (final translations in _translationsMap.values)
-          for (final t in translations)
-            if (t.id != null) t.id!: t,
-      };
-
-      await _parseTextAsync();
-      await _loadForeignWords();
-      _updateTextTermCounts();
-
-      setState(() => _isLoading = false);
-      _updateLastRead();
+      await context.read<ReaderController>().loadTermsAndParse();
     } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -151,309 +106,60 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-  Future<void> _updateLastRead() async {
-    final updatedText = _text.copyWith(
-      lastRead: DateTime.now(),
-      status: _text.status == TextStatus.pending
-          ? TextStatus.inProgress
-          : _text.status,
-    );
-    await db.updateText(updatedText);
-    _text = updatedText;
-  }
-
-  bool _hasTranslations(Term term) {
-    if (term.translation.isNotEmpty) return true;
-    if (term.id == null) return false;
-    final translations = _translationsMap[term.id!];
-    return translations != null && translations.isNotEmpty;
-  }
-
-  void _updateTextTermCounts() {
-    final counts = <int, int>{};
-    final seenWords = <String>{};
-
-    for (final token in _wordTokens) {
-      if (!token.isWord) continue;
-
-      final normalized = token.text.toLowerCase();
-      if (seenWords.contains(normalized)) continue;
-      seenWords.add(normalized);
-
-      if (_otherLanguageTerms.containsKey(normalized)) continue;
-
-      final term = _termsMap[normalized];
-      final status = term?.status ?? TermStatus.unknown;
-      counts[status] = (counts[status] ?? 0) + 1;
-    }
-
-    _termCounts = counts;
-  }
-
-  Future<void> _updateTermInPlace(Term term) async {
-    final lowerText = term.lowerText;
-
-    if (term.languageId != widget.language.id) {
-      final lang = await db.getLanguage(term.languageId);
-      final termTranslations = term.id != null
-          ? (await db.translations.getByTermIds([term.id!]))[term.id!] ?? []
-          : <Translation>[];
-      _otherLanguageTerms[lowerText] = (
-        term: term,
-        translations: termTranslations,
-        languageName: lang?.name ?? '',
-        languageId: term.languageId,
-      );
-      _termsMap.remove(lowerText);
-
-      // Persist foreign word assignment so it survives reopening the text
-      await db.textForeignWords.saveWords(
-        _text.id!,
-        term.languageId,
-        {lowerText: term.id},
-      );
-
-      _wordTokens = _wordTokens.map((token) {
-        if (token.isWord && token.text.toLowerCase() == lowerText) {
-          return WordToken(
-            text: token.text,
-            isWord: true,
-            term: null,
-            position: token.position,
-          );
-        }
-        return token;
-      }).toList();
-    } else {
-      _termsMap[lowerText] = term;
-
-      _wordTokens = _wordTokens.map((token) {
-        if (token.isWord && token.text.toLowerCase() == lowerText) {
-          return WordToken(
-            text: token.text,
-            isWord: true,
-            term: term,
-            position: token.position,
-          );
-        }
-        return token;
-      }).toList();
-    }
-
-    _groupIntoParagraphs();
-    _updateTextTermCounts();
-    setState(() {});
-  }
-
-  Future<void> _parseTextAsync() async {
-    final termsMapData = <String, Map<String, dynamic>>{};
-    for (final entry in _termsMap.entries) {
-      termsMapData[entry.key] = {
-        'text': entry.value.text,
-        'status': entry.value.status,
-      };
-    }
-
-    final input = ParseInput(
-      content: _text.content,
-      splitByCharacter: widget.language.splitByCharacter,
-      characterSubstitutions: widget.language.characterSubstitutions,
-      regexpWordCharacters: widget.language.regexpWordCharacters,
-      termsMapData: termsMapData,
-    );
-
-    final parsedTokens = await compute(parseInIsolate, input);
-
-    if (!mounted) return;
-
-    _wordTokens = parsedTokens.map((pt) {
-      return WordToken(
-        text: pt.text,
-        isWord: pt.isWord,
-        position: pt.position,
-        term: pt.termLowerText != null ? _termsMap[pt.termLowerText] : null,
-      );
-    }).toList();
-
-    _groupIntoParagraphs();
-  }
-
-  Future<void> _loadForeignWords() async {
-    final records = await db.textForeignWords
-        .getByTextId(_text.id!);
-
-    if (records.isEmpty) {
-      _otherLanguageTerms = {};
-      return;
-    }
-
-    // Collect term IDs and language IDs for batch loading
-    final termIds = records
-        .where((r) => r.termId != null)
-        .map((r) => r.termId!)
-        .toList();
-    final languageIds = records.map((r) => r.languageId).toSet();
-
-    // Batch load translations for all referenced terms
-    final foreignTranslations = termIds.isNotEmpty
-        ? await db.translations.getByTermIds(termIds)
-        : <int, List<Translation>>{};
-
-    // Batch load terms by ID
-    final foreignTerms = <int, Term>{};
-    for (final id in termIds) {
-      final term = await db.getTerm(id);
-      if (term != null) foreignTerms[id] = term;
-    }
-
-    // Cache language names
-    final languageNames = <int, String>{};
-    for (final langId in languageIds) {
-      final lang = await db.getLanguage(langId);
-      languageNames[langId] = lang?.name ?? '';
-    }
-
-    // Build the map
-    final result = <String, ({Term? term, List<Translation> translations, String languageName, int languageId})>{};
-    for (final record in records) {
-      final term = record.termId != null ? foreignTerms[record.termId!] : null;
-      final translations = record.termId != null
-          ? (foreignTranslations[record.termId!] ?? <Translation>[])
-          : <Translation>[];
-      result[record.lowerText] = (
-        term: term,
-        translations: translations,
-        languageName: languageNames[record.languageId] ?? '',
-        languageId: record.languageId,
-      );
-    }
-
-    _otherLanguageTerms = result;
-  }
-
-  void _groupIntoParagraphs() {
-    _wordTokens = [
-      for (int i = 0; i < _wordTokens.length; i++)
-        _wordTokens[i].copyWithIndex(i),
-    ];
-
-    _paragraphs = [];
-    List<WordToken> currentParagraph = [];
-
-    for (final token in _wordTokens) {
-      if (!token.isWord && token.text.contains('\n')) {
-        final nlIndex = token.text.indexOf('\n');
-        final before = token.text.substring(0, nlIndex);
-        final nlPart = token.text.substring(nlIndex);
-
-        if (before.isNotEmpty) {
-          currentParagraph.add(
-            WordToken(
-              text: before,
-              isWord: false,
-              globalIndex: token.globalIndex,
-            ),
-          );
-        }
-
-        if (currentParagraph.isNotEmpty) {
-          _paragraphs.add(currentParagraph);
-          currentParagraph = [];
-        }
-
-        final lastNl = nlPart.lastIndexOf('\n');
-        final pureNl = nlPart.substring(0, lastNl + 1);
-        final after = nlPart.substring(lastNl + 1);
-
-        currentParagraph.add(
-          WordToken(
-            text: pureNl,
-            isWord: false,
-            globalIndex: token.globalIndex,
-          ),
-        );
-        _paragraphs.add(currentParagraph);
-        currentParagraph = [];
-
-        if (after.isNotEmpty) {
-          currentParagraph.add(
-            WordToken(
-              text: after,
-              isWord: false,
-              globalIndex: token.globalIndex,
-            ),
-          );
-        }
-      } else {
-        currentParagraph.add(token);
-      }
-    }
-
-    if (currentParagraph.isNotEmpty) {
-      _paragraphs.add(currentParagraph);
-    }
-  }
-
   // --- Word interaction ---
 
-  Future<void> _handleWordTap(String word, int position, int tokenIndex) async {
-    if (_isSelectionMode) {
-      setState(() {
-        if (_selectedWordIndices.contains(tokenIndex)) {
-          _selectedWordIndices.remove(tokenIndex);
-          if (_selectedWordIndices.isEmpty) {
-            _isSelectionMode = false;
-          }
-        } else {
-          _selectedWordIndices.add(tokenIndex);
-        }
-      });
+  Future<void> _handleWordTap(
+    String word,
+    int position,
+    int tokenIndex,
+  ) async {
+    final ctrl = context.read<ReaderController>();
+
+    if (ctrl.isSelectionMode) {
+      ctrl.toggleWordSelection(tokenIndex);
       return;
     }
 
-    final lowerWord = _textParser.normalizeWord(word);
+    final lowerWord = ctrl.normalizeWord(word);
 
     // Check if this is a foreign-marked word
-    if (_otherLanguageTerms.containsKey(lowerWord)) {
-      final info = _otherLanguageTerms[lowerWord]!;
-      final shouldRemove = await _showForeignWordPopup(lowerWord, info);
+    final foreignInfo = ctrl.otherLanguageTerms[lowerWord];
+    if (foreignInfo != null) {
+      final shouldRemove = await _showForeignWordPopup(lowerWord, foreignInfo);
       if (shouldRemove == true) {
-        await db.textForeignWords.deleteWord(
-          _text.id!,
-          lowerWord,
-        );
-        _otherLanguageTerms.remove(lowerWord);
-        _updateTextTermCounts();
-        setState(() {});
+        await ctrl.removeForeignMarking(lowerWord);
       }
       return;
     }
 
-    final existingTerm = _termsMap[lowerWord];
+    final existingTerm = ctrl.termsMap[lowerWord];
 
-    if (existingTerm != null && _hasTranslations(existingTerm)) {
-      final shouldEdit = await _showTranslationPopup(existingTerm);
+    if (existingTerm != null && ctrl.hasTranslations(existingTerm)) {
+      final shouldEdit = await _showTranslationPopup(ctrl, existingTerm);
       if (shouldEdit == true) {
-        await _openTermDialog(word, position, existingTerm);
+        await _openTermDialog(ctrl, word, position, existingTerm);
       }
       return;
     }
 
-    await _openTermDialog(word, position, existingTerm);
+    await _openTermDialog(ctrl, word, position, existingTerm);
   }
 
-  Future<bool?> _showTranslationPopup(Term term) async {
+  Future<bool?> _showTranslationPopup(
+    ReaderController ctrl,
+    Term term,
+  ) async {
     final l10n = AppLocalizations.of(context);
-    // Load translations for this term
+    // Use preloaded translations from controller
     List<Translation> translations = [];
     if (term.id != null) {
-      translations = await db.translations.getByTermId(term.id!);
+      translations = ctrl.translationsMap[term.id!] ?? [];
     }
-    // If no translations in new table, use legacy translation field
     if (translations.isEmpty && term.translation.isNotEmpty) {
-      translations = [Translation(termId: term.id ?? 0, meaning: term.translation)];
+      translations = [
+        Translation(termId: term.id ?? 0, meaning: term.translation),
+      ];
     }
-    if (!mounted) return null;
 
     return showDialog<bool>(
       context: context,
@@ -483,46 +189,65 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                 ],
                 const SizedBox(height: AppConstants.spacingS),
-                ...translations.map((t) => Padding(
-                  padding: const EdgeInsets.only(bottom: AppConstants.spacingXS),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (t.partOfSpeech != null) ...[
-                        Text(
-                          PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppConstants.subtitleColor,
-                            fontStyle: FontStyle.italic,
+                ...translations.map(
+                  (t) => Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: AppConstants.spacingXS,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (t.partOfSpeech != null) ...[
+                          Text(
+                            PartOfSpeech.localizedNameFor(
+                              t.partOfSpeech!,
+                              l10n,
+                            ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(
+                              color: AppConstants.subtitleColor,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          const SizedBox(width: AppConstants.spacingS),
+                        ],
+                        Expanded(
+                          child: Text(
+                            t.meaning,
+                            style: Theme.of(context).textTheme.bodyLarge,
                           ),
                         ),
-                        const SizedBox(width: AppConstants.spacingS),
+                        if (t.baseTranslationId != null &&
+                            ctrl.translationsById.containsKey(
+                              t.baseTranslationId!,
+                            )) ...[
+                          const SizedBox(width: AppConstants.spacingS),
+                          Builder(
+                            builder: (context) {
+                              final baseTranslation =
+                                  ctrl
+                                      .translationsById[t.baseTranslationId!]!;
+                              final baseTerm =
+                                  ctrl.termsById[baseTranslation.termId];
+                              final baseText = baseTerm != null
+                                  ? '${baseTerm.lowerText} (${baseTranslation.meaning})'
+                                  : baseTranslation.meaning;
+                              return Text(
+                                '\u2190 $baseText',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(
+                                  color: AppConstants.subtitleColor,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ],
-                      Expanded(
-                        child: Text(
-                          t.meaning,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ),
-                      if (t.baseTranslationId != null && _translationsById.containsKey(t.baseTranslationId!)) ...[
-                        const SizedBox(width: AppConstants.spacingS),
-                        Builder(builder: (context) {
-                          final baseTranslation = _translationsById[t.baseTranslationId!]!;
-                          final baseTerm = _termsById[baseTranslation.termId];
-                          final baseText = baseTerm != null
-                              ? '${baseTerm.lowerText} (${baseTranslation.meaning})'
-                              : baseTranslation.meaning;
-                          return Text(
-                            '← $baseText',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppConstants.subtitleColor,
-                            ),
-                          );
-                        }),
-                      ],
-                    ],
+                    ),
                   ),
-                )),
+                ),
                 const SizedBox(height: AppConstants.spacingL),
                 Align(
                   alignment: Alignment.centerRight,
@@ -545,7 +270,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Future<bool?> _showForeignWordPopup(
     String lowerWord,
-    ({Term? term, List<Translation> translations, String languageName, int languageId}) info,
+    ForeignTermInfo info,
   ) async {
     final l10n = AppLocalizations.of(context);
     return showDialog<bool>(
@@ -573,7 +298,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     fontStyle: FontStyle.italic,
                   ),
                 ),
-                if (info.term != null && info.term!.romanization.isNotEmpty) ...[
+                if (info.term != null &&
+                    info.term!.romanization.isNotEmpty) ...[
                   const SizedBox(height: AppConstants.spacingXS),
                   Text(
                     info.term!.romanization,
@@ -585,31 +311,41 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 ],
                 if (info.translations.isNotEmpty) ...[
                   const SizedBox(height: AppConstants.spacingS),
-                  ...info.translations.map((t) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppConstants.spacingXS),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (t.partOfSpeech != null) ...[
-                          Text(
-                            PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppConstants.subtitleColor,
-                              fontStyle: FontStyle.italic,
+                  ...info.translations.map(
+                    (t) => Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: AppConstants.spacingXS,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (t.partOfSpeech != null) ...[
+                            Text(
+                              PartOfSpeech.localizedNameFor(
+                                t.partOfSpeech!,
+                                l10n,
+                              ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.copyWith(
+                                color: AppConstants.subtitleColor,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            const SizedBox(width: AppConstants.spacingS),
+                          ],
+                          Expanded(
+                            child: Text(
+                              t.meaning,
+                              style: Theme.of(context).textTheme.bodyLarge,
                             ),
                           ),
-                          const SizedBox(width: AppConstants.spacingS),
                         ],
-                        Expanded(
-                          child: Text(
-                            t.meaning,
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  )),
-                ] else if (info.term != null && info.term!.translation.isNotEmpty) ...[
+                  ),
+                ] else if (info.term != null &&
+                    info.term!.translation.isNotEmpty) ...[
                   const SizedBox(height: AppConstants.spacingS),
                   Text(
                     info.term!.translation,
@@ -637,20 +373,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Future<void> _openTermDialog(
+    ReaderController ctrl,
     String word,
     int position,
     Term? existingTerm,
   ) async {
-    final lowerWord = _textParser.normalizeWord(word);
-
-    final sentence = _textParser.getSentenceAtPosition(
-      _text.content,
-      position,
-      widget.language,
-    );
+    final lowerWord = ctrl.normalizeWord(word);
+    final sentence = ctrl.getSentenceForPosition(position);
 
     final dictionaries = await _dictService.getActiveDictionaries(
-      widget.language.id!,
+      ctrl.language.id!,
     );
     if (!mounted) return;
 
@@ -662,45 +394,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
           term: existingTerm,
           sentence: sentence,
           dictionaries: dictionaries,
-          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
-          languageId: widget.language.id!,
-          languageName: widget.language.name,
+          onLookup: (ctx, dict) =>
+              _dictService.lookupWord(ctx, word, dict.url),
+          languageId: ctrl.language.id!,
+          languageName: ctrl.language.name,
         ),
       );
 
       if (dialogResult != null) {
-        await db.updateTerm(dialogResult.term);
-        await db.translations.replaceForTerm(
-          dialogResult.term.id!,
+        await ctrl.handleTermSaved(
+          dialogResult.term,
           dialogResult.translations,
+          isNew: false,
         );
-        // Reload translations to get new IDs and update in-memory maps
-        final newTranslations = await db.translations
-            .getByTermId(dialogResult.term.id!);
-        _translationsMap[dialogResult.term.id!] = newTranslations;
-        for (final t in newTranslations) {
-          if (t.id != null) _translationsById[t.id!] = t;
-        }
-        _updateTermInPlace(dialogResult.term);
-        // Auto-remove foreign marking if word was previously marked
-        if (_otherLanguageTerms.containsKey(lowerWord)) {
-          await db.textForeignWords.deleteWord(
-            _text.id!, lowerWord);
-          _otherLanguageTerms.remove(lowerWord);
-        }
-        // Manage review card based on status change
-        if (dialogResult.term.status == TermStatus.ignored ||
-            dialogResult.term.status == TermStatus.wellKnown) {
-          await db.reviewCards
-              .deleteByTermId(dialogResult.term.id!);
-        } else {
-          await db.reviewCards
-              .getOrCreate(dialogResult.term.id!);
-        }
       }
     } else {
       final newTerm = Term(
-        languageId: widget.language.id!,
+        languageId: ctrl.language.id!,
         text: word,
         lowerText: lowerWord,
         status: TermStatus.unknown,
@@ -713,39 +423,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
           term: newTerm,
           sentence: sentence,
           dictionaries: dictionaries,
-          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
-          languageId: widget.language.id!,
-          languageName: widget.language.name,
+          onLookup: (ctx, dict) =>
+              _dictService.lookupWord(ctx, word, dict.url),
+          languageId: ctrl.language.id!,
+          languageName: ctrl.language.name,
         ),
       );
 
       if (dialogResult != null) {
-        final termId = await db.createTerm(dialogResult.term);
-        final termWithId = dialogResult.term.copyWith(id: termId);
-        await db.translations.replaceForTerm(
-          termId,
+        await ctrl.handleTermSaved(
+          dialogResult.term,
           dialogResult.translations,
+          isNew: true,
         );
-        // Reload translations to get new IDs and update in-memory maps
-        final newTranslations = await db.translations
-            .getByTermId(termId);
-        _translationsMap[termId] = newTranslations;
-        for (final t in newTranslations) {
-          if (t.id != null) _translationsById[t.id!] = t;
-        }
-        _termsById[termId] = termWithId;
-        _updateTermInPlace(termWithId);
-        // Auto-remove foreign marking if word was previously marked
-        if (_otherLanguageTerms.containsKey(lowerWord)) {
-          await db.textForeignWords.deleteWord(
-            _text.id!, lowerWord);
-          _otherLanguageTerms.remove(lowerWord);
-        }
-        // Create review card for new term (unless ignored or well known)
-        if (dialogResult.term.status != TermStatus.ignored &&
-            dialogResult.term.status != TermStatus.wellKnown) {
-          await db.reviewCards.getOrCreate(termId);
-        }
       }
     }
   }
@@ -753,51 +443,42 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // --- Selection mode ---
 
   Future<void> _handleWordLongPress(int tokenIndex) async {
-    setState(() {
-      _isSelectionMode = true;
-      _selectedWordIndices.clear();
-      _selectedWordIndices.add(tokenIndex);
-    });
-  }
-
-  void _cancelSelection() {
-    setState(() {
-      _isSelectionMode = false;
-      _selectedWordIndices.clear();
-    });
+    context.read<ReaderController>().handleWordLongPress(tokenIndex);
   }
 
   Future<void> _assignForeignLanguage() async {
-    if (_selectedWordIndices.isEmpty) return;
+    final ctrl = context.read<ReaderController>();
+    if (ctrl.selectedWordIndices.isEmpty) return;
     final l10n = AppLocalizations.of(context);
 
-    // Load all languages except current
     final allLanguages = await db.getLanguages();
-    final otherLanguages = allLanguages
-        .where((lang) => lang.id != widget.language.id)
-        .toList();
+    final otherLanguages =
+        allLanguages.where((lang) => lang.id != ctrl.language.id).toList();
 
     if (!mounted) return;
 
     if (otherLanguages.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.noOtherLanguages)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.noOtherLanguages)));
       return;
     }
 
-    // Show language picker dialog
     final selectedLanguage = await showDialog<Language>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.assignForeignLanguage),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: otherLanguages.map((lang) => ListTile(
-            leading: const Icon(Icons.language),
-            title: Text(lang.name),
-            onTap: () => Navigator.pop(context, lang),
-          )).toList(),
+          children: otherLanguages
+              .map(
+                (lang) => ListTile(
+                  leading: const Icon(Icons.language),
+                  title: Text(lang.name),
+                  onTap: () => Navigator.pop(context, lang),
+                ),
+              )
+              .toList(),
         ),
         actions: [
           TextButton(
@@ -810,46 +491,32 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     if (selectedLanguage == null || !mounted) return;
 
-    // Collect selected words (lowercased, unique)
-    final selectedTokens = _selectedWordIndices.toList()..sort();
+    final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
     final lowerWords = selectedTokens
-        .map((i) => _wordTokens[i].text.toLowerCase())
+        .map((i) => ctrl.wordTokens[i].text.toLowerCase())
         .toSet()
         .toList();
 
-    // Look up matching terms in target language to resolve term_ids
-    final targetTermsMap = await db.getTermsMap(
-      selectedLanguage.id!,
-    );
+    final targetTermsMap = await db.getTermsMap(selectedLanguage.id!);
     final wordsWithTermIds = <String, int?>{};
     for (final word in lowerWords) {
       final term = targetTermsMap[word];
       wordsWithTermIds[word] = term?.id;
     }
 
-    // Save to DB
-    await db.textForeignWords.saveWords(
-      _text.id!,
-      selectedLanguage.id!,
-      wordsWithTermIds,
-    );
-
-    // Reload foreign words and refresh
-    await _loadForeignWords();
-    _updateTextTermCounts();
-    _cancelSelection();
+    await ctrl.assignForeignWords(selectedLanguage.id!, wordsWithTermIds);
   }
 
   Future<void> _lookupSelectedWords() async {
-    if (_selectedWordIndices.isEmpty) return;
+    final ctrl = context.read<ReaderController>();
+    if (ctrl.selectedWordIndices.isEmpty) return;
 
-    final selectedTokens = _selectedWordIndices.toList()..sort();
-    final selectedWords = selectedTokens
-        .map((i) => _wordTokens[i].text)
-        .join(' ');
+    final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
+    final selectedWords =
+        selectedTokens.map((i) => ctrl.wordTokens[i].text).join(' ');
 
     final dictionaries = await _dictService.getActiveDictionaries(
-      widget.language.id!,
+      ctrl.language.id!,
     );
     if (!mounted) return;
 
@@ -888,30 +555,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     if (selectedDict != null && mounted) {
       await _dictService.lookupWord(context, selectedWords, selectedDict.url);
-      _cancelSelection();
+      ctrl.cancelSelection();
     }
   }
 
   Future<void> _saveSelectionAsTerm() async {
-    if (_selectedWordIndices.isEmpty) return;
+    final ctrl = context.read<ReaderController>();
+    if (ctrl.selectedWordIndices.isEmpty) return;
 
-    final selectedTokens = _selectedWordIndices.toList()..sort();
-    final selectedWords = selectedTokens
-        .map((i) => _wordTokens[i].text)
-        .join(widget.language.splitByCharacter ? '' : ' ');
+    final selectedWords = ctrl.getSelectedWordsText();
+    final lowerWords = ctrl.normalizeWord(selectedWords);
+    final existingTerm = ctrl.termsMap[lowerWords];
 
-    final lowerWords = _textParser.normalizeWord(selectedWords);
-    final existingTerm = _termsMap[lowerWords];
-
-    final firstToken = _wordTokens[selectedTokens.first];
-    final sentence = _textParser.getSentenceAtPosition(
-      _text.content,
-      firstToken.position,
-      widget.language,
-    );
+    final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
+    final firstToken = ctrl.wordTokens[selectedTokens.first];
+    final sentence = ctrl.getSentenceForPosition(firstToken.position);
 
     final dictionaries = await _dictService.getActiveDictionaries(
-      widget.language.id!,
+      ctrl.language.id!,
     );
     if (!mounted) return;
 
@@ -925,21 +586,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
           dictionaries: dictionaries,
           onLookup: (ctx, dict) =>
               _dictService.lookupWord(ctx, selectedWords, dict.url),
-          languageId: widget.language.id!,
-          languageName: widget.language.name,
+          languageId: ctrl.language.id!,
+          languageName: ctrl.language.name,
         ),
       );
-
-      if (dialogResult != null) {
-        await db.updateTerm(dialogResult.term);
-        await db.translations.replaceForTerm(
-          dialogResult.term.id!,
-          dialogResult.translations,
-        );
-      }
     } else {
       final newTerm = Term(
-        languageId: widget.language.id!,
+        languageId: ctrl.language.id!,
         text: selectedWords,
         lowerText: lowerWords,
         status: TermStatus.unknown,
@@ -954,57 +607,39 @@ class _ReaderScreenState extends State<ReaderScreen> {
           dictionaries: dictionaries,
           onLookup: (ctx, dict) =>
               _dictService.lookupWord(ctx, selectedWords, dict.url),
-          languageId: widget.language.id!,
-          languageName: widget.language.name,
+          languageId: ctrl.language.id!,
+          languageName: ctrl.language.name,
         ),
       );
-
-      if (dialogResult != null) {
-        final termId = await db.createTerm(dialogResult.term);
-        await db.translations.replaceForTerm(
-          termId,
-          dialogResult.translations,
-        );
-        // Create review card for new term (unless ignored or well known)
-        if (dialogResult.term.status != TermStatus.ignored &&
-            dialogResult.term.status != TermStatus.wellKnown) {
-          await db.reviewCards.getOrCreate(termId);
-        }
-      }
     }
 
-    _cancelSelection();
     if (dialogResult != null) {
-      // Remove foreign marking only for the actual saved term text
-      if (_otherLanguageTerms.containsKey(lowerWords)) {
-        await db.textForeignWords.deleteWord(
-          _text.id!, lowerWords);
-      }
-      await _loadTermsAndParse();
+      await ctrl.handleSelectionTermSaved(
+        dialogResult.term,
+        dialogResult.translations,
+        isNew: existingTerm == null,
+      );
+    } else {
+      ctrl.cancelSelection();
     }
   }
 
   // --- Text actions ---
 
   Future<void> _editText() async {
+    final ctrl = context.read<ReaderController>();
     final result = await showDialog<TextDocument>(
       context: context,
-      builder: (context) => EditTextDialog(text: _text),
+      builder: (context) => EditTextDialog(text: ctrl.text),
     );
 
     if (result != null) {
-      final contentChanged = result.content != _text.content;
-      await db.updateText(result);
-      setState(() {
-        _text = result;
-      });
-      if (contentChanged) {
-        await _loadTermsAndParse();
-      }
+      await ctrl.updateText(result);
     }
   }
 
   void _showFontSizeDialog() {
+    final ctrl = context.read<ReaderController>();
     final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
@@ -1014,19 +649,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
           builder: (context, setDialogState) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(l10n.previewText, style: TextStyle(fontSize: _fontSize)),
+              Text(
+                l10n.previewText,
+                style: TextStyle(fontSize: ctrl.fontSize),
+              ),
               Slider(
-                value: _fontSize,
+                value: ctrl.fontSize,
                 min: _ReaderScreenConstants.fontSizeMin,
                 max: _ReaderScreenConstants.fontSizeMax,
                 divisions: _ReaderScreenConstants.fontSizeSliderDivisions,
-                label: _fontSize.round().toString(),
+                label: ctrl.fontSize.round().toString(),
                 onChanged: (value) {
-                  setDialogState(() => _fontSize = value);
-                  setState(() {});
+                  ctrl.setFontSize(value);
+                  setDialogState(() {});
                 },
               ),
-              Text('${_fontSize.round()}pt'),
+              Text('${ctrl.fontSize.round()}pt'),
             ],
           ),
         ),
@@ -1041,6 +679,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _markAllWordsKnown() {
+    final ctrl = context.read<ReaderController>();
     final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
@@ -1054,8 +693,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
           TextButton(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
               Navigator.pop(context);
-              await _performMarkAllKnown();
+              try {
+                await ctrl.performMarkAllKnown();
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.allWordsMarkedKnown)),
+                );
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text('${l10n.error}: $e')),
+                );
+              }
             },
             child: Text(l10n.markAll),
           ),
@@ -1064,61 +713,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  Future<void> _performMarkAllKnown() async {
-    try {
-      final words = _textParser.splitIntoWords(_text.content, widget.language);
-
-      for (final word in words) {
-        final lowerWord = _textParser.normalizeWord(word);
-        final existingTerm = _termsMap[lowerWord];
-
-        if (existingTerm != null) {
-          await db.updateTerm(
-            existingTerm.copyWith(status: TermStatus.wellKnown),
-          );
-        } else {
-          await db.createTerm(
-            Term(
-              languageId: widget.language.id!,
-              text: word,
-              lowerText: lowerWord,
-              status: TermStatus.wellKnown,
-            ),
-          );
-        }
-      }
-
-      await _loadTermsAndParse();
-
-      if (mounted) {
-        final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.allWordsMarkedKnown)));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')),
-        );
-      }
-    }
-  }
-
   Future<void> _markAsFinished() async {
-    final newStatus = _text.status == TextStatus.finished
-        ? TextStatus.inProgress
-        : TextStatus.finished;
+    final ctrl = context.read<ReaderController>();
+    final l10n = AppLocalizations.of(context);
 
-    final updatedText = _text.copyWith(status: newStatus);
-    await db.updateText(updatedText);
-
-    setState(() {
-      _text = updatedText;
-    });
+    final newStatus = await ctrl.markAsFinished();
 
     if (mounted) {
-      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -1130,50 +731,44 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
     }
 
-    if (newStatus == TextStatus.finished && _text.collectionId != null) {
-      await _promptForNextText();
+    if (newStatus == TextStatus.finished) {
+      await _promptForNextText(ctrl);
     }
   }
 
-  Future<void> _promptForNextText() async {
-    final textsInCollection = await db
-        .getTextsInCollection(_text.collectionId!);
+  Future<void> _promptForNextText(ReaderController ctrl) async {
+    final nextText = await ctrl.getNextTextInCollection();
+    if (nextText == null || !mounted) return;
 
-    final currentIndex = textsInCollection.indexWhere((t) => t.id == _text.id);
+    final l10n = AppLocalizations.of(context);
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.continueReading),
+        content: Text(l10n.continueReadingPrompt(nextText.title)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.no),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.yes),
+          ),
+        ],
+      ),
+    );
 
-    if (currentIndex >= 0 && currentIndex < textsInCollection.length - 1) {
-      final nextText = textsInCollection[currentIndex + 1];
-
-      if (!mounted) return;
-
-      final l10n = AppLocalizations.of(context);
-      final shouldProceed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(l10n.continueReading),
-          content: Text(l10n.continueReadingPrompt(nextText.title)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(l10n.no),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(l10n.yes),
-            ),
-          ],
+    if (shouldProceed == true && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ReaderScreen(
+            text: nextText,
+            language: ctrl.language,
+          ),
         ),
       );
-
-      if (shouldProceed == true && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                ReaderScreen(text: nextText, language: widget.language),
-          ),
-        );
-      }
     }
   }
 
@@ -1181,63 +776,67 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ctrl = context.watch<ReaderController>();
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       key: _scaffoldKey,
-      endDrawer: _isLoading
+      endDrawer: ctrl.isLoading
           ? null
-          : WordListDrawer(wordTokens: _wordTokens, onWordTap: _handleWordTap),
+          : WordListDrawer(
+              wordTokens: ctrl.wordTokens,
+              onWordTap: _handleWordTap,
+            ),
       appBar: AppBar(
-        title: Text(_text.title, overflow: TextOverflow.ellipsis),
+        title: Text(ctrl.text.title, overflow: TextOverflow.ellipsis),
         actions: [
-          if (_isSelectionMode)
+          if (ctrl.isSelectionMode)
             IconButton(
               icon: const Icon(Icons.close),
               tooltip: l10n.cancelSelection,
-              onPressed: _cancelSelection,
+              onPressed: ctrl.cancelSelection,
             ),
-          if (_isSelectionMode)
+          if (ctrl.isSelectionMode)
             IconButton(
               icon: const Icon(Icons.add),
               tooltip: l10n.saveAsTerm,
               onPressed: _saveSelectionAsTerm,
             ),
-          if (_isSelectionMode)
+          if (ctrl.isSelectionMode)
             IconButton(
               icon: const Icon(Icons.language),
               tooltip: l10n.assignForeignLanguage,
               onPressed: _assignForeignLanguage,
             ),
-          if (_isSelectionMode)
+          if (ctrl.isSelectionMode)
             IconButton(
               icon: const Icon(Icons.search),
               tooltip: l10n.lookupInDictionary,
               onPressed: _lookupSelectedWords,
             ),
-          if (!_isSelectionMode)
-            IconButton(
-              icon: Icon(_showLegend ? Icons.visibility_off : Icons.visibility),
-              tooltip: l10n.toggleLegend,
-              onPressed: () {
-                setState(() => _showLegend = !_showLegend);
-              },
-            ),
-          if (!_isSelectionMode)
+          if (!ctrl.isSelectionMode)
             IconButton(
               icon: Icon(
-                _text.status == TextStatus.finished
+                ctrl.showLegend ? Icons.visibility_off : Icons.visibility,
+              ),
+              tooltip: l10n.toggleLegend,
+              onPressed: ctrl.toggleLegend,
+            ),
+          if (!ctrl.isSelectionMode)
+            IconButton(
+              icon: Icon(
+                ctrl.text.status == TextStatus.finished
                     ? Icons.check_circle
                     : Icons.check_circle_outline,
-                color: _text.status == TextStatus.finished
+                color: ctrl.text.status == TextStatus.finished
                     ? AppConstants.successColor
                     : null,
               ),
-              tooltip: _text.status == TextStatus.finished
+              tooltip: ctrl.text.status == TextStatus.finished
                   ? l10n.markedAsFinished
                   : l10n.markAsFinished,
               onPressed: _markAsFinished,
             ),
-          if (!_isSelectionMode)
+          if (!ctrl.isSelectionMode)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
               onSelected: (value) {
@@ -1301,16 +900,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
             ),
         ],
       ),
-      body: _isLoading
+      body: ctrl.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                if (_showLegend) StatusLegend(termCounts: _termCounts),
-                if (_isSelectionMode)
+                if (ctrl.showLegend)
+                  StatusLegend(termCounts: ctrl.termCounts),
+                if (ctrl.isSelectionMode)
                   Container(
-                    padding: const EdgeInsets.all(
-                      AppConstants.spacingM,
-                    ),
+                    padding: const EdgeInsets.all(AppConstants.spacingM),
                     color: _ReaderScreenConstants.selectionBannerColor,
                     child: Row(
                       children: [
@@ -1321,7 +919,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         const SizedBox(width: AppConstants.spacingS),
                         Expanded(
                           child: Text(
-                            l10n.wordsSelected(_selectedWordIndices.length),
+                            l10n.wordsSelected(
+                              ctrl.selectedWordIndices.length,
+                            ),
                             style: const TextStyle(
                               color:
                                   _ReaderScreenConstants.selectionAccentColor,
@@ -1333,17 +933,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                 Expanded(
                   child: Directionality(
-                    textDirection: widget.language.rightToLeft
+                    textDirection: ctrl.language.rightToLeft
                         ? TextDirection.rtl
                         : TextDirection.ltr,
                     child: ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.all(
-                        AppConstants.spacingL,
-                      ),
-                      itemCount: _paragraphs.length,
+                      padding: const EdgeInsets.all(AppConstants.spacingL),
+                      itemCount: ctrl.paragraphs.length,
                       itemBuilder: (context, index) {
-                        final para = _paragraphs[index];
+                        final para = ctrl.paragraphs[index];
                         if (para.length == 1 &&
                             !para[0].isWord &&
                             para[0].text.trim().isEmpty) {
@@ -1355,12 +953,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         }
                         return ParagraphRichText(
                           tokens: para,
-                          fontSize: _fontSize,
-                          selectedWordIndices: _selectedWordIndices,
-                          otherLanguageTerms: _otherLanguageTerms,
-                          translationsMap: _translationsMap,
-                          translationsById: _translationsById,
-                          termsById: _termsById,
+                          fontSize: ctrl.fontSize,
+                          selectedWordIndices: ctrl.selectedWordIndices,
+                          otherLanguageTerms: ctrl.otherLanguageTerms,
+                          translationsMap: ctrl.translationsMap,
+                          translationsById: ctrl.translationsById,
+                          termsById: ctrl.termsById,
                           onWordTap: _handleWordTap,
                           onWordLongPress: _handleWordLongPress,
                         );

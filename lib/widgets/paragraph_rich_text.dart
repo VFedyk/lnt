@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../controllers/reader_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/term.dart';
 import '../models/word_token.dart';
@@ -7,7 +8,7 @@ class ParagraphRichText extends StatelessWidget {
   final List<WordToken> tokens;
   final double fontSize;
   final Set<int> selectedWordIndices;
-  final Map<String, ({Term? term, List<Translation> translations, String languageName, int languageId})> otherLanguageTerms;
+  final Map<String, ForeignTermInfo> otherLanguageTerms;
   final Map<int, List<Translation>> translationsMap;
   final Map<int, Translation> translationsById;
   final Map<int, Term> termsById;
