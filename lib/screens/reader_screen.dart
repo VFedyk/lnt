@@ -172,11 +172,27 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  term.text,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        term.text,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (ctrl.language.languageCode.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.volume_up),
+                        tooltip: l10n.pronounce,
+                        onPressed: () => ttsService.speak(
+                          term.lowerText,
+                          ctrl.language.languageCode,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
                 ),
                 if (term.romanization.isNotEmpty) ...[
                   const SizedBox(height: AppConstants.spacingXS),
@@ -398,6 +414,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
               _dictService.lookupWord(ctx, word, dict.url),
           languageId: ctrl.language.id!,
           languageName: ctrl.language.name,
+          languageCode: ctrl.language.languageCode,
         ),
       );
 
@@ -427,6 +444,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
               _dictService.lookupWord(ctx, word, dict.url),
           languageId: ctrl.language.id!,
           languageName: ctrl.language.name,
+          languageCode: ctrl.language.languageCode,
         ),
       );
 
@@ -588,6 +606,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
               _dictService.lookupWord(ctx, selectedWords, dict.url),
           languageId: ctrl.language.id!,
           languageName: ctrl.language.name,
+          languageCode: ctrl.language.languageCode,
         ),
       );
     } else {
@@ -609,6 +628,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
               _dictService.lookupWord(ctx, selectedWords, dict.url),
           languageId: ctrl.language.id!,
           languageName: ctrl.language.name,
+          languageCode: ctrl.language.languageCode,
         ),
       );
     }

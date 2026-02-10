@@ -362,6 +362,7 @@
   "removeForeignMarking": "Remove foreign marking",
   "noOtherLanguages": "No other languages configured",
   "lookupInDictionary": "Lookup in Dictionary",
+  "pronounce": "Pronounce",
   "toggleLegend": "Toggle Legend",
   "wordList": "Word List",
   "fontSize": "Font Size",

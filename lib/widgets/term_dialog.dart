@@ -30,6 +30,7 @@ class TermDialog extends StatefulWidget {
   final Function(BuildContext, Dictionary) onLookup;
   final int languageId;
   final String languageName;
+  final String languageCode;
 
   const TermDialog({
     super.key,
@@ -39,6 +40,7 @@ class TermDialog extends StatefulWidget {
     required this.onLookup,
     required this.languageId,
     required this.languageName,
+    required this.languageCode,
   });
 
   @override
@@ -551,6 +553,15 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
               ],
             ),
           ),
+          if (widget.languageCode.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.volume_up),
+              tooltip: l10n.pronounce,
+              onPressed: () => ttsService.speak(
+                widget.term.lowerText,
+                widget.languageCode,
+              ),
+            ),
           if (widget.dictionaries.isNotEmpty)
             PopupMenuButton<Dictionary>(
               icon: const Icon(Icons.search),

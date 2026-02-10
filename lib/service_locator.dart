@@ -11,6 +11,7 @@ import 'services/import_export_service.dart';
 import 'services/epub_import_service.dart';
 import 'services/url_import_service.dart';
 import 'services/dictionary_service.dart';
+import 'services/tts_service.dart';
 
 final sl = GetIt.instance;
 
@@ -22,6 +23,7 @@ ReviewService get reviewService => sl<ReviewService>();
 DeepLService get deepLService => sl<DeepLService>();
 LibreTranslateService get libreTranslateService =>
     sl<LibreTranslateService>();
+TtsService get ttsService => sl<TtsService>();
 
 void setupServiceLocator() {
   // Singletons (lazy — constructed on first access)
@@ -33,6 +35,7 @@ void setupServiceLocator() {
   sl.registerLazySingleton<LibreTranslateService>(
     () => LibreTranslateService(),
   );
+  sl.registerLazySingleton<TtsService>(() => TtsService());
 
   // Factories (new instance each time)
   sl.registerFactory<TextParserService>(() => TextParserService());

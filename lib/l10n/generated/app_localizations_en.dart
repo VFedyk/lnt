@@ -608,6 +608,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lookupInDictionary => 'Lookup in Dictionary';
 
   @override
+  String get pronounce => 'Pronounce';
+
+  @override
   String get toggleLegend => 'Toggle Legend';
 
   @override

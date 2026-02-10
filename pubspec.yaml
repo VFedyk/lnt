@@ -61,6 +61,7 @@ dependencies:
   googleapis: ^16.0.0
   icloud_storage: ^2.1.0
   archive: ^4.0.4
+  flutter_tts: ^4.2.0
 
 dev_dependencies:
   flutter_test:

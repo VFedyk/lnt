@@ -363,6 +363,18 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
                         textAlign: TextAlign.center,
                       ),
 
+                      // Pronounce button
+                      if (widget.language.languageCode.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.volume_up),
+                          tooltip: l10n.pronounce,
+                          onPressed: () => ttsService.speak(
+                            term.lowerText,
+                            widget.language.languageCode,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+
                       // Romanization
                       if (term.romanization.isNotEmpty) ...[
                         const SizedBox(height: AppConstants.spacingS),

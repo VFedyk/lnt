@@ -1166,6 +1166,12 @@ abstract class AppLocalizations {
   /// **'Lookup in Dictionary'**
   String get lookupInDictionary;
 
+  /// No description provided for @pronounce.
+  ///
+  /// In en, this message translates to:
+  /// **'Pronounce'**
+  String get pronounce;
+
   /// No description provided for @toggleLegend.
   ///
   /// In en, this message translates to:

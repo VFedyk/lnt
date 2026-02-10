@@ -159,6 +159,7 @@ class _TermsScreenState extends State<TermsScreen> {
         dictionaries: const [],
         languageId: widget.language.id!,
         languageName: widget.language.name,
+        languageCode: widget.language.languageCode,
       ),
     );
 

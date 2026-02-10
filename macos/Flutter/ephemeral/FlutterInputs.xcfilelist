@@ -393,6 +393,8 @@
 /Users/v/.pub-cache/hosted/pub.dev/flutter_launcher_icons-0.14.4/LICENSE
 /Users/v/.pub-cache/hosted/pub.dev/flutter_lints-6.0.0/LICENSE
 /Users/v/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.33/LICENSE
+/Users/v/.pub-cache/hosted/pub.dev/flutter_tts-4.2.5/LICENSE
+/Users/v/.pub-cache/hosted/pub.dev/flutter_tts-4.2.5/lib/flutter_tts.dart
 /Users/v/.pub-cache/hosted/pub.dev/fsrs-2.0.1/LICENSE
 /Users/v/.pub-cache/hosted/pub.dev/fsrs-2.0.1/lib/fsrs.dart
 /Users/v/.pub-cache/hosted/pub.dev/get_it-8.3.0/LICENSE
@@ -1962,6 +1964,7 @@
 /Users/v/Projects/lnt/lib/services/review_service.dart
 /Users/v/Projects/lnt/lib/services/settings_service.dart
 /Users/v/Projects/lnt/lib/services/text_parser_service.dart
+/Users/v/Projects/lnt/lib/services/tts_service.dart
 /Users/v/Projects/lnt/lib/services/url_import_service.dart
 /Users/v/Projects/lnt/lib/utils/constants.dart
 /Users/v/Projects/lnt/lib/utils/cover_image_helper.dart

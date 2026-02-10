@@ -610,6 +610,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get lookupInDictionary => 'Шукати у словнику';
 
   @override
+  String get pronounce => 'Вимовити';
+
+  @override
   String get toggleLegend => 'Легенда';
 
   @override
