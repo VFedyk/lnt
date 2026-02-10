@@ -55,6 +55,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
       context: context,
       builder: (context) => DictionaryDialog(
         languageId: widget.language.id!,
+        languageCode: widget.language.languageCode,
         dictionary: dictionary,
       ),
     );

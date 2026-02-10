@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/dictionary.dart';
+import '../service_locator.dart';
 
 abstract class _DictionaryDialogConstants {
   static const double fieldSpacing = 16.0;
@@ -17,9 +18,15 @@ abstract class _DictionaryDialogConstants {
 
 class DictionaryDialog extends StatefulWidget {
   final int languageId;
+  final String languageCode;
   final Dictionary? dictionary;
 
-  const DictionaryDialog({super.key, required this.languageId, this.dictionary});
+  const DictionaryDialog({
+    super.key,
+    required this.languageId,
+    required this.languageCode,
+    this.dictionary,
+  });
 
   @override
   State<DictionaryDialog> createState() => _DictionaryDialogState();
@@ -30,6 +37,7 @@ class _DictionaryDialogState extends State<DictionaryDialog> {
   late TextEditingController _nameController;
   late TextEditingController _urlController;
   late bool _isActive;
+  String _targetLang = '';
 
   @override
   void initState() {
@@ -38,6 +46,14 @@ class _DictionaryDialogState extends State<DictionaryDialog> {
     _nameController = TextEditingController(text: dict?.name ?? '');
     _urlController = TextEditingController(text: dict?.url ?? '');
     _isActive = dict?.isActive ?? true;
+    _loadTargetLang();
+  }
+
+  Future<void> _loadTargetLang() async {
+    final targetLang = await settings.getDeepLTargetLang();
+    if (mounted) {
+      setState(() => _targetLang = targetLang.toLowerCase());
+    }
   }
 
   @override
@@ -139,12 +155,12 @@ class _DictionaryDialogState extends State<DictionaryDialog> {
                       height: _DictionaryDialogConstants.stepSpacing,
                     ),
                     _buildQuickTemplate(
-                      'Google Translate EN-UK',
-                      'https://translate.google.com/?sl=en&tl=uk&text=###&op=translate',
+                      'Google Translate ${widget.languageCode.toUpperCase()}-${_targetLang.toUpperCase()}',
+                      'https://translate.google.com/?sl=${widget.languageCode}&tl=$_targetLang&text=###&op=translate',
                     ),
                     _buildQuickTemplate(
-                      'WordReference ES-EN',
-                      'https://www.wordreference.com/es/en/translation.asp?spen=###',
+                      'Wiktionary',
+                      'https://${widget.languageCode}.wiktionary.org/wiki/###',
                     ),
                     _buildQuickTemplate(
                       'Jisho (Japanese)',
