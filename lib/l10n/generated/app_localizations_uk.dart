@@ -546,6 +546,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languageNameHint => 'напр., Іспанська, Японська, Китайська';
 
   @override
+  String get languageCodeLabel => 'Код мови';
+
+  @override
+  String get languageCodeHint => 'напр., en, de, uk, ja';
+
+  @override
   String get rightToLeftText => 'Текст справа наліво';
 
   @override

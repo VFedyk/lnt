@@ -1,6 +1,7 @@
 class Language {
   final int? id;
   final String name;
+  final String languageCode; // ISO 639-1 code (e.g., 'en', 'de', 'uk')
   final bool rightToLeft;
   final bool showRomanization;
   final bool splitByCharacter; // For languages like Chinese/Japanese
@@ -12,6 +13,7 @@ class Language {
   Language({
     this.id,
     required this.name,
+    required this.languageCode,
     this.rightToLeft = false,
     this.showRomanization = false,
     this.splitByCharacter = false,
@@ -25,6 +27,7 @@ class Language {
     return {
       'id': id,
       'name': name,
+      'language_code': languageCode,
       'right_to_left': rightToLeft ? 1 : 0,
       'show_romanization': showRomanization ? 1 : 0,
       'split_by_character': splitByCharacter ? 1 : 0,
@@ -39,11 +42,14 @@ class Language {
     return Language(
       id: map['id'],
       name: map['name'],
+      languageCode: map['language_code'] ?? '',
       rightToLeft: map['right_to_left'] == 1,
       showRomanization: map['show_romanization'] == 1,
       splitByCharacter: map['split_by_character'] == 1,
       characterSubstitutions: map['character_substitutions'] ?? '',
-      regexpWordCharacters: map['regexp_word_characters'] ?? r"[\p{L}\p{M}]+(?:['''][\p{L}\p{M}]+)*",
+      regexpWordCharacters:
+          map['regexp_word_characters'] ??
+          r"[\p{L}\p{M}]+(?:['''][\p{L}\p{M}]+)*",
       regexpSplitSentences: map['regexp_split_sentences'] ?? r'[.!?]+',
       exceptionsSplitSentences: map['exceptions_split_sentences'] ?? '',
     );
@@ -52,6 +58,7 @@ class Language {
   Language copyWith({
     int? id,
     String? name,
+    String? languageCode,
     bool? rightToLeft,
     bool? showRomanization,
     bool? splitByCharacter,
@@ -63,6 +70,7 @@ class Language {
     return Language(
       id: id ?? this.id,
       name: name ?? this.name,
+      languageCode: languageCode ?? this.languageCode,
       rightToLeft: rightToLeft ?? this.rightToLeft,
       showRomanization: showRomanization ?? this.showRomanization,
       splitByCharacter: splitByCharacter ?? this.splitByCharacter,

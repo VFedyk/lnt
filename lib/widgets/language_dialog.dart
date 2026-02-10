@@ -20,6 +20,7 @@ class LanguageDialog extends StatefulWidget {
 class _LanguageDialogState extends State<LanguageDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  late TextEditingController _codeController;
   late bool _rightToLeft;
   late bool _showRomanization;
   late bool _splitByCharacter;
@@ -29,6 +30,7 @@ class _LanguageDialogState extends State<LanguageDialog> {
     super.initState();
     final lang = widget.language;
     _nameController = TextEditingController(text: lang?.name ?? '');
+    _codeController = TextEditingController(text: lang?.languageCode ?? '');
     _rightToLeft = lang?.rightToLeft ?? false;
     _showRomanization = lang?.showRomanization ?? false;
     _splitByCharacter = lang?.splitByCharacter ?? false;
@@ -37,6 +39,7 @@ class _LanguageDialogState extends State<LanguageDialog> {
   @override
   void dispose() {
     _nameController.dispose();
+    _codeController.dispose();
     super.dispose();
   }
 
@@ -60,6 +63,15 @@ class _LanguageDialogState extends State<LanguageDialog> {
                 ),
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
                 autofocus: true,
+              ),
+              const SizedBox(height: AppConstants.spacingM),
+              TextFormField(
+                controller: _codeController,
+                decoration: InputDecoration(
+                  labelText: l10n.languageCodeLabel,
+                  hintText: l10n.languageCodeHint,
+                ),
+                validator: (v) => v?.trim().isEmpty == true ? l10n.required : null,
               ),
               const SizedBox(height: AppConstants.spacingL),
               SwitchListTile(
@@ -126,6 +138,7 @@ class _LanguageDialogState extends State<LanguageDialog> {
               final lang = Language(
                 id: widget.language?.id,
                 name: _nameController.text.trim(),
+                languageCode: _codeController.text.trim().toLowerCase(),
                 rightToLeft: _rightToLeft,
                 showRomanization: _showRomanization,
                 splitByCharacter: _splitByCharacter,

@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 10;
+const int databaseVersion = 11;
 
 /// Handle database upgrades from older versions
 Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -92,6 +92,53 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
     await db.execute('CREATE INDEX idx_review_logs_term ON review_logs(term_id)');
     await db.execute('CREATE INDEX idx_review_logs_date ON review_logs(reviewed_at)');
   }
+  if (oldVersion < 11) {
+    await db.execute('ALTER TABLE languages ADD COLUMN language_code TEXT');
+    // Backfill known language codes from language names
+    const nameToCode = {
+      'arabic': 'ar',
+      'bulgarian': 'bg',
+      'chinese': 'zh',
+      'czech': 'cs',
+      'danish': 'da',
+      'dutch': 'nl',
+      'english': 'en',
+      'estonian': 'et',
+      'finnish': 'fi',
+      'french': 'fr',
+      'german': 'de',
+      'greek': 'el',
+      'hebrew': 'he',
+      'hindi': 'hi',
+      'hungarian': 'hu',
+      'indonesian': 'id',
+      'irish': 'ga',
+      'italian': 'it',
+      'japanese': 'ja',
+      'korean': 'ko',
+      'latvian': 'lv',
+      'lithuanian': 'lt',
+      'norwegian': 'nb',
+      'polish': 'pl',
+      'portuguese': 'pt',
+      'romanian': 'ro',
+      'russian': 'ru',
+      'slovak': 'sk',
+      'slovenian': 'sl',
+      'spanish': 'es',
+      'swedish': 'sv',
+      'thai': 'th',
+      'turkish': 'tr',
+      'ukrainian': 'uk',
+      'vietnamese': 'vi',
+    };
+    for (final entry in nameToCode.entries) {
+      await db.execute(
+        "UPDATE languages SET language_code = ? WHERE LOWER(name) = ?",
+        [entry.value, entry.key],
+      );
+    }
+  }
 }
 
 /// Create fresh database with all tables
@@ -100,6 +147,7 @@ Future<void> onCreate(Database db, int version) async {
     CREATE TABLE languages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
+      language_code TEXT,
       right_to_left INTEGER DEFAULT 0,
       show_romanization INTEGER DEFAULT 0,
       split_by_character INTEGER DEFAULT 0,

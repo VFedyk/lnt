@@ -1052,6 +1052,18 @@ abstract class AppLocalizations {
   /// **'e.g., Spanish, Japanese, Chinese'**
   String get languageNameHint;
 
+  /// No description provided for @languageCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Language Code'**
+  String get languageCodeLabel;
+
+  /// No description provided for @languageCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g., en, de, uk, ja'**
+  String get languageCodeHint;
+
   /// No description provided for @rightToLeftText.
   ///
   /// In en, this message translates to:

@@ -544,6 +544,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageNameHint => 'e.g., Spanish, Japanese, Chinese';
 
   @override
+  String get languageCodeLabel => 'Language Code';
+
+  @override
+  String get languageCodeHint => 'e.g., en, de, uk, ja';
+
+  @override
   String get rightToLeftText => 'Right-to-Left Text';
 
   @override

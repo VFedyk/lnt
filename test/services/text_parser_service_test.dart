@@ -9,20 +9,23 @@ void main() {
     parser = TextParserService();
   });
 
-  Language english() => Language(name: 'English');
+  Language english() => Language(name: 'English', languageCode: 'en');
 
   Language german() => Language(
         name: 'German',
+        languageCode: 'de',
         characterSubstitutions: 'ß→ss',
       );
 
   Language chinese() => Language(
         name: 'Chinese',
+        languageCode: 'zh',
         splitByCharacter: true,
       );
 
   Language englishWithExceptions() => Language(
         name: 'English',
+        languageCode: 'en',
         exceptionsSplitSentences: 'Mr.|Dr.|Mrs.|etc.',
       );
 

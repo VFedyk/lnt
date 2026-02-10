@@ -181,6 +181,8 @@
   "manageDictionaries": "Керувати словниками",
   "languageNameLabel": "Назва мови",
   "languageNameHint": "напр., Іспанська, Японська, Китайська",
+  "languageCodeLabel": "Код мови",
+  "languageCodeHint": "напр., en, de, uk, ja",
   "rightToLeftText": "Текст справа наліво",
   "rightToLeftHint": "Для мов як Арабська, Іврит",
   "showRomanization": "Показувати романізацію",

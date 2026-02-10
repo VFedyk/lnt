@@ -1,11 +1,9 @@
 {
   "@@locale": "en",
-
   "appTitle": "Language Nerd Tools",
   "@appTitle": {
     "description": "The app title"
   },
-
   "home": "Home",
   "libraryTab": "Library",
   "texts": "Texts",
@@ -13,7 +11,6 @@
   "stats": "Stats",
   "languages": "Languages",
   "settings": "Settings",
-
   "cancel": "Cancel",
   "save": "Save",
   "delete": "Delete",
@@ -33,11 +30,9 @@
   "success": "Success",
   "warning": "Warning",
   "confirm": "Confirm",
-
   "appLanguage": "App Language",
   "english": "English",
   "ukrainian": "Ukrainian",
-
   "deepLTranslation": "DeepL Translation",
   "deepLApiKey": "DeepL API Key",
   "deepLApiKeyHint": "Get your API key from deepl.com/pro-api",
@@ -61,17 +56,22 @@
   "charactersRemaining": "{count} characters remaining",
   "@charactersRemaining": {
     "placeholders": {
-      "count": {"type": "String"}
+      "count": {
+        "type": "String"
+      }
     }
   },
   "charactersUsed": "{used} / {limit} characters",
   "@charactersUsed": {
     "placeholders": {
-      "used": {"type": "String"},
-      "limit": {"type": "String"}
+      "used": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
     }
   },
-
   "noLanguagesYet": "No Languages Yet",
   "addLanguageToStart": "Add a language to get started",
   "addLanguage": "Add Language",
@@ -80,27 +80,31 @@
   "deleteLanguageConfirm": "This will delete \"{name}\" and all associated texts, terms, and dictionaries. Continue?",
   "@deleteLanguageConfirm": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
-
   "totalTerms": "Total Terms",
   "known": "Known",
   "unknown": "Unknown",
   "unknownWords": "{count} unknown words",
   "@unknownWords": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "unknownCharacters": "{count} unknown characters",
   "@unknownCharacters": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "completed": "Completed!",
-
   "activityHeatmap": "Activity",
   "less": "Less",
   "more": "More",
@@ -108,7 +112,6 @@
   "wordsAdded": "Words added",
   "wordsReviewed": "Words reviewed",
   "noActivity": "No activity",
-
   "quickActions": "Quick Actions",
   "addText": "Add Text",
   "importVocabulary": "Import Vocabulary",
@@ -116,7 +119,6 @@
   "recentlyAdded": "Recently added",
   "noTextsReadYet": "No texts read yet.",
   "noTextsYetAddOne": "No texts yet. Add one to get started!",
-
   "searchTexts": "Search texts...",
   "searchTerms": "Search terms...",
   "noCollectionsOrTexts": "No collections or texts",
@@ -126,10 +128,11 @@
   "completedHidden": "{count} completed hidden",
   "@completedHidden": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
-
   "importFromUrl": "Import from URL",
   "importTxt": "Import TXT",
   "importEpub": "Import EPUB",
@@ -139,32 +142,40 @@
   "couldNotImportEpub": "Could not import EPUB: {error}",
   "@couldNotImportEpub": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
-
   "newCollection": "New Collection",
   "editCollection": "Edit Collection",
   "deleteCollection": "Delete Collection?",
   "deleteCollectionConfirm": "Delete \"{name}\" and its {count} text(s)?",
   "@deleteCollectionConfirm": {
     "placeholders": {
-      "name": {"type": "String"},
-      "count": {"type": "int"}
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
     }
   },
   "deleteCollectionSimple": "Delete \"{name}\"?",
   "@deleteCollectionSimple": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
-
   "deleteText": "Delete Text?",
   "deleteTextConfirm": "Delete \"{title}\"?",
   "@deleteTextConfirm": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "editText": "Edit Text",
@@ -173,26 +184,21 @@
   "setCover": "Set Cover",
   "addCover": "Add Cover",
   "removeCover": "Remove Cover",
-
   "noTermsFound": "No terms found",
   "importCsv": "Import CSV",
   "exportCsv": "Export CSV",
   "exportAnki": "Export Anki",
-
   "name": "Name",
   "description": "Description",
   "descriptionOptional": "Description (optional)",
   "required": "Required",
-
   "sortByName": "Name",
   "sortByDateAdded": "Date Added",
   "sortByLastRead": "Last Read",
-
   "listView": "List view",
   "gridView": "Grid view",
   "switchToListView": "Switch to list view",
   "switchToGridView": "Switch to grid view",
-
   "url": "URL",
   "urlHint": "https://example.com/article",
   "fetchContent": "Fetch content",
@@ -200,73 +206,90 @@
   "wordsCount": "{count} words",
   "@wordsCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "charactersCount": "{count} characters",
   "@charactersCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "pleaseEnterUrl": "Please enter a URL",
   "pleaseEnterTitle": "Please enter a title",
-
   "book": "Book",
   "author": "Author",
   "chapters": "Chapters",
   "totalParts": "Total parts",
   "characters": "Characters",
   "notes": "Notes",
-
   "textsTitle": "Texts - {languageName}",
   "@textsTitle": {
     "placeholders": {
-      "languageName": {"type": "String"}
+      "languageName": {
+        "type": "String"
+      }
     }
   },
   "sort": "Sort",
   "textCount": "{count, plural, =1{1 text} other{{count} texts}}",
   "@textCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "unknownCount": "{count} unknown",
   "@unknownCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
-
   "vocabularyTitle": "Vocabulary - {languageName}",
   "@vocabularyTitle": {
     "placeholders": {
-      "languageName": {"type": "String"}
+      "languageName": {
+        "type": "String"
+      }
     }
   },
   "exportedTerms": "Exported {count} terms",
   "@exportedTerms": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "exportFailed": "Export failed: {error}",
   "@exportFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "importedTerms": "Imported {count} terms",
   "@importedTerms": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "importFailed": "Import failed: {error}",
   "@importFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "all": "All",
@@ -277,12 +300,13 @@
   "statusLearning4": "Learning 4",
   "statusKnown": "Known",
   "statusWellKnown": "Well Known",
-
   "addDictionariesQuestion": "Add Dictionaries?",
   "addDictionariesPrompt": "Would you like to add dictionaries for {name}?",
   "@addDictionariesPrompt": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "later": "Later",
@@ -290,12 +314,16 @@
   "dictionaryCount": "{count, plural, =1{1 dictionary} other{{count} dictionaries}}",
   "@dictionaryCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "manageDictionaries": "Manage Dictionaries",
   "languageNameLabel": "Language Name",
   "languageNameHint": "e.g., Spanish, Japanese, Chinese",
+  "languageCodeLabel": "Language Code",
+  "languageCodeHint": "e.g., en, de, uk, ja",
   "rightToLeftText": "Right-to-Left Text",
   "rightToLeftHint": "For languages like Arabic, Hebrew",
   "showRomanization": "Show Romanization",
@@ -303,24 +331,29 @@
   "splitByCharacter": "Split by Character",
   "splitByCharacterHint": "For Chinese, Japanese (no spaces)",
   "addDictionariesAfterCreating": "Add dictionaries after creating the language",
-
   "errorLoadingTerms": "Error loading terms: {error}",
   "@errorLoadingTerms": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "errorLoadingLanguages": "Error loading languages: {error}",
   "@errorLoadingLanguages": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "noDictionariesConfigured": "No dictionaries configured",
   "lookupWord": "Lookup \"{word}\"",
   "@lookupWord": {
     "placeholders": {
-      "word": {"type": "String"}
+      "word": {
+        "type": "String"
+      }
     }
   },
   "cancelSelection": "Cancel Selection",
@@ -338,7 +371,9 @@
   "wordsSelected": "{count} word(s) selected. Tap + to save as term or tap search to lookup.",
   "@wordsSelected": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "previewText": "Preview Text",
@@ -353,32 +388,38 @@
   "continueReadingPrompt": "Would you like to continue with the next text?\n\n\"{title}\"",
   "@continueReadingPrompt": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
-
   "termsByStatus": "Terms by Status",
   "progressOverview": "Progress Overview",
   "percentKnown": "{percent}% Known",
   "@percentKnown": {
     "placeholders": {
-      "percent": {"type": "String"}
+      "percent": {
+        "type": "String"
+      }
     }
   },
   "noTermsYet": "No terms yet",
   "learning": "Learning",
-
   "dictionariesTitle": "Dictionaries - {languageName}",
   "@dictionariesTitle": {
     "placeholders": {
-      "languageName": {"type": "String"}
+      "languageName": {
+        "type": "String"
+      }
     }
   },
   "deleteDictionary": "Delete Dictionary?",
   "deleteDictionaryConfirm": "Delete \"{name}\"?",
   "@deleteDictionaryConfirm": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "deactivate": "Deactivate",
@@ -387,7 +428,9 @@
   "addDictionariesFor": "Add dictionaries for {name}",
   "@addDictionariesFor": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "addDictionary": "Add Dictionary",
@@ -410,7 +453,6 @@
   "active": "Active",
   "showInDictionaryLookupMenu": "Show in dictionary lookup menu",
   "quickTemplates": "Quick Templates:",
-
   "dictionaryLookup": "Dictionary Lookup",
   "reload": "Reload",
   "back": "Back",
@@ -419,27 +461,34 @@
   "errorLoadingPage": "Error loading page: {error}",
   "@errorLoadingPage": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "errorOpeningBrowser": "Error opening browser: {error}",
   "@errorOpeningBrowser": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
-
   "term": "Term",
   "useOriginal": "Use original: {text}",
   "@useOriginal": {
     "placeholders": {
-      "text": {"type": "String"}
+      "text": {
+        "type": "String"
+      }
     }
   },
   "original": "Original: {text}",
   "@original": {
     "placeholders": {
-      "text": {"type": "String"}
+      "text": {
+        "type": "String"
+      }
     }
   },
   "base": "Base: ",
@@ -448,7 +497,9 @@
   "forms": "Forms: {forms}",
   "@forms": {
     "placeholders": {
-      "forms": {"type": "String"}
+      "forms": {
+        "type": "String"
+      }
     }
   },
   "status": "Status",
@@ -463,7 +514,9 @@
   "languageNotSupported": "Language \"{name}\" is not supported",
   "@languageNotSupported": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "noDeepL": " (no DeepL)",
@@ -474,18 +527,18 @@
   "createTerm": "Create \"{term}\"",
   "@createTerm": {
     "placeholders": {
-      "term": {"type": "String"}
+      "term": {
+        "type": "String"
+      }
     }
   },
   "statusLegendTitle": "Status Legend",
-
   "databaseSection": "Database",
   "databasePath": "Database path",
   "openDatabaseDirectory": "Open Directory",
   "changeDatabase": "Change Database",
   "restartRequired": "Restart Required",
   "databaseChangedMessage": "The database has been changed. The application will now close. Please reopen it to use the new database.",
-
   "posNoun": "Noun",
   "posVerb": "Verb",
   "posAdjective": "Adjective",
@@ -498,13 +551,11 @@
   "posNumeral": "Numeral",
   "posParticle": "Particle",
   "posOther": "Other",
-
   "partOfSpeech": "Part of speech",
   "baseForm": "Base form",
   "meaning": "Meaning",
   "addTranslation": "Add translation",
   "translations": "Translations",
-
   "review": "Review",
   "showAnswer": "Show Answer",
   "rateAgain": "Again",
@@ -516,14 +567,20 @@
   "reviewedCount": "Reviewed {count} cards",
   "@reviewedCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "reviewProgress": "{current} of {total}",
   "@reviewProgress": {
     "placeholders": {
-      "current": { "type": "int" },
-      "total": { "type": "int" }
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "refresh": "Refresh",
@@ -535,7 +592,6 @@
   "statisticsDescription": "View vocabulary progress and status breakdown",
   "cardsDue": "Cards due",
   "reviewedToday": "Reviewed today",
-
   "backupRestore": "Backup & Restore",
   "backupToGoogleDrive": "Back up to Google Drive",
   "restoreFromGoogleDrive": "Restore from Google Drive",
@@ -544,7 +600,9 @@
   "lastBackup": "Last backup: {date}",
   "@lastBackup": {
     "placeholders": {
-      "date": {"type": "String"}
+      "date": {
+        "type": "String"
+      }
     }
   },
   "noBackupYet": "No backup yet",
@@ -556,13 +614,17 @@
   "backupFailed": "Backup failed: {error}",
   "@backupFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "restoreFailed": "Restore failed: {error}",
   "@restoreFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "noBackupFound": "No backup found",

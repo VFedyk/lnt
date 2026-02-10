@@ -54,6 +54,7 @@ List<ParsedToken> parseInIsolate(ParseInput input) {
   // Create language for word matching
   final tempLang = Language(
     name: '',
+    languageCode: '',
     splitByCharacter: input.splitByCharacter,
     characterSubstitutions: input.characterSubstitutions,
     regexpWordCharacters: input.regexpWordCharacters,
