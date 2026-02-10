@@ -146,18 +146,20 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       return _buildEmptyState();
     }
 
+    final langKey = ValueKey(_selectedLanguage!.id);
     switch (_selectedTab) {
       case HomeTab.dashboard:
         return DashboardTab(
+          key: langKey,
           language: _selectedLanguage!,
           onRefresh: _loadLanguages,
         );
       case HomeTab.texts:
-        return LibraryScreen(language: _selectedLanguage!);
+        return LibraryScreen(key: langKey, language: _selectedLanguage!);
       case HomeTab.terms:
-        return TermsScreen(language: _selectedLanguage!);
+        return TermsScreen(key: langKey, language: _selectedLanguage!);
       case HomeTab.review:
-        return ReviewScreen(language: _selectedLanguage!);
+        return ReviewScreen(key: langKey, language: _selectedLanguage!);
       case HomeTab.languages:
         return LanguagesScreen(onLanguagesChanged: _loadLanguages);
     }
