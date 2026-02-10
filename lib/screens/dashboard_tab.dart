@@ -181,11 +181,19 @@ class _DashboardTabState extends State<DashboardTab> {
                           children: [
                             Row(
                               children: [
-                                Icon(
-                                  Icons.language,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: AppConstants.spacingS),
+                                if (widget.language.flagEmoji.isNotEmpty) ...[
+                                  Text(
+                                    widget.language.flagEmoji,
+                                    style: const TextStyle(fontSize: 24),
+                                  ),
+                                  const SizedBox(width: AppConstants.spacingS),
+                                ] else ...[
+                                  Icon(
+                                    Icons.language,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: AppConstants.spacingS),
+                                ],
                                 Text(
                                   widget.language.name,
                                   style: Theme.of(context).textTheme.headlineSmall,

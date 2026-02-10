@@ -55,6 +55,24 @@ class Language {
     );
   }
 
+  /// Returns a flag emoji for this language, or empty string if unknown.
+  String get flagEmoji {
+    const langToCountry = {
+      'ar': 'SA', 'bg': 'BG', 'cs': 'CZ', 'da': 'DK', 'de': 'DE',
+      'el': 'GR', 'en': 'GB', 'es': 'ES', 'et': 'EE', 'fi': 'FI',
+      'fr': 'FR', 'ga': 'IE', 'he': 'IL', 'hi': 'IN', 'hu': 'HU',
+      'id': 'ID', 'it': 'IT', 'ja': 'JP', 'ko': 'KR', 'lt': 'LT',
+      'lv': 'LV', 'nb': 'NO', 'nl': 'NL', 'pl': 'PL', 'pt': 'PT',
+      'ro': 'RO', 'ru': 'RU', 'sk': 'SK', 'sl': 'SI', 'sv': 'SE',
+      'th': 'TH', 'tr': 'TR', 'uk': 'UA', 'vi': 'VN', 'zh': 'CN',
+    };
+    final country = langToCountry[languageCode.toLowerCase()];
+    if (country == null || country.length != 2) return '';
+    final first = 0x1F1E6 + country.codeUnitAt(0) - 0x41;
+    final second = 0x1F1E6 + country.codeUnitAt(1) - 0x41;
+    return String.fromCharCodes([first, second]);
+  }
+
   Language copyWith({
     int? id,
     String? name,

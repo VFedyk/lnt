@@ -209,25 +209,49 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         title: Text(l10n.appTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
-          if (_languages.isNotEmpty)
+          if (_languages.isNotEmpty && _selectedLanguage != null)
             PopupMenuButton<Language>(
-              icon: const Icon(Icons.language),
               tooltip: l10n.languages,
               onSelected: (language) {
                 setState(() => _selectedLanguage = language);
                 context.read<AppState>().setSelectedLanguage(language.id);
+                _refreshDueCount();
               },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.spacingS,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_selectedLanguage!.flagEmoji.isNotEmpty)
+                      Text(
+                        _selectedLanguage!.flagEmoji,
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    if (_selectedLanguage!.flagEmoji.isNotEmpty)
+                      const SizedBox(width: AppConstants.spacingXS),
+                    Text(
+                      _selectedLanguage!.name,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
+                ),
+              ),
               itemBuilder: (context) => _languages
                   .map(
                     (lang) => PopupMenuItem(
                       value: lang,
                       child: Row(
                         children: [
+                          if (lang.flagEmoji.isNotEmpty) ...[
+                            Text(lang.flagEmoji),
+                            const SizedBox(width: AppConstants.spacingS),
+                          ],
+                          Expanded(child: Text(lang.name)),
                           if (lang.id == _selectedLanguage?.id)
                             const Icon(Icons.check, size: _HomeScreenConstants.checkIconSize),
-                          if (lang.id == _selectedLanguage?.id)
-                            const SizedBox(width: AppConstants.spacingS),
-                          Text(lang.name),
                         ],
                       ),
                     ),
