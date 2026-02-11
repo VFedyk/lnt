@@ -330,6 +330,91 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     }
   }
 
+  Widget _buildLanguageLabel(AppLocalizations l10n) {
+    final currentLang = _languages.cast<Language?>().firstWhere(
+      (l) => l!.id == _selectedLanguageId,
+      orElse: () => null,
+    );
+    final flag = currentLang?.flagEmoji ?? '';
+    final name = currentLang?.name ?? _selectedLanguageName;
+
+    final label = Padding(
+      padding: const EdgeInsets.only(top: AppConstants.spacingXS),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (flag.isNotEmpty) ...[
+            Text(flag),
+            const SizedBox(width: AppConstants.spacingXS),
+          ],
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: AppConstants.fontSizeCaption,
+              color: AppConstants.subtitleColor,
+            ),
+          ),
+          if (_languages.length > 1)
+            Icon(
+              Icons.arrow_drop_down,
+              size: AppConstants.iconSizeS,
+              color: AppConstants.subtitleColor,
+            ),
+        ],
+      ),
+    );
+
+    if (_languages.length <= 1) return label;
+
+    return PopupMenuButton<Language>(
+      onSelected: (lang) {
+        setState(() {
+          _selectedLanguageId = lang.id!;
+          _selectedLanguageName = lang.name;
+        });
+      },
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+      position: PopupMenuPosition.under,
+      child: label,
+      itemBuilder: (context) => _languages.map((lang) {
+        final isDeepLSupported =
+            DeepLService.getDeepLLanguageCode(lang.name) != null;
+        final isLTSupported =
+            LibreTranslateService.getLanguageCode(lang.name) != null;
+        final isSupported =
+            (hasDeepL && isDeepLSupported) ||
+            (hasLibreTranslate && isLTSupported);
+        return PopupMenuItem(
+          value: lang,
+          child: Row(
+            children: [
+              if (lang.flagEmoji.isNotEmpty) ...[
+                Text(lang.flagEmoji),
+                const SizedBox(width: AppConstants.spacingS),
+              ],
+              Text(
+                lang.name +
+                    (hasAnyTranslationProvider && !isSupported
+                        ? l10n.noDeepL
+                        : ''),
+                style: TextStyle(
+                  color: hasAnyTranslationProvider && !isSupported
+                      ? Colors.grey
+                      : null,
+                ),
+              ),
+              if (lang.id == _selectedLanguageId) ...[
+                const Spacer(),
+                const Icon(Icons.check, size: 18),
+              ],
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildTranslationsSection(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -550,6 +635,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                       color: AppConstants.subtitleColor,
                     ),
                   ),
+                _buildLanguageLabel(l10n),
               ],
             ),
           ),
@@ -643,77 +729,6 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
               ),
               const SizedBox(height: AppConstants.spacingL),
 
-              // Language selector
-              if (_languages.length > 1) ...[
-                Row(
-                  children: [
-                    Text(
-                      l10n.language,
-                      style: const TextStyle(
-                        fontSize: AppConstants.fontSizeCaption,
-                      ),
-                    ),
-                    const SizedBox(width: AppConstants.spacingS),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppConstants.spacingM,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AppConstants.borderColor,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            AppConstants.borderRadiusS,
-                          ),
-                        ),
-                        child: DropdownButton<int>(
-                          value: _selectedLanguageId,
-                          isExpanded: true,
-                          isDense: true,
-                          underline: const SizedBox(),
-                          items: _languages.map((lang) {
-                            final isDeepLSupported =
-                                DeepLService.getDeepLLanguageCode(lang.name) != null;
-                            final isLTSupported =
-                                LibreTranslateService.getLanguageCode(lang.name) != null;
-                            final isSupported =
-                                (hasDeepL && isDeepLSupported) ||
-                                (hasLibreTranslate && isLTSupported);
-                            return DropdownMenuItem(
-                              value: lang.id,
-                              child: Text(
-                                lang.name +
-                                    (hasAnyTranslationProvider && !isSupported
-                                        ? l10n.noDeepL
-                                        : ''),
-                                style: TextStyle(
-                                  fontSize: AppConstants.fontSizeBody,
-                                  color: hasAnyTranslationProvider && !isSupported
-                                      ? Colors.grey
-                                      : null,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              final lang = _languages.firstWhere(
-                                (l) => l.id == value,
-                              );
-                              setState(() {
-                                _selectedLanguageId = value;
-                                _selectedLanguageName = lang.name;
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppConstants.spacingM),
-              ],
               // Translations section
               _buildTranslationsSection(l10n),
               const SizedBox(height: AppConstants.spacingM),
