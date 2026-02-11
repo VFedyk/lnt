@@ -7,6 +7,7 @@ import '../models/term.dart';
 import '../service_locator.dart';
 import '../services/text_parser_service.dart';
 import '../models/day_activity.dart';
+import '../services/logger_service.dart';
 import '../utils/constants.dart';
 import '../utils/cover_image_helper.dart';
 import '../utils/helpers.dart';
@@ -42,6 +43,7 @@ class _DashboardTabState extends State<DashboardTab> {
   Map<int, String> _collectionNames = {};
   Map<String, DayActivity> _activityData = {};
   bool _isLoading = true;
+  String? _error;
   final _textParser = TextParserService();
 
   @override
@@ -59,7 +61,10 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final recentlyRead = await db.texts.getRecentlyRead(
         widget.language.id!,
@@ -132,8 +137,12 @@ class _DashboardTabState extends State<DashboardTab> {
         _activityData = activityData;
         _isLoading = false;
       });
-    } catch (e) {
-      setState(() => _isLoading = false);
+    } catch (e, stackTrace) {
+      AppLogger.error('Dashboard load failed', error: e, stackTrace: stackTrace);
+      setState(() {
+        _isLoading = false;
+        _error = e.toString();
+      });
     }
   }
 
@@ -158,8 +167,29 @@ class _DashboardTabState extends State<DashboardTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: AppConstants.spacingM),
+            Text(l10n.failedToLoadData, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppConstants.spacingM),
+            ElevatedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.retry),
+            ),
+          ],
+        ),
+      );
     }
 
     return RefreshIndicator(

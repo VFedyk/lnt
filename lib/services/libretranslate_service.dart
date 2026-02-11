@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../service_locator.dart';
+import 'logger_service.dart';
 
 class LibreTranslateService {
   LibreTranslateService();
@@ -42,7 +43,8 @@ class LibreTranslateService {
         return data['translatedText'] as String?;
       }
       return null;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('LibreTranslate failed', error: e, stackTrace: stackTrace);
       return null;
     }
   }

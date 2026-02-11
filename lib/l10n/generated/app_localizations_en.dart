@@ -81,6 +81,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get error => 'Error';
 
   @override
+  String get failedToLoadData => 'Failed to load data';
+
+  @override
   String get success => 'Success';
 
   @override

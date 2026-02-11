@@ -4,6 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
+import '../services/logger_service.dart';
 import '../utils/constants.dart';
 
 abstract class _StatisticsConstants {
@@ -29,6 +30,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   int _totalTerms = 0;
   int _totalTexts = 0;
   bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -45,7 +47,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Future<void> _loadStatistics() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final counts = await db.terms.getCountsByStatus(
         widget.language.id!,
@@ -63,8 +68,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         _totalTexts = textCount;
         _isLoading = false;
       });
-    } catch (e) {
-      setState(() => _isLoading = false);
+    } catch (e, stackTrace) {
+      AppLogger.error('Statistics load failed', error: e, stackTrace: stackTrace);
+      setState(() {
+        _isLoading = false;
+        _error = e.toString();
+      });
     }
   }
 
@@ -75,6 +84,28 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.stats)),
         body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.stats)),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: AppConstants.spacingM),
+              Text(l10n.failedToLoadData, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: AppConstants.spacingM),
+              ElevatedButton.icon(
+                onPressed: _loadStatistics,
+                icon: const Icon(Icons.refresh),
+                label: Text(l10n.retry),
+              ),
+            ],
+          ),
+        ),
       );
     }
 

@@ -27,6 +27,7 @@
   "search": "Search",
   "loading": "Loading...",
   "error": "Error",
+  "failedToLoadData": "Failed to load data",
   "success": "Success",
   "warning": "Warning",
   "confirm": "Confirm",

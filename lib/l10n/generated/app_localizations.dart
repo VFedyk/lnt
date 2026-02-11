@@ -242,6 +242,12 @@ abstract class AppLocalizations {
   /// **'Error'**
   String get error;
 
+  /// No description provided for @failedToLoadData.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load data'**
+  String get failedToLoadData;
+
   /// No description provided for @success.
   ///
   /// In en, this message translates to:

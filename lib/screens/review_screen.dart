@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../service_locator.dart';
+import '../services/logger_service.dart';
 import '../utils/constants.dart';
 import 'flashcard_review_screen.dart';
 import 'statistics_screen.dart';
@@ -20,6 +21,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
   int _dueCount = 0;
   int _reviewedToday = 0;
   bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -36,7 +38,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 
   Future<void> _loadStats() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final dueCount = await db.reviewCards
           .getDueCount(widget.language.id!);
@@ -50,20 +55,43 @@ class _ReviewScreenState extends State<ReviewScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Review stats load failed', error: e, stackTrace: stackTrace);
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final l10n = AppLocalizations.of(context);
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: AppConstants.spacingM),
+            Text(l10n.failedToLoadData, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppConstants.spacingM),
+            ElevatedButton.icon(
+              onPressed: _loadStats,
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.retry),
+            ),
+          ],
+        ),
+      );
+    }
 
     return RefreshIndicator(
       onRefresh: _loadStats,

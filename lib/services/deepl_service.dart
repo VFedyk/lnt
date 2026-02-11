@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../service_locator.dart';
+import 'logger_service.dart';
 
 class DeepLUsage {
   final int characterCount;
@@ -57,7 +58,8 @@ class DeepLService {
         }
       }
       return null;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('DeepL translation failed', error: e, stackTrace: stackTrace);
       return null;
     }
   }
@@ -88,7 +90,8 @@ class DeepLService {
         );
       }
       return null;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('DeepL usage fetch failed', error: e, stackTrace: stackTrace);
       return null;
     }
   }

@@ -81,6 +81,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get error => 'Помилка';
 
   @override
+  String get failedToLoadData => 'Не вдалося завантажити дані';
+
+  @override
   String get success => 'Успіх';
 
   @override
