@@ -629,5 +629,24 @@
     }
   },
   "noBackupFound": "No backup found",
-  "signInCancelled": "Sign-in was cancelled"
+  "signInCancelled": "Sign-in was cancelled",
+
+  "typingReview": "Typing Review",
+  "typingSourceToTarget": "Source → Target",
+  "typingTargetToSource": "Target → Source",
+  "typingSourceToTargetDescription": "Type the translation for each word",
+  "typingTargetToSourceDescription": "Type the word for each translation",
+  "typeYourAnswer": "Type your answer...",
+  "submit": "Submit",
+  "correct": "Correct!",
+  "incorrect": "Incorrect",
+  "correctAnswerWas": "Correct answer: {answer}",
+  "@correctAnswerWas": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "noTranslationsToReview": "No cards with translations to review"
 }

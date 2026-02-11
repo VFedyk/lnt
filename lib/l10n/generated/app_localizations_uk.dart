@@ -1068,4 +1068,42 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get signInCancelled => 'Вхід скасовано';
+
+  @override
+  String get typingReview => 'Повторення введенням';
+
+  @override
+  String get typingSourceToTarget => 'Мова → Переклад';
+
+  @override
+  String get typingTargetToSource => 'Переклад → Мова';
+
+  @override
+  String get typingSourceToTargetDescription =>
+      'Введіть переклад для кожного слова';
+
+  @override
+  String get typingTargetToSourceDescription =>
+      'Введіть слово для кожного перекладу';
+
+  @override
+  String get typeYourAnswer => 'Введіть відповідь...';
+
+  @override
+  String get submit => 'Надіслати';
+
+  @override
+  String get correct => 'Правильно!';
+
+  @override
+  String get incorrect => 'Неправильно';
+
+  @override
+  String correctAnswerWas(String answer) {
+    return 'Правильна відповідь: $answer';
+  }
+
+  @override
+  String get noTranslationsToReview =>
+      'Немає карток з перекладами для повторення';
 }

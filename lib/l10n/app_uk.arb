@@ -359,5 +359,24 @@
   "backupFailed": "Помилка резервного копіювання: {error}",
   "restoreFailed": "Помилка відновлення: {error}",
   "noBackupFound": "Резервну копію не знайдено",
-  "signInCancelled": "Вхід скасовано"
+  "signInCancelled": "Вхід скасовано",
+
+  "typingReview": "Повторення введенням",
+  "typingSourceToTarget": "Мова → Переклад",
+  "typingTargetToSource": "Переклад → Мова",
+  "typingSourceToTargetDescription": "Введіть переклад для кожного слова",
+  "typingTargetToSourceDescription": "Введіть слово для кожного перекладу",
+  "typeYourAnswer": "Введіть відповідь...",
+  "submit": "Надіслати",
+  "correct": "Правильно!",
+  "incorrect": "Неправильно",
+  "correctAnswerWas": "Правильна відповідь: {answer}",
+  "@correctAnswerWas": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "noTranslationsToReview": "Немає карток з перекладами для повторення"
 }

@@ -1999,6 +1999,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign-in was cancelled'**
   String get signInCancelled;
+
+  /// No description provided for @typingReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Typing Review'**
+  String get typingReview;
+
+  /// No description provided for @typingSourceToTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Source → Target'**
+  String get typingSourceToTarget;
+
+  /// No description provided for @typingTargetToSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Target → Source'**
+  String get typingTargetToSource;
+
+  /// No description provided for @typingSourceToTargetDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the translation for each word'**
+  String get typingSourceToTargetDescription;
+
+  /// No description provided for @typingTargetToSourceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the word for each translation'**
+  String get typingTargetToSourceDescription;
+
+  /// No description provided for @typeYourAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your answer...'**
+  String get typeYourAnswer;
+
+  /// No description provided for @submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get submit;
+
+  /// No description provided for @correct.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct!'**
+  String get correct;
+
+  /// No description provided for @incorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect'**
+  String get incorrect;
+
+  /// No description provided for @correctAnswerWas.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer: {answer}'**
+  String correctAnswerWas(String answer);
+
+  /// No description provided for @noTranslationsToReview.
+  ///
+  /// In en, this message translates to:
+  /// **'No cards with translations to review'**
+  String get noTranslationsToReview;
 }
 
 class _AppLocalizationsDelegate

@@ -5,6 +5,7 @@ import '../service_locator.dart';
 import '../utils/constants.dart';
 import 'flashcard_review_screen.dart';
 import 'statistics_screen.dart';
+import 'typing_review_screen.dart';
 
 class ReviewScreen extends StatefulWidget {
   final Language language;
@@ -116,6 +117,72 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   MaterialPageRoute(
                     builder: (_) =>
                         FlashcardReviewScreen(language: widget.language),
+                  ),
+                ).then((_) => _loadStats());
+              },
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingS),
+
+          // Typing Review: Source → Target
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.keyboard),
+              title: Text(l10n.typingSourceToTarget),
+              subtitle: Text(l10n.typingSourceToTargetDescription),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_dueCount > 0)
+                    Badge(
+                      label: Text(_dueCount.toString()),
+                      child: const SizedBox.shrink(),
+                    ),
+                  const SizedBox(width: AppConstants.spacingS),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TypingReviewScreen(
+                      language: widget.language,
+                      direction: TypingDirection.sourceToTarget,
+                    ),
+                  ),
+                ).then((_) => _loadStats());
+              },
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingS),
+
+          // Typing Review: Target → Source
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.keyboard),
+              title: Text(l10n.typingTargetToSource),
+              subtitle: Text(l10n.typingTargetToSourceDescription),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_dueCount > 0)
+                    Badge(
+                      label: Text(_dueCount.toString()),
+                      child: const SizedBox.shrink(),
+                    ),
+                  const SizedBox(width: AppConstants.spacingS),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TypingReviewScreen(
+                      language: widget.language,
+                      direction: TypingDirection.targetToSource,
+                    ),
                   ),
                 ).then((_) => _loadStats());
               },

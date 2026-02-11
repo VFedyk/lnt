@@ -1065,4 +1065,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signInCancelled => 'Sign-in was cancelled';
+
+  @override
+  String get typingReview => 'Typing Review';
+
+  @override
+  String get typingSourceToTarget => 'Source → Target';
+
+  @override
+  String get typingTargetToSource => 'Target → Source';
+
+  @override
+  String get typingSourceToTargetDescription =>
+      'Type the translation for each word';
+
+  @override
+  String get typingTargetToSourceDescription =>
+      'Type the word for each translation';
+
+  @override
+  String get typeYourAnswer => 'Type your answer...';
+
+  @override
+  String get submit => 'Submit';
+
+  @override
+  String get correct => 'Correct!';
+
+  @override
+  String get incorrect => 'Incorrect';
+
+  @override
+  String correctAnswerWas(String answer) {
+    return 'Correct answer: $answer';
+  }
+
+  @override
+  String get noTranslationsToReview => 'No cards with translations to review';
 }
