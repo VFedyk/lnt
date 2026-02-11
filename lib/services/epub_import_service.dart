@@ -78,7 +78,7 @@ class EpubImportService {
       parentId: parentCollectionId,
     );
 
-    final collectionId = await db.createCollection(collection);
+    final collectionId = await db.collections.create(collection);
 
     // Extract and save cover image
     final coverImagePath = await _extractCoverImage(epubBook, collectionId);
@@ -88,7 +88,7 @@ class EpubImportService {
         id: collectionId,
         coverImage: coverImagePath,
       );
-      await db.updateCollection(updatedCollection);
+      await db.collections.update(updatedCollection);
     }
 
     try {
@@ -136,7 +136,7 @@ class EpubImportService {
 
       // Batch insert all texts
       if (textsToCreate.isNotEmpty) {
-        await db.batchCreateTexts(textsToCreate);
+        await db.texts.batchCreate(textsToCreate);
       }
 
       return EpubImportResult(
@@ -151,7 +151,7 @@ class EpubImportService {
       );
     } catch (e) {
       // If import fails, delete the created collection
-      await db.deleteCollection(collectionId);
+      await db.collections.delete(collectionId);
       rethrow;
     }
   }

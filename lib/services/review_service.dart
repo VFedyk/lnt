@@ -48,9 +48,9 @@ class ReviewService {
     await db.reviewCards.update(updatedRecord);
 
     // Update term status
-    final term = await db.getTerm(record.termId);
+    final term = await db.terms.getById(record.termId);
     if (term != null && term.status != TermStatus.ignored) {
-      await db.updateTerm(
+      await db.terms.update(
         term.copyWith(status: newStatus, lastAccessed: DateTime.now()),
       );
     }

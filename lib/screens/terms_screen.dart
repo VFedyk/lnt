@@ -43,7 +43,7 @@ class _TermsScreenState extends State<TermsScreen> {
 
   Future<void> _loadTerms() async {
     setState(() => _isLoading = true);
-    final terms = await db.getTerms(
+    final terms = await db.terms.getAll(
       languageId: widget.language.id!,
     );
     // Batch load translations for all terms
@@ -124,7 +124,7 @@ class _TermsScreenState extends State<TermsScreen> {
         );
 
         for (final term in importedTerms) {
-          await db.createTerm(term);
+          await db.terms.create(term);
         }
 
         _loadTerms();
@@ -145,7 +145,7 @@ class _TermsScreenState extends State<TermsScreen> {
   }
 
   Future<void> _deleteTerm(Term term) async {
-    await db.deleteTerm(term.id!);
+    await db.terms.delete(term.id!);
     _loadTerms();
   }
 
@@ -164,7 +164,7 @@ class _TermsScreenState extends State<TermsScreen> {
     );
 
     if (dialogResult != null) {
-      await db.updateTerm(dialogResult.term);
+      await db.terms.update(dialogResult.term);
       await db.translations.replaceForTerm(
         dialogResult.term.id!,
         dialogResult.translations,

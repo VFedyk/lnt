@@ -47,13 +47,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Future<void> _loadStatistics() async {
     setState(() => _isLoading = true);
     try {
-      final counts = await db.getTermCountsByStatus(
+      final counts = await db.terms.getCountsByStatus(
         widget.language.id!,
       );
-      final termCount = await db.getTotalTermCount(
+      final termCount = await db.terms.getTotalCount(
         widget.language.id!,
       );
-      final textCount = await db.getTotalTextCount(
+      final textCount = await db.texts.getCountByLanguage(
         widget.language.id!,
       );
 

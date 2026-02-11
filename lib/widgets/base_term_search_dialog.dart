@@ -84,7 +84,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
 
     setState(() => _isSearching = true);
 
-    final results = await db.searchTerms(
+    final results = await db.terms.search(
       widget.languageId,
       query.trim(),
     );
@@ -155,7 +155,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
       translation: _translationController.text.trim(),
     );
 
-    final id = await db.createTerm(newTerm);
+    final id = await db.terms.create(newTerm);
     final createdTerm = newTerm.copyWith(id: id);
 
     if (mounted) {

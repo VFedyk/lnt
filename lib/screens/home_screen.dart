@@ -84,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         await Future.delayed(_HomeScreenConstants.appStatePollingInterval);
       }
 
-      final languages = await db.getLanguages();
+      final languages = await db.languages.getAll();
 
       setState(() {
         _languages = languages;

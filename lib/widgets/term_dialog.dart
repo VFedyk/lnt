@@ -134,7 +134,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
       if (!_baseTranslations.containsKey(translationId)) {
         final translation = await db.translations.getById(translationId);
         if (translation != null && mounted) {
-          final term = await db.getTerm(translation.termId);
+          final term = await db.terms.getById(translation.termId);
           if (term != null && mounted) {
             setState(() => _baseTranslations[translationId] = (translation: translation, term: term));
           }
@@ -324,7 +324,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
   }
 
   Future<void> _loadLanguages() async {
-    final languages = await db.getLanguages();
+    final languages = await db.languages.getAll();
     if (mounted) {
       setState(() => _languages = languages);
     }

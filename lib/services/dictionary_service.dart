@@ -57,7 +57,7 @@ class DictionaryService {
 
   // Get active dictionaries for a language
   Future<List<Dictionary>> getActiveDictionaries(int languageId) async {
-    return await db.getDictionaries(
+    return await db.dictionaries.getAll(
       languageId: languageId,
       activeOnly: true,
     );
@@ -65,7 +65,7 @@ class DictionaryService {
 
   // Get all dictionaries for a language
   Future<List<Dictionary>> getAllDictionaries(int languageId) async {
-    return await db.getDictionaries(
+    return await db.dictionaries.getAll(
       languageId: languageId,
     );
   }

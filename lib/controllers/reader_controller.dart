@@ -61,7 +61,7 @@ class ReaderController extends ChangeNotifier {
     isLoading = true;
     _safeNotify();
 
-    termsMap = await db.getTermsMap(language.id!);
+    termsMap = await db.terms.getMapByLanguage(language.id!);
     termsById = {
       for (final term in termsMap.values)
         if (term.id != null) term.id!: term,
@@ -138,13 +138,13 @@ class ReaderController extends ChangeNotifier {
 
     final foreignTerms = <int, Term>{};
     for (final id in termIds) {
-      final term = await db.getTerm(id);
+      final term = await db.terms.getById(id);
       if (term != null) foreignTerms[id] = term;
     }
 
     final languageNames = <int, String>{};
     for (final langId in languageIds) {
-      final lang = await db.getLanguage(langId);
+      final lang = await db.languages.getById(langId);
       languageNames[langId] = lang?.name ?? '';
     }
 
@@ -270,7 +270,7 @@ class ReaderController extends ChangeNotifier {
       status:
           text.status == TextStatus.pending ? TextStatus.inProgress : text.status,
     );
-    await db.updateText(updatedText);
+    await db.texts.update(updatedText);
     text = updatedText;
   }
 
@@ -280,7 +280,7 @@ class ReaderController extends ChangeNotifier {
     final lowerText = term.lowerText;
 
     if (term.languageId != language.id) {
-      final lang = await db.getLanguage(term.languageId);
+      final lang = await db.languages.getById(term.languageId);
       final termTranslations = term.id != null
           ? (await db.translations.getByTermIds([term.id!]))[term.id!] ?? []
           : <Translation>[];
@@ -338,7 +338,7 @@ class ReaderController extends ChangeNotifier {
     required bool isNew,
   }) async {
     if (isNew) {
-      final termId = await db.createTerm(term);
+      final termId = await db.terms.create(term);
       final termWithId = term.copyWith(id: termId);
       await db.translations.replaceForTerm(termId, translations);
       final newTranslations = await db.translations.getByTermId(termId);
@@ -357,7 +357,7 @@ class ReaderController extends ChangeNotifier {
         await db.reviewCards.getOrCreate(termId);
       }
     } else {
-      await db.updateTerm(term);
+      await db.terms.update(term);
       await db.translations.replaceForTerm(term.id!, translations);
       final newTranslations = await db.translations.getByTermId(term.id!);
       translationsMap[term.id!] = newTranslations;
@@ -385,14 +385,14 @@ class ReaderController extends ChangeNotifier {
   }) async {
     cancelSelection();
     if (isNew) {
-      final termId = await db.createTerm(term);
+      final termId = await db.terms.create(term);
       await db.translations.replaceForTerm(termId, translations);
       if (term.status != TermStatus.ignored &&
           term.status != TermStatus.wellKnown) {
         await db.reviewCards.getOrCreate(termId);
       }
     } else {
-      await db.updateTerm(term);
+      await db.terms.update(term);
       await db.translations.replaceForTerm(term.id!, translations);
     }
     final lowerWords = _textParser.normalizeWord(term.text);
@@ -463,7 +463,7 @@ class ReaderController extends ChangeNotifier {
 
   Future<void> updateText(TextDocument updatedText) async {
     final contentChanged = updatedText.content != text.content;
-    await db.updateText(updatedText);
+    await db.texts.update(updatedText);
     text = updatedText;
     _safeNotify();
     if (contentChanged) {
@@ -476,7 +476,7 @@ class ReaderController extends ChangeNotifier {
         ? TextStatus.inProgress
         : TextStatus.finished;
     final updatedText = text.copyWith(status: newStatus);
-    await db.updateText(updatedText);
+    await db.texts.update(updatedText);
     text = updatedText;
     _safeNotify();
     return newStatus;
@@ -485,7 +485,7 @@ class ReaderController extends ChangeNotifier {
   Future<TextDocument?> getNextTextInCollection() async {
     if (text.collectionId == null) return null;
     final textsInCollection =
-        await db.getTextsInCollection(text.collectionId!);
+        await db.texts.getByCollection(text.collectionId!);
     final currentIndex = textsInCollection.indexWhere((t) => t.id == text.id);
     if (currentIndex >= 0 && currentIndex < textsInCollection.length - 1) {
       return textsInCollection[currentIndex + 1];
@@ -499,11 +499,11 @@ class ReaderController extends ChangeNotifier {
       final lowerWord = _textParser.normalizeWord(word);
       final existingTerm = termsMap[lowerWord];
       if (existingTerm != null) {
-        await db.updateTerm(
+        await db.terms.update(
           existingTerm.copyWith(status: TermStatus.wellKnown),
         );
       } else {
-        await db.createTerm(
+        await db.terms.create(
           Term(
             languageId: language.id!,
             text: word,

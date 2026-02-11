@@ -61,17 +61,17 @@ class _DashboardTabState extends State<DashboardTab> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final recentlyRead = await db.getRecentlyReadTexts(
+      final recentlyRead = await db.texts.getRecentlyRead(
         widget.language.id!,
         limit: _DashboardConstants.recentTextsLimit,
       );
-      final recentlyAdded = await db
-          .getRecentlyAddedTexts(widget.language.id!, limit: _DashboardConstants.recentTextsLimit);
-      final counts = await db.getTermCountsByStatus(
+      final recentlyAdded = await db.texts
+          .getRecentlyAdded(widget.language.id!, limit: _DashboardConstants.recentTextsLimit);
+      final counts = await db.terms.getCountsByStatus(
         widget.language.id!,
       );
 
-      final termsMap = await db.getTermsMap(
+      final termsMap = await db.terms.getMapByLanguage(
         widget.language.id!,
       );
 
@@ -87,7 +87,7 @@ class _DashboardTabState extends State<DashboardTab> {
           .map((t) => t.collectionId!)
           .toSet();
       for (final collectionId in collectionIds) {
-        final collection = await db.getCollection(
+        final collection = await db.collections.getById(
           collectionId,
         );
         if (collection != null) {

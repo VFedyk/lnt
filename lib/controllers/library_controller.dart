@@ -165,12 +165,12 @@ class LibraryController extends ChangeNotifier {
     isLoading = true;
     _safeNotify();
 
-    final allCollections = await db.getCollections(
+    final allCollections = await db.collections.getAll(
       languageId: language.id!,
       parentId: currentCollection?.id,
     );
 
-    final allTexts = await db.getTexts(languageId: language.id!);
+    final allTexts = await db.texts.getAll(languageId: language.id!);
 
     final filteredTexts = currentCollection == null
         ? allTexts.where((t) => t.collectionId == null).toList()
@@ -193,7 +193,7 @@ class LibraryController extends ChangeNotifier {
         texts.where((t) => !unknownCounts.containsKey(t.id!)).toList();
     if (textsToCalculate.isEmpty) return;
 
-    final termsMap = await db.getTermsMap(language.id!);
+    final termsMap = await db.terms.getMapByLanguage(language.id!);
 
     for (final text in textsToCalculate) {
       if (_isDisposed) return;
@@ -335,7 +335,7 @@ class LibraryController extends ChangeNotifier {
   }
 
   Future<void> recalculateUnknownCountForText(TextDocument text) async {
-    final termsMap = await db.getTermsMap(language.id!);
+    final termsMap = await db.terms.getMapByLanguage(language.id!);
     unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
     _safeNotify();
   }
@@ -350,7 +350,7 @@ class LibraryController extends ChangeNotifier {
   Future<void> goBack() async {
     if (currentCollection != null) {
       if (currentCollection!.parentId != null) {
-        currentCollection = await db.getCollection(
+        currentCollection = await db.collections.getById(
           currentCollection!.parentId!,
         );
       } else {
@@ -363,37 +363,37 @@ class LibraryController extends ChangeNotifier {
   // ── CRUD ──
 
   Future<void> createText(TextDocument text) async {
-    await db.createText(text);
+    await db.texts.create(text);
     await loadData();
   }
 
   Future<void> updateText(TextDocument text) async {
-    await db.updateText(text);
+    await db.texts.update(text);
     await loadData();
   }
 
   Future<void> deleteText(int textId) async {
-    await db.deleteText(textId);
+    await db.texts.delete(textId);
     await loadData();
   }
 
   Future<void> createCollection(Collection collection) async {
-    await db.createCollection(collection);
+    await db.collections.create(collection);
     await loadData();
   }
 
   Future<void> updateCollection(Collection collection) async {
-    await db.updateCollection(collection);
+    await db.collections.update(collection);
     await loadData();
   }
 
   Future<void> deleteCollection(int collectionId) async {
-    await db.deleteCollection(collectionId);
+    await db.collections.delete(collectionId);
     await loadData();
   }
 
   Future<int> getTextCountInCollection(int collectionId) async {
-    return db.getTextCountInCollection(collectionId);
+    return db.texts.getCountInCollection(collectionId);
   }
 
   Future<void> setCoverImage(TextDocument text, String sourcePath) async {
@@ -412,7 +412,7 @@ class LibraryController extends ChangeNotifier {
 
     final updatedText =
         text.copyWith(coverImage: CoverImageHelper.toRelative(newPath));
-    await db.updateText(updatedText);
+    await db.texts.update(updatedText);
     await loadData();
   }
 }

@@ -27,7 +27,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
 
   Future<void> _loadLanguages() async {
     setState(() => _isLoading = true);
-    final languages = await db.getLanguages();
+    final languages = await db.languages.getAll();
     setState(() {
       _languages = languages;
       _isLoading = false;
@@ -45,7 +45,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
 
     if (result != null) {
       if (language == null) {
-        final langId = await db.createLanguage(result);
+        final langId = await db.languages.create(result);
         // After creating language, prompt to add dictionaries
         if (mounted) {
           final l10n = AppLocalizations.of(context);
@@ -78,7 +78,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
           }
         }
       } else {
-        await db.updateLanguage(result);
+        await db.languages.update(result);
       }
       _loadLanguages();
     }
@@ -93,7 +93,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
   }
 
   Future<int> _getDictionaryCount(int languageId) async {
-    final dicts = await db.getDictionaries(
+    final dicts = await db.dictionaries.getAll(
       languageId: languageId,
     );
     return dicts.length;
@@ -121,7 +121,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
     );
 
     if (confirm == true) {
-      await db.deleteLanguage(language.id!);
+      await db.languages.delete(language.id!);
       _loadLanguages();
     }
   }

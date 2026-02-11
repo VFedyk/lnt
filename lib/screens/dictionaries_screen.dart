@@ -41,7 +41,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
 
   Future<void> _loadDictionaries() async {
     setState(() => _isLoading = true);
-    final dicts = await db.getDictionaries(
+    final dicts = await db.dictionaries.getAll(
       languageId: widget.language.id!,
     );
     setState(() {
@@ -62,9 +62,9 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
 
     if (result != null) {
       if (dictionary == null) {
-        await db.createDictionary(result);
+        await db.dictionaries.create(result);
       } else {
-        await db.updateDictionary(result);
+        await db.dictionaries.update(result);
       }
       _loadDictionaries();
     }
@@ -93,14 +93,14 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
     );
 
     if (confirm == true) {
-      await db.deleteDictionary(dictionary.id!);
+      await db.dictionaries.delete(dictionary.id!);
       _loadDictionaries();
     }
   }
 
   Future<void> _toggleActive(Dictionary dictionary) async {
     final updated = dictionary.copyWith(isActive: !dictionary.isActive);
-    await db.updateDictionary(updated);
+    await db.dictionaries.update(updated);
     _loadDictionaries();
   }
 
@@ -113,7 +113,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
       _dictionaries.insert(newIndex, item);
     });
 
-    await db.reorderDictionaries(_dictionaries);
+    await db.dictionaries.reorder(_dictionaries);
     _loadDictionaries();
   }
 

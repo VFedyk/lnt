@@ -82,7 +82,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
 
     final items = <_ReviewItem>[];
     for (final rc in dueCards) {
-      final term = await db.getTerm(rc.termId);
+      final term = await db.terms.getById(rc.termId);
       if (term == null) continue;
 
       List<Translation> translations = [];
@@ -117,7 +117,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
   Future<void> _ensureCardsSeeded() async {
     setState(() => _isSeeding = true);
 
-    final allTerms = await db.getTerms(languageId: widget.language.id!);
+    final allTerms = await db.terms.getAll(languageId: widget.language.id!);
     final eligibleIds = allTerms
         .where((t) =>
             t.id != null &&

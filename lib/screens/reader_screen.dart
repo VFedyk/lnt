@@ -469,7 +469,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     if (ctrl.selectedWordIndices.isEmpty) return;
     final l10n = AppLocalizations.of(context);
 
-    final allLanguages = await db.getLanguages();
+    final allLanguages = await db.languages.getAll();
     final otherLanguages =
         allLanguages.where((lang) => lang.id != ctrl.language.id).toList();
 
@@ -515,7 +515,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         .toSet()
         .toList();
 
-    final targetTermsMap = await db.getTermsMap(selectedLanguage.id!);
+    final targetTermsMap = await db.terms.getMapByLanguage(selectedLanguage.id!);
     final wordsWithTermIds = <String, int?>{};
     for (final word in lowerWords) {
       final term = targetTermsMap[word];
