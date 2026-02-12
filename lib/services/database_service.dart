@@ -71,6 +71,11 @@ class DatabaseService {
     );
   }
 
+  Future<T> transaction<T>(Future<T> Function(Transaction txn) action) async {
+    final db = await database;
+    return db.transaction(action);
+  }
+
   Future<void> closeDatabase() async {
     if (_database != null) {
       await _database!.close();

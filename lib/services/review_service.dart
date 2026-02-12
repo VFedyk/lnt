@@ -21,6 +21,7 @@ class ReviewService {
 
   /// Process a review rating for a term.
   /// Returns the updated ReviewCardRecord and the new TermStatus.
+  /// All writes run inside a single transaction for consistency.
   Future<({ReviewCardRecord updatedCard, int newStatus})> reviewTerm(
     ReviewCardRecord record,
     fsrs.Rating rating,
@@ -28,15 +29,8 @@ class ReviewService {
     final (:card, :reviewLog) = _scheduler.reviewCard(record.card, rating);
     final newStatus = mapFsrsToTermStatus(card);
     final now = DateTime.now().toUtc();
+    final nowIso = now.toIso8601String();
 
-    // Save review log
-    await db.reviewLogs.create(
-      record.termId,
-      jsonEncode(reviewLog.toMap()),
-      now,
-    );
-
-    // Update card in DB
     final updatedRecord = ReviewCardRecord(
       id: record.id,
       termId: record.termId,
@@ -45,15 +39,45 @@ class ReviewService {
       createdAt: record.createdAt,
       updatedAt: now,
     );
-    await db.reviewCards.update(updatedRecord);
 
-    // Update term status
-    final term = await db.terms.getById(record.termId);
-    if (term != null && term.status != TermStatus.ignored) {
-      await db.terms.update(
-        term.copyWith(status: newStatus, lastAccessed: DateTime.now()),
+    await db.transaction((txn) async {
+      // Save review log
+      await txn.insert('review_logs', {
+        'term_id': record.termId,
+        'log_data': jsonEncode(reviewLog.toMap()),
+        'reviewed_at': nowIso,
+      });
+
+      // Update review card
+      await txn.update(
+        'review_cards',
+        updatedRecord.toMap(),
+        where: 'id = ?',
+        whereArgs: [record.id],
       );
-    }
+
+      // Update term status
+      final termMaps = await txn.query(
+        'terms',
+        where: 'id = ?',
+        whereArgs: [record.termId],
+      );
+      if (termMaps.isNotEmpty) {
+        final termStatus = termMaps.first['status'] as int;
+        if (termStatus != TermStatus.ignored) {
+          await txn.update(
+            'terms',
+            {'status': newStatus, 'last_accessed': nowIso},
+            where: 'id = ?',
+            whereArgs: [record.termId],
+          );
+        }
+      }
+    });
+
+    // Notify after transaction commits
+    dataChanges.reviewCards.notify();
+    dataChanges.terms.notify();
 
     return (updatedCard: updatedRecord, newStatus: newStatus);
   }
