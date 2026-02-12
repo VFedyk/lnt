@@ -81,15 +81,17 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
     final dueCards = await db.reviewCards
         .getDueCards(widget.language.id!);
 
+    // Batch load terms and translations (2 queries instead of 2N)
+    final termIds = dueCards.map((rc) => rc.termId).toList();
+    final termsMap = await db.terms.getByIds(termIds);
+    final translationsMap = await db.translations.getByTermIds(termIds);
+
     final items = <_ReviewItem>[];
     for (final rc in dueCards) {
-      final term = await db.terms.getById(rc.termId);
+      final term = termsMap[rc.termId];
       if (term == null) continue;
 
-      List<Translation> translations = [];
-      if (term.id != null) {
-        translations = await db.translations.getByTermId(term.id!);
-      }
+      var translations = translationsMap[term.id] ?? [];
       if (translations.isEmpty && term.translation.isNotEmpty) {
         translations = [
           Translation(termId: term.id ?? 0, meaning: term.translation),

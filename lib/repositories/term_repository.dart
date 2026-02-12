@@ -86,6 +86,28 @@ class TermRepository extends BaseRepository {
     };
   }
 
+  Future<Map<int, Term>> getByIds(List<int> ids) async {
+    if (ids.isEmpty) return {};
+
+    final db = await getDatabase();
+    final result = <int, Term>{};
+    const batchSize = 500;
+
+    for (var i = 0; i < ids.length; i += batchSize) {
+      final batch = ids.skip(i).take(batchSize).toList();
+      final placeholders = List.filled(batch.length, '?').join(',');
+      final maps = await db.rawQuery(
+        'SELECT * FROM terms WHERE id IN ($placeholders)',
+        batch,
+      );
+      for (final map in maps) {
+        final term = Term.fromMap(map);
+        result[term.id!] = term;
+      }
+    }
+    return result;
+  }
+
   Future<int> update(Term term) async {
     final db = await getDatabase();
     final result = await db.update(
