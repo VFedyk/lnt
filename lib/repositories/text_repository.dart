@@ -52,12 +52,10 @@ class TextRepository extends BaseRepository {
 
   Future<List<TextDocument>> search(int languageId, String query) async {
     final db = await getDatabase();
-    final maps = await db.query(
-      'texts',
-      where: 'language_id = ? AND (title LIKE ? OR content LIKE ?)',
-      whereArgs: [languageId, '%$query%', '%$query%'],
-      orderBy: 'last_read DESC',
-      limit: 50,
+    final escaped = '%${BaseRepository.escapeLike(query)}%';
+    final maps = await db.rawQuery(
+      r"SELECT * FROM texts WHERE language_id = ? AND (title LIKE ? ESCAPE '\' OR content LIKE ? ESCAPE '\') ORDER BY last_read DESC LIMIT 50",
+      [languageId, escaped, escaped],
     );
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }

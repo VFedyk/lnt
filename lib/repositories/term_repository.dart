@@ -195,16 +195,16 @@ class TermRepository extends BaseRepository {
 
   Future<List<Term>> search(int languageId, String query) async {
     final db = await getDatabase();
-    // Search in terms table and also in translations table
+    final escaped = '%${BaseRepository.escapeLike(query)}%';
     final maps = await db.rawQuery(
-      '''
+      r"""
       SELECT DISTINCT t.* FROM terms t
       LEFT JOIN translations tr ON tr.term_id = t.id
-      WHERE t.language_id = ? AND (t.text LIKE ? OR t.translation LIKE ? OR tr.meaning LIKE ?)
+      WHERE t.language_id = ? AND (t.text LIKE ? ESCAPE '\' OR t.translation LIKE ? ESCAPE '\' OR tr.meaning LIKE ? ESCAPE '\')
       ORDER BY t.last_accessed DESC
       LIMIT 100
-      ''',
-      [languageId, '%$query%', '%$query%', '%$query%'],
+      """,
+      [languageId, escaped, escaped, escaped],
     );
     return maps.map((map) => Term.fromMap(map)).toList();
   }
