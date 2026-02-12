@@ -148,9 +148,7 @@ class _TermsScreenState extends State<TermsScreen> {
           widget.language.id!,
         );
 
-        for (final term in importedTerms) {
-          await db.terms.create(term);
-        }
+        await db.terms.bulkCreate(importedTerms);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

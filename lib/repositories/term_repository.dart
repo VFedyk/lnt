@@ -161,6 +161,18 @@ class TermRepository extends BaseRepository {
     return result.first['count'] as int;
   }
 
+  Future<void> bulkCreate(List<Term> terms) async {
+    if (terms.isEmpty) return;
+    final db = await getDatabase();
+    final batch = db.batch();
+    for (final term in terms) {
+      batch.insert('terms', term.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+    await batch.commit(noResult: true);
+    notifyChange();
+  }
+
   Future<void> bulkUpdateStatus(List<int> termIds, int newStatus) async {
     final db = await getDatabase();
     final batch = db.batch();
