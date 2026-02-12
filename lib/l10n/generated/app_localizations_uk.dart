@@ -21,6 +21,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get texts => 'Тексти';
 
   @override
+  String get textsFinished => 'Завершено';
+
+  @override
   String get vocabulary => 'Словник';
 
   @override

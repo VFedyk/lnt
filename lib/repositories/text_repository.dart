@@ -71,6 +71,15 @@ class TextRepository extends BaseRepository {
     return result.first['count'] as int;
   }
 
+  Future<int> getFinishedCount(int languageId) async {
+    final db = await getDatabase();
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM texts WHERE language_id = ? AND status = ?',
+      [languageId, TextStatus.finished.value],
+    );
+    return result.first['count'] as int;
+  }
+
   Future<int> getCountInCollection(int collectionId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(

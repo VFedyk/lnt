@@ -21,6 +21,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get texts => 'Texts';
 
   @override
+  String get textsFinished => 'Finished';
+
+  @override
   String get vocabulary => 'Vocabulary';
 
   @override

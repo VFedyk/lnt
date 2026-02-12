@@ -41,6 +41,8 @@ class _DashboardTabState extends State<DashboardTab> {
   Map<int, int> _unknownCounts = {};
   Map<int, String> _collectionNames = {};
   Map<String, DayActivity> _activityData = {};
+  int _totalTextsCount = 0;
+  int _finishedTextsCount = 0;
   bool _isLoading = true;
   String? _error;
   final _textParser = TextParserService();
@@ -83,6 +85,12 @@ class _DashboardTabState extends State<DashboardTab> {
       final recentlyAdded = await db.texts
           .getRecentlyAdded(widget.language.id!, limit: _DashboardConstants.recentTextsLimit);
       final counts = await db.terms.getCountsByStatus(
+        widget.language.id!,
+      );
+      final totalTextsCount = await db.texts.getCountByLanguage(
+        widget.language.id!,
+      );
+      final finishedTextsCount = await db.texts.getFinishedCount(
         widget.language.id!,
       );
 
@@ -142,6 +150,8 @@ class _DashboardTabState extends State<DashboardTab> {
         _recentlyReadTexts = recentlyRead;
         _recentlyAddedTexts = recentlyAdded;
         _termCounts = counts;
+        _totalTextsCount = totalTextsCount;
+        _finishedTextsCount = finishedTextsCount;
         _unknownCounts = unknownCounts;
         _collectionNames = collectionNames;
         _activityData = activityData;
@@ -312,10 +322,11 @@ class _DashboardTabState extends State<DashboardTab> {
       children: [
         _buildStatItem(l10n.totalTerms, totalTerms.toString(), Icons.book),
         _buildStatItem(l10n.known, knownTerms.toString(), Icons.check_circle),
+        _buildStatItem(l10n.texts, _totalTextsCount.toString(), Icons.article),
         _buildStatItem(
-          l10n.texts,
-          _recentlyAddedTexts.length.toString(),
-          Icons.article,
+          l10n.textsFinished,
+          _finishedTextsCount.toString(),
+          Icons.done_all,
         ),
       ],
     );

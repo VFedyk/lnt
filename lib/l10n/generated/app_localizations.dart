@@ -122,6 +122,12 @@ abstract class AppLocalizations {
   /// **'Texts'**
   String get texts;
 
+  /// No description provided for @textsFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get textsFinished;
+
   /// No description provided for @vocabulary.
   ///
   /// In en, this message translates to:
