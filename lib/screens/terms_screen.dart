@@ -31,6 +31,8 @@ class _TermsScreenState extends State<TermsScreen> {
   List<Term> _filteredTerms = [];
   Map<int, List<Translation>> _translationsMap = {};
   bool _isLoading = true;
+  bool _loadInProgress = false;
+  bool _pendingReload = false;
   final _searchController = TextEditingController();
   final _importService = ImportExportService();
   int? _statusFilter;
@@ -50,19 +52,34 @@ class _TermsScreenState extends State<TermsScreen> {
   }
 
   Future<void> _loadTerms() async {
+    if (_loadInProgress) {
+      _pendingReload = true;
+      return;
+    }
+    _loadInProgress = true;
+    _pendingReload = false;
+
     setState(() => _isLoading = true);
-    final terms = await db.terms.getAll(
-      languageId: widget.language.id!,
-    );
-    // Batch load translations for all terms
-    final termIds = terms.where((t) => t.id != null).map((t) => t.id!).toList();
-    final translationsMap = await db.translations.getByTermIds(termIds);
-    setState(() {
-      _terms = terms;
-      _translationsMap = translationsMap;
-      _applyFilters();
-      _isLoading = false;
-    });
+    try {
+      final terms = await db.terms.getAll(
+        languageId: widget.language.id!,
+      );
+      // Batch load translations for all terms
+      final termIds = terms.where((t) => t.id != null).map((t) => t.id!).toList();
+      final translationsMap = await db.translations.getByTermIds(termIds);
+      if (!mounted) return;
+      setState(() {
+        _terms = terms;
+        _translationsMap = translationsMap;
+        _applyFilters();
+        _isLoading = false;
+      });
+    } finally {
+      _loadInProgress = false;
+      if (_pendingReload && mounted) {
+        _loadTerms();
+      }
+    }
   }
 
   Map<int, int> _statusCounts = {};

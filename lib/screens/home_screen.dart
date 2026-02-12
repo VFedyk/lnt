@@ -48,6 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Language> _languages = [];
   Language? _selectedLanguage;
   bool _isLoading = true;
+  bool _loadInProgress = false;
+  bool _pendingReload = false;
   int _dueCount = 0;
 
   @override
@@ -69,6 +71,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadLanguages() async {
+    if (_loadInProgress) {
+      _pendingReload = true;
+      return;
+    }
+    _loadInProgress = true;
+    _pendingReload = false;
+
     setState(() => _isLoading = true);
     try {
       // Wait for AppState preferences to load
@@ -79,6 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final languages = await db.languages.getAll();
 
+      if (!mounted) return;
       setState(() {
         _languages = languages;
       });
@@ -107,16 +117,21 @@ class _HomeScreenState extends State<HomeScreen> {
           ? await db.reviewCards.getDueCount(_selectedLanguage!.id!)
           : 0;
 
+      if (!mounted) return;
       setState(() {
         _dueCount = dueCount;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).errorLoadingLanguages(e.toString()))));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).errorLoadingLanguages(e.toString()))));
+    } finally {
+      _loadInProgress = false;
+      if (_pendingReload && mounted) {
+        _loadLanguages();
       }
     }
   }

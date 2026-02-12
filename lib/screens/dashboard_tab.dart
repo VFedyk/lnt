@@ -44,6 +44,8 @@ class _DashboardTabState extends State<DashboardTab> {
   int _totalTextsCount = 0;
   int _finishedTextsCount = 0;
   bool _isLoading = true;
+  bool _loadInProgress = false;
+  bool _pendingReload = false;
   String? _error;
   final _textParser = TextParserService();
 
@@ -73,6 +75,13 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Future<void> _loadData() async {
+    if (_loadInProgress) {
+      _pendingReload = true;
+      return;
+    }
+    _loadInProgress = true;
+    _pendingReload = false;
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -146,6 +155,7 @@ class _DashboardTabState extends State<DashboardTab> {
         );
       }
 
+      if (!mounted) return;
       setState(() {
         _recentlyReadTexts = recentlyRead;
         _recentlyAddedTexts = recentlyAdded;
@@ -159,10 +169,16 @@ class _DashboardTabState extends State<DashboardTab> {
       });
     } catch (e, stackTrace) {
       AppLogger.error('Dashboard load failed', error: e, stackTrace: stackTrace);
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _error = e.toString();
       });
+    } finally {
+      _loadInProgress = false;
+      if (_pendingReload && mounted) {
+        _loadData();
+      }
     }
   }
 

@@ -48,10 +48,11 @@ class ReviewCardRepository extends BaseRepository {
     return result;
   }
 
-  /// Get all due cards for a language, joined with terms.
+  /// Get due cards for a language, joined with terms.
   /// Excludes ignored (status=0) and wellKnown (status=99) terms.
+  /// Limited to [limit] cards to prevent unbounded memory usage.
   Future<List<ReviewCardRecord>> getDueCards(int languageId,
-      {DateTime? now}) async {
+      {DateTime? now, int limit = 200}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
     final maps = await db.rawQuery(
@@ -63,8 +64,9 @@ class ReviewCardRepository extends BaseRepository {
         AND t.status != 99
         AND rc.next_due <= ?
       ORDER BY rc.next_due ASC
+      LIMIT ?
       ''',
-      [languageId, now.toIso8601String()],
+      [languageId, now.toIso8601String(), limit],
     );
     return maps.map((m) => ReviewCardRecord.fromMap(m)).toList();
   }
