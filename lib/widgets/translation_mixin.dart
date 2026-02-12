@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../models/translation_result.dart';
 import '../service_locator.dart';
 import '../services/deepl_service.dart';
 import '../services/libretranslate_service.dart';
@@ -36,7 +37,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
     setState(() => _isTranslating = true);
 
     final targetLang = await settings.getDeepLTargetLang();
-    String? translation;
+    TranslationResult result;
 
     if (provider == TranslationProvider.deepL) {
       final sourceCode = DeepLService.getDeepLLanguageCode(languageName);
@@ -45,7 +46,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
         setState(() => _isTranslating = false);
         return;
       }
-      translation = await deepLService.translate(
+      result = await deepLService.translate(
         text: sourceTextController.text.trim(),
         sourceLang: sourceCode,
         targetLang: targetLang,
@@ -57,7 +58,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
         setState(() => _isTranslating = false);
         return;
       }
-      translation = await libreTranslateService.translate(
+      result = await libreTranslateService.translate(
         text: sourceTextController.text.trim(),
         sourceLang: sourceCode,
         targetLang: targetLang.toLowerCase(),
@@ -66,15 +67,24 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
 
     if (mounted) {
       setState(() => _isTranslating = false);
-      if (translation != null) {
-        translationTextController.text = translation;
+      if (result.isSuccess) {
+        translationTextController.text = result.text!;
       } else {
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.translationFailed)),
+          SnackBar(content: Text(_errorMessage(l10n, result.error!))),
         );
       }
     }
+  }
+
+  String _errorMessage(AppLocalizations l10n, TranslationError error) {
+    return switch (error) {
+      TranslationError.authFailed => l10n.translationAuthFailed,
+      TranslationError.rateLimited => l10n.translationRateLimited,
+      TranslationError.networkError => l10n.translationNetworkError,
+      TranslationError.serverError => l10n.translationServerError,
+    };
   }
 
   void _showLanguageNotSupported(String providerName) {

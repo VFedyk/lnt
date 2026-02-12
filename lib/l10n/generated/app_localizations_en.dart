@@ -857,6 +857,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Translation failed. Check your API key and settings.';
 
   @override
+  String get translationAuthFailed =>
+      'Invalid API key. Check your translation settings.';
+
+  @override
+  String get translationRateLimited =>
+      'Rate limited. Please wait and try again.';
+
+  @override
+  String get translationNetworkError =>
+      'Network error. Check your connection and try again.';
+
+  @override
+  String get translationServerError =>
+      'Translation server error. Try again later.';
+
+  @override
   String languageNotSupported(String name) {
     return 'Language \"$name\" is not supported';
   }

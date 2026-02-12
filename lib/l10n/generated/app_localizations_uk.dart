@@ -860,6 +860,22 @@ class AppLocalizationsUk extends AppLocalizations {
       'Помилка перекладу. Перевірте API ключ та налаштування.';
 
   @override
+  String get translationAuthFailed =>
+      'Невірний API ключ. Перевірте налаштування перекладу.';
+
+  @override
+  String get translationRateLimited =>
+      'Перевищено ліміт запитів. Зачекайте і спробуйте знову.';
+
+  @override
+  String get translationNetworkError =>
+      'Помилка мережі. Перевірте з\'єднання і спробуйте знову.';
+
+  @override
+  String get translationServerError =>
+      'Помилка сервера перекладу. Спробуйте пізніше.';
+
+  @override
   String languageNotSupported(String name) {
     return 'Мова \"$name\" не підтримується';
   }

@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../models/translation_result.dart';
 import '../service_locator.dart';
 import 'logger_service.dart';
 
@@ -21,16 +23,15 @@ class DeepLService {
   static const String _freeUsageUrl = 'https://api-free.deepl.com/v2/usage';
   static const String _proUsageUrl = 'https://api.deepl.com/v2/usage';
 
-  /// Translates text using DeepL API
-  /// Returns the translated text or null if translation fails
-  Future<String?> translate({
+  /// Translates text using DeepL API.
+  Future<TranslationResult> translate({
     required String text,
     required String sourceLang,
     required String targetLang,
   }) async {
     final apiKey = await settings.getDeepLApiKey();
     if (apiKey == null || apiKey.isEmpty) {
-      return null;
+      return const TranslationResult.failure(TranslationError.authFailed);
     }
 
     final isFree = await settings.isDeepLApiFree();
@@ -54,14 +55,24 @@ class DeepLService {
         final data = jsonDecode(response.body);
         final translations = data['translations'] as List;
         if (translations.isNotEmpty) {
-          return translations[0]['text'] as String;
+          return TranslationResult.success(translations[0]['text'] as String);
         }
+        return const TranslationResult.failure(TranslationError.serverError);
       }
-      return null;
+      return TranslationResult.failure(_classifyHttpError(response.statusCode));
+    } on SocketException catch (e, stackTrace) {
+      AppLogger.error('DeepL network error', error: e, stackTrace: stackTrace);
+      return const TranslationResult.failure(TranslationError.networkError);
     } catch (e, stackTrace) {
       AppLogger.error('DeepL translation failed', error: e, stackTrace: stackTrace);
-      return null;
+      return const TranslationResult.failure(TranslationError.networkError);
     }
+  }
+
+  static TranslationError _classifyHttpError(int statusCode) {
+    if (statusCode == 401 || statusCode == 403) return TranslationError.authFailed;
+    if (statusCode == 429 || statusCode == 456) return TranslationError.rateLimited;
+    return TranslationError.serverError;
   }
 
   /// Gets usage statistics from DeepL API

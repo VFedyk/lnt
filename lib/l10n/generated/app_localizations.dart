@@ -1616,6 +1616,30 @@ abstract class AppLocalizations {
   /// **'Translation failed. Check your API key and settings.'**
   String get translationFailed;
 
+  /// No description provided for @translationAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid API key. Check your translation settings.'**
+  String get translationAuthFailed;
+
+  /// No description provided for @translationRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate limited. Please wait and try again.'**
+  String get translationRateLimited;
+
+  /// No description provided for @translationNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Check your connection and try again.'**
+  String get translationNetworkError;
+
+  /// No description provided for @translationServerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation server error. Try again later.'**
+  String get translationServerError;
+
   /// No description provided for @languageNotSupported.
   ///
   /// In en, this message translates to:

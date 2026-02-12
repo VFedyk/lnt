@@ -514,6 +514,10 @@
   "romanizationPronunciation": "Romanization / Pronunciation",
   "exampleSentence": "Example Sentence",
   "translationFailed": "Translation failed. Check your API key and settings.",
+  "translationAuthFailed": "Invalid API key. Check your translation settings.",
+  "translationRateLimited": "Rate limited. Please wait and try again.",
+  "translationNetworkError": "Network error. Check your connection and try again.",
+  "translationServerError": "Translation server error. Try again later.",
   "languageNotSupported": "Language \"{name}\" is not supported",
   "@languageNotSupported": {
     "placeholders": {

@@ -1,20 +1,23 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../models/translation_result.dart';
 import '../service_locator.dart';
 import 'logger_service.dart';
 
 class LibreTranslateService {
   LibreTranslateService();
 
-  /// Translates text using LibreTranslate API
-  /// Returns the translated text or null if translation fails
-  Future<String?> translate({
+  /// Translates text using LibreTranslate API.
+  Future<TranslationResult> translate({
     required String text,
     required String sourceLang,
     required String targetLang,
   }) async {
     final serverUrl = await settings.getLibreTranslateUrl();
-    if (serverUrl == null || serverUrl.isEmpty) return null;
+    if (serverUrl == null || serverUrl.isEmpty) {
+      return const TranslationResult.failure(TranslationError.authFailed);
+    }
 
     final apiKey = await settings.getLibreTranslateApiKey();
 
@@ -40,13 +43,26 @@ class LibreTranslateService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['translatedText'] as String?;
+        final translated = data['translatedText'] as String?;
+        if (translated != null) {
+          return TranslationResult.success(translated);
+        }
+        return const TranslationResult.failure(TranslationError.serverError);
       }
-      return null;
+      return TranslationResult.failure(_classifyHttpError(response.statusCode));
+    } on SocketException catch (e, stackTrace) {
+      AppLogger.error('LibreTranslate network error', error: e, stackTrace: stackTrace);
+      return const TranslationResult.failure(TranslationError.networkError);
     } catch (e, stackTrace) {
       AppLogger.error('LibreTranslate failed', error: e, stackTrace: stackTrace);
-      return null;
+      return const TranslationResult.failure(TranslationError.networkError);
     }
+  }
+
+  static TranslationError _classifyHttpError(int statusCode) {
+    if (statusCode == 401 || statusCode == 403) return TranslationError.authFailed;
+    if (statusCode == 429) return TranslationError.rateLimited;
+    return TranslationError.serverError;
   }
 
   /// Maps common language names to LibreTranslate ISO 639-1 codes (lowercase)
