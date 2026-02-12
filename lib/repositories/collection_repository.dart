@@ -2,11 +2,13 @@ import '../models/collection.dart';
 import 'base_repository.dart';
 
 class CollectionRepository extends BaseRepository {
-  CollectionRepository(super.getDatabase);
+  CollectionRepository(super.getDatabase, {super.onChange});
 
   Future<int> create(Collection collection) async {
     final db = await getDatabase();
-    return await db.insert('collections', collection.toMap());
+    final id = await db.insert('collections', collection.toMap());
+    notifyChange();
+    return id;
   }
 
   Future<List<Collection>> getAll({int? languageId, int? parentId}) async {
@@ -48,16 +50,20 @@ class CollectionRepository extends BaseRepository {
 
   Future<int> update(Collection collection) async {
     final db = await getDatabase();
-    return await db.update(
+    final result = await db.update(
       'collections',
       collection.toMap(),
       where: 'id = ?',
       whereArgs: [collection.id],
     );
+    notifyChange();
+    return result;
   }
 
   Future<int> delete(int id) async {
     final db = await getDatabase();
-    return await db.delete('collections', where: 'id = ?', whereArgs: [id]);
+    final result = await db.delete('collections', where: 'id = ?', whereArgs: [id]);
+    notifyChange();
+    return result;
   }
 }

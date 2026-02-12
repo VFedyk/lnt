@@ -35,6 +35,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   void initState() {
     super.initState();
+    dataChanges.reviewCards.addListener(_loadStatistics);
     _loadStatistics();
   }
 
@@ -44,6 +45,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (oldWidget.language.id != widget.language.id) {
       _loadStatistics();
     }
+  }
+
+  @override
+  void dispose() {
+    dataChanges.reviewCards.removeListener(_loadStatistics);
+    super.dispose();
   }
 
   Future<void> _loadStatistics() async {

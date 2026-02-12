@@ -28,14 +28,21 @@ class DatabaseService {
   late final ReviewLogRepository reviewLogs;
 
   DatabaseService() {
-    languages = LanguageRepository(() => database);
-    texts = TextRepository(() => database);
-    terms = TermRepository(() => database);
-    collections = CollectionRepository(() => database);
+    final changes = dataChanges;
+    languages = LanguageRepository(() => database, onChange: changes.languages);
+    texts = TextRepository(() => database, onChange: changes.texts);
+    terms = TermRepository(() => database, onChange: changes.terms);
+    collections = CollectionRepository(
+      () => database,
+      onChange: changes.collections,
+    );
     dictionaries = DictionaryRepository(() => database);
     translations = TranslationRepository(() => database);
     textForeignWords = TextForeignWordRepository(() => database);
-    reviewCards = ReviewCardRepository(() => database);
+    reviewCards = ReviewCardRepository(
+      () => database,
+      onChange: changes.reviewCards,
+    );
     reviewLogs = ReviewLogRepository(() => database);
   }
 

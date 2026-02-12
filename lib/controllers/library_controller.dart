@@ -61,15 +61,24 @@ class LibraryController extends ChangeNotifier {
 
   bool _isDisposed = false;
 
-  LibraryController({required this.language});
+  LibraryController({required this.language}) {
+    dataChanges.texts.addListener(_onDataChanged);
+    dataChanges.collections.addListener(_onDataChanged);
+  }
 
   void _safeNotify() {
     if (!_isDisposed) notifyListeners();
   }
 
+  void _onDataChanged() {
+    if (!_isDisposed) loadData();
+  }
+
   @override
   void dispose() {
     _isDisposed = true;
+    dataChanges.texts.removeListener(_onDataChanged);
+    dataChanges.collections.removeListener(_onDataChanged);
     super.dispose();
   }
 
@@ -364,32 +373,26 @@ class LibraryController extends ChangeNotifier {
 
   Future<void> createText(TextDocument text) async {
     await db.texts.create(text);
-    await loadData();
   }
 
   Future<void> updateText(TextDocument text) async {
     await db.texts.update(text);
-    await loadData();
   }
 
   Future<void> deleteText(int textId) async {
     await db.texts.delete(textId);
-    await loadData();
   }
 
   Future<void> createCollection(Collection collection) async {
     await db.collections.create(collection);
-    await loadData();
   }
 
   Future<void> updateCollection(Collection collection) async {
     await db.collections.update(collection);
-    await loadData();
   }
 
   Future<void> deleteCollection(int collectionId) async {
     await db.collections.delete(collectionId);
-    await loadData();
   }
 
   Future<int> getTextCountInCollection(int collectionId) async {
@@ -413,6 +416,5 @@ class LibraryController extends ChangeNotifier {
     final updatedText =
         text.copyWith(coverImage: CoverImageHelper.toRelative(newPath));
     await db.texts.update(updatedText);
-    await loadData();
   }
 }

@@ -2,11 +2,13 @@ import '../models/text_document.dart';
 import 'base_repository.dart';
 
 class TextRepository extends BaseRepository {
-  TextRepository(super.getDatabase);
+  TextRepository(super.getDatabase, {super.onChange});
 
   Future<int> create(TextDocument text) async {
     final db = await getDatabase();
-    return await db.insert('texts', text.toMap());
+    final id = await db.insert('texts', text.toMap());
+    notifyChange();
+    return id;
   }
 
   Future<List<TextDocument>> getAll({int? languageId}) async {
@@ -31,17 +33,21 @@ class TextRepository extends BaseRepository {
 
   Future<int> update(TextDocument text) async {
     final db = await getDatabase();
-    return await db.update(
+    final result = await db.update(
       'texts',
       text.toMap(),
       where: 'id = ?',
       whereArgs: [text.id],
     );
+    notifyChange();
+    return result;
   }
 
   Future<int> delete(int id) async {
     final db = await getDatabase();
-    return await db.delete('texts', where: 'id = ?', whereArgs: [id]);
+    final result = await db.delete('texts', where: 'id = ?', whereArgs: [id]);
+    notifyChange();
+    return result;
   }
 
   Future<List<TextDocument>> search(int languageId, String query) async {
@@ -82,6 +88,7 @@ class TextRepository extends BaseRepository {
       where: 'id = ?',
       whereArgs: [textId],
     );
+    notifyChange();
   }
 
   Future<void> batchCreate(List<TextDocument> texts) async {
@@ -91,6 +98,7 @@ class TextRepository extends BaseRepository {
       batch.insert('texts', text.toMap());
     }
     await batch.commit(noResult: true);
+    notifyChange();
   }
 
   Future<List<TextDocument>> getByCollection(int collectionId) async {

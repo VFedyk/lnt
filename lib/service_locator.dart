@@ -12,6 +12,7 @@ import 'services/epub_import_service.dart';
 import 'services/url_import_service.dart';
 import 'services/dictionary_service.dart';
 import 'services/tts_service.dart';
+import 'services/data_change_notifier.dart';
 
 final sl = GetIt.instance;
 
@@ -24,9 +25,11 @@ DeepLService get deepLService => sl<DeepLService>();
 LibreTranslateService get libreTranslateService =>
     sl<LibreTranslateService>();
 TtsService get ttsService => sl<TtsService>();
+DataChangeNotifier get dataChanges => sl<DataChangeNotifier>();
 
 void setupServiceLocator() {
   // Singletons (lazy — constructed on first access)
+  sl.registerLazySingleton<DataChangeNotifier>(() => DataChangeNotifier());
   sl.registerLazySingleton<SettingsService>(() => SettingsService());
   sl.registerLazySingleton<DatabaseService>(() => DatabaseService());
   sl.registerLazySingleton<ReviewService>(() => ReviewService());

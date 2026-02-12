@@ -152,7 +152,7 @@ class _LNTAppState extends State<LNTApp> with WindowListener {
               ),
             ),
             navigatorObservers: [routeObserver],
-            home: HomeScreen(key: ValueKey(appState.dataVersion)),
+            home: const HomeScreen(),
             debugShowCheckedModeBanner: false,
           );
         },
@@ -171,13 +171,11 @@ class AppState extends ChangeNotifier {
   Locale _locale = const Locale('en');
   SharedPreferences? _prefs;
   bool _isLoaded = false;
-  int _dataVersion = 0;
 
   int? get selectedLanguageId => _selectedLanguageId;
   int? get currentTextId => _currentTextId;
   Locale get locale => _locale;
   bool get isLoaded => _isLoaded;
-  int get dataVersion => _dataVersion;
 
   AppState() {
     _loadPreferences();
@@ -225,8 +223,4 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void notifyDataChanged() {
-    _dataVersion++;
-    notifyListeners();
-  }
 }

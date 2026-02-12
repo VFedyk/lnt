@@ -1954,6 +1954,7 @@
 /Users/v/Projects/lnt/lib/screens/typing_review_screen.dart
 /Users/v/Projects/lnt/lib/service_locator.dart
 /Users/v/Projects/lnt/lib/services/backup_service.dart
+/Users/v/Projects/lnt/lib/services/data_change_notifier.dart
 /Users/v/Projects/lnt/lib/services/database_migrations.dart
 /Users/v/Projects/lnt/lib/services/database_service.dart
 /Users/v/Projects/lnt/lib/services/deepl_service.dart

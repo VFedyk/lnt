@@ -2,11 +2,13 @@ import '../models/language.dart';
 import 'base_repository.dart';
 
 class LanguageRepository extends BaseRepository {
-  LanguageRepository(super.getDatabase);
+  LanguageRepository(super.getDatabase, {super.onChange});
 
   Future<int> create(Language language) async {
     final db = await getDatabase();
-    return await db.insert('languages', language.toMap());
+    final id = await db.insert('languages', language.toMap());
+    notifyChange();
+    return id;
   }
 
   Future<List<Language>> getAll() async {
@@ -24,16 +26,20 @@ class LanguageRepository extends BaseRepository {
 
   Future<int> update(Language language) async {
     final db = await getDatabase();
-    return await db.update(
+    final result = await db.update(
       'languages',
       language.toMap(),
       where: 'id = ?',
       whereArgs: [language.id],
     );
+    notifyChange();
+    return result;
   }
 
   Future<int> delete(int id) async {
     final db = await getDatabase();
-    return await db.delete('languages', where: 'id = ?', whereArgs: [id]);
+    final result = await db.delete('languages', where: 'id = ?', whereArgs: [id]);
+    notifyChange();
+    return result;
   }
 }

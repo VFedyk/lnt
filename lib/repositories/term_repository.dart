@@ -3,15 +3,17 @@ import '../models/term.dart';
 import 'base_repository.dart';
 
 class TermRepository extends BaseRepository {
-  TermRepository(super.getDatabase);
+  TermRepository(super.getDatabase, {super.onChange});
 
   Future<int> create(Term term) async {
     final db = await getDatabase();
-    return await db.insert(
+    final id = await db.insert(
       'terms',
       term.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    notifyChange();
+    return id;
   }
 
   Future<List<Term>> getAll({int? languageId, int? status}) async {
@@ -86,26 +88,32 @@ class TermRepository extends BaseRepository {
 
   Future<int> update(Term term) async {
     final db = await getDatabase();
-    return await db.update(
+    final result = await db.update(
       'terms',
       term.toMap(),
       where: 'id = ?',
       whereArgs: [term.id],
     );
+    notifyChange();
+    return result;
   }
 
   Future<int> delete(int id) async {
     final db = await getDatabase();
-    return await db.delete('terms', where: 'id = ?', whereArgs: [id]);
+    final result = await db.delete('terms', where: 'id = ?', whereArgs: [id]);
+    notifyChange();
+    return result;
   }
 
   Future<int> deleteByLanguage(int languageId) async {
     final db = await getDatabase();
-    return await db.delete(
+    final result = await db.delete(
       'terms',
       where: 'language_id = ?',
       whereArgs: [languageId],
     );
+    notifyChange();
+    return result;
   }
 
   Future<Map<int, int>> getCountsByStatus(int languageId) async {
@@ -146,6 +154,7 @@ class TermRepository extends BaseRepository {
       );
     }
     await batch.commit(noResult: true);
+    notifyChange();
   }
 
   Future<Map<String, int>> getCreatedCountsByDay(int languageId, String sinceIso) async {

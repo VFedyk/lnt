@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../controllers/settings_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../main.dart';
+import '../service_locator.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
 
@@ -157,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showRestoreSuccess() {
     final l10n = AppLocalizations.of(context);
-    context.read<AppState>().notifyDataChanged();
+    dataChanges.notifyAll();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.restoreSuccess)),
     );

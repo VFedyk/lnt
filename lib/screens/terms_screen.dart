@@ -38,7 +38,15 @@ class _TermsScreenState extends State<TermsScreen> {
   @override
   void initState() {
     super.initState();
+    dataChanges.terms.addListener(_loadTerms);
     _loadTerms();
+  }
+
+  @override
+  void dispose() {
+    dataChanges.terms.removeListener(_loadTerms);
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadTerms() async {
@@ -127,8 +135,6 @@ class _TermsScreenState extends State<TermsScreen> {
           await db.terms.create(term);
         }
 
-        _loadTerms();
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.importedTerms(importedTerms.length))),
@@ -146,7 +152,6 @@ class _TermsScreenState extends State<TermsScreen> {
 
   Future<void> _deleteTerm(Term term) async {
     await db.terms.delete(term.id!);
-    _loadTerms();
   }
 
   Future<void> _editTerm(Term term) async {
@@ -169,7 +174,6 @@ class _TermsScreenState extends State<TermsScreen> {
         dialogResult.term.id!,
         dialogResult.translations,
       );
-      _loadTerms();
     }
   }
 

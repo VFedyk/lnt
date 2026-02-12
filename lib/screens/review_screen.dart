@@ -26,6 +26,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
   @override
   void initState() {
     super.initState();
+    dataChanges.reviewCards.addListener(_loadStats);
     _loadStats();
   }
 
@@ -35,6 +36,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
     if (oldWidget.language.id != widget.language.id) {
       _loadStats();
     }
+  }
+
+  @override
+  void dispose() {
+    dataChanges.reviewCards.removeListener(_loadStats);
+    super.dispose();
   }
 
   Future<void> _loadStats() async {
@@ -146,7 +153,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     builder: (_) =>
                         FlashcardReviewScreen(language: widget.language),
                   ),
-                ).then((_) => _loadStats());
+                );
               },
             ),
           ),
@@ -179,7 +186,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       direction: TypingDirection.sourceToTarget,
                     ),
                   ),
-                ).then((_) => _loadStats());
+                );
               },
             ),
           ),
@@ -212,7 +219,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       direction: TypingDirection.targetToSource,
                     ),
                   ),
-                ).then((_) => _loadStats());
+                );
               },
             ),
           ),

@@ -3,13 +3,15 @@ import '../models/review_card.dart';
 import 'base_repository.dart';
 
 class ReviewCardRepository extends BaseRepository {
-  ReviewCardRepository(super.getDatabase);
+  ReviewCardRepository(super.getDatabase, {super.onChange});
 
   Future<int> create(ReviewCardRecord record) async {
     final db = await getDatabase();
     final map = record.toMap();
     map.remove('id');
-    return await db.insert('review_cards', map);
+    final id = await db.insert('review_cards', map);
+    notifyChange();
+    return id;
   }
 
   Future<ReviewCardRecord?> getByTermId(int termId) async {
@@ -25,21 +27,25 @@ class ReviewCardRepository extends BaseRepository {
 
   Future<int> update(ReviewCardRecord record) async {
     final db = await getDatabase();
-    return await db.update(
+    final result = await db.update(
       'review_cards',
       record.toMap(),
       where: 'id = ?',
       whereArgs: [record.id],
     );
+    notifyChange();
+    return result;
   }
 
   Future<int> deleteByTermId(int termId) async {
     final db = await getDatabase();
-    return await db.delete(
+    final result = await db.delete(
       'review_cards',
       where: 'term_id = ?',
       whereArgs: [termId],
     );
+    notifyChange();
+    return result;
   }
 
   /// Get all due cards for a language, joined with terms.
@@ -161,5 +167,6 @@ class ReviewCardRepository extends BaseRepository {
       dbBatch.insert('review_cards', map);
     }
     await dbBatch.commit(noResult: true);
+    notifyChange();
   }
 }

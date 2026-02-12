@@ -27,9 +27,8 @@ abstract class _DashboardConstants {
 
 class DashboardTab extends StatefulWidget {
   final Language language;
-  final VoidCallback onRefresh;
 
-  const DashboardTab({super.key, required this.language, required this.onRefresh});
+  const DashboardTab({super.key, required this.language});
 
   @override
   State<DashboardTab> createState() => _DashboardTabState();
@@ -49,6 +48,9 @@ class _DashboardTabState extends State<DashboardTab> {
   @override
   void initState() {
     super.initState();
+    dataChanges.terms.addListener(_loadData);
+    dataChanges.texts.addListener(_loadData);
+    dataChanges.reviewCards.addListener(_loadData);
     _loadData();
   }
 
@@ -58,6 +60,14 @@ class _DashboardTabState extends State<DashboardTab> {
     if (oldWidget.language.id != widget.language.id) {
       _loadData();
     }
+  }
+
+  @override
+  void dispose() {
+    dataChanges.terms.removeListener(_loadData);
+    dataChanges.texts.removeListener(_loadData);
+    dataChanges.reviewCards.removeListener(_loadData);
+    super.dispose();
   }
 
   Future<void> _loadData() async {

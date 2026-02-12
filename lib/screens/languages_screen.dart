@@ -7,9 +7,7 @@ import '../widgets/language_dialog.dart';
 import 'dictionaries_screen.dart';
 
 class LanguagesScreen extends StatefulWidget {
-  final VoidCallback? onLanguagesChanged;
-
-  const LanguagesScreen({super.key, this.onLanguagesChanged});
+  const LanguagesScreen({super.key});
 
   @override
   State<LanguagesScreen> createState() => _LanguagesScreenState();
@@ -32,9 +30,6 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
       _languages = languages;
       _isLoading = false;
     });
-
-    // Notify parent that languages changed
-    widget.onLanguagesChanged?.call();
   }
 
   Future<void> _addOrEditLanguage([Language? language]) async {

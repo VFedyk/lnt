@@ -43,7 +43,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with RouteAware {
+class _HomeScreenState extends State<HomeScreen> {
   HomeTab _selectedTab = HomeTab.dashboard;
   List<Language> _languages = [];
   Language? _selectedLanguage;
@@ -53,6 +53,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   @override
   void initState() {
     super.initState();
+    dataChanges.languages.addListener(_loadLanguages);
+    dataChanges.reviewCards.addListener(_refreshDueCount);
     // Delay to ensure context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadLanguages();
@@ -60,20 +62,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    routeObserver.subscribe(this, ModalRoute.of(context)!);
-  }
-
-  @override
   void dispose() {
-    routeObserver.unsubscribe(this);
+    dataChanges.languages.removeListener(_loadLanguages);
+    dataChanges.reviewCards.removeListener(_refreshDueCount);
     super.dispose();
-  }
-
-  @override
-  void didPopNext() {
-    _refreshDueCount();
   }
 
   Future<void> _loadLanguages() async {
@@ -153,7 +145,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         return DashboardTab(
           key: langKey,
           language: _selectedLanguage!,
-          onRefresh: _loadLanguages,
         );
       case HomeTab.texts:
         return LibraryScreen(key: langKey, language: _selectedLanguage!);
@@ -162,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       case HomeTab.review:
         return ReviewScreen(key: langKey, language: _selectedLanguage!);
       case HomeTab.languages:
-        return LanguagesScreen(onLanguagesChanged: _loadLanguages);
+        return const LanguagesScreen();
     }
   }
 
@@ -187,12 +178,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           ),
           const SizedBox(height: AppConstants.spacingXL),
           ElevatedButton.icon(
-            onPressed: () async {
-              await Navigator.push(
+            onPressed: () {
+              Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const LanguagesScreen()),
               );
-              _loadLanguages();
             },
             icon: const Icon(Icons.add),
             label: Text(l10n.addLanguage),

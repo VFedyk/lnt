@@ -42,9 +42,10 @@ flutter build macos          # Build macOS
 
 ## Key conventions
 
-- **Service locator**: `setupServiceLocator()` in `main.dart` registers all services. Access via top-level getters: `db`, `settings`, `backupService`, `reviewService`, `deepLService`, `libreTranslateService`
+- **Service locator**: `setupServiceLocator()` in `main.dart` registers all services. Access via top-level getters: `db`, `settings`, `backupService`, `reviewService`, `deepLService`, `libreTranslateService`, `dataChanges`
 - **Repository pattern**: `db.terms.getAll()` etc.
 - Repositories use lazy `() => database` callback — DB can be closed and reopened
+- **Reactive data layer**: `DataChangeNotifier` (singleton via get_it) holds per-domain `DomainNotifier` instances (`dataChanges.terms`, `.texts`, `.languages`, `.collections`, `.reviewCards`). Repositories call `notifyChange()` after mutations; screens/controllers `addListener` on relevant domains and auto-reload. Use `dataChanges.notifyAll()` for bulk invalidation (e.g. backup restore).
 - **Localization**: Always add strings to both `app_en.arb` and `app_uk.arb`, then run `flutter gen-l10n`
 - **Cover images**: stored as relative paths (`covers/<name>.jpg`) in documents dir, resolved at runtime by `CoverImageHelper`
 - **Backup**: zip archive containing `lnt.db` + `covers/` directory
@@ -54,7 +55,6 @@ flutter build macos          # Build macOS
 
 ## Architecture notes
 
-- `AppState.dataVersion` increments after backup restore → `HomeScreen` uses `ValueKey(dataVersion)` to force full rebuild
 - `PlatformHelper.isApple` / `PlatformHelper.isDesktop` guards platform-specific features
 - Database migrations in `database_migrations.dart` with version numbering
 - EPUB parsing via `epub_pro` package (camelCase API)
