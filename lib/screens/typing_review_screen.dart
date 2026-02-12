@@ -41,6 +41,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
   int _reviewedCount = 0;
   bool _isLoading = true;
   bool _isSeeding = false;
+  bool _hasReviewed = false;
   bool? _isCorrect; // null = not yet submitted
   final _answerController = TextEditingController();
   final _answerFocusNode = FocusNode();
@@ -54,6 +55,10 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
 
   @override
   void dispose() {
+    if (_hasReviewed) {
+      dataChanges.reviewCards.notify();
+      dataChanges.terms.notify();
+    }
     _answerController.dispose();
     _answerFocusNode.dispose();
     _keyboardFocusNode.dispose();
@@ -158,7 +163,8 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
 
     // Rate: correct → easy, incorrect → hard
     final rating = correct ? fsrs.Rating.easy : fsrs.Rating.hard;
-    reviewService.reviewTerm(item.reviewCard, rating);
+    _hasReviewed = true;
+    reviewService.reviewTerm(item.reviewCard, rating, notify: false);
   }
 
   void _nextCard() {

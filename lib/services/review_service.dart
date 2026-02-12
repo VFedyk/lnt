@@ -24,8 +24,9 @@ class ReviewService {
   /// All writes run inside a single transaction for consistency.
   Future<({ReviewCardRecord updatedCard, int newStatus})> reviewTerm(
     ReviewCardRecord record,
-    fsrs.Rating rating,
-  ) async {
+    fsrs.Rating rating, {
+    bool notify = true,
+  }) async {
     final (:card, :reviewLog) = _scheduler.reviewCard(record.card, rating);
     final newStatus = mapFsrsToTermStatus(card);
     final now = DateTime.now().toUtc();
@@ -75,9 +76,10 @@ class ReviewService {
       }
     });
 
-    // Notify after transaction commits
-    dataChanges.reviewCards.notify();
-    dataChanges.terms.notify();
+    if (notify) {
+      dataChanges.reviewCards.notify();
+      dataChanges.terms.notify();
+    }
 
     return (updatedCard: updatedRecord, newStatus: newStatus);
   }

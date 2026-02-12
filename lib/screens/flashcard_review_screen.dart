@@ -38,6 +38,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
   bool _isLoading = true;
   bool _isAnswerRevealed = false;
   bool _isSeeding = false;
+  bool _hasReviewed = false;
   Map<fsrs.Rating, Duration>? _nextIntervals;
   final _focusNode = FocusNode();
 
@@ -49,6 +50,10 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
 
   @override
   void dispose() {
+    if (_hasReviewed) {
+      dataChanges.reviewCards.notify();
+      dataChanges.terms.notify();
+    }
     _focusNode.dispose();
     super.dispose();
   }
@@ -175,9 +180,10 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
     if (_currentIndex >= _dueItems.length) return;
 
     final item = _dueItems[_currentIndex];
-    await reviewService.reviewTerm(item.reviewCard, rating);
+    await reviewService.reviewTerm(item.reviewCard, rating, notify: false);
 
     setState(() {
+      _hasReviewed = true;
       _reviewedCount++;
       _currentIndex++;
       _isAnswerRevealed = false;

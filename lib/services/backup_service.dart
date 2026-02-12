@@ -37,6 +37,9 @@ class BackupService {
     final dbPath = await _getDbPath();
     final coversDir = await _getCoversDir();
     final tempDir = await getTemporaryDirectory();
+    if (!tempDir.existsSync()) {
+      await tempDir.create(recursive: true);
+    }
     final archiveFile = File('${tempDir.path}/$_backupFileName');
 
     final archive = Archive();
@@ -214,6 +217,9 @@ class BackupService {
     }
 
     final tempDir = await getTemporaryDirectory();
+    if (!tempDir.existsSync()) {
+      await tempDir.create(recursive: true);
+    }
     final tempFile = File('${tempDir.path}/$_backupFileName');
     if (tempFile.existsSync()) tempFile.deleteSync();
 

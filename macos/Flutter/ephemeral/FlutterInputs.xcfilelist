@@ -1928,6 +1928,7 @@
 /Users/v/Projects/lnt/lib/models/review_card.dart
 /Users/v/Projects/lnt/lib/models/term.dart
 /Users/v/Projects/lnt/lib/models/text_document.dart
+/Users/v/Projects/lnt/lib/models/translation_result.dart
 /Users/v/Projects/lnt/lib/models/word_token.dart
 /Users/v/Projects/lnt/lib/repositories/base_repository.dart
 /Users/v/Projects/lnt/lib/repositories/collection_repository.dart
