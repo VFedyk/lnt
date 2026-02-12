@@ -9,6 +9,11 @@ import '../main.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
 
+abstract class _SettingsScreenConstants {
+  static const double usageBarHeight = 8.0;
+  static const double usageErrorIconSize = 20.0;
+}
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -227,7 +232,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? Row(
                     children: [
                       Icon(Icons.error_outline,
-                          color: Theme.of(context).colorScheme.error, size: 20),
+                          color: Theme.of(context).colorScheme.error,
+                          size: _SettingsScreenConstants.usageErrorIconSize),
                       const SizedBox(width: AppConstants.spacingS),
                       Expanded(
                         child: Text(AppLocalizations.of(context).couldNotLoadUsage),
@@ -262,7 +268,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
                         child: LinearProgressIndicator(
                           value: ctrl.usage!.usagePercent,
-                          minHeight: 8,
+                          minHeight: _SettingsScreenConstants.usageBarHeight,
                           backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                           valueColor: AlwaysStoppedAnimation<Color>(
                             _usageColor(ctrl.usage!.usagePercent),
@@ -360,42 +366,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppConstants.spacingL),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 const Icon(Icons.cloud),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppConstants.spacingS),
                 Text(l10n.backupRestore, style: Theme.of(context).textTheme.titleMedium),
                 if (busy) ...[
-                  const SizedBox(width: 12),
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                  const SizedBox(width: AppConstants.spacingM),
+                  SizedBox(
+                    width: AppConstants.progressIndicatorSizeS,
+                    height: AppConstants.progressIndicatorSizeS,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: AppConstants.progressStrokeWidth,
+                    ),
                   ),
                 ],
               ],
             ),
             if (PlatformHelper.isApple) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingL),
               Text('iCloud', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppConstants.spacingXS),
               Text(
                 ctrl.icloudLastBackup != null
                     ? l10n.lastBackup(dateHelper(ctrl.icloudLastBackup!))
                     : l10n.noBackupYet,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: AppConstants.fontSizeCaption,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingS),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: AppConstants.spacingS,
+                runSpacing: AppConstants.spacingS,
                 children: [
                   OutlinedButton.icon(
                     onPressed: busy ? null : () => _backupToICloud(ctrl),

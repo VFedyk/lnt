@@ -15,6 +15,14 @@ abstract class _HeatmapConstants {
   static const double legendSpacing = 2.0;
   static const int defaultWeeks = 26;
   static const double tooltipWidth = 200.0;
+  static const double tooltipOffset = 20.0;
+  static const double tooltipElevation = 4.0;
+  static const int intensityThreshold1 = 2;
+  static const int intensityThreshold2 = 5;
+  static const int intensityThreshold3 = 10;
+  static const double intensityAlpha1 = 0.25;
+  static const double intensityAlpha2 = 0.50;
+  static const double intensityAlpha3 = 0.75;
 }
 
 class ActivityHeatmap extends StatefulWidget {
@@ -53,9 +61,9 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
 
   int _intensityLevel(int total) {
     if (total == 0) return 0;
-    if (total <= 2) return 1;
-    if (total <= 5) return 2;
-    if (total <= 10) return 3;
+    if (total <= _HeatmapConstants.intensityThreshold1) return 1;
+    if (total <= _HeatmapConstants.intensityThreshold2) return 2;
+    if (total <= _HeatmapConstants.intensityThreshold3) return 3;
     return 4;
   }
 
@@ -64,11 +72,11 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
       case 0:
         return empty;
       case 1:
-        return primary.withValues(alpha: 0.25);
+        return primary.withValues(alpha: _HeatmapConstants.intensityAlpha1);
       case 2:
-        return primary.withValues(alpha: 0.50);
+        return primary.withValues(alpha: _HeatmapConstants.intensityAlpha2);
       case 3:
-        return primary.withValues(alpha: 0.75);
+        return primary.withValues(alpha: _HeatmapConstants.intensityAlpha3);
       case 4:
         return primary;
       default:
@@ -147,9 +155,11 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
             ),
             Positioned(
               left: left,
-              top: top < AppConstants.spacingS ? globalPos.dy + 20 : top,
+              top: top < AppConstants.spacingS
+                  ? globalPos.dy + _HeatmapConstants.tooltipOffset
+                  : top,
               child: Material(
-                elevation: 4,
+                elevation: _HeatmapConstants.tooltipElevation,
                 borderRadius:
                     BorderRadius.circular(AppConstants.borderRadiusM),
                 child: Container(

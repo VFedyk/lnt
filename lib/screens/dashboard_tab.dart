@@ -178,7 +178,7 @@ class _DashboardTabState extends State<DashboardTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+            Icon(Icons.error_outline, size: AppConstants.errorIconSize, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: AppConstants.spacingM),
             Text(l10n.failedToLoadData, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: AppConstants.spacingM),

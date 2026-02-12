@@ -64,6 +64,7 @@ class AppConstants {
   // UI: Icon sizes
   static const double iconSizeS = 16.0;
   static const double iconSizeM = 32.0;
+  static const double errorIconSize = 48.0;
   static const double emptyStateIconSize = 64.0;
 
   // UI: Colors

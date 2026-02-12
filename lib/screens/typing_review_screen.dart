@@ -18,6 +18,7 @@ abstract class _TypingReviewConstants {
   static const double statusDotSize = 12.0;
   static const double completionIconSize = 80.0;
   static const double minCardHeight = 300.0;
+  static const double romanizationFontSize = 16.0;
 }
 
 class TypingReviewScreen extends StatefulWidget {
@@ -366,7 +367,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
                       Text(
                         item.term.romanization,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: _TypingReviewConstants.romanizationFontSize,
                           color: AppConstants.subtitleColor,
                         ),
                         textAlign: TextAlign.center,

@@ -27,6 +27,7 @@ abstract class _HomeScreenConstants {
   // Icon sizes
   static const double emptyStateIconSize = 80.0;
   static const double checkIconSize = 20.0;
+  static const double flagEmojiFontSize = 20.0;
 
   // Data limits
   static const Duration appStatePollingInterval = Duration(milliseconds: 50);
@@ -227,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                     if (_selectedLanguage!.flagEmoji.isNotEmpty)
                       Text(
                         _selectedLanguage!.flagEmoji,
-                        style: const TextStyle(fontSize: 20),
+                        style: const TextStyle(fontSize: _HomeScreenConstants.flagEmojiFontSize),
                       ),
                     if (_selectedLanguage!.flagEmoji.isNotEmpty)
                       const SizedBox(width: AppConstants.spacingXS),
