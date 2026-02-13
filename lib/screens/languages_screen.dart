@@ -108,7 +108,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppConstants.deleteColor),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
             child: Text(l10n.delete),
           ),
         ],
@@ -181,7 +181,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
                         IconButton(
                           icon: const Icon(Icons.delete),
                           onPressed: () => _deleteLanguage(lang),
-                          color: AppConstants.deleteColor,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                       ],
                     ),

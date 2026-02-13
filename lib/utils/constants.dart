@@ -67,11 +67,8 @@ class AppConstants {
   static const double errorIconSize = 48.0;
   static const double emptyStateIconSize = 64.0;
 
-  // UI: Colors
+  // UI: Colors (neutral)
   static final Color subtitleColor = Colors.grey.shade600;
   static final Color borderColor = Colors.grey.shade400;
   static final Color sectionHeaderColor = Colors.grey.shade700;
-  static const Color deleteColor = Colors.red;
-  static const Color successColor = Colors.green;
-  static const Color warningColor = Colors.orange;
 }

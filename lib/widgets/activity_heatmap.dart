@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../l10n/generated/app_localizations.dart';
 import '../models/day_activity.dart';
+import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 
 abstract class _HeatmapConstants {
@@ -286,14 +287,14 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                       Icon(
                         Icons.local_fire_department,
                         size: AppConstants.iconSizeS,
-                        color: AppConstants.warningColor,
+                        color: context.appColors.streak,
                       ),
                       const SizedBox(width: AppConstants.spacingXS),
                       Text(
                         l10n.streakDays(widget.streakDays!),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: AppConstants.warningColor,
+                              color: context.appColors.streak,
                             ),
                       ),
                     ],

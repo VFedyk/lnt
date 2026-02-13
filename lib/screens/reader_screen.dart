@@ -13,6 +13,7 @@ import '../widgets/status_legend.dart';
 import '../widgets/edit_text_dialog.dart';
 import '../widgets/word_list_drawer.dart';
 import '../widgets/paragraph_rich_text.dart';
+import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 
 /// Layout, sizing, and timing constants for the reader screen
@@ -848,7 +849,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
                     ? Icons.check_circle
                     : Icons.check_circle_outline,
                 color: ctrl.text.status == TextStatus.finished
-                    ? AppConstants.successColor
+                    ? context.appColors.success
                     : null,
               ),
               tooltip: ctrl.text.status == TextStatus.finished

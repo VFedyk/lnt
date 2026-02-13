@@ -7,6 +7,7 @@ import '../controllers/settings_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../main.dart';
 import '../service_locator.dart';
+import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
 
@@ -200,7 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Color _usageColor(double usagePercent) {
     if (usagePercent > 0.9) return Theme.of(context).colorScheme.error;
-    if (usagePercent > 0.7) return AppConstants.warningColor;
+    if (usagePercent > 0.7) return context.appColors.warning;
     return Theme.of(context).colorScheme.primary;
   }
 

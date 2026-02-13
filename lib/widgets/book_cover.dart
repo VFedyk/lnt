@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import '../utils/cover_image_helper.dart';
 
@@ -124,7 +125,7 @@ class BookCover extends StatelessWidget {
               style: TextStyle(
                 fontSize: AppConstants.fontSizeXS,
                 color: isCompleted
-                    ? AppConstants.successColor
+                    ? context.appColors.success
                     : AppConstants.subtitleColor,
                 fontWeight: isCompleted ? FontWeight.bold : null,
               ),
@@ -147,7 +148,7 @@ class BookCover extends StatelessWidget {
               file,
               fit: BoxFit.cover,
             ),
-            if (isCompleted) _buildCompletedBadge(),
+            if (isCompleted) _buildCompletedBadge(context),
             if (isFolder) _buildFolderBadge(),
           ],
         );
@@ -159,7 +160,7 @@ class BookCover extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         _buildGeneratedCover(context),
-        if (isCompleted) _buildCompletedBadge(),
+        if (isCompleted) _buildCompletedBadge(context),
         if (isFolder) _buildFolderBadge(),
       ],
     );
@@ -260,14 +261,14 @@ class BookCover extends StatelessWidget {
     );
   }
 
-  Widget _buildCompletedBadge() {
+  Widget _buildCompletedBadge(BuildContext context) {
     return Positioned(
       top: AppConstants.spacingXS,
       right: AppConstants.spacingXS,
       child: Container(
         padding: const EdgeInsets.all(AppConstants.spacingXS),
         decoration: BoxDecoration(
-          color: AppConstants.successColor,
+          color: context.appColors.success,
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusL),
         ),
         child: const Icon(

@@ -366,9 +366,9 @@ class _TermsScreenState extends State<TermsScreen> {
                   value: 'delete',
                   child: Row(
                     children: [
-                      const Icon(Icons.delete, color: AppConstants.deleteColor),
+                      Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                       const SizedBox(width: AppConstants.spacingS),
-                      Text(l10n.delete, style: const TextStyle(color: AppConstants.deleteColor)),
+                      Text(l10n.delete, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                     ],
                   ),
                 ),

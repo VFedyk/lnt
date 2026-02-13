@@ -14,6 +14,7 @@ import '../widgets/book_cover.dart';
 import '../widgets/collection_dialog.dart';
 import '../widgets/text_edit_dialog.dart';
 import '../widgets/url_import_dialog.dart';
+import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import 'reader_screen.dart';
 
@@ -149,7 +150,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
-              foregroundColor: AppConstants.deleteColor,
+              foregroundColor: Theme.of(context).colorScheme.error,
             ),
             child: Text(l10n.delete),
           ),
@@ -382,10 +383,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: AppConstants.deleteColor),
+              leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
               title: Text(
                 l10n.delete,
-                style: const TextStyle(color: AppConstants.deleteColor),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -423,10 +424,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: AppConstants.deleteColor),
+              leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
               title: Text(
                 l10n.delete,
-                style: const TextStyle(color: AppConstants.deleteColor),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -796,9 +797,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     value: _LibraryScreenConstants.actionDelete,
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.delete,
-                          color: AppConstants.deleteColor,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                         const SizedBox(width: AppConstants.spacingS),
                         Text(l10n.delete),
@@ -835,7 +836,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: text.status == TextStatus.finished
-                    ? AppConstants.successColor.withValues(
+                    ? context.appColors.success.withValues(
                         alpha:
                             _LibraryScreenConstants.finishedBackgroundAlpha,
                       )
@@ -845,7 +846,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ? Icons.check
                       : Icons.article,
                   color: text.status == TextStatus.finished
-                      ? AppConstants.successColor
+                      ? context.appColors.success
                       : null,
                 ),
               ),
@@ -861,8 +862,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     unknownLabel,
                     style: TextStyle(
                       color: unknownCount > 0
-                          ? AppConstants.warningColor
-                          : AppConstants.successColor,
+                          ? context.appColors.warning
+                          : context.appColors.success,
                       fontSize: AppConstants.fontSizeCaption,
                       fontWeight: unknownCount == 0 ? FontWeight.bold : null,
                     ),
@@ -895,9 +896,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     value: _LibraryScreenConstants.actionDelete,
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.delete,
-                          color: AppConstants.deleteColor,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                         const SizedBox(width: AppConstants.spacingS),
                         Text(l10n.delete),

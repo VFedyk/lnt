@@ -8,6 +8,7 @@ import '../models/language.dart';
 import '../models/review_card.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
+import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 
 abstract class _FlashcardReviewConstants {
@@ -555,28 +556,28 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
         _buildRatingButton(
           label: l10n.rateAgain,
           rating: fsrs.Rating.again,
-          color: Colors.red,
+          color: Theme.of(context).colorScheme.error,
           interval: intervals?[fsrs.Rating.again],
         ),
         const SizedBox(width: _FlashcardReviewConstants.buttonSpacing),
         _buildRatingButton(
           label: l10n.rateHard,
           rating: fsrs.Rating.hard,
-          color: Colors.orange,
+          color: context.appColors.warning,
           interval: intervals?[fsrs.Rating.hard],
         ),
         const SizedBox(width: _FlashcardReviewConstants.buttonSpacing),
         _buildRatingButton(
           label: l10n.rateGood,
           rating: fsrs.Rating.good,
-          color: Colors.green,
+          color: context.appColors.success,
           interval: intervals?[fsrs.Rating.good],
         ),
         const SizedBox(width: _FlashcardReviewConstants.buttonSpacing),
         _buildRatingButton(
           label: l10n.rateEasy,
           rating: fsrs.Rating.easy,
-          color: Colors.blue,
+          color: Theme.of(context).colorScheme.primary,
           interval: intervals?[fsrs.Rating.easy],
         ),
       ],

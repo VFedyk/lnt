@@ -12,6 +12,7 @@ import 'screens/home_screen.dart';
 import 'service_locator.dart';
 import 'services/settings_service.dart';
 import 'utils/cover_image_helper.dart';
+import 'utils/app_theme.dart';
 import 'utils/helpers.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
@@ -136,21 +137,8 @@ class _LNTAppState extends State<LNTApp> with WindowListener {
               Locale('en'),
               Locale('uk'),
             ],
-            theme: ThemeData(
-              primarySwatch: Colors.purple,
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.light,
-              ),
-            ),
-            darkTheme: ThemeData(
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.dark,
-              ),
-            ),
+            theme: AppTheme.light(),
+            darkTheme: AppTheme.dark(),
             navigatorObservers: [routeObserver],
             home: const HomeScreen(),
             debugShowCheckedModeBanner: false,

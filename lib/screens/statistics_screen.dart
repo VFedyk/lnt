@@ -5,6 +5,7 @@ import '../models/language.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
 import '../services/logger_service.dart';
+import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 
 abstract class _StatisticsConstants {
@@ -154,7 +155,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         l10n.known,
                         knownCount.toString(),
                         Icons.check_circle,
-                        AppConstants.successColor,
+                        context.appColors.success,
                       ),
                       _buildStatColumn(
                         l10n.texts,
@@ -242,7 +243,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     value: _totalTerms > 0 ? knownCount / _totalTerms : 0,
                     minHeight: _StatisticsConstants.progressBarHeight,
                     backgroundColor: Colors.grey.shade200,
-                    valueColor: const AlwaysStoppedAnimation(AppConstants.successColor),
+                    valueColor: AlwaysStoppedAnimation(context.appColors.success),
                   ),
                   const SizedBox(height: AppConstants.spacingS),
                   Text(
@@ -258,7 +259,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         child: _buildProgressCard(
                           l10n.learning,
                           learningCount,
-                          AppConstants.warningColor,
+                          context.appColors.warning,
                         ),
                       ),
                       const SizedBox(width: AppConstants.spacingS),
@@ -266,7 +267,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         child: _buildProgressCard(
                           l10n.known,
                           knownCount,
-                          AppConstants.successColor,
+                          context.appColors.success,
                         ),
                       ),
                     ],

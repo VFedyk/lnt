@@ -6,6 +6,7 @@ import '../models/language.dart';
 import '../models/review_card.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
+import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 
 enum TypingDirection { sourceToTarget, targetToSource }
@@ -450,7 +451,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
           style: TextStyle(
             fontSize: _TypingReviewConstants.resultFontSize,
             fontWeight: FontWeight.bold,
-            color: correct ? Colors.green : Colors.red,
+            color: correct ? context.appColors.success : Theme.of(context).colorScheme.error,
             decoration: correct ? null : TextDecoration.lineThrough,
           ),
           textAlign: TextAlign.center,
@@ -463,7 +464,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
           style: TextStyle(
             fontSize: _TypingReviewConstants.resultFontSize,
             fontWeight: FontWeight.bold,
-            color: correct ? Colors.green : Colors.red,
+            color: correct ? context.appColors.success : Theme.of(context).colorScheme.error,
           ),
         ),
 
