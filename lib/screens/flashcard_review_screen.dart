@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
@@ -20,6 +22,7 @@ abstract class _FlashcardReviewConstants {
   static const double buttonSpacing = 8.0;
   static const double intervalFontSize = 11.0;
   static const double minCardHeight = 300.0;
+  static const Duration flipDuration = Duration(milliseconds: 400);
 }
 
 class FlashcardReviewScreen extends StatefulWidget {
@@ -31,7 +34,8 @@ class FlashcardReviewScreen extends StatefulWidget {
   State<FlashcardReviewScreen> createState() => _FlashcardReviewScreenState();
 }
 
-class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
+class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
+    with TickerProviderStateMixin {
   List<_ReviewItem> _dueItems = [];
   int _currentIndex = 0;
   int _reviewedCount = 0;
@@ -41,19 +45,31 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
   bool _hasReviewed = false;
   Map<fsrs.Rating, Duration>? _nextIntervals;
   final _focusNode = FocusNode();
+  late final AnimationController _flipController;
+  late final Animation<double> _flipAnimation;
 
   @override
   void initState() {
     super.initState();
+    _flipController = AnimationController(
+      duration: _FlashcardReviewConstants.flipDuration,
+      vsync: this,
+    );
+    _flipAnimation = Tween<double>(begin: 0, end: math.pi).animate(
+      CurvedAnimation(parent: _flipController, curve: Curves.easeInOut),
+    );
     _loadDueCards();
   }
 
   @override
   void dispose() {
     if (_hasReviewed) {
-      dataChanges.reviewCards.notify();
-      dataChanges.terms.notify();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        dataChanges.reviewCards.notify();
+        dataChanges.terms.notify();
+      });
     }
+    _flipController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -182,6 +198,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
     final item = _dueItems[_currentIndex];
     await reviewService.reviewTerm(item.reviewCard, rating, notify: false);
 
+    _flipController.reset();
     setState(() {
       _hasReviewed = true;
       _reviewedCount++;
@@ -202,6 +219,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
       _isAnswerRevealed = true;
       _nextIntervals = intervals;
     });
+    _flipController.forward();
   }
 
   String _formatDuration(Duration duration) {
@@ -338,115 +356,27 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
             ),
           ),
 
-          // Flashcard
+          // Flashcard with flip animation
           Expanded(
-            child: Card(
-              elevation: _FlashcardReviewConstants.cardElevation,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                    _FlashcardReviewConstants.cardBorderRadius),
-              ),
-              child: InkWell(
-                onTap: _isAnswerRevealed ? null : _revealAnswer,
-                borderRadius: BorderRadius.circular(
-                    _FlashcardReviewConstants.cardBorderRadius),
-                child: Container(
-                  width: double.infinity,
-                  constraints: const BoxConstraints(
-                    minHeight: _FlashcardReviewConstants.minCardHeight,
-                  ),
-                  padding: const EdgeInsets.all(AppConstants.spacingXL),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Term text
-                      Text(
-                        term.text,
-                        style: const TextStyle(
-                          fontSize: _FlashcardReviewConstants.termFontSize,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+            child: AnimatedBuilder(
+              animation: _flipAnimation,
+              builder: (context, _) {
+                final angle = _flipAnimation.value;
+                final showBack = angle >= math.pi / 2;
 
-                      // Pronounce button
-                      if (widget.language.languageCode.isNotEmpty)
-                        IconButton(
-                          icon: const Icon(Icons.volume_up),
-                          tooltip: l10n.pronounce,
-                          onPressed: () => ttsService.speak(
-                            term.lowerText,
-                            widget.language.languageCode,
-                          ),
-                          visualDensity: VisualDensity.compact,
-                        ),
+                // Counter-rotate the back face so it reads correctly
+                final transform = Matrix4.identity()
+                  ..setEntry(3, 2, 0.001) // perspective
+                  ..rotateY(showBack ? angle - math.pi : angle);
 
-                      // Romanization
-                      if (term.romanization.isNotEmpty) ...[
-                        const SizedBox(height: AppConstants.spacingS),
-                        Text(
-                          term.romanization,
-                          style: TextStyle(
-                            fontSize:
-                                _FlashcardReviewConstants.romanizationFontSize,
-                            color: AppConstants.subtitleColor,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-
-                      // Sentence
-                      if (term.sentence.isNotEmpty) ...[
-                        const SizedBox(height: AppConstants.spacingM),
-                        Text(
-                          term.sentence,
-                          style: TextStyle(
-                            fontSize: _FlashcardReviewConstants.sentenceFontSize,
-                            color: AppConstants.subtitleColor,
-                            fontStyle: FontStyle.italic,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-
-                      // Divider + translations (revealed)
-                      if (_isAnswerRevealed) ...[
-                        const SizedBox(height: AppConstants.spacingL),
-                        const Divider(),
-                        const SizedBox(height: AppConstants.spacingM),
-                        ...item.translations.map((t) => Padding(
-                              padding: const EdgeInsets.only(
-                                  bottom: AppConstants.spacingXS),
-                              child: Text(
-                                t.partOfSpeech != null && t.partOfSpeech!.isNotEmpty
-                                    ? '${t.meaning} (${t.partOfSpeech})'
-                                    : t.meaning,
-                                style: const TextStyle(
-                                  fontSize:
-                                      _FlashcardReviewConstants.translationFontSize,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            )),
-                      ],
-
-                      // "Tap to reveal" hint
-                      if (!_isAnswerRevealed) ...[
-                        const SizedBox(height: AppConstants.spacingXL),
-                        Text(
-                          l10n.showAnswer,
-                          style: TextStyle(
-                            color: AppConstants.subtitleColor,
-                            fontSize: AppConstants.fontSizeCaption,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
+                return Transform(
+                  transform: transform,
+                  alignment: Alignment.center,
+                  child: showBack
+                      ? _buildCardBack(l10n, item)
+                      : _buildCardFront(l10n, item),
+                );
+              },
             ),
           ),
 
@@ -455,6 +385,163 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> {
             const SizedBox(height: AppConstants.spacingM),
             _buildRatingButtons(l10n),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardShell({required Widget child, VoidCallback? onTap}) {
+    return Card(
+      elevation: _FlashcardReviewConstants.cardElevation,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+            _FlashcardReviewConstants.cardBorderRadius),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(
+            _FlashcardReviewConstants.cardBorderRadius),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(
+            minHeight: _FlashcardReviewConstants.minCardHeight,
+          ),
+          padding: const EdgeInsets.all(AppConstants.spacingXL),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardFront(AppLocalizations l10n, _ReviewItem item) {
+    final term = item.term;
+    return _buildCardShell(
+      onTap: _revealAnswer,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            term.text,
+            style: const TextStyle(
+              fontSize: _FlashcardReviewConstants.termFontSize,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (widget.language.languageCode.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.volume_up),
+              tooltip: l10n.pronounce,
+              onPressed: () => ttsService.speak(
+                term.lowerText,
+                widget.language.languageCode,
+              ),
+              visualDensity: VisualDensity.compact,
+            ),
+          if (term.romanization.isNotEmpty) ...[
+            const SizedBox(height: AppConstants.spacingS),
+            Text(
+              term.romanization,
+              style: TextStyle(
+                fontSize: _FlashcardReviewConstants.romanizationFontSize,
+                color: AppConstants.subtitleColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          if (term.sentence.isNotEmpty) ...[
+            const SizedBox(height: AppConstants.spacingM),
+            Text(
+              term.sentence,
+              style: TextStyle(
+                fontSize: _FlashcardReviewConstants.sentenceFontSize,
+                color: AppConstants.subtitleColor,
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          const SizedBox(height: AppConstants.spacingXL),
+          Text(
+            l10n.showAnswer,
+            style: TextStyle(
+              color: AppConstants.subtitleColor,
+              fontSize: AppConstants.fontSizeCaption,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardBack(AppLocalizations l10n, _ReviewItem item) {
+    final term = item.term;
+    return _buildCardShell(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            term.text,
+            style: const TextStyle(
+              fontSize: _FlashcardReviewConstants.termFontSize,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (widget.language.languageCode.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.volume_up),
+              tooltip: l10n.pronounce,
+              onPressed: () => ttsService.speak(
+                term.lowerText,
+                widget.language.languageCode,
+              ),
+              visualDensity: VisualDensity.compact,
+            ),
+          if (term.romanization.isNotEmpty) ...[
+            const SizedBox(height: AppConstants.spacingS),
+            Text(
+              term.romanization,
+              style: TextStyle(
+                fontSize: _FlashcardReviewConstants.romanizationFontSize,
+                color: AppConstants.subtitleColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          if (term.sentence.isNotEmpty) ...[
+            const SizedBox(height: AppConstants.spacingM),
+            Text(
+              term.sentence,
+              style: TextStyle(
+                fontSize: _FlashcardReviewConstants.sentenceFontSize,
+                color: AppConstants.subtitleColor,
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          const SizedBox(height: AppConstants.spacingL),
+          const Divider(),
+          const SizedBox(height: AppConstants.spacingM),
+          ...item.translations.map((t) => Padding(
+                padding:
+                    const EdgeInsets.only(bottom: AppConstants.spacingXS),
+                child: Text(
+                  t.partOfSpeech != null && t.partOfSpeech!.isNotEmpty
+                      ? '${t.meaning} (${t.partOfSpeech})'
+                      : t.meaning,
+                  style: const TextStyle(
+                    fontSize:
+                        _FlashcardReviewConstants.translationFontSize,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              )),
         ],
       ),
     );

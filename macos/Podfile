@@ -38,6 +38,11 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+    target.build_configurations.each do |config|
+      if config.build_settings['MACOSX_DEPLOYMENT_TARGET'].to_f < 10.15
+        config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
+      end
+    end
   end
 
   # Fix sqlite3 framework symlinks for App Store validation.
@@ -47,17 +52,19 @@ post_install do |installer|
   runner_target = main_project.targets.find { |t| t.name == 'Runner' }
   if runner_target
     phase_name = 'Fix Framework Symlinks'
-    unless runner_target.shell_script_build_phases.any? { |p| p.name == phase_name }
+    phase = runner_target.shell_script_build_phases.find { |p| p.name == phase_name }
+    unless phase
       phase = runner_target.new_shell_script_build_phase(phase_name)
-      phase.shell_script = <<~SCRIPT
-        for fw in "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}"/*.framework; do
-          if [ -d "$fw/Versions/Current/Resources" ] && [ -L "$fw/Resources" ]; then
-            rm "$fw/Resources"
-            ln -s Versions/Current/Resources "$fw/Resources"
-          fi
-        done
-      SCRIPT
     end
+    phase.always_out_of_date = '1'
+    phase.shell_script = <<~SCRIPT
+      for fw in "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}"/*.framework; do
+        if [ -d "$fw/Versions/Current/Resources" ] && [ -L "$fw/Resources" ]; then
+          rm "$fw/Resources"
+          ln -s Versions/Current/Resources "$fw/Resources"
+        fi
+      done
+    SCRIPT
     main_project.save
   end
 end

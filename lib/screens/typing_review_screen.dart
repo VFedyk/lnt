@@ -56,8 +56,10 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
   @override
   void dispose() {
     if (_hasReviewed) {
-      dataChanges.reviewCards.notify();
-      dataChanges.terms.notify();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        dataChanges.reviewCards.notify();
+        dataChanges.terms.notify();
+      });
     }
     _answerController.dispose();
     _answerFocusNode.dispose();

@@ -442,6 +442,7 @@
 		};
 		C189F8426FC37632BF2D1D9A /* Fix Framework Symlinks */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
