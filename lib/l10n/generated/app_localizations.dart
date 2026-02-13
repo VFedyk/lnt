@@ -2101,6 +2101,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No cards with translations to review'**
   String get noTranslationsToReview;
+
+  /// No description provided for @streakDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day streak} other{{count} day streak}}'**
+  String streakDays(int count);
 }
 
 class _AppLocalizationsDelegate

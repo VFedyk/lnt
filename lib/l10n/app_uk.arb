@@ -384,5 +384,13 @@
       }
     }
   },
-  "noTranslationsToReview": "Немає карток з перекладами для повторення"
+  "noTranslationsToReview": "Немає карток з перекладами для повторення",
+  "streakDays": "{count, plural, =1{1 день поспіль} few{{count} дні поспіль} other{{count} днів поспіль}}",
+  "@streakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

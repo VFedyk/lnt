@@ -12,6 +12,8 @@ import '../utils/constants.dart';
 import '../utils/cover_image_helper.dart';
 import '../utils/helpers.dart';
 import '../widgets/activity_heatmap.dart';
+import '../widgets/animated_counter.dart';
+import '../widgets/review_progress_ring.dart';
 import 'reader_screen.dart';
 import 'library_screen.dart';
 import 'terms_screen.dart';
@@ -43,6 +45,9 @@ class _DashboardTabState extends State<DashboardTab> {
   Map<String, DayActivity> _activityData = {};
   int _totalTextsCount = 0;
   int _finishedTextsCount = 0;
+  int _dueCount = 0;
+  int _reviewedToday = 0;
+  int _streakDays = 0;
   bool _isLoading = true;
   bool _loadInProgress = false;
   bool _pendingReload = false;
@@ -155,6 +160,11 @@ class _DashboardTabState extends State<DashboardTab> {
         );
       }
 
+      final dueCount = await db.reviewCards.getDueCount(widget.language.id!);
+      final reviewedToday =
+          await db.reviewLogs.getReviewCountToday(widget.language.id!);
+      final streakDays = _calculateStreak(activityData);
+
       if (!mounted) return;
       setState(() {
         _recentlyReadTexts = recentlyRead;
@@ -165,6 +175,9 @@ class _DashboardTabState extends State<DashboardTab> {
         _unknownCounts = unknownCounts;
         _collectionNames = collectionNames;
         _activityData = activityData;
+        _dueCount = dueCount;
+        _reviewedToday = reviewedToday;
+        _streakDays = streakDays;
         _isLoading = false;
       });
     } catch (e, stackTrace) {
@@ -199,6 +212,28 @@ class _DashboardTabState extends State<DashboardTab> {
     }
 
     return unknownCount;
+  }
+
+  int _calculateStreak(Map<String, DayActivity> activityData) {
+    final now = DateTime.now();
+    int streak = 0;
+
+    for (int i = 0;; i++) {
+      final date = now.subtract(Duration(days: i));
+      final key =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final activity = activityData[key];
+
+      if (activity != null && activity.total > 0) {
+        streak++;
+      } else {
+        // If today has no activity yet, skip it and start from yesterday
+        if (i == 0) continue;
+        break;
+      }
+    }
+
+    return streak;
   }
 
   @override
@@ -280,6 +315,7 @@ class _DashboardTabState extends State<DashboardTab> {
                       activityData: _activityData,
                       weeksToShow: 52,
                       useTooltip: true,
+                      streakDays: _streakDays,
                     ),
                   ),
                 ],
@@ -315,6 +351,7 @@ class _DashboardTabState extends State<DashboardTab> {
             ActivityHeatmap(
               activityData: _activityData,
               weeksToShow: 26,
+              streakDays: _streakDays,
             ),
           ],
           const SizedBox(height: AppConstants.spacingL),
@@ -336,25 +373,39 @@ class _DashboardTabState extends State<DashboardTab> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        _buildStatItem(l10n.totalTerms, totalTerms.toString(), Icons.book),
-        _buildStatItem(l10n.known, knownTerms.toString(), Icons.check_circle),
-        _buildStatItem(l10n.texts, _totalTextsCount.toString(), Icons.article),
-        _buildStatItem(
+        _buildAnimatedStatItem(l10n.totalTerms, totalTerms, Icons.book),
+        _buildAnimatedStatItem(l10n.known, knownTerms, Icons.check_circle),
+        _buildAnimatedStatItem(l10n.texts, _totalTextsCount, Icons.article),
+        _buildAnimatedStatItem(
           l10n.textsFinished,
-          _finishedTextsCount.toString(),
+          _finishedTextsCount,
           Icons.done_all,
         ),
+        _buildReviewStatItem(l10n.reviewedToday),
       ],
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon) {
+  Widget _buildReviewStatItem(String label) {
+    return Column(
+      children: [
+        ReviewProgressRing(
+          reviewedToday: _reviewedToday,
+          dueCount: _dueCount,
+        ),
+        const SizedBox(height: AppConstants.spacingXS),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
+
+  Widget _buildAnimatedStatItem(String label, int value, IconData icon) {
     return Column(
       children: [
         Icon(icon, color: Theme.of(context).colorScheme.secondary),
         const SizedBox(height: AppConstants.spacingXS),
-        Text(
-          value,
+        AnimatedCounter(
+          value: value,
           style: Theme.of(
             context,
           ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),

@@ -654,5 +654,13 @@
       }
     }
   },
-  "noTranslationsToReview": "No cards with translations to review"
+  "noTranslationsToReview": "No cards with translations to review",
+  "streakDays": "{count, plural, =1{1 day streak} other{{count} day streak}}",
+  "@streakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -1128,4 +1128,16 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get noTranslationsToReview =>
       'Немає карток з перекладами для повторення';
+
+  @override
+  String streakDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count днів поспіль',
+      few: '$count дні поспіль',
+      one: '1 день поспіль',
+    );
+    return '$_temp0';
+  }
 }

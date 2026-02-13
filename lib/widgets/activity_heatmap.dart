@@ -29,12 +29,14 @@ class ActivityHeatmap extends StatefulWidget {
   final Map<String, DayActivity> activityData;
   final int weeksToShow;
   final bool useTooltip;
+  final int? streakDays;
 
   const ActivityHeatmap({
     super.key,
     required this.activityData,
     this.weeksToShow = _HeatmapConstants.defaultWeeks,
     this.useTooltip = false,
+    this.streakDays,
   });
 
   @override
@@ -270,9 +272,33 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.activityHeatmap,
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l10n.activityHeatmap,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                if (widget.streakDays != null && widget.streakDays! > 0)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.local_fire_department,
+                        size: AppConstants.iconSizeS,
+                        color: AppConstants.warningColor,
+                      ),
+                      const SizedBox(width: AppConstants.spacingXS),
+                      Text(
+                        l10n.streakDays(widget.streakDays!),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppConstants.warningColor,
+                            ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
             const SizedBox(height: AppConstants.spacingM),
             SingleChildScrollView(

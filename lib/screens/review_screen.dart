@@ -4,6 +4,8 @@ import '../models/language.dart';
 import '../service_locator.dart';
 import '../services/logger_service.dart';
 import '../utils/constants.dart';
+import '../widgets/animated_counter.dart';
+import '../widgets/review_progress_ring.dart';
 import 'flashcard_review_screen.dart';
 import 'statistics_screen.dart';
 import 'typing_review_screen.dart';
@@ -112,15 +114,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatItem(
+                  _buildAnimatedStatItem(
                     l10n.cardsDue,
-                    _dueCount.toString(),
+                    _dueCount,
                     Icons.schedule,
                   ),
-                  _buildStatItem(
-                    l10n.reviewedToday,
-                    _reviewedToday.toString(),
-                    Icons.check_circle,
+                  Column(
+                    children: [
+                      ReviewProgressRing(
+                        reviewedToday: _reviewedToday,
+                        dueCount: _dueCount,
+                      ),
+                      const SizedBox(height: AppConstants.spacingXS),
+                      Text(l10n.reviewedToday,
+                          style: Theme.of(context).textTheme.bodySmall),
+                    ],
                   ),
                 ],
               ),
@@ -248,13 +256,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon) {
+  Widget _buildAnimatedStatItem(String label, int value, IconData icon) {
     return Column(
       children: [
         Icon(icon, color: Theme.of(context).colorScheme.secondary),
         const SizedBox(height: AppConstants.spacingXS),
-        Text(
-          value,
+        AnimatedCounter(
+          value: value,
           style: Theme.of(context)
               .textTheme
               .headlineMedium

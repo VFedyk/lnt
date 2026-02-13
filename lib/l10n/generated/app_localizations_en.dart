@@ -1124,4 +1124,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noTranslationsToReview => 'No cards with translations to review';
+
+  @override
+  String streakDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count day streak',
+      one: '1 day streak',
+    );
+    return '$_temp0';
+  }
 }
