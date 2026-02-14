@@ -24,6 +24,7 @@ abstract class _HeatmapConstants {
   static const double intensityAlpha1 = 0.25;
   static const double intensityAlpha2 = 0.50;
   static const double intensityAlpha3 = 0.75;
+  static const Duration tooltipFadeInDuration = Duration(milliseconds: 200);
 }
 
 class ActivityHeatmap extends StatefulWidget {
@@ -157,66 +158,77 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         }
         final top = globalPos.dy - 120;
 
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _removeTooltip,
+        return TweenAnimationBuilder<double>(
+          duration: _HeatmapConstants.tooltipFadeInDuration,
+          tween: Tween(begin: 0.0, end: 1.0),
+          curve: Curves.easeOut,
+          builder: (context, opacity, child) {
+            return Opacity(
+              opacity: opacity,
+              child: child!,
+            );
+          },
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _removeTooltip,
+                ),
               ),
-            ),
-            Positioned(
-              left: left,
-              top: top < AppConstants.spacingS
-                  ? globalPos.dy + _HeatmapConstants.tooltipOffset
-                  : top,
-              child: Material(
-                elevation: _HeatmapConstants.tooltipElevation,
-                borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
-                child: Container(
-                  width: _HeatmapConstants.tooltipWidth,
-                  padding: const EdgeInsets.all(AppConstants.spacingM),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(
-                      AppConstants.borderRadiusM,
+              Positioned(
+                left: left,
+                top: top < AppConstants.spacingS
+                    ? globalPos.dy + _HeatmapConstants.tooltipOffset
+                    : top,
+                child: Material(
+                  elevation: _HeatmapConstants.tooltipElevation,
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
+                  child: Container(
+                    width: _HeatmapConstants.tooltipWidth,
+                    padding: const EdgeInsets.all(AppConstants.spacingM),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.borderRadiusM,
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        dateStr,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: AppConstants.spacingS),
-                      _buildDetailRow(
-                        context,
-                        Icons.menu_book,
-                        l10n.textsCompleted,
-                        activity.textsCompleted,
-                      ),
-                      const SizedBox(height: AppConstants.spacingXS),
-                      _buildDetailRow(
-                        context,
-                        Icons.add_circle_outline,
-                        l10n.wordsAdded,
-                        activity.wordsAdded,
-                      ),
-                      const SizedBox(height: AppConstants.spacingXS),
-                      _buildDetailRow(
-                        context,
-                        Icons.school_outlined,
-                        l10n.wordsReviewed,
-                        activity.wordsReviewed,
-                      ),
-                    ],
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dateStr,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: AppConstants.spacingS),
+                        _buildDetailRow(
+                          context,
+                          Icons.menu_book,
+                          l10n.textsCompleted,
+                          activity.textsCompleted,
+                        ),
+                        const SizedBox(height: AppConstants.spacingXS),
+                        _buildDetailRow(
+                          context,
+                          Icons.add_circle_outline,
+                          l10n.wordsAdded,
+                          activity.wordsAdded,
+                        ),
+                        const SizedBox(height: AppConstants.spacingXS),
+                        _buildDetailRow(
+                          context,
+                          Icons.school_outlined,
+                          l10n.wordsReviewed,
+                          activity.wordsReviewed,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
