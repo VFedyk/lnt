@@ -1135,4 +1135,33 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get dailyActivityChart => 'Daily Activity (30 Days)';
+
+  @override
+  String get vocabularyGrowthChart => 'Vocabulary Growth';
+
+  @override
+  String get statusDistributionChart => 'Words by Status';
+
+  @override
+  String chartTooltipDate(String date) {
+    return '$date';
+  }
+
+  @override
+  String chartTooltipReviews(int count) {
+    return 'Reviews: $count';
+  }
+
+  @override
+  String chartTooltipWordsAdded(int count) {
+    return 'Words Added: $count';
+  }
+
+  @override
+  String chartTooltipTextsFinished(int count) {
+    return 'Texts Finished: $count';
+  }
 }

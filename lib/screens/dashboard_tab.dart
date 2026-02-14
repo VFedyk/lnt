@@ -13,7 +13,10 @@ import '../utils/cover_image_helper.dart';
 import '../utils/helpers.dart';
 import '../widgets/activity_heatmap.dart';
 import '../widgets/animated_counter.dart';
+import '../widgets/dashboard_charts.dart';
 import '../widgets/review_progress_ring.dart';
+import '../models/chart_data.dart';
+import '../utils/chart_helpers.dart';
 import 'reader_screen.dart';
 import 'library_screen.dart';
 import 'terms_screen.dart';
@@ -48,6 +51,9 @@ class _DashboardTabState extends State<DashboardTab> {
   int _dueCount = 0;
   int _reviewedToday = 0;
   int _streakDays = 0;
+  List<DailyActivityChartData> _dailyActivityData = [];
+  List<VocabularyGrowthChartData> _vocabularyGrowthData = [];
+  List<StatusDistributionData> _statusDistributionData = [];
   bool _isLoading = true;
   bool _loadInProgress = false;
   bool _pendingReload = false;
@@ -168,6 +174,44 @@ class _DashboardTabState extends State<DashboardTab> {
       );
       final streakDays = _calculateStreak(activityData);
 
+      // Load chart data (30 days)
+      const chartDays = 30;
+      final chartSinceDate = now.subtract(const Duration(days: chartDays));
+      final chartSinceIso =
+          '${chartSinceDate.year}-${chartSinceDate.month.toString().padLeft(2, '0')}-${chartSinceDate.day.toString().padLeft(2, '0')}';
+
+      final chartWordsAdded = await db.terms.getCreatedCountsByDay(
+        widget.language.id!,
+        chartSinceIso,
+      );
+      final chartTextsCompleted = await db.texts.getCompletedCountsByDay(
+        widget.language.id!,
+        chartSinceIso,
+      );
+      final chartReviews = await db.reviewLogs.getReviewCountsByDay(
+        widget.language.id!,
+        chartSinceIso,
+      );
+
+      // Build chart data
+      final dailyActivityData = ChartHelpers.buildDailyActivityChartData(
+        reviewsByDay: chartReviews,
+        wordsAddedByDay: chartWordsAdded,
+        textsFinishedByDay: chartTextsCompleted,
+        days: chartDays,
+      );
+
+      final knownCount =
+          (counts[TermStatus.known] ?? 0) + (counts[TermStatus.wellKnown] ?? 0);
+      final vocabularyGrowthData = ChartHelpers.buildVocabularyGrowthChartData(
+        wordsAddedByDay: chartWordsAdded,
+        currentKnownCount: knownCount,
+        days: chartDays,
+      );
+
+      final statusDistributionData =
+          ChartHelpers.buildStatusDistributionData(countsByStatus: counts);
+
       if (!mounted) return;
       setState(() {
         _recentlyReadTexts = recentlyRead;
@@ -181,6 +225,9 @@ class _DashboardTabState extends State<DashboardTab> {
         _dueCount = dueCount;
         _reviewedToday = reviewedToday;
         _streakDays = streakDays;
+        _dailyActivityData = dailyActivityData;
+        _vocabularyGrowthData = vocabularyGrowthData;
+        _statusDistributionData = statusDistributionData;
         _isLoading = false;
       });
     } catch (e, stackTrace) {
@@ -373,6 +420,8 @@ class _DashboardTabState extends State<DashboardTab> {
             ),
           ],
           const SizedBox(height: AppConstants.spacingL),
+          _buildChartsSection(),
+          const SizedBox(height: AppConstants.spacingL),
           _buildQuickActions(),
           const SizedBox(height: AppConstants.spacingL),
           _buildRecentlyReadTexts(),
@@ -448,6 +497,63 @@ class _DashboardTabState extends State<DashboardTab> {
       );
     }
     return Icon(fallbackIcon);
+  }
+
+  Widget _buildChartsSection() {
+    if (PlatformHelper.isDesktop) {
+      return IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 2,
+              child: DailyActivityBarChart(
+                data: _dailyActivityData,
+                height: 280,
+              ),
+            ),
+            const SizedBox(width: AppConstants.spacingL),
+            Expanded(
+              flex: 2,
+              child: VocabularyGrowthLineChart(
+                data: _vocabularyGrowthData,
+                height: 280,
+              ),
+            ),
+            const SizedBox(width: AppConstants.spacingL),
+            SizedBox(
+              width: 220,
+              child: StatusDistributionDonutChart(
+                data: _statusDistributionData,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Column(
+        children: [
+          DailyActivityBarChart(
+            data: _dailyActivityData,
+            height: 250,
+          ),
+          const SizedBox(height: AppConstants.spacingL),
+          VocabularyGrowthLineChart(
+            data: _vocabularyGrowthData,
+            height: 250,
+          ),
+          const SizedBox(height: AppConstants.spacingL),
+          Center(
+            child: SizedBox(
+              width: 220,
+              child: StatusDistributionDonutChart(
+                data: _statusDistributionData,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildQuickActions() {

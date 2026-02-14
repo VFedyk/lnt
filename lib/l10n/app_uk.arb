@@ -392,5 +392,40 @@
         "type": "int"
       }
     }
+  },
+  "dailyActivityChart": "Щоденна активність (30 днів)",
+  "vocabularyGrowthChart": "Зростання словникового запасу",
+  "statusDistributionChart": "Слова за статусом",
+  "chartTooltipDate": "{date}",
+  "@chartTooltipDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "chartTooltipReviews": "Повторення: {count}",
+  "@chartTooltipReviews": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chartTooltipWordsAdded": "Додано слів: {count}",
+  "@chartTooltipWordsAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chartTooltipTextsFinished": "Завершено текстів: {count}",
+  "@chartTooltipTextsFinished": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

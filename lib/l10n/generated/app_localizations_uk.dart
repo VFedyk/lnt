@@ -1140,4 +1140,33 @@ class AppLocalizationsUk extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get dailyActivityChart => 'Щоденна активність (30 днів)';
+
+  @override
+  String get vocabularyGrowthChart => 'Зростання словникового запасу';
+
+  @override
+  String get statusDistributionChart => 'Слова за статусом';
+
+  @override
+  String chartTooltipDate(String date) {
+    return '$date';
+  }
+
+  @override
+  String chartTooltipReviews(int count) {
+    return 'Повторення: $count';
+  }
+
+  @override
+  String chartTooltipWordsAdded(int count) {
+    return 'Додано слів: $count';
+  }
+
+  @override
+  String chartTooltipTextsFinished(int count) {
+    return 'Завершено текстів: $count';
+  }
 }

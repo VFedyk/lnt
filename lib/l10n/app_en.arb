@@ -662,5 +662,40 @@
         "type": "int"
       }
     }
+  },
+  "dailyActivityChart": "Daily Activity (30 Days)",
+  "vocabularyGrowthChart": "Vocabulary Growth",
+  "statusDistributionChart": "Words by Status",
+  "chartTooltipDate": "{date}",
+  "@chartTooltipDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "chartTooltipReviews": "Reviews: {count}",
+  "@chartTooltipReviews": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chartTooltipWordsAdded": "Words Added: {count}",
+  "@chartTooltipWordsAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chartTooltipTextsFinished": "Texts Finished: {count}",
+  "@chartTooltipTextsFinished": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

@@ -2107,6 +2107,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 day streak} other{{count} day streak}}'**
   String streakDays(int count);
+
+  /// No description provided for @dailyActivityChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Activity (30 Days)'**
+  String get dailyActivityChart;
+
+  /// No description provided for @vocabularyGrowthChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocabulary Growth'**
+  String get vocabularyGrowthChart;
+
+  /// No description provided for @statusDistributionChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Words by Status'**
+  String get statusDistributionChart;
+
+  /// No description provided for @chartTooltipDate.
+  ///
+  /// In en, this message translates to:
+  /// **'{date}'**
+  String chartTooltipDate(String date);
+
+  /// No description provided for @chartTooltipReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews: {count}'**
+  String chartTooltipReviews(int count);
+
+  /// No description provided for @chartTooltipWordsAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Words Added: {count}'**
+  String chartTooltipWordsAdded(int count);
+
+  /// No description provided for @chartTooltipTextsFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Texts Finished: {count}'**
+  String chartTooltipTextsFinished(int count);
 }
 
 class _AppLocalizationsDelegate

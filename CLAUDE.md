@@ -62,9 +62,16 @@ flutter build macos          # Build macOS
 
 ## Testing
 
-- Tests live in `test/services/` — run with `flutter test`
-- Pure-logic services are tested (text parser, review service, import/export, EPUB import, backup archive format)
-- Widget tests are not yet comprehensive (default `widget_test.dart` is a leftover)
+- **Command**: `flutter test` — runs all 90 tests in ~2-3 seconds
+- **Expected output**: `All tests passed!` with no failures or errors
+- **Test coverage**:
+  - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier)
+  - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping)
+  - `test/controllers/` — Screen controllers (LibraryController listener lifecycle and CRUD delegation)
+  - Widget tests are not yet comprehensive (default `widget_test.dart` is a leftover)
+- **Platform notes**: Tests use `sqflite_common_ffi` for in-memory SQLite on all platforms (no platform-specific setup required)
+- **Running specific tests**: `flutter test test/services/review_service_test.dart`
+- **CI requirement**: All tests must pass before merging (`flutter analyze` + `flutter test` in GitHub Actions)
 
 ## CI/CD
 
