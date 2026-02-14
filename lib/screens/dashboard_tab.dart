@@ -23,8 +23,8 @@ abstract class _DashboardConstants {
   static const double thumbnailWidth = 40.0;
   static const double thumbnailHeight = 56.0;
   static const double thumbnailBorderRadius = 4.0;
-  // 28 (day labels) + 52 weeks * 14 (cell + spacing) + 2 * 16 (card padding)
-  static const double desktopHeatmapWidth = 788.0;
+  // 30 (day labels) + 52 weeks * 14 (cell + spacing) + 2 * 16 (card padding)
+  static const double desktopHeatmapWidth = 795.0;
 }
 
 class DashboardTab extends StatefulWidget {
@@ -96,11 +96,11 @@ class _DashboardTabState extends State<DashboardTab> {
         widget.language.id!,
         limit: _DashboardConstants.recentTextsLimit,
       );
-      final recentlyAdded = await db.texts
-          .getRecentlyAdded(widget.language.id!, limit: _DashboardConstants.recentTextsLimit);
-      final counts = await db.terms.getCountsByStatus(
+      final recentlyAdded = await db.texts.getRecentlyAdded(
         widget.language.id!,
+        limit: _DashboardConstants.recentTextsLimit,
       );
+      final counts = await db.terms.getCountsByStatus(widget.language.id!);
       final totalTextsCount = await db.texts.getCountByLanguage(
         widget.language.id!,
       );
@@ -108,9 +108,7 @@ class _DashboardTabState extends State<DashboardTab> {
         widget.language.id!,
       );
 
-      final termsMap = await db.terms.getMapByLanguage(
-        widget.language.id!,
-      );
+      final termsMap = await db.terms.getMapByLanguage(widget.language.id!);
 
       final unknownCounts = <int, int>{};
       final allTexts = {...recentlyRead, ...recentlyAdded};
@@ -124,9 +122,7 @@ class _DashboardTabState extends State<DashboardTab> {
           .map((t) => t.collectionId!)
           .toSet();
       for (final collectionId in collectionIds) {
-        final collection = await db.collections.getById(
-          collectionId,
-        );
+        final collection = await db.collections.getById(collectionId);
         if (collection != null) {
           collectionNames[collectionId] = collection.name;
         }
@@ -139,12 +135,18 @@ class _DashboardTabState extends State<DashboardTab> {
       final sinceIso =
           '${sinceDate.year}-${sinceDate.month.toString().padLeft(2, '0')}-${sinceDate.day.toString().padLeft(2, '0')}';
 
-      final wordsAddedByDay = await db.terms
-          .getCreatedCountsByDay(widget.language.id!, sinceIso);
-      final textsCompletedByDay = await db.texts
-          .getCompletedCountsByDay(widget.language.id!, sinceIso);
-      final wordsReviewedByDay = await db.reviewLogs
-          .getReviewCountsByDay(widget.language.id!, sinceIso);
+      final wordsAddedByDay = await db.terms.getCreatedCountsByDay(
+        widget.language.id!,
+        sinceIso,
+      );
+      final textsCompletedByDay = await db.texts.getCompletedCountsByDay(
+        widget.language.id!,
+        sinceIso,
+      );
+      final wordsReviewedByDay = await db.reviewLogs.getReviewCountsByDay(
+        widget.language.id!,
+        sinceIso,
+      );
 
       final allDates = <String>{
         ...wordsAddedByDay.keys,
@@ -161,8 +163,9 @@ class _DashboardTabState extends State<DashboardTab> {
       }
 
       final dueCount = await db.reviewCards.getDueCount(widget.language.id!);
-      final reviewedToday =
-          await db.reviewLogs.getReviewCountToday(widget.language.id!);
+      final reviewedToday = await db.reviewLogs.getReviewCountToday(
+        widget.language.id!,
+      );
       final streakDays = _calculateStreak(activityData);
 
       if (!mounted) return;
@@ -181,7 +184,11 @@ class _DashboardTabState extends State<DashboardTab> {
         _isLoading = false;
       });
     } catch (e, stackTrace) {
-      AppLogger.error('Dashboard load failed', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+        'Dashboard load failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -218,7 +225,7 @@ class _DashboardTabState extends State<DashboardTab> {
     final now = DateTime.now();
     int streak = 0;
 
-    for (int i = 0;; i++) {
+    for (int i = 0; ; i++) {
       final date = now.subtract(Duration(days: i));
       final key =
           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -249,9 +256,16 @@ class _DashboardTabState extends State<DashboardTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: AppConstants.errorIconSize, color: Theme.of(context).colorScheme.error),
+            Icon(
+              Icons.error_outline,
+              size: AppConstants.errorIconSize,
+              color: Theme.of(context).colorScheme.error,
+            ),
             const SizedBox(height: AppConstants.spacingM),
-            Text(l10n.failedToLoadData, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              l10n.failedToLoadData,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: AppConstants.spacingM),
             ElevatedButton.icon(
               onPressed: _loadData,
@@ -291,13 +305,17 @@ class _DashboardTabState extends State<DashboardTab> {
                                 ] else ...[
                                   Icon(
                                     Icons.language,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                   const SizedBox(width: AppConstants.spacingS),
                                 ],
                                 Text(
                                   widget.language.name,
-                                  style: Theme.of(context).textTheme.headlineSmall,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall,
                                 ),
                               ],
                             ),
@@ -368,7 +386,9 @@ class _DashboardTabState extends State<DashboardTab> {
   Widget _buildStatsRow() {
     final l10n = AppLocalizations.of(context);
     final totalTerms = _termCounts.values.fold(0, (sum, count) => sum + count);
-    final knownTerms = (_termCounts[TermStatus.known] ?? 0) + (_termCounts[TermStatus.wellKnown] ?? 0);
+    final knownTerms =
+        (_termCounts[TermStatus.known] ?? 0) +
+        (_termCounts[TermStatus.wellKnown] ?? 0);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -389,10 +409,7 @@ class _DashboardTabState extends State<DashboardTab> {
   Widget _buildReviewStatItem(String label) {
     return Column(
       children: [
-        ReviewProgressRing(
-          reviewedToday: _reviewedToday,
-          dueCount: _dueCount,
-        ),
+        ReviewProgressRing(reviewedToday: _reviewedToday, dueCount: _dueCount),
         const SizedBox(height: AppConstants.spacingXS),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
@@ -419,7 +436,9 @@ class _DashboardTabState extends State<DashboardTab> {
     final resolvedCover = CoverImageHelper.resolve(text.coverImage);
     if (resolvedCover != null && File(resolvedCover).existsSync()) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(_DashboardConstants.thumbnailBorderRadius),
+        borderRadius: BorderRadius.circular(
+          _DashboardConstants.thumbnailBorderRadius,
+        ),
         child: Image.file(
           File(resolvedCover),
           width: _DashboardConstants.thumbnailWidth,
@@ -455,7 +474,8 @@ class _DashboardTabState extends State<DashboardTab> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => LibraryScreen(language: widget.language),
+                        builder: (_) =>
+                            LibraryScreen(language: widget.language),
                       ),
                     );
                   },

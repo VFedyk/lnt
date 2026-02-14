@@ -56,10 +56,12 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
   DateTime _getStartDate() {
     final now = DateTime.now();
     final todayWeekday = now.weekday;
-    final currentMonday = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: todayWeekday - 1));
-    return currentMonday
-        .subtract(Duration(days: (widget.weeksToShow - 1) * 7));
+    final currentMonday = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: todayWeekday - 1));
+    return currentMonday.subtract(Duration(days: (widget.weeksToShow - 1) * 7));
   }
 
   int _intensityLevel(int total) {
@@ -91,12 +93,14 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     final startDate = _getStartDate();
     final localPos = details.localPosition;
 
-    final col = ((localPos.dx - _HeatmapConstants.dayLabelWidth) /
-            (_HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing))
-        .floor();
-    final row = ((localPos.dy - _HeatmapConstants.monthLabelHeight) /
-            (_HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing))
-        .floor();
+    final col =
+        ((localPos.dx - _HeatmapConstants.dayLabelWidth) /
+                (_HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing))
+            .floor();
+    final row =
+        ((localPos.dy - _HeatmapConstants.monthLabelHeight) /
+                (_HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing))
+            .floor();
 
     if (col < 0 ||
         col >= widget.weeksToShow ||
@@ -125,8 +129,12 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     _tooltipOverlay = null;
   }
 
-  void _showTooltip(BuildContext context, Offset globalPos, DateTime date,
-      DayActivity activity) {
+  void _showTooltip(
+    BuildContext context,
+    Offset globalPos,
+    DateTime date,
+    DayActivity activity,
+  ) {
     _removeTooltip();
 
     final l10n = AppLocalizations.of(context);
@@ -142,7 +150,8 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         }
         if (left + _HeatmapConstants.tooltipWidth >
             screenSize.width - AppConstants.spacingS) {
-          left = screenSize.width -
+          left =
+              screenSize.width -
               _HeatmapConstants.tooltipWidth -
               AppConstants.spacingS;
         }
@@ -163,16 +172,15 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                   : top,
               child: Material(
                 elevation: _HeatmapConstants.tooltipElevation,
-                borderRadius:
-                    BorderRadius.circular(AppConstants.borderRadiusM),
+                borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                 child: Container(
                   width: _HeatmapConstants.tooltipWidth,
                   padding: const EdgeInsets.all(AppConstants.spacingM),
                   decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHigh,
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.borderRadiusM),
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.borderRadiusM,
+                    ),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -180,18 +188,29 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                     children: [
                       Text(
                         dateStr,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: AppConstants.spacingS),
-                      _buildDetailRow(context, Icons.menu_book,
-                          l10n.textsCompleted, activity.textsCompleted),
+                      _buildDetailRow(
+                        context,
+                        Icons.menu_book,
+                        l10n.textsCompleted,
+                        activity.textsCompleted,
+                      ),
                       const SizedBox(height: AppConstants.spacingXS),
-                      _buildDetailRow(context, Icons.add_circle_outline,
-                          l10n.wordsAdded, activity.wordsAdded),
+                      _buildDetailRow(
+                        context,
+                        Icons.add_circle_outline,
+                        l10n.wordsAdded,
+                        activity.wordsAdded,
+                      ),
                       const SizedBox(height: AppConstants.spacingXS),
-                      _buildDetailRow(context, Icons.school_outlined,
-                          l10n.wordsReviewed, activity.wordsReviewed),
+                      _buildDetailRow(
+                        context,
+                        Icons.school_outlined,
+                        l10n.wordsReviewed,
+                        activity.wordsReviewed,
+                      ),
                     ],
                   ),
                 ),
@@ -206,7 +225,10 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
   }
 
   void _showDayDialog(
-      BuildContext context, DateTime date, DayActivity activity) {
+    BuildContext context,
+    DateTime date,
+    DayActivity activity,
+  ) {
     final l10n = AppLocalizations.of(context);
     final dateStr = DateFormat.yMMMd().format(date);
     showDialog(
@@ -216,14 +238,26 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDetailRow(context, Icons.menu_book, l10n.textsCompleted,
-                activity.textsCompleted),
+            _buildDetailRow(
+              context,
+              Icons.menu_book,
+              l10n.textsCompleted,
+              activity.textsCompleted,
+            ),
             const SizedBox(height: AppConstants.spacingS),
-            _buildDetailRow(context, Icons.add_circle_outline,
-                l10n.wordsAdded, activity.wordsAdded),
+            _buildDetailRow(
+              context,
+              Icons.add_circle_outline,
+              l10n.wordsAdded,
+              activity.wordsAdded,
+            ),
             const SizedBox(height: AppConstants.spacingS),
-            _buildDetailRow(context, Icons.school_outlined,
-                l10n.wordsReviewed, activity.wordsReviewed),
+            _buildDetailRow(
+              context,
+              Icons.school_outlined,
+              l10n.wordsReviewed,
+              activity.wordsReviewed,
+            ),
           ],
         ),
         actions: [
@@ -237,11 +271,18 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
   }
 
   Widget _buildDetailRow(
-      BuildContext context, IconData icon, String label, int count) {
+    BuildContext context,
+    IconData icon,
+    String label,
+    int count,
+  ) {
     return Row(
       children: [
-        Icon(icon,
-            size: AppConstants.iconSizeS, color: AppConstants.subtitleColor),
+        Icon(
+          icon,
+          size: AppConstants.iconSizeS,
+          color: AppConstants.subtitleColor,
+        ),
         const SizedBox(width: AppConstants.spacingS),
         Expanded(child: Text(label)),
         Text(
@@ -260,10 +301,12 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     final emptyColor = colorScheme.surfaceContainerHighest;
     final startDate = _getStartDate();
 
-    final gridWidth = _HeatmapConstants.dayLabelWidth +
+    final gridWidth =
+        _HeatmapConstants.dayLabelWidth +
         widget.weeksToShow *
             (_HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing);
-    final gridHeight = _HeatmapConstants.monthLabelHeight +
+    final gridHeight =
+        _HeatmapConstants.monthLabelHeight +
         _HeatmapConstants.daysInWeek *
             (_HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing);
 
@@ -293,9 +336,9 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                       Text(
                         l10n.streakDays(widget.streakDays!),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: context.appColors.streak,
-                            ),
+                          fontWeight: FontWeight.bold,
+                          color: context.appColors.streak,
+                        ),
                       ),
                     ],
                   ),
@@ -348,11 +391,11 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
             width: _HeatmapConstants.legendCellSize,
             height: _HeatmapConstants.legendCellSize,
             margin: const EdgeInsets.symmetric(
-                horizontal: _HeatmapConstants.legendSpacing),
+              horizontal: _HeatmapConstants.legendSpacing,
+            ),
             decoration: BoxDecoration(
               color: _colorForIntensity(i, primary, emptyColor),
-              borderRadius:
-                  BorderRadius.circular(_HeatmapConstants.cellRadius),
+              borderRadius: BorderRadius.circular(_HeatmapConstants.cellRadius),
             ),
           ),
         ],
@@ -416,10 +459,7 @@ class _HeatmapPainter extends CustomPainter {
         )..layout();
         tp.paint(
           canvas,
-          Offset(
-            _HeatmapConstants.dayLabelWidth + week * cellTotal,
-            0,
-          ),
+          Offset(_HeatmapConstants.dayLabelWidth + week * cellTotal, 0),
         );
       }
     }
@@ -433,6 +473,7 @@ class _HeatmapPainter extends CustomPainter {
         final tp = TextPainter(
           text: TextSpan(text: label, style: monthLabelStyle),
           textDirection: TextDirection.ltr,
+          textAlign: TextAlign.right,
         )..layout();
         tp.paint(
           canvas,
