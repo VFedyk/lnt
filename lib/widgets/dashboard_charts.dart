@@ -78,6 +78,8 @@ class DailyActivityBarChart extends StatelessWidget {
                         barTouchData: BarTouchData(
                           enabled: true,
                           touchTooltipData: BarTouchTooltipData(
+                            fitInsideHorizontally: true,
+                            fitInsideVertically: true,
                             getTooltipColor: (group) =>
                                 colorScheme.surfaceContainerHigh,
                             getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -279,6 +281,8 @@ class VocabularyGrowthLineChart extends StatelessWidget {
                         lineTouchData: LineTouchData(
                           enabled: true,
                           touchTooltipData: LineTouchTooltipData(
+                            fitInsideHorizontally: true,
+                            fitInsideVertically: true,
                             getTooltipColor: (touchedSpot) =>
                                 colorScheme.surfaceContainerHigh,
                             getTooltipItems: (touchedSpots) {
