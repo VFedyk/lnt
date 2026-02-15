@@ -8,13 +8,19 @@ import '../models/term.dart';
 import '../models/dictionary.dart';
 import '../service_locator.dart';
 import '../services/dictionary_service.dart';
-import '../widgets/term_dialog.dart';
-import '../widgets/status_legend.dart';
 import '../widgets/edit_text_dialog.dart';
+import '../widgets/reader/reader_app_bar.dart';
+import '../widgets/reader/reader_content.dart';
+import '../widgets/reader/reader_continue_reading_dialog.dart';
+import '../widgets/reader/reader_dictionary_picker_dialog.dart';
+import '../widgets/reader/reader_font_size_dialog.dart';
+import '../widgets/reader/reader_foreign_word_dialog.dart';
+import '../widgets/reader/reader_language_picker_dialog.dart';
+import '../widgets/reader/reader_mark_all_known_dialog.dart';
+import '../widgets/reader/reader_translation_dialog.dart';
+import '../widgets/term_dialog.dart';
 import '../widgets/word_list_drawer.dart';
-import '../widgets/paragraph_rich_text.dart';
 import '../utils/app_theme.dart';
-import '../utils/constants.dart';
 
 /// Layout, sizing, and timing constants for the reader screen
 abstract class _ReaderScreenConstants {
@@ -109,11 +115,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
   // --- Word interaction ---
 
-  Future<void> _handleWordTap(
-    String word,
-    int position,
-    int tokenIndex,
-  ) async {
+  Future<void> _handleWordTap(String word, int position, int tokenIndex) async {
     final ctrl = context.read<ReaderController>();
 
     if (ctrl.isSelectionMode) {
@@ -146,12 +148,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     await _openTermDialog(ctrl, word, position, existingTerm);
   }
 
-  Future<bool?> _showTranslationPopup(
-    ReaderController ctrl,
-    Term term,
-  ) async {
+  Future<bool?> _showTranslationPopup(ReaderController ctrl, Term term) async {
     final l10n = AppLocalizations.of(context);
-    // Use preloaded translations from controller
+    // Use preloaded translations from controller.
     List<Translation> translations = [];
     if (term.id != null) {
       translations = ctrl.translationsMap[term.id!] ?? [];
@@ -164,123 +163,17 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     return showDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 736),
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.spacingL),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        term.text,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    if (ctrl.language.languageCode.isNotEmpty)
-                      IconButton(
-                        icon: const Icon(Icons.volume_up),
-                        tooltip: l10n.pronounce,
-                        onPressed: () => ttsService.speak(
-                          term.lowerText,
-                          ctrl.language.languageCode,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                  ],
-                ),
-                if (term.romanization.isNotEmpty) ...[
-                  const SizedBox(height: AppConstants.spacingXS),
-                  Text(
-                    term.romanization,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontStyle: FontStyle.italic,
-                      color: AppConstants.subtitleColor,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: AppConstants.spacingS),
-                ...translations.map(
-                  (t) => Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: AppConstants.spacingXS,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (t.partOfSpeech != null) ...[
-                          Text(
-                            PartOfSpeech.localizedNameFor(
-                              t.partOfSpeech!,
-                              l10n,
-                            ),
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.copyWith(
-                              color: AppConstants.subtitleColor,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                          const SizedBox(width: AppConstants.spacingS),
-                        ],
-                        Expanded(
-                          child: Text(
-                            t.meaning,
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                        ),
-                        if (t.baseTranslationId != null &&
-                            ctrl.translationsById.containsKey(
-                              t.baseTranslationId!,
-                            )) ...[
-                          const SizedBox(width: AppConstants.spacingS),
-                          Builder(
-                            builder: (context) {
-                              final baseTranslation =
-                                  ctrl
-                                      .translationsById[t.baseTranslationId!]!;
-                              final baseTerm =
-                                  ctrl.termsById[baseTranslation.termId];
-                              final baseText = baseTerm != null
-                                  ? '${baseTerm.lowerText} (${baseTranslation.meaning})'
-                                  : baseTranslation.meaning;
-                              return Text(
-                                '\u2190 $baseText',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodySmall?.copyWith(
-                                  color: AppConstants.subtitleColor,
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppConstants.spacingL),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: () => Navigator.pop(context, true),
-                    icon: const Icon(
-                      Icons.edit,
-                      size: _ReaderScreenConstants.editIconSize,
-                    ),
-                    label: Text(l10n.edit),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      builder: (context) => ReaderTranslationDialog(
+        term: term,
+        translations: translations,
+        translationsById: ctrl.translationsById,
+        termsById: ctrl.termsById,
+        languageCode: ctrl.language.languageCode,
+        l10n: l10n,
+        onPronounce: () =>
+            ttsService.speak(term.lowerText, ctrl.language.languageCode),
+        onEdit: () => Navigator.pop(context, true),
+        editIconSize: _ReaderScreenConstants.editIconSize,
       ),
     );
   }
@@ -292,99 +185,12 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final l10n = AppLocalizations.of(context);
     return showDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 736),
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.spacingL),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  lowerWord,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: AppConstants.spacingXS),
-                Text(
-                  info.languageName,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppConstants.subtitleColor,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-                if (info.term != null &&
-                    info.term!.romanization.isNotEmpty) ...[
-                  const SizedBox(height: AppConstants.spacingXS),
-                  Text(
-                    info.term!.romanization,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontStyle: FontStyle.italic,
-                      color: AppConstants.subtitleColor,
-                    ),
-                  ),
-                ],
-                if (info.translations.isNotEmpty) ...[
-                  const SizedBox(height: AppConstants.spacingS),
-                  ...info.translations.map(
-                    (t) => Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: AppConstants.spacingXS,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (t.partOfSpeech != null) ...[
-                            Text(
-                              PartOfSpeech.localizedNameFor(
-                                t.partOfSpeech!,
-                                l10n,
-                              ),
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodySmall?.copyWith(
-                                color: AppConstants.subtitleColor,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                            const SizedBox(width: AppConstants.spacingS),
-                          ],
-                          Expanded(
-                            child: Text(
-                              t.meaning,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ] else if (info.term != null &&
-                    info.term!.translation.isNotEmpty) ...[
-                  const SizedBox(height: AppConstants.spacingS),
-                  Text(
-                    info.term!.translation,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ],
-                const SizedBox(height: AppConstants.spacingL),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: () => Navigator.pop(context, true),
-                    icon: const Icon(
-                      Icons.remove_circle_outline,
-                      size: _ReaderScreenConstants.editIconSize,
-                    ),
-                    label: Text(l10n.removeForeignMarking),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      builder: (context) => ReaderForeignWordDialog(
+        lowerWord: lowerWord,
+        info: info,
+        l10n: l10n,
+        onRemove: () => Navigator.pop(context, true),
+        removeIconSize: _ReaderScreenConstants.editIconSize,
       ),
     );
   }
@@ -411,8 +217,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           term: existingTerm,
           sentence: sentence,
           dictionaries: dictionaries,
-          onLookup: (ctx, dict) =>
-              _dictService.lookupWord(ctx, word, dict.url),
+          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
           languageId: ctrl.language.id!,
           languageName: ctrl.language.name,
           languageCode: ctrl.language.languageCode,
@@ -441,8 +246,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           term: newTerm,
           sentence: sentence,
           dictionaries: dictionaries,
-          onLookup: (ctx, dict) =>
-              _dictService.lookupWord(ctx, word, dict.url),
+          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
           languageId: ctrl.language.id!,
           languageName: ctrl.language.name,
           languageCode: ctrl.language.languageCode,
@@ -471,8 +275,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final l10n = AppLocalizations.of(context);
 
     final allLanguages = await db.languages.getAll();
-    final otherLanguages =
-        allLanguages.where((lang) => lang.id != ctrl.language.id).toList();
+    final otherLanguages = allLanguages
+        .where((lang) => lang.id != ctrl.language.id)
+        .toList();
 
     if (!mounted) return;
 
@@ -485,27 +290,8 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     final selectedLanguage = await showDialog<Language>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.assignForeignLanguage),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: otherLanguages
-              .map(
-                (lang) => ListTile(
-                  leading: const Icon(Icons.language),
-                  title: Text(lang.name),
-                  onTap: () => Navigator.pop(context, lang),
-                ),
-              )
-              .toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-        ],
-      ),
+      builder: (context) =>
+          ReaderLanguagePickerDialog(l10n: l10n, languages: otherLanguages),
     );
 
     if (selectedLanguage == null || !mounted) return;
@@ -516,7 +302,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         .toSet()
         .toList();
 
-    final targetTermsMap = await db.terms.getMapByLanguage(selectedLanguage.id!);
+    final targetTermsMap = await db.terms.getMapByLanguage(
+      selectedLanguage.id!,
+    );
     final wordsWithTermIds = <String, int?>{};
     for (final word in lowerWords) {
       final term = targetTermsMap[word];
@@ -531,8 +319,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     if (ctrl.selectedWordIndices.isEmpty) return;
 
     final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
-    final selectedWords =
-        selectedTokens.map((i) => ctrl.wordTokens[i].text).join(' ');
+    final selectedWords = selectedTokens
+        .map((i) => ctrl.wordTokens[i].text)
+        .join(' ');
 
     final dictionaries = await _dictService.getActiveDictionaries(
       ctrl.language.id!,
@@ -549,26 +338,10 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     final selectedDict = await showDialog<Dictionary?>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.lookupWord(selectedWords)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: dictionaries
-              .map(
-                (dict) => ListTile(
-                  leading: const Icon(Icons.book),
-                  title: Text(dict.name),
-                  onTap: () => Navigator.pop(context, dict),
-                ),
-              )
-              .toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-        ],
+      builder: (context) => ReaderDictionaryPickerDialog(
+        l10n: l10n,
+        selectedWords: selectedWords,
+        dictionaries: dictionaries,
       ),
     );
 
@@ -664,37 +437,13 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.fontSize),
-        content: StatefulBuilder(
-          builder: (context, setDialogState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                l10n.previewText,
-                style: TextStyle(fontSize: ctrl.fontSize),
-              ),
-              Slider(
-                value: ctrl.fontSize,
-                min: _ReaderScreenConstants.fontSizeMin,
-                max: _ReaderScreenConstants.fontSizeMax,
-                divisions: _ReaderScreenConstants.fontSizeSliderDivisions,
-                label: ctrl.fontSize.round().toString(),
-                onChanged: (value) {
-                  ctrl.setFontSize(value);
-                  setDialogState(() {});
-                },
-              ),
-              Text('${ctrl.fontSize.round()}pt'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.done),
-          ),
-        ],
+      builder: (context) => ReaderFontSizeDialog(
+        l10n: l10n,
+        initialValue: ctrl.fontSize,
+        min: _ReaderScreenConstants.fontSizeMin,
+        max: _ReaderScreenConstants.fontSizeMax,
+        divisions: _ReaderScreenConstants.fontSizeSliderDivisions,
+        onChanged: ctrl.setFontSize,
       ),
     );
   }
@@ -704,32 +453,22 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.markAllKnownQuestion),
-        content: Text(l10n.markAllKnownConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              Navigator.pop(context);
-              try {
-                await ctrl.performMarkAllKnown();
-                messenger.showSnackBar(
-                  SnackBar(content: Text(l10n.allWordsMarkedKnown)),
-                );
-              } catch (e) {
-                messenger.showSnackBar(
-                  SnackBar(content: Text('${l10n.error}: $e')),
-                );
-              }
-            },
-            child: Text(l10n.markAll),
-          ),
-        ],
+      builder: (context) => ReaderMarkAllKnownDialog(
+        l10n: l10n,
+        onConfirm: () async {
+          final messenger = ScaffoldMessenger.of(context);
+          Navigator.pop(context);
+          try {
+            await ctrl.performMarkAllKnown();
+            messenger.showSnackBar(
+              SnackBar(content: Text(l10n.allWordsMarkedKnown)),
+            );
+          } catch (e) {
+            messenger.showSnackBar(
+              SnackBar(content: Text('${l10n.error}: $e')),
+            );
+          }
+        },
       ),
     );
   }
@@ -764,30 +503,15 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final l10n = AppLocalizations.of(context);
     final shouldProceed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.continueReading),
-        content: Text(l10n.continueReadingPrompt(nextText.title)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.no),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.yes),
-          ),
-        ],
-      ),
+      builder: (context) =>
+          ReaderContinueReadingDialog(l10n: l10n, nextTitle: nextText.title),
     );
 
     if (shouldProceed == true && mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => ReaderScreen(
-            text: nextText,
-            language: ctrl.language,
-          ),
+          builder: (_) => ReaderScreen(text: nextText, language: ctrl.language),
         ),
       );
     }
@@ -799,6 +523,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
   Widget build(BuildContext context) {
     final ctrl = context.watch<ReaderController>();
     final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: ctrl.isLoading
@@ -807,187 +532,53 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
               wordTokens: ctrl.wordTokens,
               onWordTap: _handleWordTap,
             ),
-      appBar: AppBar(
-        title: Text(ctrl.text.title, overflow: TextOverflow.ellipsis),
-        actions: [
-          if (ctrl.isSelectionMode)
-            IconButton(
-              icon: const Icon(Icons.close),
-              tooltip: l10n.cancelSelection,
-              onPressed: ctrl.cancelSelection,
-            ),
-          if (ctrl.isSelectionMode)
-            IconButton(
-              icon: const Icon(Icons.add),
-              tooltip: l10n.saveAsTerm,
-              onPressed: _saveSelectionAsTerm,
-            ),
-          if (ctrl.isSelectionMode)
-            IconButton(
-              icon: const Icon(Icons.language),
-              tooltip: l10n.assignForeignLanguage,
-              onPressed: _assignForeignLanguage,
-            ),
-          if (ctrl.isSelectionMode)
-            IconButton(
-              icon: const Icon(Icons.search),
-              tooltip: l10n.lookupInDictionary,
-              onPressed: _lookupSelectedWords,
-            ),
-          if (!ctrl.isSelectionMode)
-            IconButton(
-              icon: Icon(
-                ctrl.showLegend ? Icons.visibility_off : Icons.visibility,
-              ),
-              tooltip: l10n.toggleLegend,
-              onPressed: ctrl.toggleLegend,
-            ),
-          if (!ctrl.isSelectionMode)
-            IconButton(
-              icon: Icon(
-                ctrl.text.status == TextStatus.finished
-                    ? Icons.check_circle
-                    : Icons.check_circle_outline,
-                color: ctrl.text.status == TextStatus.finished
-                    ? context.appColors.success
-                    : null,
-              ),
-              tooltip: ctrl.text.status == TextStatus.finished
-                  ? l10n.markedAsFinished
-                  : l10n.markAsFinished,
-              onPressed: _markAsFinished,
-            ),
-          if (!ctrl.isSelectionMode)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (value) {
-                switch (value) {
-                  case 'edit':
-                    _editText();
-                    break;
-                  case 'font_size':
-                    _showFontSizeDialog();
-                    break;
-                  case 'mark_all_known':
-                    _markAllWordsKnown();
-                    break;
-                  case 'open_drawer':
-                    _scaffoldKey.currentState?.openEndDrawer();
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.edit),
-                      const SizedBox(width: AppConstants.spacingS),
-                      Text(l10n.editText),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'font_size',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.text_fields),
-                      const SizedBox(width: AppConstants.spacingS),
-                      Text(l10n.fontSize),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'mark_all_known',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.done_all),
-                      const SizedBox(width: AppConstants.spacingS),
-                      Text(l10n.markAllKnown),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'open_drawer',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.list_alt),
-                      const SizedBox(width: AppConstants.spacingS),
-                      Text(l10n.wordList),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-        ],
+      appBar: ReaderAppBar(
+        title: ctrl.text.title,
+        isSelectionMode: ctrl.isSelectionMode,
+        showLegend: ctrl.showLegend,
+        isFinished: ctrl.text.status == TextStatus.finished,
+        finishedColor: context.appColors.success,
+        l10n: l10n,
+        onCancelSelection: ctrl.cancelSelection,
+        onSaveSelectionAsTerm: _saveSelectionAsTerm,
+        onAssignForeignLanguage: _assignForeignLanguage,
+        onLookupSelectedWords: _lookupSelectedWords,
+        onToggleLegend: ctrl.toggleLegend,
+        onToggleFinished: _markAsFinished,
+        onMoreSelected: (action) {
+          switch (action) {
+            case ReaderMoreAction.edit:
+              _editText();
+            case ReaderMoreAction.fontSize:
+              _showFontSizeDialog();
+            case ReaderMoreAction.markAllKnown:
+              _markAllWordsKnown();
+            case ReaderMoreAction.openDrawer:
+              _scaffoldKey.currentState?.openEndDrawer();
+          }
+        },
       ),
       body: ctrl.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                if (ctrl.showLegend)
-                  StatusLegend(termCounts: ctrl.termCounts),
-                if (ctrl.isSelectionMode)
-                  Container(
-                    padding: const EdgeInsets.all(AppConstants.spacingM),
-                    color: _ReaderScreenConstants.selectionBannerColor,
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: _ReaderScreenConstants.selectionAccentColor,
-                        ),
-                        const SizedBox(width: AppConstants.spacingS),
-                        Expanded(
-                          child: Text(
-                            l10n.wordsSelected(
-                              ctrl.selectedWordIndices.length,
-                            ),
-                            style: const TextStyle(
-                              color:
-                                  _ReaderScreenConstants.selectionAccentColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                Expanded(
-                  child: Directionality(
-                    textDirection: ctrl.language.rightToLeft
-                        ? TextDirection.rtl
-                        : TextDirection.ltr,
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(AppConstants.spacingL),
-                      itemCount: ctrl.paragraphs.length,
-                      itemBuilder: (context, index) {
-                        final para = ctrl.paragraphs[index];
-                        if (para.length == 1 &&
-                            !para[0].isWord &&
-                            para[0].text.trim().isEmpty) {
-                          return SizedBox(
-                            height: para[0].text.contains('\n\n')
-                                ? AppConstants.spacingL
-                                : AppConstants.spacingS,
-                          );
-                        }
-                        return ParagraphRichText(
-                          tokens: para,
-                          fontSize: ctrl.fontSize,
-                          selectedWordIndices: ctrl.selectedWordIndices,
-                          otherLanguageTerms: ctrl.otherLanguageTerms,
-                          translationsMap: ctrl.translationsMap,
-                          translationsById: ctrl.translationsById,
-                          termsById: ctrl.termsById,
-                          onWordTap: _handleWordTap,
-                          onWordLongPress: _handleWordLongPress,
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
+          : ReaderContent(
+              showLegend: ctrl.showLegend,
+              termCounts: ctrl.termCounts,
+              isSelectionMode: ctrl.isSelectionMode,
+              selectedCount: ctrl.selectedWordIndices.length,
+              selectionBannerColor: _ReaderScreenConstants.selectionBannerColor,
+              selectionAccentColor: _ReaderScreenConstants.selectionAccentColor,
+              l10n: l10n,
+              rightToLeft: ctrl.language.rightToLeft,
+              scrollController: _scrollController,
+              paragraphs: ctrl.paragraphs,
+              fontSize: ctrl.fontSize,
+              selectedWordIndices: ctrl.selectedWordIndices,
+              otherLanguageTerms: ctrl.otherLanguageTerms,
+              translationsMap: ctrl.translationsMap,
+              translationsById: ctrl.translationsById,
+              termsById: ctrl.termsById,
+              onWordTap: _handleWordTap,
+              onWordLongPress: _handleWordLongPress,
             ),
     );
   }
