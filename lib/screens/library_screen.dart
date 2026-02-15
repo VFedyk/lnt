@@ -13,6 +13,7 @@ import '../widgets/add_text_dialog.dart';
 import '../widgets/collection_dialog.dart';
 import '../widgets/library/library_empty_state.dart';
 import '../widgets/library/library_grid_content.dart';
+import '../widgets/library/library_import_menu.dart';
 import '../widgets/library/library_list_content.dart';
 import '../widgets/library/library_search_bar.dart';
 import '../widgets/library/library_status_bar.dart';
@@ -29,12 +30,9 @@ abstract class _LibraryScreenConstants {
   static const double finishedBackgroundAlpha = 0.2;
   static const int maxWarningsShown = 3;
   static const double fabMenuVerticalOffset = 200.0;
-
-  static const String actionAdd = 'add';
-  static const String actionUrl = 'url';
-  static const String actionTxt = 'txt';
-  static const String actionEpub = 'epub';
 }
+
+enum _LibraryAddAction { addText, importUrl, importTxt, importEpub }
 
 class LibraryScreen extends StatefulWidget {
   final Language language;
@@ -305,7 +303,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     LibraryController ctrl,
   ) {
     final l10n = AppLocalizations.of(context);
-    showMenu<String>(
+    showMenu<_LibraryAddAction>(
       context: context,
       position: RelativeRect.fromLTRB(
         position.dx,
@@ -315,7 +313,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
       items: [
         PopupMenuItem(
-          value: _LibraryScreenConstants.actionAdd,
+          value: _LibraryAddAction.addText,
           child: Row(
             children: [
               const Icon(Icons.edit),
@@ -325,7 +323,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
         ),
         PopupMenuItem(
-          value: _LibraryScreenConstants.actionUrl,
+          value: _LibraryAddAction.importUrl,
           child: Row(
             children: [
               const Icon(Icons.link),
@@ -335,7 +333,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
         ),
         PopupMenuItem(
-          value: _LibraryScreenConstants.actionTxt,
+          value: _LibraryAddAction.importTxt,
           child: Row(
             children: [
               const Icon(Icons.text_snippet),
@@ -345,7 +343,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
         ),
         PopupMenuItem(
-          value: _LibraryScreenConstants.actionEpub,
+          value: _LibraryAddAction.importEpub,
           child: Row(
             children: [
               const Icon(Icons.book),
@@ -358,13 +356,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
     ).then((value) {
       if (value == null) return;
       switch (value) {
-        case _LibraryScreenConstants.actionAdd:
+        case _LibraryAddAction.addText:
           _addText(ctrl);
-        case _LibraryScreenConstants.actionTxt:
+        case _LibraryAddAction.importTxt:
           _importFromTextFile(ctrl);
-        case _LibraryScreenConstants.actionEpub:
+        case _LibraryAddAction.importEpub:
           _importFromEpub(ctrl);
-        case _LibraryScreenConstants.actionUrl:
+        case _LibraryAddAction.importUrl:
           _importFromUrl(ctrl);
       }
     });
@@ -571,51 +569,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
             tooltip: l10n.newCollection,
             onPressed: () => _addCollection(ctrl),
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.file_upload),
-            tooltip: l10n.import,
+          LibraryImportMenu(
+            l10n: l10n,
             onSelected: (value) {
               switch (value) {
-                case _LibraryScreenConstants.actionTxt:
-                  _importFromTextFile(ctrl);
-                case _LibraryScreenConstants.actionEpub:
-                  _importFromEpub(ctrl);
-                case _LibraryScreenConstants.actionUrl:
+                case LibraryImportAction.url:
                   _importFromUrl(ctrl);
+                case LibraryImportAction.txt:
+                  _importFromTextFile(ctrl);
+                case LibraryImportAction.epub:
+                  _importFromEpub(ctrl);
               }
             },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: _LibraryScreenConstants.actionUrl,
-                child: Row(
-                  children: [
-                    const Icon(Icons.link),
-                    const SizedBox(width: AppConstants.spacingS),
-                    Text(l10n.importFromUrl),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: _LibraryScreenConstants.actionTxt,
-                child: Row(
-                  children: [
-                    const Icon(Icons.text_snippet),
-                    const SizedBox(width: AppConstants.spacingS),
-                    Text(l10n.importTxt),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: _LibraryScreenConstants.actionEpub,
-                child: Row(
-                  children: [
-                    const Icon(Icons.book),
-                    const SizedBox(width: AppConstants.spacingS),
-                    Text(l10n.importEpub),
-                  ],
-                ),
-              ),
-            ],
           ),
         ],
       ),
