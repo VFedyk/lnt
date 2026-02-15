@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/constants.dart';
+
 class SettingsService {
   SettingsService();
 
@@ -18,7 +20,8 @@ class SettingsService {
   // LibreTranslate settings
   static const String _libreTranslateUrlKey = 'libretranslate_url';
   static const String _libreTranslateApiKeyKey = 'libretranslate_api_key';
-  static const String defaultLibreTranslateUrl = 'https://libretranslate.com';
+  static const String defaultLibreTranslateUrl =
+      AppConstants.defaultLibreTranslateUrl;
 
   // Custom database path
   static const String _customDbPathKey = 'custom_db_path';

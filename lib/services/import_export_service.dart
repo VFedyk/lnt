@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/term.dart';
+import '../utils/constants.dart';
 import '../utils/helpers.dart';
 
 class ImportExportService {
@@ -123,7 +124,7 @@ class ImportExportService {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path, mimeType: mimeType)],
-          text: 'LNT Export: $fileName',
+          text: '${AppConstants.appName} Export: $fileName',
         ),
       );
     }

@@ -33,6 +33,7 @@ class AppConstants {
   static const String appName = 'LNT';
   static const String appVersion = '1.0.0';
   static const String appDescription = 'Language Nerd Tools';
+  static const String defaultLibreTranslateUrl = 'https://libretranslate.com';
 
   // UI: Dialog
   static const double dialogWidth = 736.0;

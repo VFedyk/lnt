@@ -32,7 +32,7 @@ class ReaderTranslationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 736),
+        constraints: const BoxConstraints(maxWidth: AppConstants.dialogWidth),
         child: Padding(
           padding: const EdgeInsets.all(AppConstants.spacingL),
           child: Column(

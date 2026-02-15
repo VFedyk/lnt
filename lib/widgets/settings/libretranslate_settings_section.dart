@@ -51,7 +51,7 @@ class LibreTranslateSettingsSection extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: l10n.libreTranslateServerUrl,
                 border: const OutlineInputBorder(),
-                hintText: 'https://libretranslate.com',
+                hintText: AppConstants.defaultLibreTranslateUrl,
               ),
             ),
             const SizedBox(height: AppConstants.spacingL),
