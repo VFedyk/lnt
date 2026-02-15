@@ -28,7 +28,7 @@ abstract class _LineChartConstants {
 abstract class _DonutChartConstants {
   static const double size = 180.0;
   static const double radius = 50.0;
-  static const double centerSpaceRadius = 30.0;
+  static const double centerSpaceRadius = 40.0;
   static const double minPercentageForLabel = 5.0;
 }
 
@@ -84,8 +84,7 @@ class DailyActivityBarChart extends StatelessWidget {
                                 colorScheme.surfaceContainerHigh,
                             getTooltipItem: (group, groupIndex, rod, rodIndex) {
                               final date = data[group.x.toInt()].date;
-                              final dateStr =
-                                  DateFormat('MMM d').format(date);
+                              final dateStr = DateFormat('MMM d').format(date);
                               final reviews = data[group.x.toInt()].reviews;
                               final wordsAdded =
                                   data[group.x.toInt()].wordsAdded;
@@ -134,14 +133,17 @@ class DailyActivityBarChart extends StatelessWidget {
                               showTitles: true,
                               reservedSize: 30,
                               getTitlesWidget: (value, meta) {
-                                if (value.toInt() % 5 != 0) return const SizedBox();
+                                if (value.toInt() % 5 != 0) {
+                                  return const SizedBox();
+                                }
                                 if (value.toInt() >= data.length) {
                                   return const SizedBox();
                                 }
                                 final date = data[value.toInt()].date;
                                 return Padding(
                                   padding: const EdgeInsets.only(
-                                      top: AppConstants.spacingS),
+                                    top: AppConstants.spacingS,
+                                  ),
                                   child: Text(
                                     DateFormat('M/d').format(date),
                                     style: TextStyle(
@@ -185,7 +187,8 @@ class DailyActivityBarChart extends StatelessWidget {
                           getDrawingHorizontalLine: (value) {
                             return FlLine(
                               color: AppConstants.borderColor.withValues(
-                                  alpha: 0.3),
+                                alpha: 0.3,
+                              ),
                               strokeWidth: 1,
                             );
                           },
@@ -210,7 +213,9 @@ class DailyActivityBarChart extends StatelessWidget {
   }
 
   List<BarChartGroupData> _buildBarGroups(
-      ColorScheme colorScheme, AppColors appColors) {
+    ColorScheme colorScheme,
+    AppColors appColors,
+  ) {
     return data.asMap().entries.map((entry) {
       final index = entry.key;
       final item = entry.value;
@@ -308,14 +313,17 @@ class VocabularyGrowthLineChart extends StatelessWidget {
                               reservedSize: 30,
                               interval: 5,
                               getTitlesWidget: (value, meta) {
-                                if (value.toInt() % 5 != 0) return const SizedBox();
+                                if (value.toInt() % 5 != 0) {
+                                  return const SizedBox();
+                                }
                                 if (value.toInt() >= data.length) {
                                   return const SizedBox();
                                 }
                                 final date = data[value.toInt()].date;
                                 return Padding(
                                   padding: const EdgeInsets.only(
-                                      top: AppConstants.spacingS),
+                                    top: AppConstants.spacingS,
+                                  ),
                                   child: Text(
                                     DateFormat('M/d').format(date),
                                     style: TextStyle(
@@ -358,7 +366,8 @@ class VocabularyGrowthLineChart extends StatelessWidget {
                           getDrawingHorizontalLine: (value) {
                             return FlLine(
                               color: AppConstants.borderColor.withValues(
-                                  alpha: 0.3),
+                                alpha: 0.3,
+                              ),
                               strokeWidth: 1,
                             );
                           },
@@ -373,10 +382,12 @@ class VocabularyGrowthLineChart extends StatelessWidget {
                             spots: data
                                 .asMap()
                                 .entries
-                                .map((e) => FlSpot(
-                                      e.key.toDouble(),
-                                      e.value.totalKnownWords.toDouble(),
-                                    ))
+                                .map(
+                                  (e) => FlSpot(
+                                    e.key.toDouble(),
+                                    e.value.totalKnownWords.toDouble(),
+                                  ),
+                                )
                                 .toList(),
                             isCurved: true,
                             color: colorScheme.primary,
@@ -395,7 +406,8 @@ class VocabularyGrowthLineChart extends StatelessWidget {
                             belowBarData: BarAreaData(
                               show: true,
                               color: colorScheme.primary.withValues(
-                                  alpha: _LineChartConstants.gradientOpacity),
+                                alpha: _LineChartConstants.gradientOpacity,
+                              ),
                             ),
                           ),
                         ],
@@ -412,15 +424,17 @@ class VocabularyGrowthLineChart extends StatelessWidget {
 
   double _calculateMinY() {
     if (data.isEmpty) return 0;
-    final minWords =
-        data.map((d) => d.totalKnownWords).reduce((a, b) => a < b ? a : b);
+    final minWords = data
+        .map((d) => d.totalKnownWords)
+        .reduce((a, b) => a < b ? a : b);
     return (minWords * 0.9).floorToDouble();
   }
 
   double _calculateMaxY() {
     if (data.isEmpty) return 100;
-    final maxWords =
-        data.map((d) => d.totalKnownWords).reduce((a, b) => a > b ? a : b);
+    final maxWords = data
+        .map((d) => d.totalKnownWords)
+        .reduce((a, b) => a > b ? a : b);
     return (maxWords * 1.1).ceilToDouble();
   }
 }
@@ -429,10 +443,7 @@ class VocabularyGrowthLineChart extends StatelessWidget {
 class StatusDistributionDonutChart extends StatefulWidget {
   final List<StatusDistributionData> data;
 
-  const StatusDistributionDonutChart({
-    super.key,
-    required this.data,
-  });
+  const StatusDistributionDonutChart({super.key, required this.data});
 
   @override
   State<StatusDistributionDonutChart> createState() =>
@@ -486,8 +497,9 @@ class _StatusDistributionDonutChartState
                               touchCallback: (event, response) {
                                 setState(() {
                                   if (response?.touchedSection != null) {
-                                    _touchedIndex =
-                                        response!.touchedSection!.touchedSectionIndex;
+                                    _touchedIndex = response!
+                                        .touchedSection!
+                                        .touchedSectionIndex;
                                   } else {
                                     _touchedIndex = null;
                                   }
@@ -501,9 +513,7 @@ class _StatusDistributionDonutChartState
                           children: [
                             Text(
                               totalCount.toString(),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
+                              style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
@@ -555,8 +565,9 @@ class _StatusDistributionDonutChartState
               style: TextStyle(
                 fontSize: AppConstants.fontSizeCaption,
                 color: AppConstants.subtitleColor,
-                fontWeight:
-                    _touchedIndex == index ? FontWeight.bold : FontWeight.normal,
+                fontWeight: _touchedIndex == index
+                    ? FontWeight.bold
+                    : FontWeight.normal,
               ),
             ),
           ],

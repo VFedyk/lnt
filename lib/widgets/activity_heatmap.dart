@@ -350,56 +350,76 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
               ],
             ),
             const SizedBox(height: AppConstants.spacingM),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final cellTotal =
-                    _HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing;
-                final availableWidth = constraints.maxWidth.isFinite
-                    ? constraints.maxWidth
-                    : double.infinity;
-                final maxWeeksThatFit = availableWidth.isFinite
-                    ? ((availableWidth - _HeatmapConstants.dayLabelWidth) /
-                              cellTotal)
-                          .floor()
-                          .clamp(1, widget.weeksToShow)
-                    : widget.weeksToShow;
-                final effectiveWeeks = widget.useTooltip
-                    ? widget.weeksToShow
-                    : maxWeeksThatFit;
-                final startDate = _getStartDate(effectiveWeeks);
-                final gridWidth =
-                    _HeatmapConstants.dayLabelWidth + effectiveWeeks * cellTotal;
-                final gridHeight =
-                    _HeatmapConstants.monthLabelHeight +
-                    _HeatmapConstants.daysInWeek * cellTotal;
+            widget.useTooltip
+                ? _buildHeatmapGrid(
+                    context: context,
+                    weeksToShow: widget.weeksToShow,
+                    primary: primary,
+                    emptyColor: emptyColor,
+                  )
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final cellTotal =
+                          _HeatmapConstants.cellSize +
+                          _HeatmapConstants.cellSpacing;
+                      final availableWidth = constraints.maxWidth.isFinite
+                          ? constraints.maxWidth
+                          : double.infinity;
+                      final effectiveWeeks = availableWidth.isFinite
+                          ? ((availableWidth -
+                                          _HeatmapConstants.dayLabelWidth) /
+                                      cellTotal)
+                                  .floor()
+                                  .clamp(1, widget.weeksToShow)
+                          : widget.weeksToShow;
 
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: GestureDetector(
-                    onTapUp: (details) =>
-                        _handleTap(context, details, effectiveWeeks),
-                    child: CustomPaint(
-                      size: Size(gridWidth, gridHeight),
-                      painter: _HeatmapPainter(
-                        activityData: widget.activityData,
-                        startDate: startDate,
+                      return _buildHeatmapGrid(
+                        context: context,
                         weeksToShow: effectiveWeeks,
                         primary: primary,
                         emptyColor: emptyColor,
-                        textColor: AppConstants.subtitleColor,
-                        intensityLevel: _intensityLevel,
-                        colorForIntensity: (level) =>
-                            _colorForIntensity(level, primary, emptyColor),
-                        locale: Localizations.localeOf(context).languageCode,
-                      ),
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
             const SizedBox(height: AppConstants.spacingS),
             _buildLegend(l10n, primary, emptyColor),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeatmapGrid({
+    required BuildContext context,
+    required int weeksToShow,
+    required Color primary,
+    required Color emptyColor,
+  }) {
+    final cellTotal = _HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing;
+    final startDate = _getStartDate(weeksToShow);
+    final gridWidth = _HeatmapConstants.dayLabelWidth + weeksToShow * cellTotal;
+    final gridHeight =
+        _HeatmapConstants.monthLabelHeight +
+        _HeatmapConstants.daysInWeek * cellTotal;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: GestureDetector(
+        onTapUp: (details) => _handleTap(context, details, weeksToShow),
+        child: CustomPaint(
+          size: Size(gridWidth, gridHeight),
+          painter: _HeatmapPainter(
+            activityData: widget.activityData,
+            startDate: startDate,
+            weeksToShow: weeksToShow,
+            primary: primary,
+            emptyColor: emptyColor,
+            textColor: AppConstants.subtitleColor,
+            intensityLevel: _intensityLevel,
+            colorForIntensity: (level) =>
+                _colorForIntensity(level, primary, emptyColor),
+            locale: Localizations.localeOf(context).languageCode,
+          ),
         ),
       ),
     );
