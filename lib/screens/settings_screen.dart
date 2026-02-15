@@ -10,6 +10,12 @@ import '../service_locator.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
+import '../widgets/settings/app_language_section.dart';
+import '../widgets/settings/backup_section.dart';
+import '../widgets/settings/database_section.dart';
+import '../widgets/settings/deepl_settings_section.dart';
+import '../widgets/settings/deepl_usage_section.dart';
+import '../widgets/settings/libretranslate_settings_section.dart';
 
 abstract class _SettingsScreenConstants {
   static const double usageBarHeight = 8.0;
@@ -160,9 +166,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showRestoreSuccess() {
     final l10n = AppLocalizations.of(context);
     dataChanges.notifyAll();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.restoreSuccess)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.restoreSuccess)));
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
@@ -190,10 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(l10n.restartRequired),
         content: Text(l10n.databaseChangedMessage),
         actions: [
-          TextButton(
-            onPressed: () => exit(0),
-            child: const Text('OK'),
-          ),
+          TextButton(onPressed: () => exit(0), child: const Text('OK')),
         ],
       ),
     );
@@ -206,223 +209,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildUsageSection(SettingsController ctrl) {
-    return Padding(
-      padding: const EdgeInsets.only(top: AppConstants.spacingL),
-      child: Container(
-        padding: const EdgeInsets.all(AppConstants.spacingM),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        ),
-        child: ctrl.isLoadingUsage
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: AppConstants.progressIndicatorSizeS,
-                    height: AppConstants.progressIndicatorSizeS,
-                    child: const CircularProgressIndicator(
-                      strokeWidth: AppConstants.progressStrokeWidth,
-                    ),
-                  ),
-                  const SizedBox(width: AppConstants.spacingS),
-                  Text(AppLocalizations.of(context).loadingUsage),
-                ],
-              )
-            : ctrl.usage == null
-                ? Row(
-                    children: [
-                      Icon(Icons.error_outline,
-                          color: Theme.of(context).colorScheme.error,
-                          size: _SettingsScreenConstants.usageErrorIconSize),
-                      const SizedBox(width: AppConstants.spacingS),
-                      Expanded(
-                        child: Text(AppLocalizations.of(context).couldNotLoadUsage),
-                      ),
-                      TextButton(
-                        onPressed: ctrl.loadUsage,
-                        child: Text(AppLocalizations.of(context).retry),
-                      ),
-                    ],
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            AppLocalizations.of(context).monthlyUsage,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            '${(ctrl.usage!.usagePercent * 100).toStringAsFixed(1)}%',
-                            style: TextStyle(
-                              color: _usageColor(ctrl.usage!.usagePercent),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppConstants.spacingS),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
-                        child: LinearProgressIndicator(
-                          value: ctrl.usage!.usagePercent,
-                          minHeight: _SettingsScreenConstants.usageBarHeight,
-                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            _usageColor(ctrl.usage!.usagePercent),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppConstants.spacingS),
-                      Text(
-                        AppLocalizations.of(context).charactersUsed(
-                          SettingsController.formatNumber(ctrl.usage!.characterCount),
-                          SettingsController.formatNumber(ctrl.usage!.characterLimit),
-                        ),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: AppConstants.fontSizeCaption,
-                        ),
-                      ),
-                      Text(
-                        AppLocalizations.of(context).charactersRemaining(
-                          SettingsController.formatNumber(ctrl.usage!.charactersRemaining),
-                        ),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: AppConstants.fontSizeCaption,
-                        ),
-                      ),
-                    ],
-                  ),
-      ),
+    return DeepLUsageSection(
+      isLoadingUsage: ctrl.isLoadingUsage,
+      usage: ctrl.usage,
+      usageColor: _usageColor,
+      onRetry: ctrl.loadUsage,
+      usageBarHeight: _SettingsScreenConstants.usageBarHeight,
+      usageErrorIconSize: _SettingsScreenConstants.usageErrorIconSize,
     );
   }
 
   Widget _buildDatabaseSection(SettingsController ctrl) {
-    final l10n = AppLocalizations.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacingL),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.storage),
-                const SizedBox(width: AppConstants.spacingS),
-                Text(l10n.databaseSection, style: Theme.of(context).textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: AppConstants.spacingL),
-            Text(l10n.databasePath, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: AppConstants.spacingS),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppConstants.spacingM),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
-                border: Border.all(color: colorScheme.outlineVariant),
-              ),
-              child: SelectableText(
-                ctrl.dbPath ?? '',
-                style: TextStyle(
-                  fontSize: AppConstants.fontSizeCaption,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppConstants.spacingL),
-            Wrap(
-              spacing: AppConstants.spacingS,
-              runSpacing: AppConstants.spacingS,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () => _openDatabaseDirectory(ctrl),
-                  icon: const Icon(Icons.folder_open),
-                  label: Text(l10n.openDatabaseDirectory),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => _changeDatabase(ctrl),
-                  icon: const Icon(Icons.swap_horiz),
-                  label: Text(l10n.changeDatabase),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return DatabaseSection(
+      l10n: AppLocalizations.of(context),
+      dbPath: ctrl.dbPath ?? '',
+      onOpenDatabaseDirectory: () => _openDatabaseDirectory(ctrl),
+      onChangeDatabase: () => _changeDatabase(ctrl),
     );
   }
 
   Widget _buildBackupSection(SettingsController ctrl) {
     final l10n = AppLocalizations.of(context);
-    final dateHelper = DateHelper.formatDateTime;
     final busy = ctrl.isBackingUp || ctrl.isRestoring;
+    final backupLabel = ctrl.icloudLastBackup != null
+        ? l10n.lastBackup(DateHelper.formatDateTime(ctrl.icloudLastBackup!))
+        : l10n.noBackupYet;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacingL),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.cloud),
-                const SizedBox(width: AppConstants.spacingS),
-                Text(l10n.backupRestore, style: Theme.of(context).textTheme.titleMedium),
-                if (busy) ...[
-                  const SizedBox(width: AppConstants.spacingM),
-                  SizedBox(
-                    width: AppConstants.progressIndicatorSizeS,
-                    height: AppConstants.progressIndicatorSizeS,
-                    child: const CircularProgressIndicator(
-                      strokeWidth: AppConstants.progressStrokeWidth,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            if (PlatformHelper.isApple) ...[
-              const SizedBox(height: AppConstants.spacingL),
-              Text('iCloud', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: AppConstants.spacingXS),
-              Text(
-                ctrl.icloudLastBackup != null
-                    ? l10n.lastBackup(dateHelper(ctrl.icloudLastBackup!))
-                    : l10n.noBackupYet,
-                style: TextStyle(
-                  fontSize: AppConstants.fontSizeCaption,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: AppConstants.spacingS),
-              Wrap(
-                spacing: AppConstants.spacingS,
-                runSpacing: AppConstants.spacingS,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: busy ? null : () => _backupToICloud(ctrl),
-                    icon: const Icon(Icons.cloud_upload),
-                    label: Text(l10n.backupToICloud),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: busy ? null : () => _restoreFromICloud(ctrl),
-                    icon: const Icon(Icons.cloud_download),
-                    label: Text(l10n.restoreFromICloud),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
+    return BackupSection(
+      l10n: l10n,
+      isApplePlatform: PlatformHelper.isApple,
+      busy: busy,
+      iCloudBackupLabel: backupLabel,
+      onBackupToICloud: () => _backupToICloud(ctrl),
+      onRestoreFromICloud: () => _restoreFromICloud(ctrl),
     );
   }
 
@@ -430,248 +249,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => SettingsController()..loadSettings(),
-      child: Builder(builder: (context) {
-        final ctrl = context.watch<SettingsController>();
-        _seedControllers(ctrl);
+      child: Builder(
+        builder: (context) {
+          final ctrl = context.watch<SettingsController>();
+          _seedControllers(ctrl);
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(AppLocalizations.of(context).settings),
-            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          ),
-          body: ctrl.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                  padding: const EdgeInsets.all(AppConstants.spacingL),
-                  children: [
-                    // App Language Section
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppConstants.spacingL),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.language),
-                                const SizedBox(width: AppConstants.spacingS),
-                                Text(
-                                  AppLocalizations.of(context).appLanguage,
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppConstants.spacingL),
-                            SegmentedButton<Locale>(
-                              segments: [
-                                ButtonSegment(
-                                  value: const Locale('en'),
-                                  label: Text(AppLocalizations.of(context).english),
-                                ),
-                                ButtonSegment(
-                                  value: const Locale('uk'),
-                                  label: Text(AppLocalizations.of(context).ukrainian),
-                                ),
-                              ],
-                              selected: {context.watch<AppState>().locale},
-                              onSelectionChanged: (selected) {
-                                context.read<AppState>().setLocale(selected.first);
-                              },
-                            ),
-                          ],
-                        ),
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(AppLocalizations.of(context).settings),
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+            ),
+            body: ctrl.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView(
+                    padding: const EdgeInsets.all(AppConstants.spacingL),
+                    children: [
+                      AppLanguageSection(
+                        l10n: AppLocalizations.of(context),
+                        selectedLocale: context.watch<AppState>().locale,
+                        onLocaleChanged: (locale) {
+                          context.read<AppState>().setLocale(locale);
+                        },
                       ),
-                    ),
-                    if (_isDesktop) ...[
+                      if (_isDesktop) ...[
+                        const SizedBox(height: AppConstants.spacingL),
+                        _buildDatabaseSection(ctrl),
+                      ],
                       const SizedBox(height: AppConstants.spacingL),
-                      _buildDatabaseSection(ctrl),
+                      _buildBackupSection(ctrl),
+                      const SizedBox(height: AppConstants.spacingL),
+                      DeepLSettingsSection(
+                        l10n: AppLocalizations.of(context),
+                        apiKeyController: _apiKeyController,
+                        obscureApiKey: _obscureApiKey,
+                        onToggleObscureApiKey: () {
+                          setState(() => _obscureApiKey = !_obscureApiKey);
+                        },
+                        isApiFree: ctrl.isApiFree,
+                        onApiTypeChanged: ctrl.setApiFree,
+                        showUsage:
+                            ctrl.isApiFree && _apiKeyController.text.isNotEmpty,
+                        usageWidget: _buildUsageSection(ctrl),
+                        targetLang: ctrl.targetLang,
+                        targetLanguages: _targetLanguages,
+                        onTargetLangChanged: ctrl.setTargetLang,
+                      ),
+                      const SizedBox(height: AppConstants.spacingL),
+                      LibreTranslateSettingsSection(
+                        l10n: AppLocalizations.of(context),
+                        urlController: _ltUrlController,
+                        apiKeyController: _ltApiKeyController,
+                        obscureApiKey: _obscureLtApiKey,
+                        onToggleObscureApiKey: () {
+                          setState(() => _obscureLtApiKey = !_obscureLtApiKey);
+                        },
+                      ),
+                      const SizedBox(height: AppConstants.spacingL),
+                      ElevatedButton.icon(
+                        onPressed: () => _saveSettings(ctrl),
+                        icon: const Icon(Icons.save),
+                        label: Text(AppLocalizations.of(context).saveSettings),
+                      ),
                     ],
-                    const SizedBox(height: AppConstants.spacingL),
-                    _buildBackupSection(ctrl),
-                    const SizedBox(height: AppConstants.spacingL),
-                    // DeepL API Section
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppConstants.spacingL),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.translate),
-                                const SizedBox(width: AppConstants.spacingS),
-                                Text(
-                                  AppLocalizations.of(context).deepLTranslation,
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppConstants.spacingS),
-                            Text(
-                              AppLocalizations.of(context).deepLApiKeyHint,
-                              style: TextStyle(
-                                color: AppConstants.subtitleColor,
-                                fontSize: AppConstants.fontSizeCaption,
-                              ),
-                            ),
-                            const SizedBox(height: AppConstants.spacingL),
-                            TextField(
-                              controller: _apiKeyController,
-                              decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).deepLApiKey,
-                                border: const OutlineInputBorder(),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscureApiKey ? Icons.visibility : Icons.visibility_off,
-                                  ),
-                                  onPressed: () {
-                                    setState(() => _obscureApiKey = !_obscureApiKey);
-                                  },
-                                ),
-                              ),
-                              obscureText: _obscureApiKey,
-                            ),
-                            const SizedBox(height: AppConstants.spacingL),
-                            Text(
-                              AppLocalizations.of(context).apiType,
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            const SizedBox(height: AppConstants.spacingS),
-                            SegmentedButton<bool>(
-                              segments: [
-                                ButtonSegment(value: true, label: Text(AppLocalizations.of(context).free)),
-                                ButtonSegment(value: false, label: Text(AppLocalizations.of(context).pro)),
-                              ],
-                              selected: {ctrl.isApiFree},
-                              onSelectionChanged: (selected) {
-                                ctrl.setApiFree(selected.first);
-                              },
-                            ),
-                            const SizedBox(height: AppConstants.spacingS),
-                            Text(
-                              ctrl.isApiFree
-                                  ? AppLocalizations.of(context).freeApiLimit
-                                  : AppLocalizations.of(context).proApiPayPerUse,
-                              style: TextStyle(
-                                color: AppConstants.subtitleColor,
-                                fontSize: AppConstants.fontSizeCaption,
-                              ),
-                            ),
-                            if (ctrl.isApiFree && _apiKeyController.text.isNotEmpty)
-                              _buildUsageSection(ctrl),
-                            const SizedBox(height: AppConstants.spacingL),
-                            Text(
-                              AppLocalizations.of(context).targetLanguage,
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            const SizedBox(height: AppConstants.spacingS),
-                            DropdownButtonFormField<String>(
-                              initialValue: ctrl.targetLang,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: AppConstants.spacingM,
-                                  vertical: AppConstants.spacingS,
-                                ),
-                              ),
-                              items: _targetLanguages.entries
-                                  .map(
-                                    (e) => DropdownMenuItem(
-                                      value: e.key,
-                                      child: Text(e.value),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) {
-                                if (value != null) ctrl.setTargetLang(value);
-                              },
-                            ),
-                            const SizedBox(height: AppConstants.spacingS),
-                            Text(
-                              AppLocalizations.of(context).languageForTranslations,
-                              style: TextStyle(
-                                color: AppConstants.subtitleColor,
-                                fontSize: AppConstants.fontSizeCaption,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacingL),
-                    // LibreTranslate Section
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppConstants.spacingL),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.g_translate),
-                                const SizedBox(width: AppConstants.spacingS),
-                                Text(
-                                  AppLocalizations.of(context).libreTranslate,
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppConstants.spacingS),
-                            Text(
-                              AppLocalizations.of(context).libreTranslateHint,
-                              style: TextStyle(
-                                color: AppConstants.subtitleColor,
-                                fontSize: AppConstants.fontSizeCaption,
-                              ),
-                            ),
-                            const SizedBox(height: AppConstants.spacingL),
-                            TextField(
-                              controller: _ltUrlController,
-                              decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).libreTranslateServerUrl,
-                                border: const OutlineInputBorder(),
-                                hintText: 'https://libretranslate.com',
-                              ),
-                            ),
-                            const SizedBox(height: AppConstants.spacingL),
-                            TextField(
-                              controller: _ltApiKeyController,
-                              decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).libreTranslateApiKey,
-                                border: const OutlineInputBorder(),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscureLtApiKey ? Icons.visibility : Icons.visibility_off,
-                                  ),
-                                  onPressed: () {
-                                    setState(() => _obscureLtApiKey = !_obscureLtApiKey);
-                                  },
-                                ),
-                              ),
-                              obscureText: _obscureLtApiKey,
-                            ),
-                            const SizedBox(height: AppConstants.spacingS),
-                            Text(
-                              AppLocalizations.of(context).libreTranslateApiKeyOptional,
-                              style: TextStyle(
-                                color: AppConstants.subtitleColor,
-                                fontSize: AppConstants.fontSizeCaption,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacingL),
-                    ElevatedButton.icon(
-                      onPressed: () => _saveSettings(ctrl),
-                      icon: const Icon(Icons.save),
-                      label: Text(AppLocalizations.of(context).saveSettings),
-                    ),
-                  ],
-                ),
-        );
-      }),
+                  ),
+          );
+        },
+      ),
     );
   }
 }
