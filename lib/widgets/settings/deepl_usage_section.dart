@@ -4,13 +4,16 @@ import '../../controllers/settings_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../utils/constants.dart';
 
+abstract class _DeepLUsageSectionConstants {
+  static const double usageBarHeight = 8.0;
+  static const double usageErrorIconSize = 20.0;
+}
+
 class DeepLUsageSection extends StatelessWidget {
   final bool isLoadingUsage;
   final dynamic usage;
   final Color Function(double usagePercent) usageColor;
   final VoidCallback onRetry;
-  final double usageBarHeight;
-  final double usageErrorIconSize;
 
   const DeepLUsageSection({
     super.key,
@@ -18,8 +21,6 @@ class DeepLUsageSection extends StatelessWidget {
     required this.usage,
     required this.usageColor,
     required this.onRetry,
-    required this.usageBarHeight,
-    required this.usageErrorIconSize,
   });
 
   @override
@@ -58,7 +59,7 @@ class DeepLUsageSection extends StatelessWidget {
                   Icon(
                     Icons.error_outline,
                     color: Theme.of(context).colorScheme.error,
-                    size: usageErrorIconSize,
+                    size: _DeepLUsageSectionConstants.usageErrorIconSize,
                   ),
                   const SizedBox(width: AppConstants.spacingS),
                   Expanded(child: Text(l10n.couldNotLoadUsage)),
@@ -91,7 +92,7 @@ class DeepLUsageSection extends StatelessWidget {
                     ),
                     child: LinearProgressIndicator(
                       value: usage.usagePercent,
-                      minHeight: usageBarHeight,
+                      minHeight: _DeepLUsageSectionConstants.usageBarHeight,
                       backgroundColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerHighest,

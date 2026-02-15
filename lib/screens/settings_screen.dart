@@ -17,11 +17,6 @@ import '../widgets/settings/deepl_settings_section.dart';
 import '../widgets/settings/deepl_usage_section.dart';
 import '../widgets/settings/libretranslate_settings_section.dart';
 
-abstract class _SettingsScreenConstants {
-  static const double usageBarHeight = 8.0;
-  static const double usageErrorIconSize = 20.0;
-}
-
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -37,10 +32,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _obscureLtApiKey = true;
   bool _controllersSeeded = false;
 
-  static bool get _isDesktop => PlatformHelper.isDesktop;
-
   static const _targetLanguages = {
     'EN': 'English',
+    'UK': 'Ukrainian',
     'DE': 'German',
     'FR': 'French',
     'ES': 'Spanish',
@@ -68,7 +62,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'SL': 'Slovenian',
     'SV': 'Swedish',
     'TR': 'Turkish',
-    'UK': 'Ukrainian',
   };
 
   @override
@@ -214,8 +207,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       usage: ctrl.usage,
       usageColor: _usageColor,
       onRetry: ctrl.loadUsage,
-      usageBarHeight: _SettingsScreenConstants.usageBarHeight,
-      usageErrorIconSize: _SettingsScreenConstants.usageErrorIconSize,
     );
   }
 
@@ -271,7 +262,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           context.read<AppState>().setLocale(locale);
                         },
                       ),
-                      if (_isDesktop) ...[
+                      if (PlatformHelper.isDesktop) ...[
                         const SizedBox(height: AppConstants.spacingL),
                         _buildDatabaseSection(ctrl),
                       ],
