@@ -2048,6 +2048,11 @@
 /Users/v/Projects/lnt/lib/widgets/dictionary_dialog.dart
 /Users/v/Projects/lnt/lib/widgets/edit_text_dialog.dart
 /Users/v/Projects/lnt/lib/widgets/language_dialog.dart
+/Users/v/Projects/lnt/lib/widgets/library/library_empty_state.dart
+/Users/v/Projects/lnt/lib/widgets/library/library_grid_content.dart
+/Users/v/Projects/lnt/lib/widgets/library/library_list_content.dart
+/Users/v/Projects/lnt/lib/widgets/library/library_search_bar.dart
+/Users/v/Projects/lnt/lib/widgets/library/library_status_bar.dart
 /Users/v/Projects/lnt/lib/widgets/paragraph_rich_text.dart
 /Users/v/Projects/lnt/lib/widgets/review_progress_ring.dart
 /Users/v/Projects/lnt/lib/widgets/status_legend.dart

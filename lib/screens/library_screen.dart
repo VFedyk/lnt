@@ -10,11 +10,14 @@ import '../models/collection.dart';
 import '../services/import_export_service.dart';
 import '../services/epub_import_service.dart';
 import '../widgets/add_text_dialog.dart';
-import '../widgets/book_cover.dart';
 import '../widgets/collection_dialog.dart';
+import '../widgets/library/library_empty_state.dart';
+import '../widgets/library/library_grid_content.dart';
+import '../widgets/library/library_list_content.dart';
+import '../widgets/library/library_search_bar.dart';
+import '../widgets/library/library_status_bar.dart';
 import '../widgets/text_edit_dialog.dart';
 import '../widgets/url_import_dialog.dart';
-import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import 'reader_screen.dart';
 
@@ -31,9 +34,6 @@ abstract class _LibraryScreenConstants {
   static const String actionUrl = 'url';
   static const String actionTxt = 'txt';
   static const String actionEpub = 'epub';
-  static const String actionCover = 'cover';
-  static const String actionEdit = 'edit';
-  static const String actionDelete = 'delete';
 }
 
 class LibraryScreen extends StatefulWidget {
@@ -160,10 +160,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (confirm == true) await ctrl.deleteCollection(collection.id!);
   }
 
-  Future<void> _setCoverImage(
-    LibraryController ctrl,
-    TextDocument text,
-  ) async {
+  Future<void> _setCoverImage(LibraryController ctrl, TextDocument text) async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null && result.files.single.path != null) {
       await ctrl.setCoverImage(text, result.files.single.path!);
@@ -302,12 +299,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (result != null) await ctrl.createText(result);
   }
 
-  void _showAddMenu(BuildContext context, Offset position, LibraryController ctrl) {
+  void _showAddMenu(
+    BuildContext context,
+    Offset position,
+    LibraryController ctrl,
+  ) {
     final l10n = AppLocalizations.of(context);
     showMenu<String>(
       context: context,
       position: RelativeRect.fromLTRB(
-        position.dx, position.dy, position.dx, position.dy,
+        position.dx,
+        position.dy,
+        position.dx,
+        position.dy,
       ),
       items: [
         PopupMenuItem(
@@ -383,7 +387,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+              leading: Icon(
+                Icons.delete,
+                color: Theme.of(context).colorScheme.error,
+              ),
               title: Text(
                 l10n.delete,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
@@ -424,7 +431,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+              leading: Icon(
+                Icons.delete,
+                color: Theme.of(context).colorScheme.error,
+              ),
               title: Text(
                 l10n.delete,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
@@ -450,10 +460,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
         ctrl.loadPreferences().then((_) => ctrl.loadData());
         return ctrl;
       },
-      child: Builder(builder: (context) {
-        final ctrl = context.watch<LibraryController>();
-        return _buildScaffold(context, ctrl);
-      }),
+      child: Builder(
+        builder: (context) {
+          final ctrl = context.watch<LibraryController>();
+          return _buildScaffold(context, ctrl);
+        },
+      ),
     );
   }
 
@@ -610,45 +622,28 @@ class _LibraryScreenState extends State<LibraryScreen> {
       body: Column(
         children: [
           if (_showSearch)
-            Padding(
-              padding: const EdgeInsets.all(AppConstants.spacingL),
-              child: TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: l10n.searchTexts,
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() => _searchController.clear());
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.borderRadiusM),
-                  ),
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
+            LibrarySearchBar(
+              controller: _searchController,
+              hintText: l10n.searchTexts,
+              onChanged: (_) => setState(() {}),
+              onClear: () {
+                setState(() => _searchController.clear());
+              },
             ),
           _buildSortFilterBar(ctrl),
           Expanded(
             child: ctrl.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ctrl.viewMode == TextViewMode.list
-                    ? _buildContentList(ctrl)
-                    : _buildContentGrid(ctrl),
+                ? _buildContentList(ctrl)
+                : _buildContentGrid(ctrl),
           ),
         ],
       ),
       floatingActionButton: Builder(
         builder: (fabContext) => FloatingActionButton(
           onPressed: () {
-            final RenderBox button =
-                fabContext.findRenderObject() as RenderBox;
+            final RenderBox button = fabContext.findRenderObject() as RenderBox;
             final Offset position = button.localToGlobal(Offset.zero);
             _showAddMenu(
               context,
@@ -667,373 +662,93 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Widget _buildSortFilterBar(LibraryController ctrl) {
     final l10n = AppLocalizations.of(context);
-    final sortedTexts =
-        ctrl.getSortedAndFilteredTexts(_searchController.text);
+    final sortedTexts = ctrl.getSortedAndFilteredTexts(_searchController.text);
     final totalTexts = ctrl.texts.length;
     final shownTexts = sortedTexts.length;
     final hiddenCount = totalTexts - shownTexts;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.spacingL,
-        vertical: AppConstants.spacingS,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            ctrl.sortOption.icon,
-            size: _LibraryScreenConstants.sortArrowIconSize,
-            color: Theme.of(context).colorScheme.outline,
-          ),
-          const SizedBox(width: AppConstants.spacingXS),
-          Text(
-            '${ctrl.sortOption.localizedLabel(l10n)} ${ctrl.sortAscending ? '\u2191' : '\u2193'}',
-            style: TextStyle(
-              fontSize: AppConstants.fontSizeCaption,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-          ),
-          if (ctrl.hideCompleted && hiddenCount > 0) ...[
-            const SizedBox(width: AppConstants.spacingM),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.spacingS,
-                vertical: _LibraryScreenConstants.badgeVerticalPadding,
-              ),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius:
-                    BorderRadius.circular(AppConstants.borderRadiusL),
-              ),
-              child: Text(
-                l10n.completedHidden(hiddenCount),
-                style: TextStyle(
-                  fontSize: AppConstants.fontSizeCaption,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-              ),
-            ),
-          ],
-          const Spacer(),
-          Text(
-            l10n.textCount(shownTexts),
-            style: TextStyle(
-              fontSize: AppConstants.fontSizeCaption,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-          ),
-        ],
-      ),
+    return LibraryStatusBar(
+      sortIcon: ctrl.sortOption.icon,
+      sortLabel:
+          '${ctrl.sortOption.localizedLabel(l10n)} ${ctrl.sortAscending ? '\u2191' : '\u2193'}',
+      showHiddenBadge: ctrl.hideCompleted && hiddenCount > 0,
+      hiddenCountLabel: l10n.completedHidden(hiddenCount),
+      textCountLabel: l10n.textCount(shownTexts),
+      iconSize: _LibraryScreenConstants.sortArrowIconSize,
+      badgeVerticalPadding: _LibraryScreenConstants.badgeVerticalPadding,
+    );
+  }
+
+  Widget _buildEmptyState(LibraryController ctrl) {
+    final l10n = AppLocalizations.of(context);
+    return LibraryEmptyState(
+      showCompletedState: ctrl.hideCompleted && ctrl.texts.isNotEmpty,
+      allTextsCompletedLabel: l10n.allTextsCompleted,
+      showCompletedLabel: l10n.showCompletedTexts,
+      noCollectionsOrTextsLabel: l10n.noCollectionsOrTexts,
+      onShowCompleted: ctrl.toggleHideCompleted,
     );
   }
 
   Widget _buildContentList(LibraryController ctrl) {
     final l10n = AppLocalizations.of(context);
-    final sortedTexts =
-        ctrl.getSortedAndFilteredTexts(_searchController.text);
+    final sortedTexts = ctrl.getSortedAndFilteredTexts(_searchController.text);
 
     if (ctrl.collections.isEmpty && sortedTexts.isEmpty) {
-      if (ctrl.hideCompleted && ctrl.texts.isNotEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.check_circle_outline,
-                size: AppConstants.emptyStateIconSize,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-              const SizedBox(height: AppConstants.spacingL),
-              Text(
-                l10n.allTextsCompleted,
-                style: TextStyle(
-                  fontSize: AppConstants.fontSizeSubtitle,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-              ),
-              const SizedBox(height: AppConstants.spacingS),
-              TextButton.icon(
-                onPressed: ctrl.toggleHideCompleted,
-                icon: const Icon(Icons.visibility),
-                label: Text(l10n.showCompletedTexts),
-              ),
-            ],
-          ),
-        );
-      }
-      return Center(child: Text(l10n.noCollectionsOrTexts));
+      return _buildEmptyState(ctrl);
     }
 
-    return ListView(
-      children: [
-        ...ctrl.collections.map(
-          (collection) => Card(
-            margin: const EdgeInsets.symmetric(
-              horizontal: AppConstants.spacingL,
-              vertical: AppConstants.spacingXS,
-            ),
-            child: ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.folder)),
-              title: Tooltip(
-                message: collection.name,
-                child: Text(collection.name, overflow: TextOverflow.ellipsis),
-              ),
-              subtitle: collection.description.isNotEmpty
-                  ? Text(collection.description)
-                  : null,
-              trailing: PopupMenuButton(
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: _LibraryScreenConstants.actionEdit,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.edit),
-                        const SizedBox(width: AppConstants.spacingS),
-                        Text(l10n.edit),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: _LibraryScreenConstants.actionDelete,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        const SizedBox(width: AppConstants.spacingS),
-                        Text(l10n.delete),
-                      ],
-                    ),
-                  ),
-                ],
-                onSelected: (value) {
-                  if (value == _LibraryScreenConstants.actionEdit) {
-                    _editCollection(ctrl, collection);
-                  } else if (value == _LibraryScreenConstants.actionDelete) {
-                    _deleteCollection(ctrl, collection);
-                  }
-                },
-              ),
-              onTap: () => ctrl.openCollection(collection),
-            ),
+    return LibraryListContent(
+      language: widget.language,
+      l10n: l10n,
+      collections: ctrl.collections,
+      texts: sortedTexts,
+      unknownCounts: ctrl.unknownCounts,
+      onOpenCollection: ctrl.openCollection,
+      onEditCollection: (collection) => _editCollection(ctrl, collection),
+      onDeleteCollection: (collection) => _deleteCollection(ctrl, collection),
+      onOpenText: (text) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ReaderScreen(text: text, language: widget.language),
           ),
-        ),
-        ...sortedTexts.map((text) {
-          final unknownCount = ctrl.unknownCounts[text.id] ?? 0;
-          final totalLabel = widget.language.splitByCharacter
-              ? l10n.charactersCount(text.characterCount)
-              : l10n.wordsCount(text.wordCount);
-          final unknownLabel = widget.language.splitByCharacter
-              ? l10n.unknownCharacters(unknownCount)
-              : l10n.unknownWords(unknownCount);
-
-          return Card(
-            margin: const EdgeInsets.symmetric(
-              horizontal: AppConstants.spacingL,
-              vertical: AppConstants.spacingXS,
-            ),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: text.status == TextStatus.finished
-                    ? context.appColors.success.withValues(
-                        alpha:
-                            _LibraryScreenConstants.finishedBackgroundAlpha,
-                      )
-                    : null,
-                child: Icon(
-                  text.status == TextStatus.finished
-                      ? Icons.check
-                      : Icons.article,
-                  color: text.status == TextStatus.finished
-                      ? context.appColors.success
-                      : null,
-                ),
-              ),
-              title: Tooltip(
-                message: text.title,
-                child: Text(text.title, overflow: TextOverflow.ellipsis),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(totalLabel),
-                  Text(
-                    unknownLabel,
-                    style: TextStyle(
-                      color: unknownCount > 0
-                          ? context.appColors.warning
-                          : context.appColors.success,
-                      fontSize: AppConstants.fontSizeCaption,
-                      fontWeight: unknownCount == 0 ? FontWeight.bold : null,
-                    ),
-                  ),
-                ],
-              ),
-              trailing: PopupMenuButton(
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: _LibraryScreenConstants.actionCover,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.image),
-                        const SizedBox(width: AppConstants.spacingS),
-                        Text(l10n.setCover),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: _LibraryScreenConstants.actionEdit,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.edit),
-                        const SizedBox(width: AppConstants.spacingS),
-                        Text(l10n.edit),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: _LibraryScreenConstants.actionDelete,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        const SizedBox(width: AppConstants.spacingS),
-                        Text(l10n.delete),
-                      ],
-                    ),
-                  ),
-                ],
-                onSelected: (value) {
-                  if (value == _LibraryScreenConstants.actionCover) {
-                    _setCoverImage(ctrl, text);
-                  } else if (value == _LibraryScreenConstants.actionEdit) {
-                    _editText(ctrl, text);
-                  } else if (value == _LibraryScreenConstants.actionDelete) {
-                    _deleteText(ctrl, text);
-                  }
-                },
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ReaderScreen(
-                      text: text,
-                      language: widget.language,
-                    ),
-                  ),
-                ).then((_) => ctrl.recalculateUnknownCountForText(text));
-              },
-            ),
-          );
-        }),
-      ],
+        ).then((_) => ctrl.recalculateUnknownCountForText(text));
+      },
+      onSetCover: (text) => _setCoverImage(ctrl, text),
+      onEditText: (text) => _editText(ctrl, text),
+      onDeleteText: (text) => _deleteText(ctrl, text),
+      finishedBackgroundAlpha: _LibraryScreenConstants.finishedBackgroundAlpha,
     );
   }
 
   Widget _buildContentGrid(LibraryController ctrl) {
     final l10n = AppLocalizations.of(context);
-    final sortedTexts =
-        ctrl.getSortedAndFilteredTexts(_searchController.text);
+    final sortedTexts = ctrl.getSortedAndFilteredTexts(_searchController.text);
 
     if (ctrl.collections.isEmpty && sortedTexts.isEmpty) {
-      if (ctrl.hideCompleted && ctrl.texts.isNotEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.check_circle_outline,
-                size: AppConstants.emptyStateIconSize,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-              const SizedBox(height: AppConstants.spacingL),
-              Text(
-                l10n.allTextsCompleted,
-                style: TextStyle(
-                  fontSize: AppConstants.fontSizeSubtitle,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-              ),
-              const SizedBox(height: AppConstants.spacingS),
-              TextButton.icon(
-                onPressed: ctrl.toggleHideCompleted,
-                icon: const Icon(Icons.visibility),
-                label: Text(l10n.showCompletedTexts),
-              ),
-            ],
-          ),
-        );
-      }
-      return Center(child: Text(l10n.noCollectionsOrTexts));
+      return _buildEmptyState(ctrl);
     }
 
-    final items = <_GridItem>[
-      ...ctrl.collections.map((c) => _GridItem(collection: c)),
-      ...sortedTexts.map((t) => _GridItem(text: t)),
-    ];
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(AppConstants.spacingL),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: _LibraryScreenConstants.gridMaxCrossAxisExtent,
-        childAspectRatio: _LibraryScreenConstants.gridChildAspectRatio,
-        crossAxisSpacing: AppConstants.spacingL,
-        mainAxisSpacing: AppConstants.spacingL,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-
-        if (item.collection != null) {
-          final collection = item.collection!;
-          return BookCover(
-            title: collection.name,
-            subtitle: collection.description.isNotEmpty
-                ? collection.description
-                : null,
-            imagePath: collection.coverImage,
-            isFolder: true,
-            onTap: () => ctrl.openCollection(collection),
-            onLongPress: () => _showCollectionOptions(ctrl, collection),
-          );
-        } else {
-          final text = item.text!;
-          final unknownCount = ctrl.unknownCounts[text.id] ?? 0;
-          final unknownLabel = l10n.unknownCount(unknownCount);
-
-          return BookCover(
-            title: text.title,
-            subtitle: text.status == TextStatus.finished
-                ? l10n.completed
-                : unknownLabel,
-            imagePath: text.coverImage,
-            isCompleted: text.status == TextStatus.finished,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ReaderScreen(
-                    text: text,
-                    language: widget.language,
-                  ),
-                ),
-              ).then((_) => ctrl.recalculateUnknownCountForText(text));
-            },
-            onLongPress: () => _showTextOptions(ctrl, text),
-          );
-        }
+    return LibraryGridContent(
+      l10n: l10n,
+      collections: ctrl.collections,
+      texts: sortedTexts,
+      unknownCounts: ctrl.unknownCounts,
+      onOpenCollection: ctrl.openCollection,
+      onShowCollectionOptions: (collection) =>
+          _showCollectionOptions(ctrl, collection),
+      onOpenText: (text) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ReaderScreen(text: text, language: widget.language),
+          ),
+        ).then((_) => ctrl.recalculateUnknownCountForText(text));
       },
+      onShowTextOptions: (text) => _showTextOptions(ctrl, text),
+      gridMaxCrossAxisExtent: _LibraryScreenConstants.gridMaxCrossAxisExtent,
+      gridChildAspectRatio: _LibraryScreenConstants.gridChildAspectRatio,
     );
   }
-}
-
-class _GridItem {
-  final Collection? collection;
-  final TextDocument? text;
-
-  _GridItem({this.collection, this.text});
 }
