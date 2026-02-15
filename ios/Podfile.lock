@@ -44,6 +44,8 @@ PODS:
     - DKImagePickerController/PhotoGallery
     - Flutter
   - Flutter (1.0.0)
+  - flutter_tts (0.0.1):
+    - Flutter
   - google_sign_in_ios (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -95,6 +97,7 @@ PODS:
 DEPENDENCIES:
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
+  - flutter_tts (from `.symlinks/plugins/flutter_tts/ios`)
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
   - icloud_storage (from `.symlinks/plugins/icloud_storage/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
@@ -122,6 +125,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
     :path: Flutter
+  flutter_tts:
+    :path: ".symlinks/plugins/flutter_tts/ios"
   google_sign_in_ios:
     :path: ".symlinks/plugins/google_sign_in_ios/darwin"
   icloud_storage:
@@ -144,6 +149,7 @@ SPEC CHECKSUMS:
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_tts: 35ac3c7d42412733e795ea96ad2d7e05d0a75113
   google_sign_in_ios: 000870aa06da9b28d1d0bf7ef70ff0213059dd28
   GoogleSignIn: fcee2257188d5eda57a5e2b6a715550ffff9206d
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
