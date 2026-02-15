@@ -6,6 +6,11 @@ import '../../models/text_document.dart';
 import '../../utils/constants.dart';
 import '../book_cover.dart';
 
+abstract class _LibraryGridContentConstants {
+  static const double maxCrossAxisExtent = 140.0;
+  static const double childAspectRatio = 0.45;
+}
+
 class LibraryGridContent extends StatelessWidget {
   final AppLocalizations l10n;
   final List<Collection> collections;
@@ -15,8 +20,6 @@ class LibraryGridContent extends StatelessWidget {
   final ValueChanged<Collection> onShowCollectionOptions;
   final ValueChanged<TextDocument> onOpenText;
   final ValueChanged<TextDocument> onShowTextOptions;
-  final double gridMaxCrossAxisExtent;
-  final double gridChildAspectRatio;
 
   const LibraryGridContent({
     super.key,
@@ -28,8 +31,6 @@ class LibraryGridContent extends StatelessWidget {
     required this.onShowCollectionOptions,
     required this.onOpenText,
     required this.onShowTextOptions,
-    required this.gridMaxCrossAxisExtent,
-    required this.gridChildAspectRatio,
   });
 
   @override
@@ -42,8 +43,8 @@ class LibraryGridContent extends StatelessWidget {
     return GridView.builder(
       padding: const EdgeInsets.all(AppConstants.spacingL),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: gridMaxCrossAxisExtent,
-        childAspectRatio: gridChildAspectRatio,
+        maxCrossAxisExtent: _LibraryGridContentConstants.maxCrossAxisExtent,
+        childAspectRatio: _LibraryGridContentConstants.childAspectRatio,
         crossAxisSpacing: AppConstants.spacingL,
         mainAxisSpacing: AppConstants.spacingL,
       ),

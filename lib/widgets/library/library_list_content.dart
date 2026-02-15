@@ -7,6 +7,10 @@ import '../../models/text_document.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/constants.dart';
 
+abstract class _LibraryListContentConstants {
+  static const double finishedBackgroundAlpha = 0.2;
+}
+
 class LibraryListContent extends StatelessWidget {
   final Language language;
   final AppLocalizations l10n;
@@ -20,7 +24,6 @@ class LibraryListContent extends StatelessWidget {
   final ValueChanged<TextDocument> onSetCover;
   final ValueChanged<TextDocument> onEditText;
   final ValueChanged<TextDocument> onDeleteText;
-  final double finishedBackgroundAlpha;
 
   const LibraryListContent({
     super.key,
@@ -36,7 +39,6 @@ class LibraryListContent extends StatelessWidget {
     required this.onSetCover,
     required this.onEditText,
     required this.onDeleteText,
-    required this.finishedBackgroundAlpha,
   });
 
   @override
@@ -114,7 +116,8 @@ class LibraryListContent extends StatelessWidget {
               leading: CircleAvatar(
                 backgroundColor: text.status == TextStatus.finished
                     ? context.appColors.success.withValues(
-                        alpha: finishedBackgroundAlpha,
+                        alpha: _LibraryListContentConstants
+                            .finishedBackgroundAlpha,
                       )
                     : null,
                 child: Icon(

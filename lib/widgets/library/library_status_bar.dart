@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../../utils/constants.dart';
 
+abstract class _LibraryStatusBarConstants {
+  static const double sortIconSize = 16.0;
+  static const double badgeVerticalPadding = 2.0;
+}
+
 class LibraryStatusBar extends StatelessWidget {
   final IconData sortIcon;
   final String sortLabel;
   final bool showHiddenBadge;
   final String hiddenCountLabel;
   final String textCountLabel;
-  final double iconSize;
-  final double badgeVerticalPadding;
 
   const LibraryStatusBar({
     super.key,
@@ -18,8 +21,6 @@ class LibraryStatusBar extends StatelessWidget {
     required this.showHiddenBadge,
     required this.hiddenCountLabel,
     required this.textCountLabel,
-    required this.iconSize,
-    required this.badgeVerticalPadding,
   });
 
   @override
@@ -33,7 +34,7 @@ class LibraryStatusBar extends StatelessWidget {
         children: [
           Icon(
             sortIcon,
-            size: iconSize,
+            size: _LibraryStatusBarConstants.sortIconSize,
             color: Theme.of(context).colorScheme.outline,
           ),
           const SizedBox(width: AppConstants.spacingXS),
@@ -49,7 +50,7 @@ class LibraryStatusBar extends StatelessWidget {
             Container(
               padding: EdgeInsets.symmetric(
                 horizontal: AppConstants.spacingS,
-                vertical: badgeVerticalPadding,
+                vertical: _LibraryStatusBarConstants.badgeVerticalPadding,
               ),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,

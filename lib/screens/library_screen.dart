@@ -23,11 +23,7 @@ import '../utils/constants.dart';
 import 'reader_screen.dart';
 
 abstract class _LibraryScreenConstants {
-  static const double gridMaxCrossAxisExtent = 140.0;
-  static const double gridChildAspectRatio = 0.45;
   static const double sortArrowIconSize = 16.0;
-  static const double badgeVerticalPadding = 2.0;
-  static const double finishedBackgroundAlpha = 0.2;
   static const int maxWarningsShown = 3;
   static const double fabMenuVerticalOffset = 200.0;
 }
@@ -639,8 +635,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
       showHiddenBadge: ctrl.hideCompleted && hiddenCount > 0,
       hiddenCountLabel: l10n.completedHidden(hiddenCount),
       textCountLabel: l10n.textCount(shownTexts),
-      iconSize: _LibraryScreenConstants.sortArrowIconSize,
-      badgeVerticalPadding: _LibraryScreenConstants.badgeVerticalPadding,
     );
   }
 
@@ -683,7 +677,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
       onSetCover: (text) => _setCoverImage(ctrl, text),
       onEditText: (text) => _editText(ctrl, text),
       onDeleteText: (text) => _deleteText(ctrl, text),
-      finishedBackgroundAlpha: _LibraryScreenConstants.finishedBackgroundAlpha,
     );
   }
 
@@ -712,8 +705,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
         ).then((_) => ctrl.recalculateUnknownCountForText(text));
       },
       onShowTextOptions: (text) => _showTextOptions(ctrl, text),
-      gridMaxCrossAxisExtent: _LibraryScreenConstants.gridMaxCrossAxisExtent,
-      gridChildAspectRatio: _LibraryScreenConstants.gridChildAspectRatio,
     );
   }
 }
