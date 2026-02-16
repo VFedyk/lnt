@@ -380,6 +380,72 @@ abstract class AppLocalizations {
   /// **'API key is only required if the server needs authentication'**
   String get libreTranslateApiKeyOptional;
 
+  /// No description provided for @aiAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Assistant'**
+  String get aiAssistant;
+
+  /// No description provided for @aiApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get aiApiKey;
+
+  /// No description provided for @aiModelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get aiModelName;
+
+  /// No description provided for @aiApiUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'API URL'**
+  String get aiApiUrl;
+
+  /// No description provided for @aiApiKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure API key, model, and endpoint for AI explanations in Reader'**
+  String get aiApiKeyHint;
+
+  /// No description provided for @aiProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get aiProvider;
+
+  /// No description provided for @aiProviderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use OpenAI-compatible for local Ollama /v1 endpoints, or Ollama for /api/chat and /api/generate.'**
+  String get aiProviderHint;
+
+  /// No description provided for @aiProviderAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto detect'**
+  String get aiProviderAuto;
+
+  /// No description provided for @aiProviderOpenAiCompatible.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI-compatible'**
+  String get aiProviderOpenAiCompatible;
+
+  /// No description provided for @aiProviderAnthropic.
+  ///
+  /// In en, this message translates to:
+  /// **'Anthropic'**
+  String get aiProviderAnthropic;
+
+  /// No description provided for @aiProviderOllama.
+  ///
+  /// In en, this message translates to:
+  /// **'Ollama'**
+  String get aiProviderOllama;
+
   /// No description provided for @saveSettings.
   ///
   /// In en, this message translates to:
@@ -1177,6 +1243,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lookup in Dictionary'**
   String get lookupInDictionary;
+
+  /// No description provided for @aiActions.
+  ///
+  /// In en, this message translates to:
+  /// **'AI actions'**
+  String get aiActions;
+
+  /// No description provided for @aiThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'AI is thinking...'**
+  String get aiThinking;
+
+  /// No description provided for @aiFeatureUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'AI is not configured. Add API key in Settings.'**
+  String get aiFeatureUnavailable;
+
+  /// No description provided for @explainMeaningInContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain meaning in context'**
+  String get explainMeaningInContext;
+
+  /// No description provided for @explainGrammarInContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain grammar in context'**
+  String get explainGrammarInContext;
+
+  /// No description provided for @aiMeaningExplainFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not explain meaning in context'**
+  String get aiMeaningExplainFailed;
+
+  /// No description provided for @aiGrammarExplainFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not explain grammar in context'**
+  String get aiGrammarExplainFailed;
 
   /// No description provided for @pronounce.
   ///

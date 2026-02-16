@@ -152,6 +152,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'API key is only required if the server needs authentication';
 
   @override
+  String get aiAssistant => 'AI Assistant';
+
+  @override
+  String get aiApiKey => 'API Key';
+
+  @override
+  String get aiModelName => 'Model';
+
+  @override
+  String get aiApiUrl => 'API URL';
+
+  @override
+  String get aiApiKeyHint =>
+      'Configure API key, model, and endpoint for AI explanations in Reader';
+
+  @override
+  String get aiProvider => 'Provider';
+
+  @override
+  String get aiProviderHint =>
+      'Use OpenAI-compatible for local Ollama /v1 endpoints, or Ollama for /api/chat and /api/generate.';
+
+  @override
+  String get aiProviderAuto => 'Auto detect';
+
+  @override
+  String get aiProviderOpenAiCompatible => 'OpenAI-compatible';
+
+  @override
+  String get aiProviderAnthropic => 'Anthropic';
+
+  @override
+  String get aiProviderOllama => 'Ollama';
+
+  @override
   String get saveSettings => 'Save Settings';
 
   @override
@@ -612,6 +647,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupInDictionary => 'Lookup in Dictionary';
+
+  @override
+  String get aiActions => 'AI actions';
+
+  @override
+  String get aiThinking => 'AI is thinking...';
+
+  @override
+  String get aiFeatureUnavailable =>
+      'AI is not configured. Add API key in Settings.';
+
+  @override
+  String get explainMeaningInContext => 'Explain meaning in context';
+
+  @override
+  String get explainGrammarInContext => 'Explain grammar in context';
+
+  @override
+  String get aiMeaningExplainFailed => 'Could not explain meaning in context';
+
+  @override
+  String get aiGrammarExplainFailed => 'Could not explain grammar in context';
 
   @override
   String get pronounce => 'Pronounce';

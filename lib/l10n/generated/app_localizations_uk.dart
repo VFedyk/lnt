@@ -152,6 +152,41 @@ class AppLocalizationsUk extends AppLocalizations {
       'API ключ потрібен лише якщо сервер вимагає автентифікації';
 
   @override
+  String get aiAssistant => 'AI помічник';
+
+  @override
+  String get aiApiKey => 'API ключ';
+
+  @override
+  String get aiModelName => 'Модель';
+
+  @override
+  String get aiApiUrl => 'API URL';
+
+  @override
+  String get aiApiKeyHint =>
+      'Налаштуйте API ключ, модель і endpoint для AI-пояснень у Reader';
+
+  @override
+  String get aiProvider => 'Провайдер';
+
+  @override
+  String get aiProviderHint =>
+      'OpenAI-compatible для локального Ollama /v1, або Ollama для /api/chat і /api/generate.';
+
+  @override
+  String get aiProviderAuto => 'Автовизначення';
+
+  @override
+  String get aiProviderOpenAiCompatible => 'OpenAI-compatible';
+
+  @override
+  String get aiProviderAnthropic => 'Anthropic';
+
+  @override
+  String get aiProviderOllama => 'Ollama';
+
+  @override
   String get saveSettings => 'Зберегти налаштування';
 
   @override
@@ -614,6 +649,30 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get lookupInDictionary => 'Шукати у словнику';
+
+  @override
+  String get aiActions => 'AI дії';
+
+  @override
+  String get aiThinking => 'AI формує відповідь...';
+
+  @override
+  String get aiFeatureUnavailable =>
+      'AI не налаштовано. Додайте API ключ у Налаштуваннях.';
+
+  @override
+  String get explainMeaningInContext => 'Пояснити значення в контексті';
+
+  @override
+  String get explainGrammarInContext => 'Пояснити граматику в контексті';
+
+  @override
+  String get aiMeaningExplainFailed =>
+      'Не вдалося пояснити значення в контексті';
+
+  @override
+  String get aiGrammarExplainFailed =>
+      'Не вдалося пояснити граматику в контексті';
 
   @override
   String get pronounce => 'Вимовити';

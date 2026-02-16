@@ -7,8 +7,10 @@ import '../models/text_document.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
 import '../service_locator.dart';
+import '../services/ai_explanation_service.dart';
 import '../services/dictionary_service.dart';
 import '../widgets/edit_text_dialog.dart';
+import '../widgets/reader/reader_ai_explanation_dialog.dart';
 import '../widgets/reader/reader_app_bar.dart';
 import '../widgets/reader/reader_content.dart';
 import '../widgets/reader/reader_continue_reading_dialog.dart';
@@ -62,6 +64,7 @@ class _ReaderScreenBody extends StatefulWidget {
 class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
   final _scrollController = ScrollController();
   final _dictService = DictionaryService();
+  final _aiExplanationService = AiExplanationService(settings: settings);
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _loadScheduled = false;
 
@@ -418,6 +421,80 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     }
   }
 
+  Future<void> _explainSelectionInContext(AiExplanationType type) async {
+    final ctrl = context.read<ReaderController>();
+    if (ctrl.selectedWordIndices.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
+    final responseLanguageCode = Localizations.localeOf(context).languageCode;
+
+    if (!await _aiExplanationService.isConfigured()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.aiFeatureUnavailable)),
+      );
+      return;
+    }
+
+    final selectedWords = ctrl.getSelectedWordsText();
+    final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
+    final firstToken = ctrl.wordTokens[selectedTokens.first];
+    final sentence = ctrl.getSentenceForPosition(firstToken.position);
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(width: 16),
+            Text(l10n.aiThinking),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final explanation = await _aiExplanationService.explainInContext(
+        type: type,
+        selectedText: selectedWords,
+        contextSentence: sentence,
+        languageName: ctrl.language.name,
+        responseLanguageCode: responseLanguageCode,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // loading
+
+      final title = type == AiExplanationType.meaning
+          ? l10n.explainMeaningInContext
+          : l10n.explainGrammarInContext;
+
+      await showDialog<void>(
+        context: context,
+        builder: (context) => ReaderAiExplanationDialog(
+          title: title,
+          selectedText: selectedWords,
+          contextSentence: sentence,
+          explanation: explanation,
+          closeLabel: l10n.close,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.pop(context); // loading
+      final message = type == AiExplanationType.meaning
+          ? l10n.aiMeaningExplainFailed
+          : l10n.aiGrammarExplainFailed;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   // --- Text actions ---
 
   Future<void> _editText() async {
@@ -543,6 +620,14 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         onSaveSelectionAsTerm: _saveSelectionAsTerm,
         onAssignForeignLanguage: _assignForeignLanguage,
         onLookupSelectedWords: _lookupSelectedWords,
+        onSelectionAiSelected: (action) {
+          switch (action) {
+            case ReaderSelectionAiAction.meaning:
+              _explainSelectionInContext(AiExplanationType.meaning);
+            case ReaderSelectionAiAction.grammar:
+              _explainSelectionInContext(AiExplanationType.grammar);
+          }
+        },
         onToggleLegend: ctrl.toggleLegend,
         onToggleFinished: _markAsFinished,
         onMoreSelected: (action) {

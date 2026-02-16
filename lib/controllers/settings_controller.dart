@@ -19,6 +19,10 @@ class SettingsController extends ChangeNotifier {
   String initialApiKey = '';
   String initialLtUrl = '';
   String initialLtApiKey = '';
+  String initialAiApiKey = '';
+  String initialAiModel = SettingsService.defaultAiModel;
+  String initialAiApiUrl = SettingsService.defaultAiApiUrl;
+  String initialAiProvider = SettingsService.aiProviderAuto;
 
   bool _isDisposed = false;
 
@@ -38,6 +42,10 @@ class SettingsController extends ChangeNotifier {
     final tgtLang = await settings.getDeepLTargetLang();
     final ltUrl = await settings.getLibreTranslateUrl();
     final ltApiKey = await settings.getLibreTranslateApiKey();
+    final aiApiKey = await settings.getAiApiKey();
+    final aiModel = await settings.getAiModel();
+    final aiApiUrl = await settings.getAiApiUrl();
+    final aiProvider = await settings.getAiProvider();
 
     String? path;
     if (PlatformHelper.isDesktop) {
@@ -50,6 +58,10 @@ class SettingsController extends ChangeNotifier {
     initialApiKey = apiKey ?? '';
     initialLtUrl = ltUrl ?? '';
     initialLtApiKey = ltApiKey ?? '';
+    initialAiApiKey = aiApiKey ?? '';
+    initialAiModel = aiModel;
+    initialAiApiUrl = aiApiUrl;
+    initialAiProvider = aiProvider;
     isApiFree = isFree;
     targetLang = tgtLang;
     dbPath = path;
@@ -75,12 +87,20 @@ class SettingsController extends ChangeNotifier {
     required String apiKey,
     required String ltUrl,
     required String ltApiKey,
+    required String aiApiKey,
+    required String aiModel,
+    required String aiApiUrl,
+    required String aiProvider,
   }) async {
     await settings.setDeepLApiKey(apiKey.trim());
     await settings.setDeepLApiFree(isApiFree);
     await settings.setDeepLTargetLang(targetLang);
     await settings.setLibreTranslateUrl(ltUrl.trim());
     await settings.setLibreTranslateApiKey(ltApiKey.trim());
+    await settings.setAiApiKey(aiApiKey.trim());
+    await settings.setAiModel(aiModel.trim());
+    await settings.setAiApiUrl(aiApiUrl.trim());
+    await settings.setAiProvider(aiProvider.trim());
   }
 
   /// Returns true on success.

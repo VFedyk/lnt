@@ -4,6 +4,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../utils/constants.dart';
 
 enum ReaderMoreAction { edit, fontSize, markAllKnown, openDrawer }
+enum ReaderSelectionAiAction { meaning, grammar }
 
 class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -16,6 +17,7 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onSaveSelectionAsTerm;
   final VoidCallback onAssignForeignLanguage;
   final VoidCallback onLookupSelectedWords;
+  final ValueChanged<ReaderSelectionAiAction> onSelectionAiSelected;
   final VoidCallback onToggleLegend;
   final VoidCallback onToggleFinished;
   final ValueChanged<ReaderMoreAction> onMoreSelected;
@@ -32,6 +34,7 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onSaveSelectionAsTerm,
     required this.onAssignForeignLanguage,
     required this.onLookupSelectedWords,
+    required this.onSelectionAiSelected,
     required this.onToggleLegend,
     required this.onToggleFinished,
     required this.onMoreSelected,
@@ -68,6 +71,34 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
             icon: const Icon(Icons.search),
             tooltip: l10n.lookupInDictionary,
             onPressed: onLookupSelectedWords,
+          ),
+        if (isSelectionMode)
+          PopupMenuButton<ReaderSelectionAiAction>(
+            icon: const Icon(Icons.auto_awesome),
+            tooltip: l10n.aiActions,
+            onSelected: onSelectionAiSelected,
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: ReaderSelectionAiAction.meaning,
+                child: Row(
+                  children: [
+                    const Icon(Icons.lightbulb_outline),
+                    const SizedBox(width: AppConstants.spacingS),
+                    Text(l10n.explainMeaningInContext),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: ReaderSelectionAiAction.grammar,
+                child: Row(
+                  children: [
+                    const Icon(Icons.rule),
+                    const SizedBox(width: AppConstants.spacingS),
+                    Text(l10n.explainGrammarInContext),
+                  ],
+                ),
+              ),
+            ],
           ),
         if (!isSelectionMode)
           IconButton(

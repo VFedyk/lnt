@@ -23,6 +23,19 @@ class SettingsService {
   static const String defaultLibreTranslateUrl =
       AppConstants.defaultLibreTranslateUrl;
 
+  // AI settings
+  static const String _aiApiKeyKey = 'ai_api_key';
+  static const String _aiModelKey = 'ai_model';
+  static const String _aiApiUrlKey = 'ai_api_url';
+  static const String _aiProviderKey = 'ai_provider';
+  static const String aiProviderAuto = 'auto';
+  static const String aiProviderOpenAiCompatible = 'openai_compatible';
+  static const String aiProviderAnthropic = 'anthropic';
+  static const String aiProviderOllama = 'ollama';
+  static const String defaultAiModel = 'gpt-4.1-mini';
+  static const String defaultAiApiUrl =
+      'https://api.openai.com/v1/chat/completions';
+
   // Custom database path
   static const String _customDbPathKey = 'custom_db_path';
 
@@ -119,6 +132,64 @@ class SettingsService {
   Future<bool> hasLibreTranslateApiKey() async {
     final key = await getLibreTranslateApiKey();
     return key != null && key.isNotEmpty;
+  }
+
+  // AI settings
+
+  Future<String?> getAiApiKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_aiApiKeyKey);
+  }
+
+  Future<void> setAiApiKey(String? apiKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (apiKey == null || apiKey.isEmpty) {
+      await prefs.remove(_aiApiKeyKey);
+    } else {
+      await prefs.setString(_aiApiKeyKey, apiKey);
+    }
+  }
+
+  Future<String> getAiModel() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_aiModelKey) ?? defaultAiModel;
+  }
+
+  Future<void> setAiModel(String? model) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (model == null || model.isEmpty) {
+      await prefs.remove(_aiModelKey);
+    } else {
+      await prefs.setString(_aiModelKey, model);
+    }
+  }
+
+  Future<String> getAiApiUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_aiApiUrlKey) ?? defaultAiApiUrl;
+  }
+
+  Future<void> setAiApiUrl(String? url) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (url == null || url.isEmpty) {
+      await prefs.remove(_aiApiUrlKey);
+    } else {
+      await prefs.setString(_aiApiUrlKey, url);
+    }
+  }
+
+  Future<String> getAiProvider() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_aiProviderKey) ?? aiProviderAuto;
+  }
+
+  Future<void> setAiProvider(String? provider) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (provider == null || provider.isEmpty) {
+      await prefs.remove(_aiProviderKey);
+    } else {
+      await prefs.setString(_aiProviderKey, provider);
+    }
   }
 
   // Custom database path

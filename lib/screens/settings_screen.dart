@@ -7,9 +7,11 @@ import '../controllers/settings_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../main.dart';
 import '../service_locator.dart';
+import '../services/settings_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
+import '../widgets/settings/ai_settings_section.dart';
 import '../widgets/settings/app_language_section.dart';
 import '../widgets/settings/backup_section.dart';
 import '../widgets/settings/database_section.dart';
@@ -28,8 +30,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _apiKeyController = TextEditingController();
   final _ltUrlController = TextEditingController();
   final _ltApiKeyController = TextEditingController();
+  final _aiApiKeyController = TextEditingController();
+  final _aiModelController = TextEditingController();
+  final _aiApiUrlController = TextEditingController();
   bool _obscureApiKey = true;
   bool _obscureLtApiKey = true;
+  bool _obscureAiApiKey = true;
+  String _aiProvider = SettingsService.aiProviderAuto;
   bool _controllersSeeded = false;
 
   static const _targetLanguages = {
@@ -69,6 +76,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _apiKeyController.dispose();
     _ltUrlController.dispose();
     _ltApiKeyController.dispose();
+    _aiApiKeyController.dispose();
+    _aiModelController.dispose();
+    _aiApiUrlController.dispose();
     super.dispose();
   }
 
@@ -78,6 +88,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _apiKeyController.text = ctrl.initialApiKey;
       _ltUrlController.text = ctrl.initialLtUrl;
       _ltApiKeyController.text = ctrl.initialLtApiKey;
+      _aiApiKeyController.text = ctrl.initialAiApiKey;
+      _aiModelController.text = ctrl.initialAiModel;
+      _aiApiUrlController.text = ctrl.initialAiApiUrl;
+      _aiProvider = ctrl.initialAiProvider;
     }
   }
 
@@ -86,6 +100,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       apiKey: _apiKeyController.text,
       ltUrl: _ltUrlController.text,
       ltApiKey: _ltApiKeyController.text,
+      aiApiKey: _aiApiKeyController.text,
+      aiModel: _aiModelController.text,
+      aiApiUrl: _aiApiUrlController.text,
+      aiProvider: _aiProvider,
     );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -293,6 +311,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         obscureApiKey: _obscureLtApiKey,
                         onToggleObscureApiKey: () {
                           setState(() => _obscureLtApiKey = !_obscureLtApiKey);
+                        },
+                      ),
+                      const SizedBox(height: AppConstants.spacingL),
+                      AiSettingsSection(
+                        l10n: AppLocalizations.of(context),
+                        provider: _aiProvider,
+                        onProviderChanged: (value) {
+                          setState(() => _aiProvider = value);
+                        },
+                        apiKeyController: _aiApiKeyController,
+                        modelController: _aiModelController,
+                        apiUrlController: _aiApiUrlController,
+                        obscureApiKey: _obscureAiApiKey,
+                        onToggleObscureApiKey: () {
+                          setState(() => _obscureAiApiKey = !_obscureAiApiKey);
                         },
                       ),
                       const SizedBox(height: AppConstants.spacingL),
