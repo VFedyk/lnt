@@ -87,6 +87,10 @@ Return:
       hasApiKey: apiKey.isNotEmpty,
     );
 
+    final timeout = provider == _AiApiProvider.ollama
+        ? const Duration(seconds: 120)
+        : const Duration(seconds: 30);
+
     try {
       final response = await http
           .post(
@@ -94,7 +98,7 @@ Return:
             headers: headers,
             body: body,
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(timeout);
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception(

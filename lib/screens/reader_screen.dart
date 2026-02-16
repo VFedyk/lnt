@@ -483,15 +483,18 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           closeLabel: l10n.close,
         ),
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       Navigator.pop(context); // loading
-      final message = type == AiExplanationType.meaning
+      final label = type == AiExplanationType.meaning
           ? l10n.aiMeaningExplainFailed
           : l10n.aiGrammarExplainFailed;
+      final detail = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : e.toString();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ).showSnackBar(SnackBar(content: Text('$label: $detail')));
     }
   }
 

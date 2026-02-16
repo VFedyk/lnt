@@ -28,6 +28,9 @@ abstract class _DashboardConstants {
   static const double thumbnailBorderRadius = 4.0;
   // 30 (day labels) + 52 weeks * 14 (cell + spacing) + 2 * 16 (card padding)
   static const double desktopHeatmapWidth = 795.0;
+  static const double tabletBreakpoint = 600.0;
+  static const int maxHeatmapWeeks = 52;
+  static const int compactHeatmapWeeks = 26;
 }
 
 class DashboardTab extends StatefulWidget {
@@ -134,8 +137,8 @@ class _DashboardTabState extends State<DashboardTab> {
         }
       }
 
-      // Load activity heatmap data (52 weeks on desktop, 26 on mobile)
-      final heatmapWeeks = PlatformHelper.isDesktop ? 52 : 26;
+      // Load max history so tablet orientation/layout switches do not need reload.
+      const heatmapWeeks = _DashboardConstants.maxHeatmapWeeks;
       final now = DateTime.now();
       final sinceDate = now.subtract(Duration(days: heatmapWeeks * 7));
       final sinceIso =
@@ -293,6 +296,12 @@ class _DashboardTabState extends State<DashboardTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final media = MediaQuery.of(context);
+    final isWideTabletLandscape =
+        !PlatformHelper.isDesktop &&
+        media.orientation == Orientation.landscape &&
+        media.size.shortestSide >= _DashboardConstants.tabletBreakpoint;
+    final useDesktopStyleLayout = PlatformHelper.isDesktop || isWideTabletLandscape;
 
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -329,7 +338,7 @@ class _DashboardTabState extends State<DashboardTab> {
       child: ListView(
         padding: const EdgeInsets.all(AppConstants.spacingL),
         children: [
-          if (PlatformHelper.isDesktop)
+          if (useDesktopStyleLayout)
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -378,7 +387,7 @@ class _DashboardTabState extends State<DashboardTab> {
                     width: _DashboardConstants.desktopHeatmapWidth,
                     child: ActivityHeatmap(
                       activityData: _activityData,
-                      weeksToShow: 52,
+                      weeksToShow: _DashboardConstants.maxHeatmapWeeks,
                       useTooltip: true,
                       streakDays: _streakDays,
                     ),
@@ -415,12 +424,12 @@ class _DashboardTabState extends State<DashboardTab> {
             const SizedBox(height: AppConstants.spacingL),
             ActivityHeatmap(
               activityData: _activityData,
-              weeksToShow: 26,
+              weeksToShow: _DashboardConstants.compactHeatmapWeeks,
               streakDays: _streakDays,
             ),
           ],
           const SizedBox(height: AppConstants.spacingL),
-          _buildChartsSection(),
+          _buildChartsSection(useDesktopStyleLayout),
           const SizedBox(height: AppConstants.spacingL),
           _buildQuickActions(),
           const SizedBox(height: AppConstants.spacingL),
@@ -499,8 +508,8 @@ class _DashboardTabState extends State<DashboardTab> {
     return Icon(fallbackIcon);
   }
 
-  Widget _buildChartsSection() {
-    if (PlatformHelper.isDesktop) {
+  Widget _buildChartsSection(bool useDesktopStyleLayout) {
+    if (useDesktopStyleLayout) {
       return IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,

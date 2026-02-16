@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../utils/constants.dart';
 
@@ -47,7 +48,10 @@ class ReaderAiExplanationDialog extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppConstants.spacingL),
-              SelectableText(explanation),
+              MarkdownBody(
+                data: explanation,
+                selectable: true,
+              ),
             ],
           ),
         ),
