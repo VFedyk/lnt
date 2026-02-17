@@ -8,8 +8,10 @@ import '../models/language.dart';
 import '../models/review_card.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
+import '../services/dictionary_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import '../widgets/term_dialog.dart';
 
 abstract class _FlashcardReviewConstants {
   static const double cardElevation = 4.0;
@@ -45,7 +47,9 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
   bool _isSeeding = false;
   bool _hasReviewed = false;
   Map<fsrs.Rating, Duration>? _nextIntervals;
+  int _cardRebuildKey = 0;
   final _focusNode = FocusNode();
+  final _dictService = DictionaryService();
   late final AnimationController _flipController;
   late final Animation<double> _flipAnimation;
 
@@ -206,6 +210,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
       _currentIndex++;
       _isAnswerRevealed = false;
       _nextIntervals = null;
+      _cardRebuildKey = 0;
     });
   }
 
@@ -221,6 +226,64 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
       _nextIntervals = intervals;
     });
     _flipController.forward();
+  }
+
+  Future<void> _editTerm(Term term) async {
+    final dictionaries = await db.dictionaries.getAll(
+      languageId: widget.language.id!,
+    );
+
+    if (!mounted) return;
+
+    final result = await showDialog<TermDialogResult>(
+      context: context,
+      builder: (context) => TermDialog(
+        term: term,
+        sentence: term.sentence,
+        dictionaries: dictionaries,
+        onLookup: (ctx, dict) => _dictService.lookupWord(ctx, term.text, dict.url),
+        languageId: widget.language.id!,
+        languageName: widget.language.name,
+        languageCode: widget.language.languageCode,
+      ),
+    );
+
+    if (result != null) {
+      // Save the updated term and translations to database
+      await db.terms.update(result.term);
+      if (result.term.id != null) {
+        await db.translations.replaceForTerm(
+          result.term.id!,
+          result.translations,
+        );
+      }
+      // Reload the current item's data to reflect changes
+      await _reloadCurrentItem();
+    }
+  }
+
+  Future<void> _reloadCurrentItem() async {
+    if (_currentIndex >= _dueItems.length) return;
+
+    final currentItem = _dueItems[_currentIndex];
+    final termId = currentItem.term.id;
+    if (termId == null) return;
+
+    final updatedTerm = await db.terms.getById(termId);
+    if (updatedTerm == null) return;
+
+    final translations = await db.translations.getByTermId(termId);
+
+    if (!mounted) return;
+
+    setState(() {
+      _dueItems[_currentIndex] = _ReviewItem(
+        term: updatedTerm,
+        reviewCard: currentItem.reviewCard,
+        translations: translations,
+      );
+      _cardRebuildKey++;
+    });
   }
 
   String _formatDuration(Duration duration) {
@@ -360,6 +423,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
           // Flashcard with flip animation
           Expanded(
             child: AnimatedBuilder(
+              key: ValueKey('card_${item.term.id}_$_cardRebuildKey'),
               animation: _flipAnimation,
               builder: (context, _) {
                 final angle = _flipAnimation.value;
@@ -480,69 +544,84 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
   Widget _buildCardBack(AppLocalizations l10n, _ReviewItem item) {
     final term = item.term;
     return _buildCardShell(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
         children: [
-          Text(
-            term.text,
-            style: const TextStyle(
-              fontSize: _FlashcardReviewConstants.termFontSize,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          if (widget.language.languageCode.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.volume_up),
-              tooltip: l10n.pronounce,
-              onPressed: () => ttsService.speak(
-                term.lowerText,
-                widget.language.languageCode,
+          Column(
+            key: ValueKey('card_back_${item.term.id}_$_cardRebuildKey'),
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                term.text,
+                style: const TextStyle(
+                  fontSize: _FlashcardReviewConstants.termFontSize,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
-              visualDensity: VisualDensity.compact,
-            ),
-          if (term.romanization.isNotEmpty) ...[
-            const SizedBox(height: AppConstants.spacingS),
-            Text(
-              term.romanization,
-              style: TextStyle(
-                fontSize: _FlashcardReviewConstants.romanizationFontSize,
-                color: AppConstants.subtitleColor,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-          if (term.sentence.isNotEmpty) ...[
-            const SizedBox(height: AppConstants.spacingM),
-            Text(
-              term.sentence,
-              style: TextStyle(
-                fontSize: _FlashcardReviewConstants.sentenceFontSize,
-                color: AppConstants.subtitleColor,
-                fontStyle: FontStyle.italic,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-          const SizedBox(height: AppConstants.spacingL),
-          const Divider(),
-          const SizedBox(height: AppConstants.spacingM),
-          ...item.translations.map((t) => Padding(
-                padding:
-                    const EdgeInsets.only(bottom: AppConstants.spacingXS),
-                child: Text(
-                  t.partOfSpeech != null && t.partOfSpeech!.isNotEmpty
-                      ? '${t.meaning} (${t.partOfSpeech})'
-                      : t.meaning,
-                  style: const TextStyle(
-                    fontSize:
-                        _FlashcardReviewConstants.translationFontSize,
+              if (widget.language.languageCode.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.volume_up),
+                  tooltip: l10n.pronounce,
+                  onPressed: () => ttsService.speak(
+                    term.lowerText,
+                    widget.language.languageCode,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+              if (term.romanization.isNotEmpty) ...[
+                const SizedBox(height: AppConstants.spacingS),
+                Text(
+                  term.romanization,
+                  style: TextStyle(
+                    fontSize: _FlashcardReviewConstants.romanizationFontSize,
+                    color: AppConstants.subtitleColor,
                   ),
                   textAlign: TextAlign.center,
                 ),
-              )),
+              ],
+              if (term.sentence.isNotEmpty) ...[
+                const SizedBox(height: AppConstants.spacingM),
+                Text(
+                  term.sentence,
+                  style: TextStyle(
+                    fontSize: _FlashcardReviewConstants.sentenceFontSize,
+                    color: AppConstants.subtitleColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: AppConstants.spacingL),
+              const Divider(),
+              const SizedBox(height: AppConstants.spacingM),
+              ...item.translations.map((t) => Padding(
+                    padding:
+                        const EdgeInsets.only(bottom: AppConstants.spacingXS),
+                    child: Text(
+                      t.partOfSpeech != null && t.partOfSpeech!.isNotEmpty
+                          ? '${t.meaning} (${t.partOfSpeech})'
+                          : t.meaning,
+                      style: const TextStyle(
+                        fontSize:
+                            _FlashcardReviewConstants.translationFontSize,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )),
+            ],
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: l10n.edit,
+              onPressed: () => _editTerm(term),
+              iconSize: 20,
+            ),
+          ),
         ],
       ),
     );
