@@ -475,15 +475,18 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Widget _buildAnimatedStatItem(String label, int value, IconData icon) {
+    final isMobile = !PlatformHelper.isDesktop;
+    final numberStyle = isMobile
+        ? Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)
+        : Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold);
+
     return Column(
       children: [
         Icon(icon, color: Theme.of(context).colorScheme.secondary),
         const SizedBox(height: AppConstants.spacingXS),
         AnimatedCounter(
           value: value,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: numberStyle,
         ),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
