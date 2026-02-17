@@ -1253,8 +1253,26 @@ abstract class AppLocalizations {
   /// No description provided for @aiThinking.
   ///
   /// In en, this message translates to:
-  /// **'AI is thinking...'**
+  /// **'Thinking...'**
   String get aiThinking;
+
+  /// No description provided for @aiAnalyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing...'**
+  String get aiAnalyzing;
+
+  /// No description provided for @aiProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get aiProcessing;
+
+  /// No description provided for @aiGenerating.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating...'**
+  String get aiGenerating;
 
   /// No description provided for @aiFeatureUnavailable.
   ///

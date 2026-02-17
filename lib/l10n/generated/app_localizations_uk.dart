@@ -654,7 +654,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get aiActions => 'AI дії';
 
   @override
-  String get aiThinking => 'AI формує відповідь...';
+  String get aiThinking => 'Обмірковую...';
+
+  @override
+  String get aiAnalyzing => 'Аналізую...';
+
+  @override
+  String get aiProcessing => 'Обробляю...';
+
+  @override
+  String get aiGenerating => 'Генерую...';
 
   @override
   String get aiFeatureUnavailable =>

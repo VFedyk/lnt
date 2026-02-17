@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../controllers/reader_controller.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -10,6 +11,7 @@ import '../service_locator.dart';
 import '../services/ai_explanation_service.dart';
 import '../services/dictionary_service.dart';
 import '../widgets/edit_text_dialog.dart';
+import '../widgets/reader/ai_thinking_dialog.dart';
 import '../widgets/reader/reader_ai_explanation_dialog.dart';
 import '../widgets/reader/reader_app_bar.dart';
 import '../widgets/reader/reader_content.dart';
@@ -122,7 +124,8 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final ctrl = context.read<ReaderController>();
 
     if (ctrl.isSelectionMode) {
-      ctrl.toggleWordSelection(tokenIndex);
+      final shiftPressed = HardwareKeyboard.instance.isShiftPressed;
+      ctrl.toggleWordSelection(tokenIndex, shiftPressed: shiftPressed);
       return;
     }
 
@@ -445,16 +448,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(width: 16),
-            Text(l10n.aiThinking),
-          ],
-        ),
-      ),
+      builder: (context) => const AiThinkingDialog(),
     );
 
     try {

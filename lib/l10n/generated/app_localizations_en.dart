@@ -652,7 +652,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiActions => 'AI actions';
 
   @override
-  String get aiThinking => 'AI is thinking...';
+  String get aiThinking => 'Thinking...';
+
+  @override
+  String get aiAnalyzing => 'Analyzing...';
+
+  @override
+  String get aiProcessing => 'Processing...';
+
+  @override
+  String get aiGenerating => 'Generating...';
 
   @override
   String get aiFeatureUnavailable =>

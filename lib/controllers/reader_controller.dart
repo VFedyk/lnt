@@ -411,16 +411,39 @@ class ReaderController extends ChangeNotifier {
     _safeNotify();
   }
 
-  void toggleWordSelection(int tokenIndex) {
-    if (selectedWordIndices.contains(tokenIndex)) {
-      selectedWordIndices.remove(tokenIndex);
-      if (selectedWordIndices.isEmpty) {
-        isSelectionMode = false;
-      }
+  void toggleWordSelection(int tokenIndex, {bool shiftPressed = false}) {
+    if (shiftPressed && selectedWordIndices.isNotEmpty) {
+      // Shift+click: select range from last selected to clicked word
+      _selectRange(tokenIndex);
     } else {
-      selectedWordIndices.add(tokenIndex);
+      // Normal click: toggle individual word
+      if (selectedWordIndices.contains(tokenIndex)) {
+        selectedWordIndices.remove(tokenIndex);
+        if (selectedWordIndices.isEmpty) {
+          isSelectionMode = false;
+        }
+      } else {
+        selectedWordIndices.add(tokenIndex);
+      }
     }
     _safeNotify();
+  }
+
+  void _selectRange(int endIndex) {
+    // Find the last selected word index (anchor point)
+    final sortedIndices = selectedWordIndices.toList()..sort();
+    final anchorIndex = sortedIndices.last;
+
+    final start = anchorIndex < endIndex ? anchorIndex : endIndex;
+    final end = anchorIndex < endIndex ? endIndex : anchorIndex;
+
+    // Add all word indices in the range
+    for (int i = 0; i < wordTokens.length; i++) {
+      final token = wordTokens[i];
+      if (token.isWord && token.globalIndex >= start && token.globalIndex <= end) {
+        selectedWordIndices.add(token.globalIndex);
+      }
+    }
   }
 
   void cancelSelection() {
