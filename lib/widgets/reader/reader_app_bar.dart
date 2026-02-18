@@ -84,7 +84,9 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     const Icon(Icons.lightbulb_outline),
                     const SizedBox(width: AppConstants.spacingS),
-                    Text(l10n.explainMeaningInContext),
+                    Expanded(
+                      child: Text(l10n.explainMeaningInContext),
+                    ),
                   ],
                 ),
               ),
@@ -94,7 +96,9 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     const Icon(Icons.rule),
                     const SizedBox(width: AppConstants.spacingS),
-                    Text(l10n.explainGrammarInContext),
+                    Expanded(
+                      child: Text(l10n.explainGrammarInContext),
+                    ),
                   ],
                 ),
               ),
@@ -126,7 +130,9 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     const Icon(Icons.edit),
                     const SizedBox(width: AppConstants.spacingS),
-                    Text(l10n.editText),
+                    Expanded(
+                      child: Text(l10n.editText),
+                    ),
                   ],
                 ),
               ),
@@ -136,7 +142,9 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     const Icon(Icons.text_fields),
                     const SizedBox(width: AppConstants.spacingS),
-                    Text(l10n.fontSize),
+                    Expanded(
+                      child: Text(l10n.fontSize),
+                    ),
                   ],
                 ),
               ),
@@ -146,7 +154,9 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     const Icon(Icons.done_all),
                     const SizedBox(width: AppConstants.spacingS),
-                    Text(l10n.markAllKnown),
+                    Expanded(
+                      child: Text(l10n.markAllKnown),
+                    ),
                   ],
                 ),
               ),
@@ -156,7 +166,9 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     const Icon(Icons.list_alt),
                     const SizedBox(width: AppConstants.spacingS),
-                    Text(l10n.wordList),
+                    Expanded(
+                      child: Text(l10n.wordList),
+                    ),
                   ],
                 ),
               ),

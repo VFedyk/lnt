@@ -65,21 +65,14 @@ class _AiThinkingDialogState extends State<AiThinkingDialog> {
       content: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(),
-          const SizedBox(width: 16),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _emojis[_emojiIndex],
-                style: const TextStyle(fontSize: 24),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                textStages[_textIndex],
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
+          Text(
+            _emojis[_emojiIndex],
+            style: const TextStyle(fontSize: 24),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            textStages[_textIndex],
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
       ),

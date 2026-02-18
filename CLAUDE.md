@@ -53,6 +53,26 @@ flutter build macos          # Build macOS
 - **Google Drive**: hidden app data folder (`appDataFolder`)
 - **Google Sign-In v7**: singleton `GoogleSignIn.instance`, must call `initialize()` once before `authenticate()`
 
+## UI and theming
+
+- **Theme colors are the foundation**: Always use theme colors instead of hardcoded values for consistency across light/dark modes
+- **AppColors extension** (`lib/utils/app_theme.dart`): Access via `context.appColors` for semantic colors:
+  - `success` / `onSuccess` — Success states (green in light, lighter green in dark)
+  - `warning` / `onWarning` — Warnings (orange in light, lighter orange in dark)
+  - `streak` — Streak indicators
+- **Material 3 ColorScheme**: Use `Theme.of(context).colorScheme` for standard roles:
+  - `primary` / `onPrimary`, `secondary` / `onSecondary`, `tertiary` / `onTertiary`
+  - `error` / `onError` — Error states
+  - `surface` / `onSurface`, `background` / `onBackground`
+- **SnackbarHelpers** (`lib/utils/snackbar_helpers.dart`): Use for consistent user feedback:
+  - `showSuccess(context, message)` — Green background with theme-aware text
+  - `showError(context, message)` — Red background with theme-aware text
+  - `showWarning(context, message)` — Orange background with theme-aware text
+  - `showInfo(context, message)` — Default theme colors
+- **DialogHelpers** (`lib/utils/dialog_helpers.dart`): Use for consistent confirmation dialogs
+- **AsyncHelpers** (`lib/utils/async_helpers.dart`): Use for async operations with error handling
+- **Text overflow prevention**: Wrap text in `Expanded` widgets within `Row` layouts to prevent overflow with long translations (especially important for Ukrainian locale)
+
 ## Architecture notes
 
 - `PlatformHelper.isApple` / `PlatformHelper.isDesktop` guards platform-specific features

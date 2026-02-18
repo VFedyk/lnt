@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_theme.dart';
 
 /// Utility class for showing consistent SnackBar messages
 class SnackbarHelpers {
@@ -11,10 +12,14 @@ class SnackbarHelpers {
   static void showSuccess(BuildContext context, String message) {
     if (!context.mounted) return;
 
+    final appColors = context.appColors;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green[700],
+        content: Text(
+          message,
+          style: TextStyle(color: appColors.onSuccess),
+        ),
+        backgroundColor: appColors.success,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -29,10 +34,14 @@ class SnackbarHelpers {
   static void showError(BuildContext context, String message) {
     if (!context.mounted) return;
 
+    final colorScheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
+        content: Text(
+          message,
+          style: TextStyle(color: colorScheme.onError),
+        ),
+        backgroundColor: colorScheme.error,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
       ),
@@ -65,10 +74,14 @@ class SnackbarHelpers {
   static void showWarning(BuildContext context, String message) {
     if (!context.mounted) return;
 
+    final appColors = context.appColors;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.orange[700],
+        content: Text(
+          message,
+          style: TextStyle(color: appColors.onWarning),
+        ),
+        backgroundColor: appColors.warning,
         behavior: SnackBarBehavior.floating,
       ),
     );
