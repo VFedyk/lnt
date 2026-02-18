@@ -2044,6 +2044,7 @@
 /Users/v/.pub-cache/hosted/pub.dev/yaml-3.1.3/LICENSE
 /Users/v/Projects/lnt/LICENSE
 /Users/v/Projects/lnt/l10n.yaml
+/Users/v/Projects/lnt/lib/controllers/base_controller.dart
 /Users/v/Projects/lnt/lib/controllers/library_controller.dart
 /Users/v/Projects/lnt/lib/controllers/reader_controller.dart
 /Users/v/Projects/lnt/lib/controllers/settings_controller.dart
@@ -2105,10 +2106,13 @@
 /Users/v/Projects/lnt/lib/utils/chart_helpers.dart
 /Users/v/Projects/lnt/lib/utils/constants.dart
 /Users/v/Projects/lnt/lib/utils/cover_image_helper.dart
+/Users/v/Projects/lnt/lib/utils/dialog_helpers.dart
 /Users/v/Projects/lnt/lib/utils/helpers.dart
+/Users/v/Projects/lnt/lib/utils/snackbar_helpers.dart
 /Users/v/Projects/lnt/lib/widgets/activity_heatmap.dart
 /Users/v/Projects/lnt/lib/widgets/add_text_dialog.dart
 /Users/v/Projects/lnt/lib/widgets/animated_counter.dart
+/Users/v/Projects/lnt/lib/widgets/app_empty_state.dart
 /Users/v/Projects/lnt/lib/widgets/base_term_search_dialog.dart
 /Users/v/Projects/lnt/lib/widgets/book_cover.dart
 /Users/v/Projects/lnt/lib/widgets/collection_dialog.dart
@@ -2134,6 +2138,7 @@
 /Users/v/Projects/lnt/lib/widgets/reader/reader_language_picker_dialog.dart
 /Users/v/Projects/lnt/lib/widgets/reader/reader_mark_all_known_dialog.dart
 /Users/v/Projects/lnt/lib/widgets/reader/reader_translation_dialog.dart
+/Users/v/Projects/lnt/lib/widgets/review_progress_indicator.dart
 /Users/v/Projects/lnt/lib/widgets/review_progress_ring.dart
 /Users/v/Projects/lnt/lib/widgets/settings/ai_settings_section.dart
 /Users/v/Projects/lnt/lib/widgets/settings/app_language_section.dart

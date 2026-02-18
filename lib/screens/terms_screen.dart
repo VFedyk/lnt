@@ -7,6 +7,7 @@ import '../models/language.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
 import '../services/import_export_service.dart';
+import '../utils/async_helpers.dart';
 import '../utils/constants.dart';
 import '../utils/snackbar_helpers.dart';
 import '../widgets/app_empty_state.dart';
@@ -118,16 +119,12 @@ class _TermsScreenState extends State<TermsScreen> {
 
   Future<void> _exportTerms(String format) async {
     final l10n = AppLocalizations.of(context);
-    try {
-      await _importService.exportAndShare(_terms, format);
-      if (mounted) {
-        SnackbarHelpers.showSuccess(context, l10n.exportedTerms(_terms.length));
-      }
-    } catch (e) {
-      if (mounted) {
-        SnackbarHelpers.showError(context, l10n.exportFailed(e.toString()));
-      }
-    }
+    await AsyncHelpers.run(
+      context,
+      operation: () => _importService.exportAndShare(_terms, format),
+      successMessage: l10n.exportedTerms(_terms.length),
+      errorMessageBuilder: (e) => l10n.exportFailed(e.toString()),
+    );
   }
 
   Future<void> _importFromCSV() async {
@@ -137,27 +134,25 @@ class _TermsScreenState extends State<TermsScreen> {
       allowedExtensions: ['csv', 'txt'],
     );
 
-    if (result != null && result.files.single.path != null) {
-      try {
-        final file = File(result.files.single.path!);
-        final content = await _importService.readTextFile(file);
-        final importedTerms = await _importService.importTermsFromCSV(
-          content,
-          widget.language.id!,
-        );
-
-        await db.terms.bulkCreate(importedTerms);
-
-        if (mounted) {
-          SnackbarHelpers.showSuccess(
-            context,
-            l10n.importedTerms(importedTerms.length),
+    if (result != null && result.files.single.path != null && mounted) {
+      int importedCount = 0;
+      await AsyncHelpers.run(
+        context,
+        operation: () async {
+          final file = File(result.files.single.path!);
+          final content = await _importService.readTextFile(file);
+          final importedTerms = await _importService.importTermsFromCSV(
+            content,
+            widget.language.id!,
           );
-        }
-      } catch (e) {
-        if (mounted) {
-          SnackbarHelpers.showError(context, l10n.importFailed(e.toString()));
-        }
+          await db.terms.bulkCreate(importedTerms);
+          importedCount = importedTerms.length;
+        },
+        errorMessageBuilder: (e) => l10n.importFailed(e.toString()),
+      );
+
+      if (mounted && importedCount > 0) {
+        SnackbarHelpers.showSuccess(context, l10n.importedTerms(importedCount));
       }
     }
   }

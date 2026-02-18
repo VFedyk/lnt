@@ -10,6 +10,7 @@ import '../service_locator.dart';
 import '../services/settings_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import '../utils/async_helpers.dart';
 import '../utils/dialog_helpers.dart';
 import '../utils/helpers.dart';
 import '../utils/snackbar_helpers.dart';
@@ -116,38 +117,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _backupToICloud(SettingsController ctrl) async {
-    try {
-      await ctrl.backupToICloud();
-      if (mounted) {
-        SnackbarHelpers.showSuccess(
-          context,
-          AppLocalizations.of(context).backupSuccess,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        SnackbarHelpers.showError(
-          context,
-          AppLocalizations.of(context).backupFailed(e.toString()),
-        );
-      }
-    }
+    final l10n = AppLocalizations.of(context);
+    await AsyncHelpers.run(
+      context,
+      operation: () => ctrl.backupToICloud(),
+      successMessage: l10n.backupSuccess,
+      errorMessageBuilder: (e) => l10n.backupFailed(e.toString()),
+    );
   }
 
   Future<void> _restoreFromICloud(SettingsController ctrl) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await _confirmRestore();
-    if (confirmed != true) return;
-    try {
-      await ctrl.restoreFromICloud();
-      if (mounted) _showRestoreSuccess();
-    } catch (e) {
-      if (mounted) {
-        SnackbarHelpers.showError(
-          context,
-          AppLocalizations.of(context).restoreFailed(e.toString()),
-        );
-      }
-    }
+    if (confirmed != true || !mounted) return;
+
+    await AsyncHelpers.run(
+      context,
+      operation: () => ctrl.restoreFromICloud(),
+      errorMessageBuilder: (e) => l10n.restoreFailed(e.toString()),
+    );
+
+    if (mounted) _showRestoreSuccess();
   }
 
   Future<bool?> _confirmRestore() {
