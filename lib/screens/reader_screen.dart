@@ -25,6 +25,7 @@ import '../widgets/reader/reader_translation_dialog.dart';
 import '../widgets/term_dialog.dart';
 import '../widgets/word_list_drawer.dart';
 import '../utils/app_theme.dart';
+import '../utils/async_helpers.dart';
 import '../utils/snackbar_helpers.dart';
 
 /// Layout, sizing, and timing constants for the reader screen
@@ -107,17 +108,12 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
   }
 
   Future<void> _loadData() async {
-    try {
-      await context.read<ReaderController>().loadTermsAndParse();
-    } catch (e) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context);
-        SnackbarHelpers.showError(
-          context,
-          l10n.errorLoadingTerms(e.toString()),
-        );
-      }
-    }
+    final l10n = AppLocalizations.of(context);
+    await AsyncHelpers.run(
+      context,
+      operation: () => context.read<ReaderController>().loadTermsAndParse(),
+      errorMessageBuilder: (e) => l10n.errorLoadingTerms(e.toString()),
+    );
   }
 
   // --- Word interaction ---
@@ -525,16 +521,12 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         l10n: l10n,
         onConfirm: () async {
           Navigator.pop(dialogContext);
-          try {
-            await ctrl.performMarkAllKnown();
-            if (mounted && context.mounted) {
-              SnackbarHelpers.showSuccess(context, l10n.allWordsMarkedKnown);
-            }
-          } catch (e) {
-            if (mounted && context.mounted) {
-              SnackbarHelpers.showError(context, '${l10n.error}: $e');
-            }
-          }
+          await AsyncHelpers.run(
+            context,
+            operation: () => ctrl.performMarkAllKnown(),
+            successMessage: l10n.allWordsMarkedKnown,
+            errorMessageBuilder: (e) => '${l10n.error}: $e',
+          );
         },
       ),
     );

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../utils/async_helpers.dart';
 import '../utils/constants.dart';
-import '../utils/snackbar_helpers.dart';
 
 abstract class _WebViewConstants {
   static const int frameLoadInterruptedError = 2;
@@ -195,20 +195,17 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
   }
 
   Future<void> _openInExternalBrowser() async {
-    try {
-      final urlString = _currentUrl.isNotEmpty ? _currentUrl : widget.url;
-      final url = Uri.parse(urlString);
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context);
-        SnackbarHelpers.showError(
-          context,
-          l10n.errorOpeningBrowser(e.toString()),
-        );
-      }
-    }
+    final l10n = AppLocalizations.of(context);
+    await AsyncHelpers.run(
+      context,
+      operation: () async {
+        final urlString = _currentUrl.isNotEmpty ? _currentUrl : widget.url;
+        final url = Uri.parse(urlString);
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        }
+      },
+      errorMessageBuilder: (e) => l10n.errorOpeningBrowser(e.toString()),
+    );
   }
 }
