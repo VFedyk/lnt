@@ -64,6 +64,10 @@ flutter build macos          # Build macOS
 
 - **Command**: `flutter test` — runs all 90 tests in ~2-3 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
+- **Verification**: Use exit code pattern to avoid parsing verbose output:
+  ```bash
+  flutter test > /dev/null 2>&1 && echo "✅ All tests passed!" || echo "❌ Some tests failed"
+  ```
 - **Test coverage**:
   - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier)
   - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping)
