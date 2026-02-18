@@ -3,6 +3,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/language_dialog.dart';
 import 'dictionaries_screen.dart';
 
@@ -129,20 +130,15 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _languages.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.language, size: AppConstants.emptyStateIconSize, color: Colors.grey[400]),
-                  const SizedBox(height: AppConstants.spacingL),
-                  Text(l10n.noLanguagesYet),
-                  const SizedBox(height: AppConstants.spacingS),
-                  ElevatedButton.icon(
-                    onPressed: () => _addOrEditLanguage(),
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n.addLanguage),
-                  ),
-                ],
+          ? AppEmptyState(
+              icon: Icons.language,
+              iconSize: AppConstants.emptyStateIconSize,
+              iconColor: Colors.grey[400],
+              title: l10n.noLanguagesYet,
+              action: ElevatedButton.icon(
+                onPressed: () => _addOrEditLanguage(),
+                icon: const Icon(Icons.add),
+                label: Text(l10n.addLanguage),
               ),
             )
           : ListView.builder(

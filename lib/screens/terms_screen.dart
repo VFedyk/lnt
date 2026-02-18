@@ -8,6 +8,7 @@ import '../models/term.dart';
 import '../service_locator.dart';
 import '../services/import_export_service.dart';
 import '../utils/constants.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/term_dialog.dart';
 
 abstract class _TermsConstants {
@@ -325,7 +326,10 @@ class _TermsScreenState extends State<TermsScreen> {
   Widget _buildTermsList() {
     final l10n = AppLocalizations.of(context);
     if (_filteredTerms.isEmpty) {
-      return Center(child: Text(l10n.noTermsFound));
+      return AppEmptyState(
+        icon: Icons.search_off,
+        title: l10n.noTermsFound,
+      );
     }
 
     return ListView.builder(

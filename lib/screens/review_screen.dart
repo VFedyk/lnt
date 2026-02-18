@@ -5,6 +5,7 @@ import '../service_locator.dart';
 import '../services/logger_service.dart';
 import '../utils/constants.dart';
 import '../widgets/animated_counter.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/review_progress_ring.dart';
 import 'flashcard_review_screen.dart';
 import 'statistics_screen.dart';
@@ -84,21 +85,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: AppConstants.errorIconSize, color: Theme.of(context).colorScheme.error),
-            const SizedBox(height: AppConstants.spacingM),
-            Text(l10n.failedToLoadData, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: AppConstants.spacingM),
-            ElevatedButton.icon(
-              onPressed: _loadStats,
-              icon: const Icon(Icons.refresh),
-              label: Text(l10n.retry),
-            ),
-          ],
-        ),
+      return AppErrorState(
+        title: l10n.failedToLoadData,
+        onRetry: _loadStats,
+        retryLabel: l10n.retry,
       );
     }
 

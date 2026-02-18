@@ -115,3 +115,37 @@ class ReviewCompletionState extends StatelessWidget {
     );
   }
 }
+
+/// A reusable error state widget
+///
+/// Displays an error icon with message and retry button
+class AppErrorState extends StatelessWidget {
+  final String title;
+  final String? message;
+  final VoidCallback onRetry;
+  final String retryLabel;
+
+  const AppErrorState({
+    super.key,
+    required this.title,
+    required this.onRetry,
+    required this.retryLabel,
+    this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppEmptyState(
+      icon: Icons.error_outline,
+      iconSize: AppConstants.errorIconSize,
+      iconColor: Theme.of(context).colorScheme.error,
+      title: title,
+      subtitle: message,
+      action: ElevatedButton.icon(
+        onPressed: onRetry,
+        icon: const Icon(Icons.refresh),
+        label: Text(retryLabel),
+      ),
+    );
+  }
+}

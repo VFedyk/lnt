@@ -6,6 +6,7 @@ import '../main.dart';
 import '../models/language.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
+import '../widgets/app_empty_state.dart';
 import 'dashboard_tab.dart';
 import 'languages_screen.dart';
 import 'library_screen.dart';
@@ -174,35 +175,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildEmptyState() {
     final l10n = AppLocalizations.of(context);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.language, size: _HomeScreenConstants.emptyStateIconSize, color: _HomeScreenConstants.emptyStateIconColor),
-          const SizedBox(height: AppConstants.spacingL),
-          Text(
-            l10n.noLanguagesYet,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(color: AppConstants.subtitleColor),
-          ),
-          const SizedBox(height: AppConstants.spacingS),
-          Text(
-            l10n.addLanguageToStart,
-            style: TextStyle(color: AppConstants.subtitleColor),
-          ),
-          const SizedBox(height: AppConstants.spacingXL),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const LanguagesScreen()),
-              );
-            },
-            icon: const Icon(Icons.add),
-            label: Text(l10n.addLanguage),
-          ),
-        ],
+    return AppEmptyState(
+      icon: Icons.language,
+      iconSize: _HomeScreenConstants.emptyStateIconSize,
+      iconColor: _HomeScreenConstants.emptyStateIconColor,
+      title: l10n.noLanguagesYet,
+      titleStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(
+        color: AppConstants.subtitleColor,
+      ),
+      subtitle: l10n.addLanguageToStart,
+      action: ElevatedButton.icon(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LanguagesScreen()),
+          );
+        },
+        icon: const Icon(Icons.add),
+        label: Text(l10n.addLanguage),
       ),
     );
   }

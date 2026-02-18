@@ -13,6 +13,7 @@ import '../utils/cover_image_helper.dart';
 import '../utils/helpers.dart';
 import '../widgets/activity_heatmap.dart';
 import '../widgets/animated_counter.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/dashboard_charts.dart';
 import '../widgets/review_progress_ring.dart';
 import '../models/chart_data.dart';
@@ -308,28 +309,11 @@ class _DashboardTabState extends State<DashboardTab> {
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: AppConstants.errorIconSize,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: AppConstants.spacingM),
-            Text(
-              l10n.failedToLoadData,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppConstants.spacingM),
-            ElevatedButton.icon(
-              onPressed: _loadData,
-              icon: const Icon(Icons.refresh),
-              label: Text(l10n.retry),
-            ),
-          ],
-        ),
+      return AppErrorState(
+        title: l10n.failedToLoadData,
+        message: _error,
+        onRetry: _loadData,
+        retryLabel: l10n.retry,
       );
     }
 

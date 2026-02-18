@@ -4,6 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/dictionary.dart';
 import '../service_locator.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/dictionary_dialog.dart';
 
 class _DictionariesScreenConstants {
@@ -12,8 +13,6 @@ class _DictionariesScreenConstants {
   static const double iconSpacing = 8.0;
   static const double subtitleFontSize = 12.0;
   static const double emptyIconSize = 64.0;
-  static const double emptyTextSpacing = 16.0;
-  static const double emptySubtextSpacing = 8.0;
   static const double helpSectionSpacing = 16.0;
   static const double helpStepSpacing = 8.0;
   static const double exampleUrlFontSize = 12.0;
@@ -261,31 +260,17 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
   Widget _buildEmptyState() {
     final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.book,
-            size: _DictionariesScreenConstants.emptyIconSize,
-            color: colorScheme.outline,
-          ),
-          const SizedBox(height: _DictionariesScreenConstants.emptyTextSpacing),
-          Text(l10n.noDictionariesYet),
-          const SizedBox(
-            height: _DictionariesScreenConstants.emptySubtextSpacing,
-          ),
-          Text(
-            l10n.addDictionariesFor(widget.language.name),
-            style: TextStyle(color: colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: _DictionariesScreenConstants.emptyTextSpacing),
-          ElevatedButton.icon(
-            onPressed: () => _addOrEditDictionary(),
-            icon: const Icon(Icons.add),
-            label: Text(l10n.addDictionary),
-          ),
-        ],
+    return AppEmptyState(
+      icon: Icons.book,
+      iconSize: _DictionariesScreenConstants.emptyIconSize,
+      iconColor: colorScheme.outline,
+      title: l10n.noDictionariesYet,
+      subtitle: l10n.addDictionariesFor(widget.language.name),
+      subtitleStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+      action: ElevatedButton.icon(
+        onPressed: () => _addOrEditDictionary(),
+        icon: const Icon(Icons.add),
+        label: Text(l10n.addDictionary),
       ),
     );
   }
