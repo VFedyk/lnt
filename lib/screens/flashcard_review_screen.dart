@@ -11,6 +11,8 @@ import '../service_locator.dart';
 import '../services/dictionary_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import '../widgets/app_empty_state.dart';
+import '../widgets/review_progress_indicator.dart';
 import '../widgets/term_dialog.dart';
 
 abstract class _FlashcardReviewConstants {
@@ -18,13 +20,14 @@ abstract class _FlashcardReviewConstants {
   static const double cardBorderRadius = 16.0;
   static const double termFontSize = 28.0;
   static const double romanizationFontSize = 16.0;
-  static const double sentenceFontSize = 14.0;
+  static const double sentenceFontSize = 16.0;
   static const double translationFontSize = 18.0;
   static const double statusDotSize = 12.0;
   static const double completionIconSize = 80.0;
   static const double buttonSpacing = 8.0;
   static const double intervalFontSize = 11.0;
   static const double minCardHeight = 300.0;
+  static const double contentSpacing = 20.0;
   static const Duration flipDuration = Duration(milliseconds: 400);
 }
 
@@ -296,6 +299,58 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
     }
   }
 
+  Widget _buildHighlightedSentence(String sentence, String termText, int status) {
+    // Try to find the term in the sentence (case-insensitive)
+    final lowerSentence = sentence.toLowerCase();
+    final lowerTerm = termText.toLowerCase();
+    final index = lowerSentence.indexOf(lowerTerm);
+
+    if (index == -1) {
+      // Term not found in sentence, return plain text
+      return Text(
+        sentence,
+        style: TextStyle(
+          fontSize: _FlashcardReviewConstants.sentenceFontSize,
+          color: AppConstants.subtitleColor,
+          fontStyle: FontStyle.italic,
+        ),
+        textAlign: TextAlign.center,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    // Split sentence into parts: before, term, after
+    final before = sentence.substring(0, index);
+    final term = sentence.substring(index, index + termText.length);
+    final after = sentence.substring(index + termText.length);
+
+    return RichText(
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: _FlashcardReviewConstants.sentenceFontSize,
+          color: AppConstants.subtitleColor,
+          fontStyle: FontStyle.italic,
+        ),
+        children: [
+          TextSpan(text: before),
+          TextSpan(
+            text: term,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: TermStatus.colorFor(status),
+              fontStyle: FontStyle.normal,
+            ),
+          ),
+          TextSpan(text: after),
+        ],
+      ),
+      textAlign: TextAlign.center,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -325,68 +380,26 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
   }
 
   Widget _buildEmptyState(AppLocalizations l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacingXL),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: _FlashcardReviewConstants.completionIconSize,
-              color: TermStatus.colorFor(TermStatus.known),
-            ),
-            const SizedBox(height: AppConstants.spacingL),
-            Text(
-              l10n.noCardsDue,
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.spacingL),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_back),
-              label: Text(l10n.done),
-            ),
-          ],
-        ),
+    return AppEmptyState(
+      icon: Icons.check_circle_outline,
+      iconSize: _FlashcardReviewConstants.completionIconSize,
+      iconColor: TermStatus.colorFor(TermStatus.known),
+      title: l10n.noCardsDue,
+      action: ElevatedButton.icon(
+        onPressed: () => Navigator.pop(context),
+        icon: const Icon(Icons.arrow_back),
+        label: Text(l10n.done),
       ),
     );
   }
 
   Widget _buildCompletionState(AppLocalizations l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacingXL),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.celebration,
-              size: _FlashcardReviewConstants.completionIconSize,
-              color: TermStatus.colorFor(TermStatus.known),
-            ),
-            const SizedBox(height: AppConstants.spacingL),
-            Text(
-              l10n.reviewComplete,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: AppConstants.spacingS),
-            Text(
-              l10n.reviewedCount(_reviewedCount),
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppConstants.subtitleColor,
-                  ),
-            ),
-            const SizedBox(height: AppConstants.spacingL),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.done),
-              label: Text(l10n.done),
-            ),
-          ],
-        ),
-      ),
+    return ReviewCompletionState(
+      reviewedCount: _reviewedCount,
+      onDone: () => Navigator.pop(context),
+      completionMessage: l10n.reviewComplete,
+      reviewedCountMessage: l10n.reviewedCount(_reviewedCount),
+      doneLabel: l10n.done,
     );
   }
 
@@ -399,25 +412,11 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
       child: Column(
         children: [
           // Progress indicator
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppConstants.spacingM),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  l10n.reviewProgress(_currentIndex + 1, _dueItems.length),
-                  style: TextStyle(color: AppConstants.subtitleColor),
-                ),
-                Container(
-                  width: _FlashcardReviewConstants.statusDotSize,
-                  height: _FlashcardReviewConstants.statusDotSize,
-                  decoration: BoxDecoration(
-                    color: TermStatus.colorFor(term.status),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ],
-            ),
+          ReviewProgressIndicator(
+            currentIndex: _currentIndex,
+            totalCount: _dueItems.length,
+            termStatus: term.status,
+            statusDotSize: _FlashcardReviewConstants.statusDotSize,
           ),
 
           // Flashcard with flip animation
@@ -504,7 +503,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
               visualDensity: VisualDensity.compact,
             ),
           if (term.romanization.isNotEmpty) ...[
-            const SizedBox(height: AppConstants.spacingS),
+            const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
             Text(
               term.romanization,
               style: TextStyle(
@@ -515,17 +514,14 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
             ),
           ],
           if (term.sentence.isNotEmpty) ...[
-            const SizedBox(height: AppConstants.spacingM),
-            Text(
-              term.sentence,
-              style: TextStyle(
-                fontSize: _FlashcardReviewConstants.sentenceFontSize,
-                color: AppConstants.subtitleColor,
-                fontStyle: FontStyle.italic,
+            const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacingL),
+              child: _buildHighlightedSentence(
+                term.sentence,
+                term.text,
+                term.status,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
           const SizedBox(height: AppConstants.spacingXL),
@@ -569,7 +565,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
                   visualDensity: VisualDensity.compact,
                 ),
               if (term.romanization.isNotEmpty) ...[
-                const SizedBox(height: AppConstants.spacingS),
+                const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
                 Text(
                   term.romanization,
                   style: TextStyle(
@@ -580,25 +576,22 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
                 ),
               ],
               if (term.sentence.isNotEmpty) ...[
-                const SizedBox(height: AppConstants.spacingM),
-                Text(
-                  term.sentence,
-                  style: TextStyle(
-                    fontSize: _FlashcardReviewConstants.sentenceFontSize,
-                    color: AppConstants.subtitleColor,
-                    fontStyle: FontStyle.italic,
+                const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacingL),
+                  child: _buildHighlightedSentence(
+                    term.sentence,
+                    term.text,
+                    term.status,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
-              const SizedBox(height: AppConstants.spacingL),
+              const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
               const Divider(),
               const SizedBox(height: AppConstants.spacingM),
               ...item.translations.map((t) => Padding(
                     padding:
-                        const EdgeInsets.only(bottom: AppConstants.spacingXS),
+                        const EdgeInsets.only(bottom: AppConstants.spacingS),
                     child: Text(
                       t.partOfSpeech != null && t.partOfSpeech!.isNotEmpty
                           ? '${t.meaning} (${t.partOfSpeech})'

@@ -8,6 +8,8 @@ import '../models/term.dart';
 import '../service_locator.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import '../widgets/app_empty_state.dart';
+import '../widgets/review_progress_indicator.dart';
 
 enum TypingDirection { sourceToTarget, targetToSource }
 
@@ -236,68 +238,26 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
 
   Widget _buildEmptyState(AppLocalizations l10n) {
     final hasNoTranslations = _dueItems.isEmpty && !_isLoading;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacingXL),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: _TypingReviewConstants.completionIconSize,
-              color: TermStatus.colorFor(TermStatus.known),
-            ),
-            const SizedBox(height: AppConstants.spacingL),
-            Text(
-              hasNoTranslations ? l10n.noTranslationsToReview : l10n.noCardsDue,
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.spacingL),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_back),
-              label: Text(l10n.done),
-            ),
-          ],
-        ),
+    return AppEmptyState(
+      icon: Icons.check_circle_outline,
+      iconSize: _TypingReviewConstants.completionIconSize,
+      iconColor: TermStatus.colorFor(TermStatus.known),
+      title: hasNoTranslations ? l10n.noTranslationsToReview : l10n.noCardsDue,
+      action: ElevatedButton.icon(
+        onPressed: () => Navigator.pop(context),
+        icon: const Icon(Icons.arrow_back),
+        label: Text(l10n.done),
       ),
     );
   }
 
   Widget _buildCompletionState(AppLocalizations l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacingXL),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.celebration,
-              size: _TypingReviewConstants.completionIconSize,
-              color: TermStatus.colorFor(TermStatus.known),
-            ),
-            const SizedBox(height: AppConstants.spacingL),
-            Text(
-              l10n.reviewComplete,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: AppConstants.spacingS),
-            Text(
-              l10n.reviewedCount(_reviewedCount),
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppConstants.subtitleColor,
-                  ),
-            ),
-            const SizedBox(height: AppConstants.spacingL),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.done),
-              label: Text(l10n.done),
-            ),
-          ],
-        ),
-      ),
+    return ReviewCompletionState(
+      reviewedCount: _reviewedCount,
+      onDone: () => Navigator.pop(context),
+      completionMessage: l10n.reviewComplete,
+      reviewedCountMessage: l10n.reviewedCount(_reviewedCount),
+      doneLabel: l10n.done,
     );
   }
 
@@ -310,25 +270,11 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
       child: Column(
         children: [
           // Progress indicator
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppConstants.spacingM),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  l10n.reviewProgress(_currentIndex + 1, _dueItems.length),
-                  style: TextStyle(color: AppConstants.subtitleColor),
-                ),
-                Container(
-                  width: _TypingReviewConstants.statusDotSize,
-                  height: _TypingReviewConstants.statusDotSize,
-                  decoration: BoxDecoration(
-                    color: TermStatus.colorFor(item.term.status),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ],
-            ),
+          ReviewProgressIndicator(
+            currentIndex: _currentIndex,
+            totalCount: _dueItems.length,
+            termStatus: item.term.status,
+            statusDotSize: _TypingReviewConstants.statusDotSize,
           ),
 
           // Card with prompt + input
