@@ -1,10 +1,10 @@
-import 'package:flutter/foundation.dart';
 import '../service_locator.dart';
 import '../services/deepl_service.dart';
 import '../services/settings_service.dart';
 import '../utils/helpers.dart';
+import 'base_controller.dart';
 
-class SettingsController extends ChangeNotifier {
+class SettingsController extends BaseController {
   bool isLoading = true;
   bool isApiFree = true;
   String targetLang = SettingsService.defaultTargetLang;
@@ -23,18 +23,6 @@ class SettingsController extends ChangeNotifier {
   String initialAiModel = SettingsService.defaultAiModel;
   String initialAiApiUrl = SettingsService.defaultAiApiUrl;
   String initialAiProvider = SettingsService.aiProviderAuto;
-
-  bool _isDisposed = false;
-
-  void _safeNotify() {
-    if (!_isDisposed) notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _isDisposed = true;
-    super.dispose();
-  }
 
   Future<void> loadSettings() async {
     final apiKey = await settings.getDeepLApiKey();
@@ -67,7 +55,7 @@ class SettingsController extends ChangeNotifier {
     dbPath = path;
     icloudLastBackup = icloudBackup;
     isLoading = false;
-    _safeNotify();
+    safeNotify();
 
     if (apiKey != null && apiKey.isNotEmpty) {
       await loadUsage();
@@ -76,11 +64,11 @@ class SettingsController extends ChangeNotifier {
 
   Future<void> loadUsage() async {
     isLoadingUsage = true;
-    _safeNotify();
+    safeNotify();
     final result = await deepLService.getUsage();
     usage = result;
     isLoadingUsage = false;
-    _safeNotify();
+    safeNotify();
   }
 
   Future<void> saveSettings({
@@ -106,16 +94,16 @@ class SettingsController extends ChangeNotifier {
   /// Returns true on success.
   Future<bool> backupToICloud() async {
     isBackingUp = true;
-    _safeNotify();
+    safeNotify();
     try {
       await backupService.backupToICloud();
       icloudLastBackup = DateTime.now();
       isBackingUp = false;
-      _safeNotify();
+      safeNotify();
       return true;
     } catch (_) {
       isBackingUp = false;
-      _safeNotify();
+      safeNotify();
       rethrow;
     }
   }
@@ -123,15 +111,15 @@ class SettingsController extends ChangeNotifier {
   /// Returns true on success. Caller should confirm with user first.
   Future<bool> restoreFromICloud() async {
     isRestoring = true;
-    _safeNotify();
+    safeNotify();
     try {
       await backupService.restoreFromICloud();
       isRestoring = false;
-      _safeNotify();
+      safeNotify();
       return true;
     } catch (_) {
       isRestoring = false;
-      _safeNotify();
+      safeNotify();
       rethrow;
     }
   }
@@ -142,12 +130,12 @@ class SettingsController extends ChangeNotifier {
 
   void setApiFree(bool value) {
     isApiFree = value;
-    _safeNotify();
+    safeNotify();
   }
 
   void setTargetLang(String value) {
     targetLang = value;
-    _safeNotify();
+    safeNotify();
   }
 
   static String formatNumber(int number) {

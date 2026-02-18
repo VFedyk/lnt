@@ -10,7 +10,9 @@ import '../service_locator.dart';
 import '../services/settings_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import '../utils/dialog_helpers.dart';
 import '../utils/helpers.dart';
+import '../utils/snackbar_helpers.dart';
 import '../widgets/settings/ai_settings_section.dart';
 import '../widgets/settings/app_language_section.dart';
 import '../widgets/settings/backup_section.dart';
@@ -106,8 +108,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       aiProvider: _aiProvider,
     );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).settingsSaved)),
+      SnackbarHelpers.showSuccess(
+        context,
+        AppLocalizations.of(context).settingsSaved,
       );
     }
   }
@@ -116,18 +119,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await ctrl.backupToICloud();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).backupSuccess)),
+        SnackbarHelpers.showSuccess(
+          context,
+          AppLocalizations.of(context).backupSuccess,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).backupFailed(e.toString()),
-            ),
-          ),
+        SnackbarHelpers.showError(
+          context,
+          AppLocalizations.of(context).backupFailed(e.toString()),
         );
       }
     }
@@ -141,12 +142,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) _showRestoreSuccess();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).restoreFailed(e.toString()),
-            ),
-          ),
+        SnackbarHelpers.showError(
+          context,
+          AppLocalizations.of(context).restoreFailed(e.toString()),
         );
       }
     }
@@ -154,32 +152,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<bool?> _confirmRestore() {
     final l10n = AppLocalizations.of(context);
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.restoreConfirmTitle),
-        content: Text(l10n.restoreConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(l10n.restore),
-          ),
-        ],
-      ),
+    return DialogHelpers.showDestructiveDialog(
+      context,
+      title: l10n.restoreConfirmTitle,
+      message: l10n.restoreConfirmMessage,
+      confirmText: l10n.restore,
     );
   }
 
   void _showRestoreSuccess() {
     final l10n = AppLocalizations.of(context);
     dataChanges.notifyAll();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(l10n.restoreSuccess)));
+    SnackbarHelpers.showSuccess(context, l10n.restoreSuccess);
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 

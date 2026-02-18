@@ -8,6 +8,7 @@ import '../models/term.dart';
 import '../service_locator.dart';
 import '../services/import_export_service.dart';
 import '../utils/constants.dart';
+import '../utils/snackbar_helpers.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/term_dialog.dart';
 
@@ -120,15 +121,11 @@ class _TermsScreenState extends State<TermsScreen> {
     try {
       await _importService.exportAndShare(_terms, format);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.exportedTerms(_terms.length))),
-        );
+        SnackbarHelpers.showSuccess(context, l10n.exportedTerms(_terms.length));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.exportFailed(e.toString()))));
+        SnackbarHelpers.showError(context, l10n.exportFailed(e.toString()));
       }
     }
   }
@@ -152,15 +149,14 @@ class _TermsScreenState extends State<TermsScreen> {
         await db.terms.bulkCreate(importedTerms);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.importedTerms(importedTerms.length))),
+          SnackbarHelpers.showSuccess(
+            context,
+            l10n.importedTerms(importedTerms.length),
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.importFailed(e.toString()))));
+          SnackbarHelpers.showError(context, l10n.importFailed(e.toString()));
         }
       }
     }

@@ -20,6 +20,7 @@ import '../widgets/library/library_status_bar.dart';
 import '../widgets/text_edit_dialog.dart';
 import '../widgets/url_import_dialog.dart';
 import '../utils/constants.dart';
+import '../utils/dialog_helpers.dart';
 import 'reader_screen.dart';
 
 abstract class _LibraryScreenConstants {
@@ -99,22 +100,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Future<void> _deleteText(LibraryController ctrl, TextDocument text) async {
     final l10n = AppLocalizations.of(context);
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteText),
-        content: Text(l10n.deleteTextConfirm(text.title)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
+    final confirm = await DialogHelpers.showDestructiveDialog(
+      context,
+      title: l10n.deleteText,
+      message: l10n.deleteTextConfirm(text.title),
+      confirmText: l10n.delete,
     );
     if (confirm == true) await ctrl.deleteText(text.id!);
   }
@@ -127,29 +117,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final textCount = await ctrl.getTextCountInCollection(collection.id!);
     if (!mounted) return;
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteCollection),
-        content: Text(
-          textCount > 0
-              ? l10n.deleteCollectionConfirm(collection.name, textCount)
-              : l10n.deleteCollectionSimple(collection.name),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
+    final confirm = await DialogHelpers.showDestructiveDialog(
+      context,
+      title: l10n.deleteCollection,
+      message: textCount > 0
+          ? l10n.deleteCollectionConfirm(collection.name, textCount)
+          : l10n.deleteCollectionSimple(collection.name),
+      confirmText: l10n.delete,
     );
     if (confirm == true) await ctrl.deleteCollection(collection.id!);
   }

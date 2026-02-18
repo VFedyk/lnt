@@ -4,6 +4,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../utils/constants.dart';
+import '../utils/snackbar_helpers.dart';
 
 abstract class _WebViewConstants {
   static const int frameLoadInterruptedError = 2;
@@ -203,8 +204,9 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.errorOpeningBrowser(e.toString()))),
+        SnackbarHelpers.showError(
+          context,
+          l10n.errorOpeningBrowser(e.toString()),
         );
       }
     }

@@ -3,6 +3,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
+import '../utils/dialog_helpers.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/language_dialog.dart';
 import 'dictionaries_screen.dart';
@@ -45,22 +46,12 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
         // After creating language, prompt to add dictionaries
         if (mounted) {
           final l10n = AppLocalizations.of(context);
-          final shouldAddDict = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text(l10n.addDictionariesQuestion),
-              content: Text(l10n.addDictionariesPrompt(result.name)),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(l10n.later),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text(l10n.addNow),
-                ),
-              ],
-            ),
+          final shouldAddDict = await DialogHelpers.showConfirmationDialog(
+            context,
+            title: l10n.addDictionariesQuestion,
+            message: l10n.addDictionariesPrompt(result.name),
+            cancelText: l10n.later,
+            confirmText: l10n.addNow,
           );
 
           if (shouldAddDict == true && mounted) {
@@ -97,23 +88,11 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
 
   Future<void> _deleteLanguage(Language language) async {
     final l10n = AppLocalizations.of(context);
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteLanguageQuestion),
-        content: Text(l10n.deleteLanguageConfirm(language.name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
+    final confirm = await DialogHelpers.showDestructiveDialog(
+      context,
+      title: l10n.deleteLanguageQuestion,
+      message: l10n.deleteLanguageConfirm(language.name),
+      confirmText: l10n.delete,
     );
 
     if (confirm == true) {

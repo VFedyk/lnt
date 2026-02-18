@@ -4,6 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/dictionary.dart';
 import '../service_locator.dart';
+import '../utils/dialog_helpers.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/dictionary_dialog.dart';
 
@@ -71,24 +72,11 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
 
   Future<void> _deleteDictionary(Dictionary dictionary) async {
     final l10n = AppLocalizations.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteDictionary),
-        content: Text(l10n.deleteDictionaryConfirm(dictionary.name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
+    final confirm = await DialogHelpers.showDestructiveDialog(
+      context,
+      title: l10n.deleteDictionary,
+      message: l10n.deleteDictionaryConfirm(dictionary.name),
+      confirmText: l10n.delete,
     );
 
     if (confirm == true) {

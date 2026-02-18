@@ -6,6 +6,7 @@ import '../models/word_token.dart';
 import '../service_locator.dart';
 import '../services/text_parser_service.dart';
 import '../services/isolate_parser.dart';
+import 'base_controller.dart';
 
 /// Info about a foreign-language term found in the text.
 class ForeignTermInfo {
@@ -22,7 +23,7 @@ class ForeignTermInfo {
   });
 }
 
-class ReaderController extends ChangeNotifier {
+class ReaderController extends BaseController {
   final Language language;
   final _textParser = TextParserService();
 
@@ -41,25 +42,13 @@ class ReaderController extends ChangeNotifier {
   bool isSelectionMode = false;
   Map<int, int> termCounts = {};
 
-  bool _isDisposed = false;
-
   ReaderController({required this.text, required this.language});
-
-  void _safeNotify() {
-    if (!_isDisposed) notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _isDisposed = true;
-    super.dispose();
-  }
 
   // ── Data loading ──
 
   Future<void> loadTermsAndParse() async {
     isLoading = true;
-    _safeNotify();
+    safeNotify();
 
     termsMap = await db.terms.getMapByLanguage(language.id!);
     termsById = {
@@ -77,12 +66,12 @@ class ReaderController extends ChangeNotifier {
     };
 
     await _parseTextAsync();
-    if (_isDisposed) return;
+    if (isDisposed) return;
     await _loadForeignWords();
     _updateTextTermCounts();
 
     isLoading = false;
-    _safeNotify();
+    safeNotify();
     _updateLastRead();
   }
 
@@ -104,7 +93,7 @@ class ReaderController extends ChangeNotifier {
     );
 
     final parsedTokens = await compute(parseInIsolate, input);
-    if (_isDisposed) return;
+    if (isDisposed) return;
 
     wordTokens = parsedTokens.map((pt) {
       return WordToken(
@@ -327,7 +316,7 @@ class ReaderController extends ChangeNotifier {
 
     _groupIntoParagraphs();
     _updateTextTermCounts();
-    _safeNotify();
+    safeNotify();
   }
 
   // ── Term CRUD (called after dialog completes) ──
@@ -408,7 +397,7 @@ class ReaderController extends ChangeNotifier {
     isSelectionMode = true;
     selectedWordIndices.clear();
     selectedWordIndices.add(tokenIndex);
-    _safeNotify();
+    safeNotify();
   }
 
   void toggleWordSelection(int tokenIndex, {bool shiftPressed = false}) {
@@ -426,7 +415,7 @@ class ReaderController extends ChangeNotifier {
         selectedWordIndices.add(tokenIndex);
       }
     }
-    _safeNotify();
+    safeNotify();
   }
 
   void _selectRange(int endIndex) {
@@ -449,7 +438,7 @@ class ReaderController extends ChangeNotifier {
   void cancelSelection() {
     isSelectionMode = false;
     selectedWordIndices.clear();
-    _safeNotify();
+    safeNotify();
   }
 
   String getSelectedWordsText() {
@@ -465,7 +454,7 @@ class ReaderController extends ChangeNotifier {
     await db.textForeignWords.deleteWord(text.id!, lowerWord);
     otherLanguageTerms.remove(lowerWord);
     _updateTextTermCounts();
-    _safeNotify();
+    safeNotify();
   }
 
   Future<void> assignForeignWords(
@@ -488,7 +477,7 @@ class ReaderController extends ChangeNotifier {
     final contentChanged = updatedText.content != text.content;
     await db.texts.update(updatedText);
     text = updatedText;
-    _safeNotify();
+    safeNotify();
     if (contentChanged) {
       await loadTermsAndParse();
     }
@@ -501,7 +490,7 @@ class ReaderController extends ChangeNotifier {
     final updatedText = text.copyWith(status: newStatus);
     await db.texts.update(updatedText);
     text = updatedText;
-    _safeNotify();
+    safeNotify();
     return newStatus;
   }
 
@@ -543,11 +532,11 @@ class ReaderController extends ChangeNotifier {
 
   void toggleLegend() {
     showLegend = !showLegend;
-    _safeNotify();
+    safeNotify();
   }
 
   void setFontSize(double size) {
     fontSize = size;
-    _safeNotify();
+    safeNotify();
   }
 }

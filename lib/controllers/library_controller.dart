@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show IconData, Icons;
 import '../l10n/generated/app_localizations.dart';
 import 'package:path/path.dart' as p;
@@ -12,6 +11,7 @@ import '../models/term.dart';
 import '../service_locator.dart';
 import '../services/text_parser_service.dart';
 import '../utils/cover_image_helper.dart';
+import 'base_controller.dart';
 
 /// Sorting options for texts
 enum TextSortOption {
@@ -37,7 +37,7 @@ enum TextSortOption {
 /// View mode for texts screen
 enum TextViewMode { list, grid }
 
-class LibraryController extends ChangeNotifier {
+class LibraryController extends BaseController {
   final Language language;
   final _textParser = TextParserService();
 
@@ -59,24 +59,17 @@ class LibraryController extends ChangeNotifier {
   Map<int, int> get unknownCounts =>
       unknownCountsCache[language.id!] ??= {};
 
-  bool _isDisposed = false;
-
   LibraryController({required this.language}) {
     dataChanges.texts.addListener(_onDataChanged);
     dataChanges.collections.addListener(_onDataChanged);
   }
 
-  void _safeNotify() {
-    if (!_isDisposed) notifyListeners();
-  }
-
   void _onDataChanged() {
-    if (!_isDisposed) loadData();
+    if (!isDisposed) loadData();
   }
 
   @override
   void dispose() {
-    _isDisposed = true;
     dataChanges.texts.removeListener(_onDataChanged);
     dataChanges.collections.removeListener(_onDataChanged);
     super.dispose();
@@ -103,7 +96,7 @@ class LibraryController extends ChangeNotifier {
         prefs.getInt(_viewModeKey) ?? TextViewMode.list.index;
     viewMode = TextViewMode
         .values[viewModeIndex.clamp(0, TextViewMode.values.length - 1)];
-    _safeNotify();
+    safeNotify();
   }
 
   Future<void> _savePreferences() async {
@@ -119,7 +112,7 @@ class LibraryController extends ChangeNotifier {
   void toggleViewMode() {
     viewMode =
         viewMode == TextViewMode.list ? TextViewMode.grid : TextViewMode.list;
-    _safeNotify();
+    safeNotify();
     _savePreferences();
   }
 
@@ -130,13 +123,13 @@ class LibraryController extends ChangeNotifier {
       sortOption = option;
       sortAscending = option == TextSortOption.name;
     }
-    _safeNotify();
+    safeNotify();
     _savePreferences();
   }
 
   void toggleHideCompleted() {
     hideCompleted = !hideCompleted;
-    _safeNotify();
+    safeNotify();
     _savePreferences();
   }
 
@@ -172,7 +165,7 @@ class LibraryController extends ChangeNotifier {
 
   Future<void> loadData() async {
     isLoading = true;
-    _safeNotify();
+    safeNotify();
 
     final allCollections = await db.collections.getAll(
       languageId: language.id!,
@@ -190,7 +183,7 @@ class LibraryController extends ChangeNotifier {
     collections = allCollections;
     texts = filteredTexts;
     isLoading = false;
-    _safeNotify();
+    safeNotify();
 
     _calculateUnknownCountsAsync(filteredTexts);
   }
@@ -205,12 +198,12 @@ class LibraryController extends ChangeNotifier {
     final termsMap = await db.terms.getMapByLanguage(language.id!);
 
     for (final text in textsToCalculate) {
-      if (_isDisposed) return;
+      if (isDisposed) return;
       unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
       await Future<void>.delayed(Duration.zero);
     }
 
-    _safeNotify();
+    safeNotify();
   }
 
   int _calculateUnknownCount(TextDocument text, Map<String, Term> termsMap) {
@@ -346,7 +339,7 @@ class LibraryController extends ChangeNotifier {
   Future<void> recalculateUnknownCountForText(TextDocument text) async {
     final termsMap = await db.terms.getMapByLanguage(language.id!);
     unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
-    _safeNotify();
+    safeNotify();
   }
 
   // ── Collection navigation ──

@@ -25,6 +25,7 @@ import '../widgets/reader/reader_translation_dialog.dart';
 import '../widgets/term_dialog.dart';
 import '../widgets/word_list_drawer.dart';
 import '../utils/app_theme.dart';
+import '../utils/snackbar_helpers.dart';
 
 /// Layout, sizing, and timing constants for the reader screen
 abstract class _ReaderScreenConstants {
@@ -111,8 +112,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.errorLoadingTerms(e.toString()))),
+        SnackbarHelpers.showError(
+          context,
+          l10n.errorLoadingTerms(e.toString()),
         );
       }
     }
@@ -288,9 +290,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     if (!mounted) return;
 
     if (otherLanguages.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.noOtherLanguages)));
+      SnackbarHelpers.showInfo(context, l10n.noOtherLanguages);
       return;
     }
 
@@ -336,9 +336,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     final l10n = AppLocalizations.of(context);
     if (dictionaries.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.noDictionariesConfigured)));
+      SnackbarHelpers.showInfo(context, l10n.noDictionariesConfigured);
       return;
     }
 
@@ -432,9 +430,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     if (!await _aiExplanationService.isConfigured()) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.aiFeatureUnavailable)),
-      );
+      SnackbarHelpers.showInfo(context, l10n.aiFeatureUnavailable);
       return;
     }
 
@@ -486,9 +482,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       final detail = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : e.toString();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('$label: $detail')));
+      SnackbarHelpers.showError(context, '$label: $detail');
     }
   }
 
@@ -527,20 +521,19 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
-      builder: (context) => ReaderMarkAllKnownDialog(
+      builder: (dialogContext) => ReaderMarkAllKnownDialog(
         l10n: l10n,
         onConfirm: () async {
-          final messenger = ScaffoldMessenger.of(context);
-          Navigator.pop(context);
+          Navigator.pop(dialogContext);
           try {
             await ctrl.performMarkAllKnown();
-            messenger.showSnackBar(
-              SnackBar(content: Text(l10n.allWordsMarkedKnown)),
-            );
+            if (mounted && context.mounted) {
+              SnackbarHelpers.showSuccess(context, l10n.allWordsMarkedKnown);
+            }
           } catch (e) {
-            messenger.showSnackBar(
-              SnackBar(content: Text('${l10n.error}: $e')),
-            );
+            if (mounted && context.mounted) {
+              SnackbarHelpers.showError(context, '${l10n.error}: $e');
+            }
           }
         },
       ),
@@ -554,14 +547,11 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final newStatus = await ctrl.markAsFinished();
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            newStatus == TextStatus.finished
-                ? l10n.textMarkedFinished
-                : l10n.textMarkedInProgress,
-          ),
-        ),
+      SnackbarHelpers.showSuccess(
+        context,
+        newStatus == TextStatus.finished
+            ? l10n.textMarkedFinished
+            : l10n.textMarkedInProgress,
       );
     }
 
