@@ -27,6 +27,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get vocabulary => 'Словник';
 
   @override
+  String get words => 'слів';
+
+  @override
   String get stats => 'Статистика';
 
   @override

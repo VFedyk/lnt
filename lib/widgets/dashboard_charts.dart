@@ -678,7 +678,7 @@ class _StatusDistributionDonutChartState
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              'words',
+                              l10n.words,
                               style: TextStyle(
                                 fontSize: AppConstants.fontSizeCaption,
                                 color: AppConstants.subtitleColor,
@@ -741,17 +741,17 @@ class _StatusDistributionDonutChartState
     final l10n = AppLocalizations.of(context);
     switch (status) {
       case 0: // TermStatus.ignored
-        return 'Ignored';
+        return l10n.statusIgnored;
       case 1: // TermStatus.unknown
-        return 'Unknown';
+        return l10n.statusUnknown;
       case 2: // TermStatus.learning2 (grouped learning)
         return l10n.learning;
       case 5: // TermStatus.known
-        return 'Known';
+        return l10n.statusKnown;
       case 99: // TermStatus.wellKnown
-        return 'Well Known';
+        return l10n.statusWellKnown;
       default:
-        return 'Unknown';
+        return l10n.statusUnknown;
     }
   }
 

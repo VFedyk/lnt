@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Vocabulary'**
   String get vocabulary;
 
+  /// No description provided for @words.
+  ///
+  /// In en, this message translates to:
+  /// **'words'**
+  String get words;
+
   /// No description provided for @stats.
   ///
   /// In en, this message translates to:
