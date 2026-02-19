@@ -30,7 +30,7 @@ abstract class _LineChartConstants {
 abstract class _DonutChartConstants {
   static const double size = 180.0;
   static const double radius = 50.0;
-  static const double centerSpaceRadius = 40.0;
+  static const double centerSpaceRadius = 49.0;
   static const double minPercentageForLabel = 5.0;
 }
 
