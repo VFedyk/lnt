@@ -4,6 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/day_activity.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import 'custom_chart_tooltip.dart';
 
 abstract class _HeatmapConstants {
   static const double cellSize = 11.0;
@@ -15,16 +16,12 @@ abstract class _HeatmapConstants {
   static const double legendCellSize = 10.0;
   static const double legendSpacing = 2.0;
   static const int defaultWeeks = 26;
-  static const double tooltipWidth = 200.0;
-  static const double tooltipOffset = 20.0;
-  static const double tooltipElevation = 4.0;
   static const int intensityThreshold1 = 2;
   static const int intensityThreshold2 = 5;
   static const int intensityThreshold3 = 10;
   static const double intensityAlpha1 = 0.25;
   static const double intensityAlpha2 = 0.50;
   static const double intensityAlpha3 = 0.75;
-  static const Duration tooltipFadeInDuration = Duration(milliseconds: 200);
 }
 
 class ActivityHeatmap extends StatefulWidget {
@@ -47,6 +44,8 @@ class ActivityHeatmap extends StatefulWidget {
 
 class _ActivityHeatmapState extends State<ActivityHeatmap> {
   OverlayEntry? _tooltipOverlay;
+  String? _currentHoveredDateKey;
+  final GlobalKey _heatmapKey = GlobalKey();
 
   @override
   void dispose() {
@@ -132,6 +131,61 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
   void _removeTooltip() {
     _tooltipOverlay?.remove();
     _tooltipOverlay = null;
+    _currentHoveredDateKey = null;
+  }
+
+  void _handleHover(
+    BuildContext context,
+    PointerEvent event,
+    int weeksToShow,
+  ) {
+    if (!widget.useTooltip) return;
+
+    // Get render box for coordinate conversion
+    final RenderBox? renderBox = _heatmapKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final startDate = _getStartDate(weeksToShow);
+    final localPos = event.localPosition;
+
+    final col =
+        ((localPos.dx - _HeatmapConstants.dayLabelWidth) /
+                (_HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing))
+            .floor();
+    final row =
+        ((localPos.dy - _HeatmapConstants.monthLabelHeight) /
+                (_HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing))
+            .floor();
+
+    if (col < 0 ||
+        col >= weeksToShow ||
+        row < 0 ||
+        row >= _HeatmapConstants.daysInWeek) {
+      if (_currentHoveredDateKey != null) {
+        _removeTooltip();
+      }
+      return;
+    }
+
+    final date = startDate.add(Duration(days: col * 7 + row));
+    if (date.isAfter(DateTime.now())) {
+      if (_currentHoveredDateKey != null) {
+        _removeTooltip();
+      }
+      return;
+    }
+
+    final dateStr = DateFormat('yyyy-MM-dd').format(date);
+
+    // Only update tooltip if hovering over a different cell
+    if (_currentHoveredDateKey != dateStr) {
+      _currentHoveredDateKey = dateStr;
+      final activity = widget.activityData[dateStr] ?? const DayActivity();
+
+      // Convert local position to global
+      final globalPosition = renderBox.localToGlobal(localPos);
+      _showTooltip(context, globalPosition, date, activity);
+    }
   }
 
   void _showTooltip(
@@ -140,104 +194,55 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     DateTime date,
     DayActivity activity,
   ) {
-    _removeTooltip();
+    // Remove old tooltip overlay but keep the current hovered date key
+    _tooltipOverlay?.remove();
+    _tooltipOverlay = null;
 
     final l10n = AppLocalizations.of(context);
     final dateStr = DateFormat.yMMMd().format(date);
-    final overlay = Overlay.of(context);
-    final screenSize = MediaQuery.of(context).size;
 
-    _tooltipOverlay = OverlayEntry(
-      builder: (context) {
-        double left = globalPos.dx - _HeatmapConstants.tooltipWidth / 2;
-        if (left < AppConstants.spacingS) {
-          left = AppConstants.spacingS;
-        }
-        if (left + _HeatmapConstants.tooltipWidth >
-            screenSize.width - AppConstants.spacingS) {
-          left =
-              screenSize.width -
-              _HeatmapConstants.tooltipWidth -
-              AppConstants.spacingS;
-        }
-        final top = globalPos.dy - 120;
+    // Calculate chart bounds to constrain tooltip within the heatmap area
+    final RenderBox? renderBox = _heatmapKey.currentContext?.findRenderObject() as RenderBox?;
+    Rect? chartBounds;
+    if (renderBox != null) {
+      final position = renderBox.localToGlobal(Offset.zero);
+      final size = renderBox.size;
+      chartBounds = Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
+    }
 
-        return TweenAnimationBuilder<double>(
-          duration: _HeatmapConstants.tooltipFadeInDuration,
-          tween: Tween(begin: 0.0, end: 1.0),
-          curve: Curves.easeOut,
-          builder: (context, opacity, child) {
-            return Opacity(
-              opacity: opacity,
-              child: child!,
-            );
-          },
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _removeTooltip,
-                ),
-              ),
-              Positioned(
-                left: left,
-                top: top < AppConstants.spacingS
-                    ? globalPos.dy + _HeatmapConstants.tooltipOffset
-                    : top,
-                child: Material(
-                  elevation: _HeatmapConstants.tooltipElevation,
-                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
-                  child: Container(
-                    width: _HeatmapConstants.tooltipWidth,
-                    padding: const EdgeInsets.all(AppConstants.spacingM),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.borderRadiusM,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          dateStr,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: AppConstants.spacingS),
-                        _buildDetailRow(
-                          context,
-                          Icons.menu_book,
-                          l10n.textsCompleted,
-                          activity.textsCompleted,
-                        ),
-                        const SizedBox(height: AppConstants.spacingXS),
-                        _buildDetailRow(
-                          context,
-                          Icons.add_circle_outline,
-                          l10n.wordsAdded,
-                          activity.wordsAdded,
-                        ),
-                        const SizedBox(height: AppConstants.spacingXS),
-                        _buildDetailRow(
-                          context,
-                          Icons.school_outlined,
-                          l10n.wordsReviewed,
-                          activity.wordsReviewed,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    _tooltipOverlay = CustomChartTooltip.showTooltip(
+      context: context,
+      position: globalPos,
+      title: dateStr,
+      rows: [
+        TooltipRow(
+          icon: Icons.menu_book,
+          label: l10n.textsCompleted,
+          value: activity.textsCompleted.toString(),
+          iconColor: AppConstants.subtitleColor,
+          labelColor: Theme.of(context).textTheme.bodyMedium?.color,
+          valueColor: Theme.of(context).textTheme.bodyMedium?.color,
+        ),
+        TooltipRow(
+          icon: Icons.add_circle_outline,
+          label: l10n.wordsAdded,
+          value: activity.wordsAdded.toString(),
+          iconColor: AppConstants.subtitleColor,
+          labelColor: Theme.of(context).textTheme.bodyMedium?.color,
+          valueColor: Theme.of(context).textTheme.bodyMedium?.color,
+        ),
+        TooltipRow(
+          icon: Icons.school_outlined,
+          label: l10n.wordsReviewed,
+          value: activity.wordsReviewed.toString(),
+          iconColor: AppConstants.subtitleColor,
+          labelColor: Theme.of(context).textTheme.bodyMedium?.color,
+          valueColor: Theme.of(context).textTheme.bodyMedium?.color,
+        ),
+      ],
+      onDismiss: _removeTooltip,
+      chartBounds: chartBounds,
     );
-
-    overlay.insert(_tooltipOverlay!);
   }
 
   void _showDayDialog(
@@ -404,21 +409,27 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: GestureDetector(
-        onTapUp: (details) => _handleTap(context, details, weeksToShow),
-        child: CustomPaint(
-          size: Size(gridWidth, gridHeight),
-          painter: _HeatmapPainter(
-            activityData: widget.activityData,
-            startDate: startDate,
-            weeksToShow: weeksToShow,
-            primary: primary,
-            emptyColor: emptyColor,
-            textColor: AppConstants.subtitleColor,
-            intensityLevel: _intensityLevel,
-            colorForIntensity: (level) =>
-                _colorForIntensity(level, primary, emptyColor),
-            locale: Localizations.localeOf(context).languageCode,
+      child: MouseRegion(
+        key: _heatmapKey,
+        onHover: (event) => _handleHover(context, event, weeksToShow),
+        onExit: (_) => _removeTooltip(),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapUp: (details) => _handleTap(context, details, weeksToShow),
+          child: CustomPaint(
+            size: Size(gridWidth, gridHeight),
+            painter: _HeatmapPainter(
+              activityData: widget.activityData,
+              startDate: startDate,
+              weeksToShow: weeksToShow,
+              primary: primary,
+              emptyColor: emptyColor,
+              textColor: AppConstants.subtitleColor,
+              intensityLevel: _intensityLevel,
+              colorForIntensity: (level) =>
+                  _colorForIntensity(level, primary, emptyColor),
+              locale: Localizations.localeOf(context).languageCode,
+            ),
           ),
         ),
       ),

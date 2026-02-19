@@ -5,6 +5,8 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/chart_data.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import '../utils/helpers.dart';
+import 'custom_chart_tooltip.dart';
 
 // Constants for daily activity bar chart
 abstract class _BarChartConstants {
@@ -33,7 +35,7 @@ abstract class _DonutChartConstants {
 }
 
 /// Daily activity bar chart showing reviews, words added, and texts finished.
-class DailyActivityBarChart extends StatelessWidget {
+class DailyActivityBarChart extends StatefulWidget {
   final List<DailyActivityChartData> data;
   final double height;
 
@@ -42,6 +44,93 @@ class DailyActivityBarChart extends StatelessWidget {
     required this.data,
     this.height = _BarChartConstants.mobileHeight,
   });
+
+  @override
+  State<DailyActivityBarChart> createState() => _DailyActivityBarChartState();
+}
+
+class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
+  OverlayEntry? _tooltipOverlay;
+  final GlobalKey _chartKey = GlobalKey();
+  int? _currentTouchedBar;
+
+  @override
+  void dispose() {
+    _removeTooltip();
+    super.dispose();
+  }
+
+  void _removeTooltip() {
+    _tooltipOverlay?.remove();
+    _tooltipOverlay = null;
+    _currentTouchedBar = null;
+  }
+
+  void _showBarTooltip(
+    BuildContext context,
+    int barIndex,
+    Offset localPosition,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    AppColors appColors,
+  ) {
+    // Only remove tooltip if we don't have one yet (prevents blinking)
+    _tooltipOverlay?.remove();
+    _tooltipOverlay = null;
+
+    final item = widget.data[barIndex];
+    final dateStr = DateFormat('MMM d').format(item.date);
+
+    // Get chart bounds
+    final RenderBox? renderBox = _chartKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final chartPosition = renderBox.localToGlobal(Offset.zero);
+    final chartSize = renderBox.size;
+    final chartBounds = Rect.fromLTWH(
+      chartPosition.dx,
+      chartPosition.dy,
+      chartSize.width,
+      chartSize.height,
+    );
+
+    // Convert local position to global
+    final globalPosition = renderBox.localToGlobal(localPosition);
+
+    _tooltipOverlay = CustomChartTooltip.showTooltip(
+      context: context,
+      position: globalPosition,
+      title: dateStr,
+      rows: [
+        TooltipRow(
+          icon: Icons.school_outlined,
+          label: l10n.wordsReviewed,
+          value: item.reviews.toString(),
+          iconColor: colorScheme.primary,
+          labelColor: Theme.of(context).textTheme.bodyMedium?.color,
+          valueColor: colorScheme.primary,
+        ),
+        TooltipRow(
+          icon: Icons.add_circle_outline,
+          label: l10n.wordsAdded,
+          value: item.wordsAdded.toString(),
+          iconColor: appColors.warning,
+          labelColor: Theme.of(context).textTheme.bodyMedium?.color,
+          valueColor: appColors.warning,
+        ),
+        TooltipRow(
+          icon: Icons.menu_book,
+          label: l10n.textsCompleted,
+          value: item.textsFinished.toString(),
+          iconColor: appColors.success,
+          labelColor: Theme.of(context).textTheme.bodyMedium?.color,
+          valueColor: appColors.success,
+        ),
+      ],
+      onDismiss: _removeTooltip,
+      chartBounds: chartBounds,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,70 +152,54 @@ class DailyActivityBarChart extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spacingL),
             SizedBox(
-              height: height,
-              child: data.isEmpty
+              height: widget.height,
+              child: widget.data.isEmpty
                   ? Center(
                       child: Text(
                         'No activity data',
                         style: TextStyle(color: AppConstants.subtitleColor),
                       ),
                     )
-                  : BarChart(
-                      BarChartData(
-                        alignment: BarChartAlignment.spaceEvenly,
-                        maxY: _calculateMaxY(),
-                        barTouchData: BarTouchData(
-                          enabled: true,
-                          touchTooltipData: BarTouchTooltipData(
-                            fitInsideHorizontally: true,
-                            fitInsideVertically: true,
-                            getTooltipColor: (group) =>
-                                colorScheme.surfaceContainerHigh,
-                            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                              final date = data[group.x.toInt()].date;
-                              final dateStr = DateFormat('MMM d').format(date);
-                              final reviews = data[group.x.toInt()].reviews;
-                              final wordsAdded =
-                                  data[group.x.toInt()].wordsAdded;
-                              final textsFinished =
-                                  data[group.x.toInt()].textsFinished;
+                  : MouseRegion(
+                      key: _chartKey,
+                      child: BarChart(
+                        BarChartData(
+                          alignment: BarChartAlignment.spaceEvenly,
+                          maxY: _calculateMaxY(),
+                          barTouchData: BarTouchData(
+                            enabled: PlatformHelper.isDesktop,
+                            touchTooltipData: BarTouchTooltipData(
+                              // Disable built-in tooltip rendering
+                              getTooltipItem: (group, groupIndex, rod, rodIndex) => null,
+                            ),
+                            touchCallback: (event, response) {
+                              if (response == null || response.spot == null || event.localPosition == null) {
+                                _removeTooltip();
+                                return;
+                              }
 
-                              return BarTooltipItem(
-                                '$dateStr\n',
-                                TextStyle(
-                                  color: colorScheme.onSurface,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text: l10n.chartTooltipReviews(reviews),
-                                    style: TextStyle(
-                                      color: colorScheme.primary,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text:
-                                        '\n${l10n.chartTooltipWordsAdded(wordsAdded)}',
-                                    style: TextStyle(
-                                      color: appColors.warning,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text:
-                                        '\n${l10n.chartTooltipTextsFinished(textsFinished)}',
-                                    style: TextStyle(
-                                      color: appColors.success,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              );
+                              final barIndex = response.spot!.touchedBarGroupIndex;
+                              if (barIndex < 0 || barIndex >= widget.data.length) {
+                                _removeTooltip();
+                                return;
+                              }
+
+                              // Only update if different bar
+                              if (_currentTouchedBar != barIndex) {
+                                _currentTouchedBar = barIndex;
+                                _showBarTooltip(
+                                  context,
+                                  barIndex,
+                                  event.localPosition!,
+                                  l10n,
+                                  colorScheme,
+                                  appColors,
+                                );
+                              }
                             },
+                            handleBuiltInTouches: true,
                           ),
-                        ),
-                        titlesData: FlTitlesData(
+                          titlesData: FlTitlesData(
                           show: true,
                           bottomTitles: AxisTitles(
                             sideTitles: SideTitles(
@@ -136,10 +209,10 @@ class DailyActivityBarChart extends StatelessWidget {
                                 if (value.toInt() % 5 != 0) {
                                   return const SizedBox();
                                 }
-                                if (value.toInt() >= data.length) {
+                                if (value.toInt() >= widget.data.length) {
                                   return const SizedBox();
                                 }
-                                final date = data[value.toInt()].date;
+                                final date = widget.data[value.toInt()].date;
                                 return Padding(
                                   padding: const EdgeInsets.only(
                                     top: AppConstants.spacingS,
@@ -199,6 +272,7 @@ class DailyActivityBarChart extends StatelessWidget {
                       duration: _BarChartConstants.animationDuration,
                       curve: _BarChartConstants.animationCurve,
                     ),
+                  ),
             ),
           ],
         ),
@@ -207,8 +281,8 @@ class DailyActivityBarChart extends StatelessWidget {
   }
 
   double _calculateMaxY() {
-    if (data.isEmpty) return 10;
-    final maxTotal = data.map((d) => d.total).reduce((a, b) => a > b ? a : b);
+    if (widget.data.isEmpty) return 10;
+    final maxTotal = widget.data.map((d) => d.total).reduce((a, b) => a > b ? a : b);
     return (maxTotal * 1.2).ceilToDouble();
   }
 
@@ -216,7 +290,7 @@ class DailyActivityBarChart extends StatelessWidget {
     ColorScheme colorScheme,
     AppColors appColors,
   ) {
-    return data.asMap().entries.map((entry) {
+    return widget.data.asMap().entries.map((entry) {
       final index = entry.key;
       final item = entry.value;
 
@@ -244,7 +318,7 @@ class DailyActivityBarChart extends StatelessWidget {
 }
 
 /// Vocabulary growth line chart showing cumulative known words over time.
-class VocabularyGrowthLineChart extends StatelessWidget {
+class VocabularyGrowthLineChart extends StatefulWidget {
   final List<VocabularyGrowthChartData> data;
   final double height;
 
@@ -253,6 +327,75 @@ class VocabularyGrowthLineChart extends StatelessWidget {
     required this.data,
     this.height = _LineChartConstants.mobileHeight,
   });
+
+  @override
+  State<VocabularyGrowthLineChart> createState() => _VocabularyGrowthLineChartState();
+}
+
+class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
+  OverlayEntry? _tooltipOverlay;
+  final GlobalKey _chartKey = GlobalKey();
+  int? _currentTouchedSpot;
+
+  @override
+  void dispose() {
+    _removeTooltip();
+    super.dispose();
+  }
+
+  void _removeTooltip() {
+    _tooltipOverlay?.remove();
+    _tooltipOverlay = null;
+    _currentTouchedSpot = null;
+  }
+
+  void _showLineTooltip(
+    BuildContext context,
+    int spotIndex,
+    Offset localPosition,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
+    _tooltipOverlay?.remove();
+    _tooltipOverlay = null;
+
+    final item = widget.data[spotIndex];
+    final dateStr = DateFormat('MMM d').format(item.date);
+
+    // Get chart bounds
+    final RenderBox? renderBox = _chartKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final chartPosition = renderBox.localToGlobal(Offset.zero);
+    final chartSize = renderBox.size;
+    final chartBounds = Rect.fromLTWH(
+      chartPosition.dx,
+      chartPosition.dy,
+      chartSize.width,
+      chartSize.height,
+    );
+
+    // Convert local position to global
+    final globalPosition = renderBox.localToGlobal(localPosition);
+
+    _tooltipOverlay = CustomChartTooltip.showTooltip(
+      context: context,
+      position: globalPosition,
+      title: dateStr,
+      rows: [
+        TooltipRow(
+          icon: Icons.abc,
+          label: 'Total words',
+          value: item.totalKnownWords.toString(),
+          iconColor: colorScheme.primary,
+          labelColor: Theme.of(context).textTheme.bodyMedium?.color,
+          valueColor: colorScheme.primary,
+        ),
+      ],
+      onDismiss: _removeTooltip,
+      chartBounds: chartBounds,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -273,39 +416,54 @@ class VocabularyGrowthLineChart extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spacingL),
             SizedBox(
-              height: height,
-              child: data.isEmpty
+              height: widget.height,
+              child: widget.data.isEmpty
                   ? Center(
                       child: Text(
                         'No vocabulary data',
                         style: TextStyle(color: AppConstants.subtitleColor),
                       ),
                     )
-                  : LineChart(
-                      LineChartData(
-                        lineTouchData: LineTouchData(
-                          enabled: true,
-                          touchTooltipData: LineTouchTooltipData(
-                            fitInsideHorizontally: true,
-                            fitInsideVertically: true,
-                            getTooltipColor: (touchedSpot) =>
-                                colorScheme.surfaceContainerHigh,
-                            getTooltipItems: (touchedSpots) {
-                              return touchedSpots.map((spot) {
-                                final date = data[spot.x.toInt()].date;
-                                final words = spot.y.toInt();
-                                return LineTooltipItem(
-                                  '${DateFormat('MMM d').format(date)}\n$words words',
-                                  TextStyle(
-                                    color: colorScheme.onSurface,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                );
-                              }).toList();
+                  : MouseRegion(
+                      key: _chartKey,
+                      child: LineChart(
+                        LineChartData(
+                          lineTouchData: LineTouchData(
+                            enabled: PlatformHelper.isDesktop,
+                            touchTooltipData: LineTouchTooltipData(
+                              // Disable built-in tooltip rendering
+                              getTooltipItems: (touchedSpots) => touchedSpots.map((spot) => null).toList(),
+                            ),
+                            touchCallback: (event, response) {
+                              if (response == null || response.lineBarSpots == null || response.lineBarSpots!.isEmpty) {
+                                _removeTooltip();
+                                return;
+                              }
+
+                              final spot = response.lineBarSpots!.first;
+                              final spotIndex = spot.x.toInt();
+                              if (spotIndex < 0 || spotIndex >= widget.data.length) {
+                                _removeTooltip();
+                                return;
+                              }
+
+                              // Only update if different spot
+                              if (_currentTouchedSpot != spotIndex) {
+                                _currentTouchedSpot = spotIndex;
+                                if (event.localPosition != null) {
+                                  _showLineTooltip(
+                                    context,
+                                    spotIndex,
+                                    event.localPosition!,
+                                    l10n,
+                                    colorScheme,
+                                  );
+                                }
+                              }
                             },
+                            handleBuiltInTouches: true,
                           ),
-                        ),
-                        titlesData: FlTitlesData(
+                          titlesData: FlTitlesData(
                           show: true,
                           bottomTitles: AxisTitles(
                             sideTitles: SideTitles(
@@ -316,10 +474,10 @@ class VocabularyGrowthLineChart extends StatelessWidget {
                                 if (value.toInt() % 5 != 0) {
                                   return const SizedBox();
                                 }
-                                if (value.toInt() >= data.length) {
+                                if (value.toInt() >= widget.data.length) {
                                   return const SizedBox();
                                 }
-                                final date = data[value.toInt()].date;
+                                final date = widget.data[value.toInt()].date;
                                 return Padding(
                                   padding: const EdgeInsets.only(
                                     top: AppConstants.spacingS,
@@ -374,12 +532,12 @@ class VocabularyGrowthLineChart extends StatelessWidget {
                         ),
                         borderData: FlBorderData(show: false),
                         minX: 0,
-                        maxX: (data.length - 1).toDouble(),
+                        maxX: (widget.data.length - 1).toDouble(),
                         minY: _calculateMinY(),
                         maxY: _calculateMaxY(),
                         lineBarsData: [
                           LineChartBarData(
-                            spots: data
+                            spots: widget.data
                                 .asMap()
                                 .entries
                                 .map(
@@ -415,6 +573,7 @@ class VocabularyGrowthLineChart extends StatelessWidget {
                       duration: _LineChartConstants.animationDuration,
                       curve: _LineChartConstants.animationCurve,
                     ),
+                  ),
             ),
           ],
         ),
@@ -423,16 +582,16 @@ class VocabularyGrowthLineChart extends StatelessWidget {
   }
 
   double _calculateMinY() {
-    if (data.isEmpty) return 0;
-    final minWords = data
+    if (widget.data.isEmpty) return 0;
+    final minWords = widget.data
         .map((d) => d.totalKnownWords)
         .reduce((a, b) => a < b ? a : b);
     return (minWords * 0.9).floorToDouble();
   }
 
   double _calculateMaxY() {
-    if (data.isEmpty) return 100;
-    final maxWords = data
+    if (widget.data.isEmpty) return 100;
+    final maxWords = widget.data
         .map((d) => d.totalKnownWords)
         .reduce((a, b) => a > b ? a : b);
     return (maxWords * 1.1).ceilToDouble();

@@ -205,11 +205,11 @@ class _DashboardTabState extends State<DashboardTab> {
         days: chartDays,
       );
 
-      final knownCount =
-          (counts[TermStatus.known] ?? 0) + (counts[TermStatus.wellKnown] ?? 0);
+      // Calculate total word count (all statuses)
+      final totalWordCount = counts.values.fold<int>(0, (sum, count) => sum + count);
       final vocabularyGrowthData = ChartHelpers.buildVocabularyGrowthChartData(
         wordsAddedByDay: chartWordsAdded,
-        currentKnownCount: knownCount,
+        currentKnownCount: totalWordCount,
         days: chartDays,
       );
 

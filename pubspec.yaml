@@ -62,7 +62,7 @@ dependencies:
   icloud_storage: ^2.1.0
   archive: ^4.0.4
   flutter_tts: ^4.2.0
-  fl_chart: ^0.69.2
+  fl_chart: ^1.1.1
   flutter_markdown: ^0.7.7+1
 
 dev_dependencies:

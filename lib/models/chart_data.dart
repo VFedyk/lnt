@@ -19,7 +19,7 @@ class DailyActivityChartData {
 }
 
 /// Data model for vocabulary growth line chart.
-/// Holds cumulative total of known words for a single date.
+/// Holds cumulative total of words for a single date.
 class VocabularyGrowthChartData {
   final DateTime date;
   final int totalKnownWords;

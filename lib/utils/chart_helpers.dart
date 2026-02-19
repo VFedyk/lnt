@@ -34,7 +34,7 @@ abstract class ChartHelpers {
 
   /// Builds vocabulary growth chart data for the last [days] days.
   ///
-  /// Calculates cumulative word counts by working backwards from [currentKnownCount],
+  /// Calculates cumulative word counts by working backwards from current total,
   /// subtracting daily additions to determine historical totals.
   /// Values are clamped to never go below 0.
   static List<VocabularyGrowthChartData> buildVocabularyGrowthChartData({
