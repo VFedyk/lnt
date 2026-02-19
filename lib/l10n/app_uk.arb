@@ -406,7 +406,7 @@
     }
   },
   "noTranslationsToReview": "Немає карток з перекладами для повторення",
-  "streakDays": "{count, plural, =1{1 день поспіль} few{{count} дні поспіль} other{{count} днів поспіль}}",
+  "streakDays": "{count, plural, one{{count} день поспіль} few{{count} дні поспіль} other{{count} днів поспіль}}",
   "@streakDays": {
     "placeholders": {
       "count": {

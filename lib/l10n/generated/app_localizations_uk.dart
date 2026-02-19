@@ -1204,7 +1204,7 @@ class AppLocalizationsUk extends AppLocalizations {
       locale: localeName,
       other: '$count днів поспіль',
       few: '$count дні поспіль',
-      one: '1 день поспіль',
+      one: '$count день поспіль',
     );
     return '$_temp0';
   }

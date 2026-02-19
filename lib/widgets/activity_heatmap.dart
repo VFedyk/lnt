@@ -327,31 +327,27 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   l10n.activityHeatmap,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                if (widget.streakDays != null && widget.streakDays! > 0)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.local_fire_department,
-                        size: AppConstants.iconSizeS,
-                        color: context.appColors.streak,
-                      ),
-                      const SizedBox(width: AppConstants.spacingXS),
-                      Text(
-                        l10n.streakDays(widget.streakDays!),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: context.appColors.streak,
-                        ),
-                      ),
-                    ],
+                if (widget.streakDays != null && widget.streakDays! > 0) ...[
+                  const Spacer(),
+                  Icon(
+                    Icons.local_fire_department,
+                    size: AppConstants.iconSizeS,
+                    color: context.appColors.streak,
                   ),
+                  const SizedBox(width: AppConstants.spacingXS),
+                  Text(
+                    l10n.streakDays(widget.streakDays!),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: context.appColors.streak,
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: AppConstants.spacingM),

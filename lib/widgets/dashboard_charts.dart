@@ -162,6 +162,7 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
                     )
                   : MouseRegion(
                       key: _chartKey,
+                      onExit: (_) => _removeTooltip(),
                       child: BarChart(
                         BarChartData(
                           alignment: BarChartAlignment.spaceEvenly,
@@ -426,6 +427,7 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
                     )
                   : MouseRegion(
                       key: _chartKey,
+                      onExit: (_) => _removeTooltip(),
                       child: LineChart(
                         LineChartData(
                           lineTouchData: LineTouchData(
