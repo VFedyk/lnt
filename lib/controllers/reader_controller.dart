@@ -153,6 +153,34 @@ class ReaderController extends BaseController {
     }
 
     otherLanguageTerms = result;
+    _rebindWordTokens();
+  }
+
+  void _rebindWordTokens() {
+    wordTokens = wordTokens.map((token) {
+      if (!token.isWord) return token;
+
+      final lowerWord = _textParser.normalizeWord(token.text);
+      if (otherLanguageTerms.containsKey(lowerWord)) {
+        if (token.term == null) return token;
+        return WordToken(
+          text: token.text,
+          isWord: true,
+          term: null,
+          position: token.position,
+        );
+      }
+
+      final mappedTerm = termsMap[lowerWord];
+      if (token.term?.id == mappedTerm?.id) return token;
+      return WordToken(
+        text: token.text,
+        isWord: true,
+        term: mappedTerm,
+        position: token.position,
+      );
+    }).toList();
+    _groupIntoParagraphs();
   }
 
   void _groupIntoParagraphs() {
@@ -337,7 +365,8 @@ class ReaderController extends BaseController {
       }
       termsById[termId] = termWithId;
       await updateTermInPlace(termWithId);
-      if (otherLanguageTerms.containsKey(termWithId.lowerText)) {
+      if (termWithId.languageId == language.id &&
+          otherLanguageTerms.containsKey(termWithId.lowerText)) {
         await db.textForeignWords.deleteWord(text.id!, termWithId.lowerText);
         otherLanguageTerms.remove(termWithId.lowerText);
       }
@@ -354,7 +383,8 @@ class ReaderController extends BaseController {
         if (t.id != null) translationsById[t.id!] = t;
       }
       await updateTermInPlace(term);
-      if (otherLanguageTerms.containsKey(term.lowerText)) {
+      if (term.languageId == language.id &&
+          otherLanguageTerms.containsKey(term.lowerText)) {
         await db.textForeignWords.deleteWord(text.id!, term.lowerText);
         otherLanguageTerms.remove(term.lowerText);
       }
@@ -441,10 +471,19 @@ class ReaderController extends BaseController {
     safeNotify();
   }
 
+  WordToken? getWordTokenByGlobalIndex(int globalIndex) {
+    for (final token in wordTokens) {
+      if (token.globalIndex == globalIndex) return token;
+    }
+    return null;
+  }
+
   String getSelectedWordsText() {
     final selectedTokens = selectedWordIndices.toList()..sort();
     return selectedTokens
-        .map((i) => wordTokens[i].text)
+        .map(getWordTokenByGlobalIndex)
+        .whereType<WordToken>()
+        .map((t) => t.text)
         .join(language.splitByCharacter ? '' : ' ');
   }
 
@@ -453,6 +492,7 @@ class ReaderController extends BaseController {
   Future<void> removeForeignMarking(String lowerWord) async {
     await db.textForeignWords.deleteWord(text.id!, lowerWord);
     otherLanguageTerms.remove(lowerWord);
+    _rebindWordTokens();
     _updateTextTermCounts();
     safeNotify();
   }

@@ -7,6 +7,7 @@ import '../models/language.dart';
 import '../models/text_document.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
+import '../models/word_token.dart';
 import '../service_locator.dart';
 import '../services/ai_explanation_service.dart';
 import '../services/dictionary_service.dart';
@@ -300,7 +301,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
     final lowerWords = selectedTokens
-        .map((i) => ctrl.wordTokens[i].text.toLowerCase())
+        .map(ctrl.getWordTokenByGlobalIndex)
+        .whereType<WordToken>()
+        .map((t) => ctrl.normalizeWord(t.text))
         .toSet()
         .toList();
 
@@ -322,7 +325,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
     final selectedWords = selectedTokens
-        .map((i) => ctrl.wordTokens[i].text)
+        .map(ctrl.getWordTokenByGlobalIndex)
+        .whereType<WordToken>()
+        .map((t) => t.text)
         .join(' ');
 
     final dictionaries = await _dictService.getActiveDictionaries(
@@ -360,7 +365,11 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final existingTerm = ctrl.termsMap[lowerWords];
 
     final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
-    final firstToken = ctrl.wordTokens[selectedTokens.first];
+    final firstToken = ctrl.getWordTokenByGlobalIndex(selectedTokens.first);
+    if (firstToken == null) {
+      ctrl.cancelSelection();
+      return;
+    }
     final sentence = ctrl.getSentenceForPosition(firstToken.position);
 
     final dictionaries = await _dictService.getActiveDictionaries(
@@ -432,7 +441,11 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     final selectedWords = ctrl.getSelectedWordsText();
     final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
-    final firstToken = ctrl.wordTokens[selectedTokens.first];
+    final firstToken = ctrl.getWordTokenByGlobalIndex(selectedTokens.first);
+    if (firstToken == null) {
+      ctrl.cancelSelection();
+      return;
+    }
     final sentence = ctrl.getSentenceForPosition(firstToken.position);
 
     if (!mounted) return;
