@@ -6,6 +6,10 @@ import 'text_parser_service.dart';
 class ParseInput {
   final String content;
   final bool splitByCharacter;
+  // useWordSegmentation (jieba) is intentionally NOT supported in the isolate:
+  // jieba requires async asset loading via Flutter's rootBundle, which is
+  // unavailable in a background isolate. Chinese texts using word segmentation
+  // are parsed on the main isolate via ReaderController instead.
   final String characterSubstitutions;
   final String regexpWordCharacters;
   final Map<String, Map<String, dynamic>> termsMapData; // Serialized terms
@@ -39,6 +43,10 @@ List<ParsedToken> parseInIsolate(ParseInput input) {
   final totalStopwatch = Stopwatch()..start();
   final stepWatch = Stopwatch();
 
+  // No ChineseSegmentationService here — jieba cannot be initialised inside
+  // a background isolate (no Flutter asset bundle access). Chinese languages
+  // with useWordSegmentation fall back to character-level splitting in the
+  // isolate; word-level parsing for those texts happens on the main isolate.
   final parser = TextParserService();
   final tokens = <ParsedToken>[];
   final content = input.content;

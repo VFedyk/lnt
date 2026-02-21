@@ -15,7 +15,8 @@ import 'utils/cover_image_helper.dart';
 import 'utils/app_theme.dart';
 import 'utils/helpers.dart';
 
-final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,7 @@ void main() async {
   }
 
   setupServiceLocator();
+  await chineseSegService.init();
   await db.database;
   await CoverImageHelper.initialize();
   reviewService.initialize();
@@ -133,10 +135,7 @@ class _LNTAppState extends State<LNTApp> with WindowListener {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            supportedLocales: const [
-              Locale('en'),
-              Locale('uk'),
-            ],
+            supportedLocales: const [Locale('en'), Locale('uk')],
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
             navigatorObservers: [routeObserver],
@@ -210,5 +209,4 @@ class AppState extends ChangeNotifier {
     }
     notifyListeners();
   }
-
 }

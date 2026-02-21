@@ -5,6 +5,9 @@ class Language {
   final bool rightToLeft;
   final bool showRomanization;
   final bool splitByCharacter; // For languages like Chinese/Japanese
+  // When true, uses jieba word-level segmentation instead of per-character split.
+  // Intended for Mandarin Chinese. Requires splitByCharacter to also be true.
+  final bool useWordSegmentation;
   final String characterSubstitutions;
   final String regexpWordCharacters;
   final String regexpSplitSentences;
@@ -17,6 +20,7 @@ class Language {
     this.rightToLeft = false,
     this.showRomanization = false,
     this.splitByCharacter = false,
+    this.useWordSegmentation = false,
     this.characterSubstitutions = '',
     this.regexpWordCharacters = r"[\p{L}\p{M}]+(?:['''][\p{L}\p{M}]+)*",
     this.regexpSplitSentences = r'[.!?]+',
@@ -31,6 +35,7 @@ class Language {
       'right_to_left': rightToLeft ? 1 : 0,
       'show_romanization': showRomanization ? 1 : 0,
       'split_by_character': splitByCharacter ? 1 : 0,
+      'use_word_segmentation': useWordSegmentation ? 1 : 0,
       'character_substitutions': characterSubstitutions,
       'regexp_word_characters': regexpWordCharacters,
       'regexp_split_sentences': regexpSplitSentences,
@@ -46,6 +51,7 @@ class Language {
       rightToLeft: map['right_to_left'] == 1,
       showRomanization: map['show_romanization'] == 1,
       splitByCharacter: map['split_by_character'] == 1,
+      useWordSegmentation: map['use_word_segmentation'] == 1,
       characterSubstitutions: map['character_substitutions'] ?? '',
       regexpWordCharacters:
           map['regexp_word_characters'] ??
@@ -58,13 +64,41 @@ class Language {
   /// Returns a flag emoji for this language, or empty string if unknown.
   String get flagEmoji {
     const langToCountry = {
-      'ar': 'SA', 'bg': 'BG', 'cs': 'CZ', 'da': 'DK', 'de': 'DE',
-      'el': 'GR', 'en': 'GB', 'es': 'ES', 'et': 'EE', 'fi': 'FI',
-      'fr': 'FR', 'ga': 'IE', 'he': 'IL', 'hi': 'IN', 'hu': 'HU',
-      'id': 'ID', 'it': 'IT', 'ja': 'JP', 'ko': 'KR', 'lt': 'LT',
-      'lv': 'LV', 'nb': 'NO', 'nl': 'NL', 'pl': 'PL', 'pt': 'PT',
-      'ro': 'RO', 'ru': 'RU', 'sk': 'SK', 'sl': 'SI', 'sv': 'SE',
-      'th': 'TH', 'tr': 'TR', 'uk': 'UA', 'vi': 'VN', 'zh': 'CN',
+      'ar': 'SA',
+      'bg': 'BG',
+      'cs': 'CZ',
+      'da': 'DK',
+      'de': 'DE',
+      'el': 'GR',
+      'en': 'GB',
+      'es': 'ES',
+      'et': 'EE',
+      'fi': 'FI',
+      'fr': 'FR',
+      'ga': 'IE',
+      'he': 'IL',
+      'hi': 'IN',
+      'hu': 'HU',
+      'id': 'ID',
+      'it': 'IT',
+      'ja': 'JP',
+      'ko': 'KR',
+      'lt': 'LT',
+      'lv': 'LV',
+      'nb': 'NO',
+      'nl': 'NL',
+      'pl': 'PL',
+      'pt': 'PT',
+      'ro': 'RO',
+      'ru': 'RU',
+      'sk': 'SK',
+      'sl': 'SI',
+      'sv': 'SE',
+      'th': 'TH',
+      'tr': 'TR',
+      'uk': 'UA',
+      'vi': 'VN',
+      'zh': 'CN',
     };
     final country = langToCountry[languageCode.toLowerCase()];
     if (country == null || country.length != 2) return '';
@@ -80,6 +114,7 @@ class Language {
     bool? rightToLeft,
     bool? showRomanization,
     bool? splitByCharacter,
+    bool? useWordSegmentation,
     String? characterSubstitutions,
     String? regexpWordCharacters,
     String? regexpSplitSentences,
@@ -92,6 +127,7 @@ class Language {
       rightToLeft: rightToLeft ?? this.rightToLeft,
       showRomanization: showRomanization ?? this.showRomanization,
       splitByCharacter: splitByCharacter ?? this.splitByCharacter,
+      useWordSegmentation: useWordSegmentation ?? this.useWordSegmentation,
       characterSubstitutions:
           characterSubstitutions ?? this.characterSubstitutions,
       regexpWordCharacters: regexpWordCharacters ?? this.regexpWordCharacters,

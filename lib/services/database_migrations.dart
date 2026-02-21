@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 12;
+const int databaseVersion = 13;
 
 /// Handle database upgrades from older versions
 Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -37,7 +37,9 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
         FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
       )
     ''');
-    await db.execute('CREATE INDEX idx_translations_term ON translations(term_id)');
+    await db.execute(
+      'CREATE INDEX idx_translations_term ON translations(term_id)',
+    );
 
     // Migrate existing translations from terms table
     await db.execute('''
@@ -47,7 +49,9 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
   }
   if (oldVersion < 8) {
     // Add base_translation_id column (replaces base_form TEXT which is left unused)
-    await db.execute('ALTER TABLE translations ADD COLUMN base_translation_id INTEGER');
+    await db.execute(
+      'ALTER TABLE translations ADD COLUMN base_translation_id INTEGER',
+    );
   }
   if (oldVersion < 9) {
     await db.execute('''
@@ -63,7 +67,9 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
         UNIQUE(text_id, lower_text)
       )
     ''');
-    await db.execute('CREATE INDEX idx_tfw_text ON text_foreign_words(text_id)');
+    await db.execute(
+      'CREATE INDEX idx_tfw_text ON text_foreign_words(text_id)',
+    );
   }
   if (oldVersion < 10) {
     await db.execute('''
@@ -77,8 +83,12 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
         FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
       )
     ''');
-    await db.execute('CREATE INDEX idx_review_cards_term ON review_cards(term_id)');
-    await db.execute('CREATE INDEX idx_review_cards_due ON review_cards(next_due)');
+    await db.execute(
+      'CREATE INDEX idx_review_cards_term ON review_cards(term_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_review_cards_due ON review_cards(next_due)',
+    );
 
     await db.execute('''
       CREATE TABLE review_logs (
@@ -89,8 +99,12 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
         FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
       )
     ''');
-    await db.execute('CREATE INDEX idx_review_logs_term ON review_logs(term_id)');
-    await db.execute('CREATE INDEX idx_review_logs_date ON review_logs(reviewed_at)');
+    await db.execute(
+      'CREATE INDEX idx_review_logs_term ON review_logs(term_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_review_logs_date ON review_logs(reviewed_at)',
+    );
   }
   if (oldVersion < 11) {
     await db.execute('ALTER TABLE languages ADD COLUMN language_code TEXT');
@@ -140,9 +154,22 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
     }
   }
   if (oldVersion < 12) {
-    await db.execute('CREATE INDEX idx_texts_lang_status ON texts(language_id, status)');
-    await db.execute('CREATE INDEX idx_texts_lang_collection ON texts(language_id, collection_id)');
-    await db.execute('CREATE INDEX idx_review_logs_term_date ON review_logs(term_id, reviewed_at)');
+    await db.execute(
+      'CREATE INDEX idx_texts_lang_status ON texts(language_id, status)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_texts_lang_collection ON texts(language_id, collection_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_review_logs_term_date ON review_logs(term_id, reviewed_at)',
+    );
+  }
+  if (oldVersion < 13) {
+    // Add word-level segmentation flag (used by Mandarin Chinese / jieba).
+    // Defaults to 0 (off) so all existing languages retain their behaviour.
+    await db.execute(
+      'ALTER TABLE languages ADD COLUMN use_word_segmentation INTEGER DEFAULT 0',
+    );
   }
 }
 
@@ -156,6 +183,7 @@ Future<void> onCreate(Database db, int version) async {
       right_to_left INTEGER DEFAULT 0,
       show_romanization INTEGER DEFAULT 0,
       split_by_character INTEGER DEFAULT 0,
+      use_word_segmentation INTEGER DEFAULT 0,
       character_substitutions TEXT,
       regexp_word_characters TEXT,
       regexp_split_sentences TEXT,
@@ -205,8 +233,12 @@ Future<void> onCreate(Database db, int version) async {
   await db.execute('CREATE INDEX idx_terms_language ON terms(language_id)');
   await db.execute('CREATE INDEX idx_terms_base ON terms(base_term_id)');
   await db.execute('CREATE INDEX idx_texts_language ON texts(language_id)');
-  await db.execute('CREATE INDEX idx_texts_lang_status ON texts(language_id, status)');
-  await db.execute('CREATE INDEX idx_texts_lang_collection ON texts(language_id, collection_id)');
+  await db.execute(
+    'CREATE INDEX idx_texts_lang_status ON texts(language_id, status)',
+  );
+  await db.execute(
+    'CREATE INDEX idx_texts_lang_collection ON texts(language_id, collection_id)',
+  );
 
   await db.execute('''
     CREATE TABLE translations (
@@ -219,7 +251,9 @@ Future<void> onCreate(Database db, int version) async {
       FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
     )
   ''');
-  await db.execute('CREATE INDEX idx_translations_term ON translations(term_id)');
+  await db.execute(
+    'CREATE INDEX idx_translations_term ON translations(term_id)',
+  );
 
   await db.execute('''
     CREATE TABLE collections (
@@ -285,8 +319,12 @@ Future<void> onCreate(Database db, int version) async {
       FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
     )
   ''');
-  await db.execute('CREATE INDEX idx_review_cards_term ON review_cards(term_id)');
-  await db.execute('CREATE INDEX idx_review_cards_due ON review_cards(next_due)');
+  await db.execute(
+    'CREATE INDEX idx_review_cards_term ON review_cards(term_id)',
+  );
+  await db.execute(
+    'CREATE INDEX idx_review_cards_due ON review_cards(next_due)',
+  );
 
   await db.execute('''
     CREATE TABLE review_logs (
@@ -298,6 +336,10 @@ Future<void> onCreate(Database db, int version) async {
     )
   ''');
   await db.execute('CREATE INDEX idx_review_logs_term ON review_logs(term_id)');
-  await db.execute('CREATE INDEX idx_review_logs_date ON review_logs(reviewed_at)');
-  await db.execute('CREATE INDEX idx_review_logs_term_date ON review_logs(term_id, reviewed_at)');
+  await db.execute(
+    'CREATE INDEX idx_review_logs_date ON review_logs(reviewed_at)',
+  );
+  await db.execute(
+    'CREATE INDEX idx_review_logs_term_date ON review_logs(term_id, reviewed_at)',
+  );
 }

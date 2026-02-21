@@ -24,6 +24,7 @@ class _LanguageDialogState extends State<LanguageDialog> {
   late bool _rightToLeft;
   late bool _showRomanization;
   late bool _splitByCharacter;
+  late bool _useWordSegmentation;
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _LanguageDialogState extends State<LanguageDialog> {
     _rightToLeft = lang?.rightToLeft ?? false;
     _showRomanization = lang?.showRomanization ?? false;
     _splitByCharacter = lang?.splitByCharacter ?? false;
+    _useWordSegmentation = lang?.useWordSegmentation ?? false;
   }
 
   @override
@@ -47,7 +49,9 @@ class _LanguageDialogState extends State<LanguageDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(widget.language == null ? l10n.addLanguage : l10n.editLanguage),
+      title: Text(
+        widget.language == null ? l10n.addLanguage : l10n.editLanguage,
+      ),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -71,7 +75,8 @@ class _LanguageDialogState extends State<LanguageDialog> {
                   labelText: l10n.languageCodeLabel,
                   hintText: l10n.languageCodeHint,
                 ),
-                validator: (v) => v?.trim().isEmpty == true ? l10n.required : null,
+                validator: (v) =>
+                    v?.trim().isEmpty == true ? l10n.required : null,
               ),
               const SizedBox(height: AppConstants.spacingL),
               SwitchListTile(
@@ -92,16 +97,39 @@ class _LanguageDialogState extends State<LanguageDialog> {
                 title: Text(l10n.splitByCharacter),
                 subtitle: Text(l10n.splitByCharacterHint),
                 value: _splitByCharacter,
-                onChanged: (v) => setState(() => _splitByCharacter = v),
+                onChanged: (v) => setState(() {
+                  _splitByCharacter = v;
+                  // Disable word segmentation if character split is turned off.
+                  if (!v) _useWordSegmentation = false;
+                }),
                 contentPadding: EdgeInsets.zero,
               ),
+              // Word-level segmentation (jieba) — only visible when
+              // split-by-character is enabled (i.e. CJK script).
+              if (_splitByCharacter)
+                SwitchListTile(
+                  title: const Text('Word segmentation (Chinese)'),
+                  subtitle: const Text(
+                    'Use jieba to split text into words instead of individual characters. '
+                    'Recommended for Mandarin Chinese.',
+                  ),
+                  value: _useWordSegmentation,
+                  onChanged: (v) => setState(() => _useWordSegmentation = v),
+                  contentPadding: EdgeInsets.zero,
+                ),
               const SizedBox(height: AppConstants.spacingS),
               Container(
                 padding: const EdgeInsets.all(AppConstants.spacingM),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
-                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.borderRadiusM,
+                  ),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -116,7 +144,9 @@ class _LanguageDialogState extends State<LanguageDialog> {
                         l10n.addDictionariesAfterCreating,
                         style: TextStyle(
                           fontSize: _LanguageDialogConstants.infoFontSize,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                         ),
                       ),
                     ),
@@ -142,6 +172,7 @@ class _LanguageDialogState extends State<LanguageDialog> {
                 rightToLeft: _rightToLeft,
                 showRomanization: _showRomanization,
                 splitByCharacter: _splitByCharacter,
+                useWordSegmentation: _useWordSegmentation,
               );
               Navigator.pop(context, lang);
             }

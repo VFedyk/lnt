@@ -39,7 +39,9 @@ enum TextViewMode { list, grid }
 
 class LibraryController extends BaseController {
   final Language language;
-  final _textParser = TextParserService();
+  final _textParser = sl.isRegistered<TextParserService>()
+      ? sl<TextParserService>()
+      : TextParserService();
 
   List<TextDocument> texts = [];
   List<Collection> collections = [];
@@ -56,8 +58,7 @@ class LibraryController extends BaseController {
   // Key: languageId -> (textId -> unknownCount)
   static final Map<int, Map<int, int>> unknownCountsCache = {};
 
-  Map<int, int> get unknownCounts =>
-      unknownCountsCache[language.id!] ??= {};
+  Map<int, int> get unknownCounts => unknownCountsCache[language.id!] ??= {};
 
   LibraryController({required this.language}) {
     dataChanges.texts.addListener(_onDataChanged);
@@ -92,8 +93,7 @@ class LibraryController extends BaseController {
         .values[sortIndex.clamp(0, TextSortOption.values.length - 1)];
     sortAscending = prefs.getBool(_sortAscendingKey) ?? false;
     hideCompleted = prefs.getBool(_hideCompletedKey) ?? false;
-    final viewModeIndex =
-        prefs.getInt(_viewModeKey) ?? TextViewMode.list.index;
+    final viewModeIndex = prefs.getInt(_viewModeKey) ?? TextViewMode.list.index;
     viewMode = TextViewMode
         .values[viewModeIndex.clamp(0, TextViewMode.values.length - 1)];
     safeNotify();
@@ -110,8 +110,9 @@ class LibraryController extends BaseController {
   // ── Sort / filter ──
 
   void toggleViewMode() {
-    viewMode =
-        viewMode == TextViewMode.list ? TextViewMode.grid : TextViewMode.list;
+    viewMode = viewMode == TextViewMode.list
+        ? TextViewMode.grid
+        : TextViewMode.list;
     safeNotify();
     _savePreferences();
   }
@@ -177,8 +178,8 @@ class LibraryController extends BaseController {
     final filteredTexts = currentCollection == null
         ? allTexts.where((t) => t.collectionId == null).toList()
         : allTexts
-            .where((t) => t.collectionId == currentCollection!.id)
-            .toList();
+              .where((t) => t.collectionId == currentCollection!.id)
+              .toList();
 
     collections = allCollections;
     texts = filteredTexts;
@@ -191,8 +192,9 @@ class LibraryController extends BaseController {
   // ── Unknown counts ──
 
   Future<void> _calculateUnknownCountsAsync(List<TextDocument> texts) async {
-    final textsToCalculate =
-        texts.where((t) => !unknownCounts.containsKey(t.id!)).toList();
+    final textsToCalculate = texts
+        .where((t) => !unknownCounts.containsKey(t.id!))
+        .toList();
     if (textsToCalculate.isEmpty) return;
 
     final termsMap = await db.terms.getMapByLanguage(language.id!);
@@ -406,8 +408,9 @@ class LibraryController extends BaseController {
 
     await sourceFile.copy(newPath);
 
-    final updatedText =
-        text.copyWith(coverImage: CoverImageHelper.toRelative(newPath));
+    final updatedText = text.copyWith(
+      coverImage: CoverImageHelper.toRelative(newPath),
+    );
     await db.texts.update(updatedText);
   }
 }

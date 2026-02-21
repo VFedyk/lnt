@@ -13,6 +13,7 @@ import 'services/url_import_service.dart';
 import 'services/dictionary_service.dart';
 import 'services/tts_service.dart';
 import 'services/data_change_notifier.dart';
+import 'services/chinese_segmentation_service.dart';
 
 final sl = GetIt.instance;
 
@@ -22,10 +23,11 @@ SettingsService get settings => sl<SettingsService>();
 BackupService get backupService => sl<BackupService>();
 ReviewService get reviewService => sl<ReviewService>();
 DeepLService get deepLService => sl<DeepLService>();
-LibreTranslateService get libreTranslateService =>
-    sl<LibreTranslateService>();
+LibreTranslateService get libreTranslateService => sl<LibreTranslateService>();
 TtsService get ttsService => sl<TtsService>();
 DataChangeNotifier get dataChanges => sl<DataChangeNotifier>();
+ChineseSegmentationService get chineseSegService =>
+    sl<ChineseSegmentationService>();
 
 void setupServiceLocator() {
   // Singletons (lazy — constructed on first access)
@@ -40,8 +42,16 @@ void setupServiceLocator() {
   );
   sl.registerLazySingleton<TtsService>(() => TtsService());
 
+  // Chinese segmentation — registered as a singleton so the jieba dictionary
+  // is only loaded once. init() is called lazily on first use inside the service.
+  sl.registerLazySingleton<ChineseSegmentationService>(
+    () => ChineseSegmentationService(),
+  );
+
   // Factories (new instance each time)
-  sl.registerFactory<TextParserService>(() => TextParserService());
+  sl.registerFactory<TextParserService>(
+    () => TextParserService(chineseSeg: sl<ChineseSegmentationService>()),
+  );
   sl.registerFactory<ImportExportService>(() => ImportExportService());
   sl.registerFactory<EpubImportService>(() => EpubImportService());
   sl.registerFactory<UrlImportService>(() => UrlImportService());

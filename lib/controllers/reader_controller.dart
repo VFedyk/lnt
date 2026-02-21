@@ -25,7 +25,9 @@ class ForeignTermInfo {
 
 class ReaderController extends BaseController {
   final Language language;
-  final _textParser = TextParserService();
+  final _textParser = sl.isRegistered<TextParserService>()
+      ? sl<TextParserService>()
+      : TextParserService();
 
   TextDocument text;
   Map<String, Term> termsMap = {};
@@ -56,8 +58,10 @@ class ReaderController extends BaseController {
         if (term.id != null) term.id!: term,
     };
 
-    final termIds =
-        termsMap.values.where((t) => t.id != null).map((t) => t.id!).toList();
+    final termIds = termsMap.values
+        .where((t) => t.id != null)
+        .map((t) => t.id!)
+        .toList();
     translationsMap = await db.translations.getByTermIds(termIds);
     translationsById = {
       for (final translations in translationsMap.values)
@@ -76,6 +80,11 @@ class ReaderController extends BaseController {
   }
 
   Future<void> _parseTextAsync() async {
+    if (language.splitByCharacter && language.useWordSegmentation) {
+      _parseTextWithConfiguredParser();
+      return;
+    }
+
     final termsMapData = <String, Map<String, dynamic>>{};
     for (final entry in termsMap.entries) {
       termsMapData[entry.key] = {
@@ -104,6 +113,50 @@ class ReaderController extends BaseController {
       );
     }).toList();
 
+    _groupIntoParagraphs();
+  }
+
+  void _parseTextWithConfiguredParser() {
+    final content = text.content;
+    final matches = _textParser.getWordMatches(content, language);
+    final tokens = <WordToken>[];
+
+    int lastEnd = 0;
+    for (final match in matches) {
+      if (match.start > lastEnd) {
+        tokens.add(
+          WordToken(
+            text: content.substring(lastEnd, match.start),
+            isWord: false,
+            position: lastEnd,
+          ),
+        );
+      }
+
+      final tokenText = content.substring(match.start, match.end);
+      final lowerWord = _textParser.normalizeWord(match.word);
+      tokens.add(
+        WordToken(
+          text: tokenText,
+          isWord: true,
+          position: match.start,
+          term: termsMap[lowerWord],
+        ),
+      );
+      lastEnd = match.end;
+    }
+
+    if (lastEnd < content.length) {
+      tokens.add(
+        WordToken(
+          text: content.substring(lastEnd),
+          isWord: false,
+          position: lastEnd,
+        ),
+      );
+    }
+
+    wordTokens = tokens;
     _groupIntoParagraphs();
   }
 
@@ -139,8 +192,7 @@ class ReaderController extends BaseController {
 
     final result = <String, ForeignTermInfo>{};
     for (final record in records) {
-      final term =
-          record.termId != null ? foreignTerms[record.termId!] : null;
+      final term = record.termId != null ? foreignTerms[record.termId!] : null;
       final translations = record.termId != null
           ? (foreignTranslations[record.termId!] ?? <Translation>[])
           : <Translation>[];
@@ -185,7 +237,8 @@ class ReaderController extends BaseController {
 
   void _groupIntoParagraphs() {
     wordTokens = [
-      for (int i = 0; i < wordTokens.length; i++) wordTokens[i].copyWithIndex(i),
+      for (int i = 0; i < wordTokens.length; i++)
+        wordTokens[i].copyWithIndex(i),
     ];
 
     paragraphs = [];
@@ -284,8 +337,9 @@ class ReaderController extends BaseController {
   Future<void> _updateLastRead() async {
     final updatedText = text.copyWith(
       lastRead: DateTime.now(),
-      status:
-          text.status == TextStatus.pending ? TextStatus.inProgress : text.status,
+      status: text.status == TextStatus.pending
+          ? TextStatus.inProgress
+          : text.status,
     );
     await db.texts.update(updatedText);
     text = updatedText;
@@ -309,11 +363,9 @@ class ReaderController extends BaseController {
       );
       termsMap.remove(lowerText);
 
-      await db.textForeignWords.saveWords(
-        text.id!,
-        term.languageId,
-        {lowerText: term.id},
-      );
+      await db.textForeignWords.saveWords(text.id!, term.languageId, {
+        lowerText: term.id,
+      });
 
       wordTokens = wordTokens.map((token) {
         if (token.isWord && token.text.toLowerCase() == lowerText) {
@@ -459,7 +511,9 @@ class ReaderController extends BaseController {
     // Add all word indices in the range
     for (int i = 0; i < wordTokens.length; i++) {
       final token = wordTokens[i];
-      if (token.isWord && token.globalIndex >= start && token.globalIndex <= end) {
+      if (token.isWord &&
+          token.globalIndex >= start &&
+          token.globalIndex <= end) {
         selectedWordIndices.add(token.globalIndex);
       }
     }
@@ -536,8 +590,9 @@ class ReaderController extends BaseController {
 
   Future<TextDocument?> getNextTextInCollection() async {
     if (text.collectionId == null) return null;
-    final textsInCollection =
-        await db.texts.getByCollection(text.collectionId!);
+    final textsInCollection = await db.texts.getByCollection(
+      text.collectionId!,
+    );
     final currentIndex = textsInCollection.indexWhere((t) => t.id == text.id);
     if (currentIndex >= 0 && currentIndex < textsInCollection.length - 1) {
       return textsInCollection[currentIndex + 1];

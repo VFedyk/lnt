@@ -327,6 +327,41 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     final languages = await db.languages.getAll();
     if (mounted) {
       setState(() => _languages = languages);
+      _maybeAutoFillRomanization();
+    }
+  }
+
+  String _selectedLanguageCode() {
+    final selected = _languages.cast<Language?>().firstWhere(
+      (l) => l?.id == _selectedLanguageId,
+      orElse: () => null,
+    );
+    if (selected != null && selected.languageCode.isNotEmpty) {
+      return selected.languageCode.toLowerCase();
+    }
+    if (_selectedLanguageId == widget.languageId && widget.languageCode.isNotEmpty) {
+      return widget.languageCode.toLowerCase();
+    }
+    return '';
+  }
+
+  bool _isSelectedLanguageChinese() {
+    final code = _selectedLanguageCode();
+    if (code.startsWith('zh')) return true;
+    final name = _selectedLanguageName.toLowerCase();
+    return name.contains('chinese') || name.contains('mandarin');
+  }
+
+  void _maybeAutoFillRomanization() {
+    if (!_isSelectedLanguageChinese()) return;
+    if (_romanizationController.text.trim().isNotEmpty) return;
+
+    final source = _termController.text.trim();
+    if (source.isEmpty) return;
+
+    final generated = chineseSegService.getPinyin(source).trim();
+    if (generated.isNotEmpty) {
+      _romanizationController.text = generated;
     }
   }
 
@@ -372,6 +407,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
           _selectedLanguageId = lang.id!;
           _selectedLanguageName = lang.name;
         });
+        _maybeAutoFillRomanization();
       },
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
@@ -687,6 +723,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                         )
                       : null,
                 ),
+                onChanged: (_) => _maybeAutoFillRomanization(),
               ),
               const SizedBox(height: AppConstants.spacingM),
 
@@ -771,6 +808,11 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
         TextButton(
           onPressed: () {
             final editedTerm = _termController.text.trim().toLowerCase();
+            final romanization = _romanizationController.text.trim().isNotEmpty
+                ? _romanizationController.text.trim()
+                : (_isSelectedLanguageChinese()
+                      ? chineseSegService.getPinyin(editedTerm).trim()
+                      : '');
             // Use first translation meaning for legacy translation field
             final legacyTranslation = _translations.isNotEmpty
                 ? _translations.first.meaning
@@ -781,7 +823,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
               lowerText: editedTerm,
               status: _status,
               translation: legacyTranslation,
-              romanization: _romanizationController.text,
+              romanization: romanization,
               sentence: _sentenceController.text,
               lastAccessed: DateTime.now(),
             );

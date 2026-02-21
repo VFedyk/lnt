@@ -62,7 +62,9 @@ class _DashboardTabState extends State<DashboardTab> {
   bool _loadInProgress = false;
   bool _pendingReload = false;
   String? _error;
-  final _textParser = TextParserService();
+  final _textParser = sl.isRegistered<TextParserService>()
+      ? sl<TextParserService>()
+      : TextParserService();
 
   @override
   void initState() {
@@ -206,15 +208,19 @@ class _DashboardTabState extends State<DashboardTab> {
       );
 
       // Calculate total word count (all statuses)
-      final totalWordCount = counts.values.fold<int>(0, (sum, count) => sum + count);
+      final totalWordCount = counts.values.fold<int>(
+        0,
+        (sum, count) => sum + count,
+      );
       final vocabularyGrowthData = ChartHelpers.buildVocabularyGrowthChartData(
         wordsAddedByDay: chartWordsAdded,
         currentKnownCount: totalWordCount,
         days: chartDays,
       );
 
-      final statusDistributionData =
-          ChartHelpers.buildStatusDistributionData(countsByStatus: counts);
+      final statusDistributionData = ChartHelpers.buildStatusDistributionData(
+        countsByStatus: counts,
+      );
 
       if (!mounted) return;
       setState(() {
@@ -302,7 +308,8 @@ class _DashboardTabState extends State<DashboardTab> {
         !PlatformHelper.isDesktop &&
         media.orientation == Orientation.landscape &&
         media.size.shortestSide >= _DashboardConstants.tabletBreakpoint;
-    final useDesktopStyleLayout = PlatformHelper.isDesktop || isWideTabletLandscape;
+    final useDesktopStyleLayout =
+        PlatformHelper.isDesktop || isWideTabletLandscape;
 
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -461,17 +468,18 @@ class _DashboardTabState extends State<DashboardTab> {
   Widget _buildAnimatedStatItem(String label, int value, IconData icon) {
     final isMobile = !PlatformHelper.isDesktop;
     final numberStyle = isMobile
-        ? Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)
-        : Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold);
+        ? Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)
+        : Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold);
 
     return Column(
       children: [
         Icon(icon, color: Theme.of(context).colorScheme.secondary),
         const SizedBox(height: AppConstants.spacingXS),
-        AnimatedCounter(
-          value: value,
-          style: numberStyle,
-        ),
+        AnimatedCounter(value: value, style: numberStyle),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
@@ -529,15 +537,9 @@ class _DashboardTabState extends State<DashboardTab> {
     } else {
       return Column(
         children: [
-          DailyActivityBarChart(
-            data: _dailyActivityData,
-            height: 250,
-          ),
+          DailyActivityBarChart(data: _dailyActivityData, height: 250),
           const SizedBox(height: AppConstants.spacingL),
-          VocabularyGrowthLineChart(
-            data: _vocabularyGrowthData,
-            height: 250,
-          ),
+          VocabularyGrowthLineChart(data: _vocabularyGrowthData, height: 250),
           const SizedBox(height: AppConstants.spacingL),
           Center(
             child: SizedBox(
