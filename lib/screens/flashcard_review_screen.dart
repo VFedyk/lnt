@@ -145,8 +145,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
     // Ensure all eligible terms have review cards (lazy seeding)
     await _ensureCardsSeeded();
 
-    final dueCards = await db.reviewCards
-        .getDueCards(widget.language.id!);
+    final dueCards = await db.reviewCards.getDueCards(widget.language.id!);
 
     // Batch load terms and translations (2 queries instead of 2N)
     final termIds = dueCards.map((rc) => rc.termId).toList();
@@ -166,7 +165,9 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
         ];
       }
 
-      items.add(_ReviewItem(reviewCard: rc, term: term, translations: translations));
+      items.add(
+        _ReviewItem(reviewCard: rc, term: term, translations: translations),
+      );
     }
 
     if (mounted) {
@@ -180,14 +181,14 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
   Future<void> _ensureCardsSeeded() async {
     setState(() => _isSeeding = true);
 
-    final allTerms = await db.terms.getAll(
-      languageId: widget.language.id!,
-    );
+    final allTerms = await db.terms.getAll(languageId: widget.language.id!);
     final eligibleIds = allTerms
-        .where((t) =>
-            t.id != null &&
-            t.status != TermStatus.ignored &&
-            t.status != TermStatus.wellKnown)
+        .where(
+          (t) =>
+              t.id != null &&
+              t.status != TermStatus.ignored &&
+              t.status != TermStatus.wellKnown,
+        )
         .map((t) => t.id!)
         .toList();
 
@@ -221,8 +222,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
     if (_currentIndex >= _dueItems.length) return;
 
     final item = _dueItems[_currentIndex];
-    final intervals =
-        reviewService.getNextIntervals(item.reviewCard.card);
+    final intervals = reviewService.getNextIntervals(item.reviewCard.card);
 
     setState(() {
       _isAnswerRevealed = true;
@@ -244,7 +244,8 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
         term: term,
         sentence: term.sentence,
         dictionaries: dictionaries,
-        onLookup: (ctx, dict) => _dictService.lookupWord(ctx, term.text, dict.url),
+        onLookup: (ctx, dict) =>
+            _dictService.lookupWord(ctx, term.text, dict.url),
         languageId: widget.language.id!,
         languageName: widget.language.name,
         languageCode: widget.language.languageCode,
@@ -299,7 +300,11 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
     }
   }
 
-  Widget _buildHighlightedSentence(String sentence, String termText, int status) {
+  Widget _buildHighlightedSentence(
+    String sentence,
+    String termText,
+    int status,
+  ) {
     // Try to find the term in the sentence (case-insensitive)
     final lowerSentence = sentence.toLowerCase();
     final lowerTerm = termText.toLowerCase();
@@ -371,9 +376,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
       autofocus: true,
       onKeyEvent: _handleKeyEvent,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.flashcardReview),
-        ),
+        appBar: AppBar(title: Text(l10n.flashcardReview)),
         body: body,
       ),
     );
@@ -459,12 +462,14 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
       elevation: _FlashcardReviewConstants.cardElevation,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(
-            _FlashcardReviewConstants.cardBorderRadius),
+          _FlashcardReviewConstants.cardBorderRadius,
+        ),
       ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(
-            _FlashcardReviewConstants.cardBorderRadius),
+          _FlashcardReviewConstants.cardBorderRadius,
+        ),
         child: Container(
           width: double.infinity,
           constraints: const BoxConstraints(
@@ -516,7 +521,9 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
           if (term.sentence.isNotEmpty) ...[
             const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacingL),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.spacingL,
+              ),
               child: _buildHighlightedSentence(
                 term.sentence,
                 term.text,
@@ -565,7 +572,9 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
                   visualDensity: VisualDensity.compact,
                 ),
               if (term.romanization.isNotEmpty) ...[
-                const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
+                const SizedBox(
+                  height: _FlashcardReviewConstants.contentSpacing,
+                ),
                 Text(
                   term.romanization,
                   style: TextStyle(
@@ -576,9 +585,13 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
                 ),
               ],
               if (term.sentence.isNotEmpty) ...[
-                const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
+                const SizedBox(
+                  height: _FlashcardReviewConstants.contentSpacing,
+                ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacingL),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.spacingL,
+                  ),
                   child: _buildHighlightedSentence(
                     term.sentence,
                     term.text,
@@ -589,20 +602,20 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
               const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
               const Divider(),
               const SizedBox(height: AppConstants.spacingM),
-              ...item.translations.map((t) => Padding(
-                    padding:
-                        const EdgeInsets.only(bottom: AppConstants.spacingS),
-                    child: Text(
-                      t.partOfSpeech != null && t.partOfSpeech!.isNotEmpty
-                          ? '${t.meaning} (${t.partOfSpeech})'
-                          : t.meaning,
-                      style: const TextStyle(
-                        fontSize:
-                            _FlashcardReviewConstants.translationFontSize,
-                      ),
-                      textAlign: TextAlign.center,
+              ...item.translations.map(
+                (t) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppConstants.spacingS),
+                  child: Text(
+                    t.partOfSpeech != null && t.partOfSpeech!.isNotEmpty
+                        ? '${t.meaning} (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})'
+                        : t.meaning,
+                    style: const TextStyle(
+                      fontSize: _FlashcardReviewConstants.translationFontSize,
                     ),
-                  )),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
             ],
           ),
           Positioned(

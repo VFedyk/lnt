@@ -1,8 +1,6 @@
 {
   "@@locale": "uk",
-
   "appTitle": "Language Nerd Tools",
-
   "home": "Головна",
   "libraryTab": "Бібліотека",
   "texts": "Тексти",
@@ -12,7 +10,6 @@
   "stats": "Статистика",
   "languages": "Мови",
   "settings": "Налаштування",
-
   "cancel": "Скасувати",
   "save": "Зберегти",
   "delete": "Видалити",
@@ -33,11 +30,9 @@
   "success": "Успіх",
   "warning": "Попередження",
   "confirm": "Підтвердити",
-
   "appLanguage": "Мова застосунку",
   "english": "Англійська",
   "ukrainian": "Українська",
-
   "deepLTranslation": "Переклад DeepL",
   "deepLApiKey": "API ключ DeepL",
   "deepLApiKeyHint": "Отримайте API ключ на deepl.com/pro-api",
@@ -71,21 +66,18 @@
   "loadingUsage": "Завантаження використання...",
   "charactersRemaining": "{count} символів залишилось",
   "charactersUsed": "{used} / {limit} символів",
-
   "noLanguagesYet": "Мов ще немає",
   "addLanguageToStart": "Додайте мову, щоб почати",
   "addLanguage": "Додати мову",
   "editLanguage": "Редагувати мову",
   "deleteLanguageQuestion": "Видалити мову?",
   "deleteLanguageConfirm": "Це видалить \"{name}\" та всі пов'язані тексти, терміни та словники. Продовжити?",
-
   "totalTerms": "Всього термінів",
   "known": "Відомі",
   "unknown": "Невідомі",
   "unknownWords": "{count} невідомих слів",
   "unknownCharacters": "{count} невідомих символів",
   "completed": "Завершено!",
-
   "activityHeatmap": "Активність",
   "less": "Менше",
   "more": "Більше",
@@ -93,7 +85,6 @@
   "wordsAdded": "Слів додано",
   "wordsReviewed": "Слів повторено",
   "noActivity": "Немає активності",
-
   "quickActions": "Швидкі дії",
   "addText": "Додати текст",
   "importVocabulary": "Імпортувати словник",
@@ -101,7 +92,6 @@
   "recentlyAdded": "Нещодавно додане",
   "noTextsReadYet": "Ще не прочитано жодного тексту.",
   "noTextsYetAddOne": "Текстів ще немає. Додайте один, щоб почати!",
-
   "searchTexts": "Пошук текстів...",
   "searchTerms": "Пошук термінів...",
   "noCollectionsOrTexts": "Немає колекцій чи текстів",
@@ -109,7 +99,6 @@
   "showCompletedTexts": "Показати завершені тексти",
   "hideCompletedTexts": "Сховати завершені тексти",
   "completedHidden": "{count} завершених сховано",
-
   "importFromUrl": "Імпорт з URL",
   "importTxt": "Імпорт TXT",
   "importEpub": "Імпорт EPUB",
@@ -117,13 +106,11 @@
   "importComplete": "Імпорт завершено",
   "importFailedTitle": "Помилка імпорту",
   "couldNotImportEpub": "Не вдалося імпортувати EPUB: {error}",
-
   "newCollection": "Нова колекція",
   "editCollection": "Редагувати колекцію",
   "deleteCollection": "Видалити колекцію?",
   "deleteCollectionConfirm": "Видалити \"{name}\" та {count} текст(ів)?",
   "deleteCollectionSimple": "Видалити \"{name}\"?",
-
   "deleteText": "Видалити текст?",
   "deleteTextConfirm": "Видалити \"{title}\"?",
   "editText": "Редагувати текст",
@@ -132,26 +119,21 @@
   "setCover": "Встановити обкладинку",
   "addCover": "Додати обкладинку",
   "removeCover": "Видалити обкладинку",
-
   "noTermsFound": "Термінів не знайдено",
   "importCsv": "Імпорт CSV",
   "exportCsv": "Експорт CSV",
   "exportAnki": "Експорт Anki",
-
   "name": "Назва",
   "description": "Опис",
   "descriptionOptional": "Опис (необов'язково)",
   "required": "Обов'язково",
-
   "sortByName": "За назвою",
   "sortByDateAdded": "За датою додавання",
   "sortByLastRead": "За останнім читанням",
-
   "listView": "Список",
   "gridView": "Сітка",
   "switchToListView": "Перейти до списку",
   "switchToGridView": "Перейти до сітки",
-
   "url": "URL",
   "urlHint": "https://example.com/article",
   "fetchContent": "Завантажити вміст",
@@ -160,19 +142,16 @@
   "charactersCount": "{count} символів",
   "pleaseEnterUrl": "Введіть URL",
   "pleaseEnterTitle": "Введіть назву",
-
   "book": "Книга",
   "author": "Автор",
   "chapters": "Розділи",
   "totalParts": "Всього частин",
   "characters": "Символів",
   "notes": "Примітки",
-
   "textsTitle": "Тексти - {languageName}",
   "sort": "Сортувати",
   "textCount": "{count, plural, =1{1 текст} few{{count} тексти} other{{count} текстів}}",
   "unknownCount": "{count} невідомих",
-
   "vocabularyTitle": "Словник - {languageName}",
   "exportedTerms": "Експортовано {count} термінів",
   "exportFailed": "Помилка експорту: {error}",
@@ -186,7 +165,6 @@
   "statusLearning4": "Вивчення 4",
   "statusKnown": "Відомі",
   "statusWellKnown": "Добре відомі",
-
   "addDictionariesQuestion": "Додати словники?",
   "addDictionariesPrompt": "Бажаєте додати словники для {name}?",
   "later": "Пізніше",
@@ -204,7 +182,6 @@
   "splitByCharacter": "Розділяти за символами",
   "splitByCharacterHint": "Для Китайської, Японської (без пробілів)",
   "addDictionariesAfterCreating": "Додайте словники після створення мови",
-
   "errorLoadingTerms": "Помилка завантаження термінів: {error}",
   "errorLoadingLanguages": "Помилка завантаження мов: {error}",
   "noDictionariesConfigured": "Словники не налаштовані",
@@ -243,13 +220,11 @@
   "textMarkedInProgress": "Текст позначено як незавершений",
   "continueReading": "Продовжити читання?",
   "continueReadingPrompt": "Бажаєте продовжити з наступним текстом?\n\n\"{title}\"",
-
   "termsByStatus": "Терміни за статусом",
   "progressOverview": "Огляд прогресу",
   "percentKnown": "{percent}% відомо",
   "noTermsYet": "Ще немає термінів",
   "learning": "Вивчення",
-
   "dictionariesTitle": "Словники - {languageName}",
   "deleteDictionary": "Видалити словник?",
   "deleteDictionaryConfirm": "Видалити \"{name}\"?",
@@ -277,7 +252,6 @@
   "active": "Активний",
   "showInDictionaryLookupMenu": "Показувати в меню пошуку",
   "quickTemplates": "Швидкі шаблони:",
-
   "dictionaryLookup": "Пошук у словнику",
   "reload": "Оновити",
   "back": "Назад",
@@ -285,7 +259,6 @@
   "openInBrowser": "Відкрити в браузері",
   "errorLoadingPage": "Помилка завантаження сторінки: {error}",
   "errorOpeningBrowser": "Помилка відкриття браузера: {error}",
-
   "term": "Термін",
   "useOriginal": "Використати оригінал: {text}",
   "original": "Оригінал: {text}",
@@ -314,33 +287,29 @@
   "translationOptional": "Переклад (необов'язково)",
   "createTerm": "Створити \"{term}\"",
   "statusLegendTitle": "Легенда статусів",
-
   "databaseSection": "База даних",
   "databasePath": "Шлях до бази даних",
   "openDatabaseDirectory": "Відкрити директорію",
   "changeDatabase": "Змінити базу даних",
   "restartRequired": "Потрібен перезапуск",
   "databaseChangedMessage": "Базу даних змінено. Програма зараз закриється. Будь ласка, відкрийте її знову для використання нової бази даних.",
-
-  "posNoun": "Іменник",
-  "posVerb": "Дієслово",
-  "posAdjective": "Прикметник",
-  "posAdverb": "Прислівник",
-  "posPronoun": "Займенник",
-  "posPreposition": "Прийменник",
-  "posConjunction": "Сполучник",
-  "posInterjection": "Вигук",
-  "posArticle": "Артикль",
-  "posNumeral": "Числівник",
-  "posParticle": "Частка",
-  "posOther": "Інше",
-
+  "posNoun": "іменник",
+  "posVerb": "дієслово",
+  "posAdjective": "прикметник",
+  "posAdverb": "прислівник",
+  "posPronoun": "займенник",
+  "posPreposition": "прийменник",
+  "posConjunction": "сполучник",
+  "posInterjection": "вигук",
+  "posArticle": "артикль",
+  "posNumeral": "числівник",
+  "posParticle": "частка",
+  "posOther": "інше",
   "partOfSpeech": "Частина мови",
   "baseForm": "Базова форма",
   "meaning": "Значення",
   "addTranslation": "Додати переклад",
   "translations": "Переклади",
-
   "review": "Повторення",
   "showAnswer": "Показати відповідь",
   "rateAgain": "Знову",
@@ -352,14 +321,20 @@
   "reviewedCount": "Повторено {count} карток",
   "@reviewedCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "reviewProgress": "{current} з {total}",
   "@reviewProgress": {
     "placeholders": {
-      "current": { "type": "int" },
-      "total": { "type": "int" }
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "refresh": "Оновити",
@@ -371,7 +346,6 @@
   "statisticsDescription": "Переглядайте прогрес словника та розподіл за статусами",
   "cardsDue": "Карток до повторення",
   "reviewedToday": "Повторено сьогодні",
-
   "backupRestore": "Резервне копіювання",
   "backupToGoogleDrive": "Зберегти в Google Drive",
   "restoreFromGoogleDrive": "Відновити з Google Drive",
@@ -388,7 +362,6 @@
   "restoreFailed": "Помилка відновлення: {error}",
   "noBackupFound": "Резервну копію не знайдено",
   "signInCancelled": "Вхід скасовано",
-
   "typingReview": "Повторення введенням",
   "typingSourceToTarget": "Мова → Переклад",
   "typingTargetToSource": "Переклад → Мова",

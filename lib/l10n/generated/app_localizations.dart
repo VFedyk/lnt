@@ -1859,73 +1859,73 @@ abstract class AppLocalizations {
   /// No description provided for @posNoun.
   ///
   /// In en, this message translates to:
-  /// **'Noun'**
+  /// **'noun'**
   String get posNoun;
 
   /// No description provided for @posVerb.
   ///
   /// In en, this message translates to:
-  /// **'Verb'**
+  /// **'verb'**
   String get posVerb;
 
   /// No description provided for @posAdjective.
   ///
   /// In en, this message translates to:
-  /// **'Adjective'**
+  /// **'adjective'**
   String get posAdjective;
 
   /// No description provided for @posAdverb.
   ///
   /// In en, this message translates to:
-  /// **'Adverb'**
+  /// **'adverb'**
   String get posAdverb;
 
   /// No description provided for @posPronoun.
   ///
   /// In en, this message translates to:
-  /// **'Pronoun'**
+  /// **'pronoun'**
   String get posPronoun;
 
   /// No description provided for @posPreposition.
   ///
   /// In en, this message translates to:
-  /// **'Preposition'**
+  /// **'preposition'**
   String get posPreposition;
 
   /// No description provided for @posConjunction.
   ///
   /// In en, this message translates to:
-  /// **'Conjunction'**
+  /// **'conjunction'**
   String get posConjunction;
 
   /// No description provided for @posInterjection.
   ///
   /// In en, this message translates to:
-  /// **'Interjection'**
+  /// **'interjection'**
   String get posInterjection;
 
   /// No description provided for @posArticle.
   ///
   /// In en, this message translates to:
-  /// **'Article'**
+  /// **'article'**
   String get posArticle;
 
   /// No description provided for @posNumeral.
   ///
   /// In en, this message translates to:
-  /// **'Numeral'**
+  /// **'numeral'**
   String get posNumeral;
 
   /// No description provided for @posParticle.
   ///
   /// In en, this message translates to:
-  /// **'Particle'**
+  /// **'particle'**
   String get posParticle;
 
   /// No description provided for @posOther.
   ///
   /// In en, this message translates to:
-  /// **'Other'**
+  /// **'other'**
   String get posOther;
 
   /// No description provided for @partOfSpeech.
