@@ -44,12 +44,7 @@ class _AiThinkingDialogState extends State<AiThinkingDialog> {
     super.dispose();
   }
 
-  static const _emojis = [
-    '🤔',
-    '💭',
-    '📖',
-    '✨',
-  ];
+  static const _emojis = ['🤔', '💭', '📖', '✨'];
 
   @override
   Widget build(BuildContext context) {
@@ -62,19 +57,22 @@ class _AiThinkingDialogState extends State<AiThinkingDialog> {
     ];
 
     return AlertDialog(
-      content: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _emojis[_emojiIndex],
-            style: const TextStyle(fontSize: 24),
+      content: SizedBox(
+        height: 30, // adjust to taste
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(_emojis[_emojiIndex], style: const TextStyle(fontSize: 24)),
+              const SizedBox(width: 8),
+              Text(
+                textStages[_textIndex],
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            textStages[_textIndex],
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
+        ),
       ),
     );
   }
