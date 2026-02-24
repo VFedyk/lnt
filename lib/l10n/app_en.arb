@@ -18,6 +18,7 @@
   "delete": "Delete",
   "edit": "Edit",
   "add": "Add",
+  "addTerm": "Add Term",
   "ok": "OK",
   "retry": "Retry",
   "create": "Create",

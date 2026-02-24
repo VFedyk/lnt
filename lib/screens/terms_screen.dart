@@ -64,11 +64,12 @@ class _TermsScreenState extends State<TermsScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final terms = await db.terms.getAll(
-        languageId: widget.language.id!,
-      );
+      final terms = await db.terms.getAll(languageId: widget.language.id!);
       // Batch load translations for all terms
-      final termIds = terms.where((t) => t.id != null).map((t) => t.id!).toList();
+      final termIds = terms
+          .where((t) => t.id != null)
+          .map((t) => t.id!)
+          .toList();
       final translationsMap = await db.translations.getByTermIds(termIds);
       if (!mounted) return;
       setState(() {
@@ -161,6 +162,31 @@ class _TermsScreenState extends State<TermsScreen> {
     await db.terms.delete(term.id!);
   }
 
+  Future<void> _addTerm() async {
+    final newTerm = Term(
+      languageId: widget.language.id!,
+      text: '',
+      lowerText: '',
+    );
+    final dialogResult = await showDialog<TermDialogResult?>(
+      context: context,
+      builder: (dialogContext) => TermDialog(
+        term: newTerm,
+        sentence: '',
+        onLookup: (ctx, dictNum) {},
+        dictionaries: const [],
+        languageId: widget.language.id!,
+        languageName: widget.language.name,
+        languageCode: widget.language.languageCode,
+      ),
+    );
+
+    if (dialogResult != null) {
+      final id = await db.terms.create(dialogResult.term);
+      await db.translations.replaceForTerm(id, dialogResult.translations);
+    }
+  }
+
   Future<void> _editTerm(Term term) async {
     final dialogResult = await showDialog<TermDialogResult?>(
       context: context,
@@ -241,6 +267,11 @@ class _TermsScreenState extends State<TermsScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addTerm,
+        tooltip: l10n.addTerm,
+        child: const Icon(Icons.add),
+      ),
       body: Column(
         children: [
           Padding(
@@ -253,7 +284,9 @@ class _TermsScreenState extends State<TermsScreen> {
                     hintText: l10n.searchTerms,
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.borderRadiusM,
+                      ),
                     ),
                   ),
                   onChanged: (_) => setState(() => _applyFilters()),
@@ -278,10 +311,15 @@ class _TermsScreenState extends State<TermsScreen> {
                         final status = i == _TermsConstants.wellKnownStatusIndex
                             ? _TermsConstants.wellKnownStatusValue
                             : i;
-                        final statusName = TermStatus.localizedNameFor(status, l10n);
+                        final statusName = TermStatus.localizedNameFor(
+                          status,
+                          l10n,
+                        );
                         final count = _statusCounts[status] ?? 0;
                         return Padding(
-                          padding: const EdgeInsets.only(right: AppConstants.spacingS),
+                          padding: const EdgeInsets.only(
+                            right: AppConstants.spacingS,
+                          ),
                           child: FilterChip(
                             label: Text('$statusName ($count)'),
                             selected: _statusFilter == status,
@@ -317,10 +355,7 @@ class _TermsScreenState extends State<TermsScreen> {
   Widget _buildTermsList() {
     final l10n = AppLocalizations.of(context);
     if (_filteredTerms.isEmpty) {
-      return AppEmptyState(
-        icon: Icons.search_off,
-        title: l10n.noTermsFound,
-      );
+      return AppEmptyState(icon: Icons.search_off, title: l10n.noTermsFound);
     }
 
     return ListView.builder(
@@ -361,9 +396,17 @@ class _TermsScreenState extends State<TermsScreen> {
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                      Icon(
+                        Icons.delete,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                       const SizedBox(width: AppConstants.spacingS),
-                      Text(l10n.delete, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      Text(
+                        l10n.delete,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -382,7 +425,6 @@ class _TermsScreenState extends State<TermsScreen> {
       },
     );
   }
-
 
   bool _translationsContainQuery(int? termId, String query) {
     if (termId == null) return false;
@@ -405,11 +447,13 @@ class _TermsScreenState extends State<TermsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (hasTranslations)
-          ...translations.map((t) => Text(
-            t.partOfSpeech != null
-                ? '${t.meaning} (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})'
-                : t.meaning,
-          ))
+          ...translations.map(
+            (t) => Text(
+              t.partOfSpeech != null
+                  ? '${t.meaning} (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})'
+                  : t.meaning,
+            ),
+          )
         else if (hasLegacyTranslation)
           Text(term.translation),
         if (hasRomanization)

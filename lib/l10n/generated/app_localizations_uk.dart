@@ -54,6 +54,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get add => 'Додати';
 
   @override
+  String get addTerm => 'Додати термін';
+
+  @override
   String get ok => 'OK';
 
   @override

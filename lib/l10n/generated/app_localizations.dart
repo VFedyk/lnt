@@ -188,6 +188,12 @@ abstract class AppLocalizations {
   /// **'Add'**
   String get add;
 
+  /// No description provided for @addTerm.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Term'**
+  String get addTerm;
+
   /// No description provided for @ok.
   ///
   /// In en, this message translates to:
