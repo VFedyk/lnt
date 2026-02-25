@@ -3,9 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
+import 'package:provider/provider.dart';
+import '../controllers/flashcard_review_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
-import '../models/review_card.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
 import '../services/dictionary_service.dart';
@@ -31,26 +32,30 @@ abstract class _FlashcardReviewConstants {
   static const Duration flipDuration = Duration(milliseconds: 400);
 }
 
-class FlashcardReviewScreen extends StatefulWidget {
+class FlashcardReviewScreen extends StatelessWidget {
   final Language language;
 
   const FlashcardReviewScreen({super.key, required this.language});
 
   @override
-  State<FlashcardReviewScreen> createState() => _FlashcardReviewScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => FlashcardReviewController(language: language),
+      child: const _FlashcardReviewScreenBody(),
+    );
+  }
 }
 
-class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
+class _FlashcardReviewScreenBody extends StatefulWidget {
+  const _FlashcardReviewScreenBody();
+
+  @override
+  State<_FlashcardReviewScreenBody> createState() =>
+      _FlashcardReviewScreenBodyState();
+}
+
+class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
     with TickerProviderStateMixin {
-  List<_ReviewItem> _dueItems = [];
-  int _currentIndex = 0;
-  int _reviewedCount = 0;
-  bool _isLoading = true;
-  bool _isAnswerRevealed = false;
-  bool _isSeeding = false;
-  bool _hasReviewed = false;
-  Map<fsrs.Rating, Duration>? _nextIntervals;
-  int _cardRebuildKey = 0;
   final _focusNode = FocusNode();
   final _dictService = DictionaryService();
   late final AnimationController _flipController;
@@ -66,17 +71,10 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
     _flipAnimation = Tween<double>(begin: 0, end: math.pi).animate(
       CurvedAnimation(parent: _flipController, curve: Curves.easeInOut),
     );
-    _loadDueCards();
   }
 
   @override
   void dispose() {
-    if (_hasReviewed) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        dataChanges.reviewCards.notify();
-        dataChanges.terms.notify();
-      });
-    }
     _flipController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -86,8 +84,10 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
 
+    final controller = context.read<FlashcardReviewController>();
+
     // When answer is not yet revealed, any rating key reveals it first
-    if (!_isAnswerRevealed) {
+    if (!controller.isAnswerRevealed) {
       if (key == LogicalKeyboardKey.space ||
           key == LogicalKeyboardKey.enter ||
           key == LogicalKeyboardKey.digit1 ||
@@ -98,7 +98,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
           key == LogicalKeyboardKey.keyS ||
           key == LogicalKeyboardKey.keyD ||
           key == LogicalKeyboardKey.keyF) {
-        _revealAnswer();
+        _revealAnswer(controller);
         return KeyEventResult.handled;
       }
       return KeyEventResult.ignored;
@@ -106,134 +106,41 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
 
     // Answer is revealed — rate the card
     if (key == LogicalKeyboardKey.digit1 || key == LogicalKeyboardKey.keyA) {
-      _rateCard(fsrs.Rating.again);
+      _rateCard(controller, fsrs.Rating.again);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.digit2 || key == LogicalKeyboardKey.keyS) {
-      _rateCard(fsrs.Rating.hard);
+      _rateCard(controller, fsrs.Rating.hard);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.digit3 || key == LogicalKeyboardKey.keyD) {
-      _rateCard(fsrs.Rating.good);
+      _rateCard(controller, fsrs.Rating.good);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.digit4 || key == LogicalKeyboardKey.keyF) {
-      _rateCard(fsrs.Rating.easy);
+      _rateCard(controller, fsrs.Rating.easy);
       return KeyEventResult.handled;
     }
 
     return KeyEventResult.ignored;
   }
 
-  @override
-  void didUpdateWidget(FlashcardReviewScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.language.id != widget.language.id) {
-      _loadDueCards();
-    }
-  }
-
-  Future<void> _loadDueCards() async {
-    setState(() {
-      _isLoading = true;
-      _currentIndex = 0;
-      _reviewedCount = 0;
-      _isAnswerRevealed = false;
-      _nextIntervals = null;
-    });
-
-    // Ensure all eligible terms have review cards (lazy seeding)
-    await _ensureCardsSeeded();
-
-    final dueCards = await db.reviewCards.getDueCards(widget.language.id!);
-
-    // Batch load terms and translations (2 queries instead of 2N)
-    final termIds = dueCards.map((rc) => rc.termId).toList();
-    final termsMap = await db.terms.getByIds(termIds);
-    final translationsMap = await db.translations.getByTermIds(termIds);
-
-    final items = <_ReviewItem>[];
-    for (final rc in dueCards) {
-      final term = termsMap[rc.termId];
-      if (term == null) continue;
-
-      var translations = translationsMap[term.id] ?? [];
-      // Fallback to legacy translation field
-      if (translations.isEmpty && term.translation.isNotEmpty) {
-        translations = [
-          Translation(termId: term.id ?? 0, meaning: term.translation),
-        ];
-      }
-
-      items.add(
-        _ReviewItem(reviewCard: rc, term: term, translations: translations),
-      );
-    }
-
-    if (mounted) {
-      setState(() {
-        _dueItems = items;
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _ensureCardsSeeded() async {
-    setState(() => _isSeeding = true);
-
-    final allTerms = await db.terms.getAll(languageId: widget.language.id!);
-    final eligibleIds = allTerms
-        .where(
-          (t) =>
-              t.id != null &&
-              t.status != TermStatus.ignored &&
-              t.status != TermStatus.wellKnown,
-        )
-        .map((t) => t.id!)
-        .toList();
-
-    if (eligibleIds.isNotEmpty) {
-      await db.reviewCards.ensureCardsExist(eligibleIds);
-    }
-
-    if (mounted) {
-      setState(() => _isSeeding = false);
-    }
-  }
-
-  Future<void> _rateCard(fsrs.Rating rating) async {
-    if (_currentIndex >= _dueItems.length) return;
-
-    final item = _dueItems[_currentIndex];
-    await reviewService.reviewTerm(item.reviewCard, rating, notify: false);
-
-    _flipController.reset();
-    setState(() {
-      _hasReviewed = true;
-      _reviewedCount++;
-      _currentIndex++;
-      _isAnswerRevealed = false;
-      _nextIntervals = null;
-      _cardRebuildKey = 0;
-    });
-  }
-
-  void _revealAnswer() {
-    if (_currentIndex >= _dueItems.length) return;
-
-    final item = _dueItems[_currentIndex];
-    final intervals = reviewService.getNextIntervals(item.reviewCard.card);
-
-    setState(() {
-      _isAnswerRevealed = true;
-      _nextIntervals = intervals;
-    });
+  void _revealAnswer(FlashcardReviewController controller) {
+    controller.revealAnswer();
     _flipController.forward();
   }
 
-  Future<void> _editTerm(Term term) async {
+  void _rateCard(FlashcardReviewController controller, fsrs.Rating rating) {
+    controller.rateCard(rating);
+    _flipController.reset();
+  }
+
+  Future<void> _editTerm(
+    FlashcardReviewController controller,
+    Term term,
+  ) async {
     final dictionaries = await db.dictionaries.getAll(
-      languageId: widget.language.id!,
+      languageId: controller.language.id!,
     );
 
     if (!mounted) return;
@@ -246,9 +153,9 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
         dictionaries: dictionaries,
         onLookup: (ctx, dict) =>
             _dictService.lookupWord(ctx, term.text, dict.url),
-        languageId: widget.language.id!,
-        languageName: widget.language.name,
-        languageCode: widget.language.languageCode,
+        languageId: controller.language.id!,
+        languageName: controller.language.name,
+        languageCode: controller.language.languageCode,
       ),
     );
 
@@ -262,32 +169,8 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
         );
       }
       // Reload the current item's data to reflect changes
-      await _reloadCurrentItem();
+      await controller.reloadCurrentItem();
     }
-  }
-
-  Future<void> _reloadCurrentItem() async {
-    if (_currentIndex >= _dueItems.length) return;
-
-    final currentItem = _dueItems[_currentIndex];
-    final termId = currentItem.term.id;
-    if (termId == null) return;
-
-    final updatedTerm = await db.terms.getById(termId);
-    if (updatedTerm == null) return;
-
-    final translations = await db.translations.getByTermId(termId);
-
-    if (!mounted) return;
-
-    setState(() {
-      _dueItems[_currentIndex] = _ReviewItem(
-        term: updatedTerm,
-        reviewCard: currentItem.reviewCard,
-        translations: translations,
-      );
-      _cardRebuildKey++;
-    });
   }
 
   String _formatDuration(Duration duration) {
@@ -360,25 +243,29 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    Widget body;
-    if (_isLoading || _isSeeding) {
-      body = const Center(child: CircularProgressIndicator());
-    } else if (_dueItems.isEmpty) {
-      body = _buildEmptyState(l10n);
-    } else if (_currentIndex >= _dueItems.length) {
-      body = _buildCompletionState(l10n);
-    } else {
-      body = _buildReviewCard(l10n);
-    }
+    return Consumer<FlashcardReviewController>(
+      builder: (context, controller, _) {
+        Widget body;
+        if (controller.isLoading || controller.isSeeding) {
+          body = const Center(child: CircularProgressIndicator());
+        } else if (controller.dueItems.isEmpty) {
+          body = _buildEmptyState(l10n);
+        } else if (controller.currentIndex >= controller.dueItems.length) {
+          body = _buildCompletionState(l10n, controller);
+        } else {
+          body = _buildReviewCard(l10n, controller);
+        }
 
-    return Focus(
-      focusNode: _focusNode,
-      autofocus: true,
-      onKeyEvent: _handleKeyEvent,
-      child: Scaffold(
-        appBar: AppBar(title: Text(l10n.flashcardReview)),
-        body: body,
-      ),
+        return Focus(
+          focusNode: _focusNode,
+          autofocus: true,
+          onKeyEvent: _handleKeyEvent,
+          child: Scaffold(
+            appBar: AppBar(title: Text(l10n.flashcardReview)),
+            body: body,
+          ),
+        );
+      },
     );
   }
 
@@ -396,18 +283,24 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
     );
   }
 
-  Widget _buildCompletionState(AppLocalizations l10n) {
+  Widget _buildCompletionState(
+    AppLocalizations l10n,
+    FlashcardReviewController controller,
+  ) {
     return ReviewCompletionState(
-      reviewedCount: _reviewedCount,
+      reviewedCount: controller.reviewedCount,
       onDone: () => Navigator.pop(context),
       completionMessage: l10n.reviewComplete,
-      reviewedCountMessage: l10n.reviewedCount(_reviewedCount),
+      reviewedCountMessage: l10n.reviewedCount(controller.reviewedCount),
       doneLabel: l10n.done,
     );
   }
 
-  Widget _buildReviewCard(AppLocalizations l10n) {
-    final item = _dueItems[_currentIndex];
+  Widget _buildReviewCard(
+    AppLocalizations l10n,
+    FlashcardReviewController controller,
+  ) {
+    final item = controller.currentItem!;
     final term = item.term;
 
     return Padding(
@@ -416,8 +309,8 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
         children: [
           // Progress indicator
           ReviewProgressIndicator(
-            currentIndex: _currentIndex,
-            totalCount: _dueItems.length,
+            currentIndex: controller.currentIndex,
+            totalCount: controller.dueItems.length,
             termStatus: term.status,
             statusDotSize: _FlashcardReviewConstants.statusDotSize,
           ),
@@ -425,7 +318,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
           // Flashcard with flip animation
           Expanded(
             child: AnimatedBuilder(
-              key: ValueKey('card_${item.term.id}_$_cardRebuildKey'),
+              key: ValueKey('card_${term.id}_${item.hashCode}'),
               animation: _flipAnimation,
               builder: (context, _) {
                 final angle = _flipAnimation.value;
@@ -440,17 +333,17 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
                   transform: transform,
                   alignment: Alignment.center,
                   child: showBack
-                      ? _buildCardBack(l10n, item)
-                      : _buildCardFront(l10n, item),
+                      ? _buildCardBack(l10n, controller, item)
+                      : _buildCardFront(l10n, controller, item),
                 );
               },
             ),
           ),
 
           // Rating buttons
-          if (_isAnswerRevealed) ...[
+          if (controller.isAnswerRevealed) ...[
             const SizedBox(height: AppConstants.spacingM),
-            _buildRatingButtons(l10n),
+            _buildRatingButtons(l10n, controller),
           ],
         ],
       ),
@@ -482,10 +375,14 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
     );
   }
 
-  Widget _buildCardFront(AppLocalizations l10n, _ReviewItem item) {
+  Widget _buildCardFront(
+    AppLocalizations l10n,
+    FlashcardReviewController controller,
+    ReviewItem item,
+  ) {
     final term = item.term;
     return _buildCardShell(
-      onTap: _revealAnswer,
+      onTap: () => _revealAnswer(controller),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -497,13 +394,13 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
             ),
             textAlign: TextAlign.center,
           ),
-          if (widget.language.languageCode.isNotEmpty)
+          if (controller.language.languageCode.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.volume_up),
               tooltip: l10n.pronounce,
               onPressed: () => ttsService.speak(
                 term.lowerText,
-                widget.language.languageCode,
+                controller.language.languageCode,
               ),
               visualDensity: VisualDensity.compact,
             ),
@@ -544,13 +441,16 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
     );
   }
 
-  Widget _buildCardBack(AppLocalizations l10n, _ReviewItem item) {
+  Widget _buildCardBack(
+    AppLocalizations l10n,
+    FlashcardReviewController controller,
+    ReviewItem item,
+  ) {
     final term = item.term;
     return _buildCardShell(
       child: Stack(
         children: [
           Column(
-            key: ValueKey('card_back_${item.term.id}_$_cardRebuildKey'),
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
@@ -561,13 +461,13 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
                 ),
                 textAlign: TextAlign.center,
               ),
-              if (widget.language.languageCode.isNotEmpty)
+              if (controller.language.languageCode.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.volume_up),
                   tooltip: l10n.pronounce,
                   onPressed: () => ttsService.speak(
                     term.lowerText,
-                    widget.language.languageCode,
+                    controller.language.languageCode,
                   ),
                   visualDensity: VisualDensity.compact,
                 ),
@@ -624,7 +524,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
             child: IconButton(
               icon: const Icon(Icons.edit_outlined),
               tooltip: l10n.edit,
-              onPressed: () => _editTerm(term),
+              onPressed: () => _editTerm(controller, term),
               iconSize: 20,
             ),
           ),
@@ -633,12 +533,16 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
     );
   }
 
-  Widget _buildRatingButtons(AppLocalizations l10n) {
-    final intervals = _nextIntervals;
+  Widget _buildRatingButtons(
+    AppLocalizations l10n,
+    FlashcardReviewController controller,
+  ) {
+    final intervals = controller.nextIntervals;
 
     return Row(
       children: [
         _buildRatingButton(
+          controller: controller,
           label: l10n.rateAgain,
           rating: fsrs.Rating.again,
           color: Theme.of(context).colorScheme.error,
@@ -646,6 +550,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
         ),
         const SizedBox(width: _FlashcardReviewConstants.buttonSpacing),
         _buildRatingButton(
+          controller: controller,
           label: l10n.rateHard,
           rating: fsrs.Rating.hard,
           color: context.appColors.warning,
@@ -653,6 +558,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
         ),
         const SizedBox(width: _FlashcardReviewConstants.buttonSpacing),
         _buildRatingButton(
+          controller: controller,
           label: l10n.rateGood,
           rating: fsrs.Rating.good,
           color: context.appColors.success,
@@ -660,6 +566,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
         ),
         const SizedBox(width: _FlashcardReviewConstants.buttonSpacing),
         _buildRatingButton(
+          controller: controller,
           label: l10n.rateEasy,
           rating: fsrs.Rating.easy,
           color: Theme.of(context).colorScheme.primary,
@@ -670,6 +577,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
   }
 
   Widget _buildRatingButton({
+    required FlashcardReviewController controller,
     required String label,
     required fsrs.Rating rating,
     required Color color,
@@ -677,7 +585,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
   }) {
     return Expanded(
       child: OutlinedButton(
-        onPressed: () => _rateCard(rating),
+        onPressed: () => _rateCard(controller, rating),
         style: OutlinedButton.styleFrom(
           foregroundColor: color,
           side: BorderSide(color: color),
@@ -700,16 +608,4 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen>
       ),
     );
   }
-}
-
-class _ReviewItem {
-  final ReviewCardRecord reviewCard;
-  final Term term;
-  final List<Translation> translations;
-
-  const _ReviewItem({
-    required this.reviewCard,
-    required this.term,
-    required this.translations,
-  });
 }

@@ -99,8 +99,8 @@ class _DashboardTabState extends State<DashboardTab> {
     _loadInProgress = true;
     _pendingReload = false;
 
+    // Only set error to null, don't clear the screen if already loaded
     setState(() {
-      _isLoading = true;
       _error = null;
     });
     try {

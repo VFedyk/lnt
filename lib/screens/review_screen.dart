@@ -49,14 +49,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Future<void> _loadStats() async {
     setState(() {
-      _isLoading = true;
       _error = null;
     });
     try {
-      final dueCount = await db.reviewCards
-          .getDueCount(widget.language.id!);
-      final reviewedToday = await db.reviewLogs
-          .getReviewCountToday(widget.language.id!);
+      final dueCount = await db.reviewCards.getDueCount(widget.language.id!);
+      final reviewedToday = await db.reviewLogs.getReviewCountToday(
+        widget.language.id!,
+      );
 
       if (mounted) {
         setState(() {
@@ -66,7 +65,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
         });
       }
     } catch (e, stackTrace) {
-      AppLogger.error('Review stats load failed', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+        'Review stats load failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -116,8 +119,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         dueCount: _dueCount,
                       ),
                       const SizedBox(height: AppConstants.spacingXS),
-                      Text(l10n.reviewedToday,
-                          style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        l10n.reviewedToday,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ],
                   ),
                 ],
@@ -234,8 +239,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        StatisticsScreen(language: widget.language),
+                    builder: (_) => StatisticsScreen(language: widget.language),
                   ),
                 );
               },
@@ -253,10 +257,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
         const SizedBox(height: AppConstants.spacingXS),
         AnimatedCounter(
           value: value,
-          style: Theme.of(context)
-              .textTheme
-              .headlineMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
