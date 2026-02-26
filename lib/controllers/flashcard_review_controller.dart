@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import '../models/language.dart';
 import '../models/review_card.dart';
@@ -27,6 +28,8 @@ class FlashcardReviewController extends BaseController {
   bool _isAnswerRevealed = false;
   bool _isSeeding = false;
   bool _hasReviewed = false;
+  bool _isRating = false;
+  int _reloadVersion = 0;
   Map<fsrs.Rating, Duration>? _nextIntervals;
 
   List<ReviewItem> get dueItems => _dueItems;
@@ -36,6 +39,7 @@ class FlashcardReviewController extends BaseController {
   bool get isAnswerRevealed => _isAnswerRevealed;
   bool get isSeeding => _isSeeding;
   bool get hasReviewed => _hasReviewed;
+  int get reloadVersion => _reloadVersion;
   Map<fsrs.Rating, Duration>? get nextIntervals => _nextIntervals;
 
   ReviewItem? get currentItem =>
@@ -48,8 +52,10 @@ class FlashcardReviewController extends BaseController {
   @override
   void dispose() {
     if (_hasReviewed) {
-      dataChanges.reviewCards.notify();
-      dataChanges.terms.notify();
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        dataChanges.reviewCards.notify();
+        dataChanges.terms.notify();
+      });
     }
     super.dispose();
   }
@@ -119,11 +125,10 @@ class FlashcardReviewController extends BaseController {
   }
 
   Future<void> rateCard(fsrs.Rating rating) async {
-    if (_currentIndex >= _dueItems.length) return;
+    if (_isRating || _currentIndex >= _dueItems.length) return;
 
+    _isRating = true;
     final item = _dueItems[_currentIndex];
-    // Call the service but don't wait for UI to update to feel snappy,
-    // though awaiting is required if we want strict consistency.
     await reviewService.reviewTerm(item.reviewCard, rating, notify: false);
 
     _hasReviewed = true;
@@ -131,6 +136,7 @@ class FlashcardReviewController extends BaseController {
     _currentIndex++;
     _isAnswerRevealed = false;
     _nextIntervals = null;
+    _isRating = false;
     safeNotify();
   }
 
@@ -162,6 +168,7 @@ class FlashcardReviewController extends BaseController {
       reviewCard: currentItem.reviewCard,
       translations: translations,
     );
+    _reloadVersion++;
     safeNotify();
   }
 }

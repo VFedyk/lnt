@@ -130,8 +130,11 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
     _flipController.forward();
   }
 
-  void _rateCard(FlashcardReviewController controller, fsrs.Rating rating) {
-    controller.rateCard(rating);
+  Future<void> _rateCard(
+    FlashcardReviewController controller,
+    fsrs.Rating rating,
+  ) async {
+    await controller.rateCard(rating);
     _flipController.reset();
   }
 
@@ -318,7 +321,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
           // Flashcard with flip animation
           Expanded(
             child: AnimatedBuilder(
-              key: ValueKey('card_${term.id}_${item.hashCode}'),
+              key: ValueKey('card_${controller.currentIndex}_${controller.reloadVersion}'),
               animation: _flipAnimation,
               builder: (context, _) {
                 final angle = _flipAnimation.value;
