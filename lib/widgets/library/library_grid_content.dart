@@ -14,6 +14,7 @@ abstract class _LibraryGridContentConstants {
   static const double feedbackWidth = 100.0;
   static const double parentZoneHeight = 40.0;
   static const double parentZoneBorderWidth = 2.0;
+  static const double hoverScale = 1.04;
 }
 
 class LibraryGridContent extends StatelessWidget {
@@ -122,7 +123,7 @@ class LibraryGridContent extends StatelessWidget {
                               _LibraryGridContentConstants.draggingOpacity,
                           child: cover,
                         ),
-                        child: cover,
+                        child: _HoverableBookCover(child: cover),
                       ),
                     );
                   },
@@ -163,7 +164,7 @@ class LibraryGridContent extends StatelessWidget {
                   opacity: _LibraryGridContentConstants.draggingOpacity,
                   child: cover,
                 ),
-                child: cover,
+                child: _HoverableBookCover(child: cover),
               );
             },
           ),
@@ -237,6 +238,33 @@ class _ParentDropZone extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _HoverableBookCover extends StatefulWidget {
+  final Widget child;
+
+  const _HoverableBookCover({required this.child});
+
+  @override
+  State<_HoverableBookCover> createState() => _HoverableBookCoverState();
+}
+
+class _HoverableBookCoverState extends State<_HoverableBookCover> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedScale(
+        scale: _isHovered ? _LibraryGridContentConstants.hoverScale : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
     );
   }
 }

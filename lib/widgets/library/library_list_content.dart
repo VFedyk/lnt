@@ -15,6 +15,7 @@ abstract class _LibraryListContentConstants {
   static const double feedbackWidth = 280.0;
   static const double parentZoneHeight = 40.0;
   static const double parentZoneBorderWidth = 2.0;
+  static const double hoverElevation = 3.0;
 }
 
 class LibraryListContent extends StatelessWidget {
@@ -162,7 +163,7 @@ class _ParentDropZone extends StatelessWidget {
 
 // ── Folder list item ──────────────────────────────────────────────────────────
 
-class _FolderListItem extends StatelessWidget {
+class _FolderListItem extends StatefulWidget {
   final Collection collection;
   final AppLocalizations l10n;
   final VoidCallback onOpen;
@@ -180,10 +181,22 @@ class _FolderListItem extends StatelessWidget {
   });
 
   @override
+  State<_FolderListItem> createState() => _FolderListItemState();
+}
+
+class _FolderListItemState extends State<_FolderListItem> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final collection = widget.collection;
+    final l10n = widget.l10n;
 
     final card = Card(
+      elevation: _isHovered
+          ? _LibraryListContentConstants.hoverElevation
+          : null,
       margin: const EdgeInsets.symmetric(
         horizontal: AppConstants.spacingL,
         vertical: AppConstants.spacingXS,
@@ -225,13 +238,13 @@ class _FolderListItem extends StatelessWidget {
           ],
           onSelected: (value) {
             if (value == _ListAction.edit) {
-              onEdit();
+              widget.onEdit();
             } else if (value == _ListAction.delete) {
-              onDelete();
+              widget.onDelete();
             }
           },
         ),
-        onTap: onOpen,
+        onTap: widget.onOpen,
       ),
     );
 
@@ -245,50 +258,52 @@ class _FolderListItem extends StatelessWidget {
           width: _LibraryListContentConstants.feedbackWidth,
           child: ListTile(
             leading: const CircleAvatar(child: Icon(Icons.folder)),
-            title: Text(
-              collection.name,
-              overflow: TextOverflow.ellipsis,
-            ),
+            title: Text(collection.name, overflow: TextOverflow.ellipsis),
           ),
         ),
       ),
     );
 
-    return DragTarget<Object>(
-      onWillAcceptWithDetails: (details) => details.data != collection,
-      onAcceptWithDetails: (details) => onDrop(details.data),
-      builder: (context, candidateItems, _) {
-        final isHovering = candidateItems.isNotEmpty;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          decoration: isHovering
-              ? BoxDecoration(
-                  border: Border.all(
-                    color: colorScheme.primary,
-                    width: _LibraryListContentConstants.parentZoneBorderWidth,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.spacingS + 4),
-                )
-              : null,
-          child: Draggable<Object>(
-            data: collection,
-            feedback: feedback,
-            childWhenDragging: Opacity(
-              opacity: _LibraryListContentConstants.draggingOpacity,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: DragTarget<Object>(
+        onWillAcceptWithDetails: (details) => details.data != collection,
+        onAcceptWithDetails: (details) => widget.onDrop(details.data),
+        builder: (context, candidateItems, _) {
+          final isDragHovering = candidateItems.isNotEmpty;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: isDragHovering
+                ? BoxDecoration(
+                    border: Border.all(
+                      color: colorScheme.primary,
+                      width:
+                          _LibraryListContentConstants.parentZoneBorderWidth,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.spacingS + 4),
+                  )
+                : null,
+            child: Draggable<Object>(
+              data: collection,
+              feedback: feedback,
+              childWhenDragging: Opacity(
+                opacity: _LibraryListContentConstants.draggingOpacity,
+                child: card,
+              ),
               child: card,
             ),
-            child: card,
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
 
 // ── Text list item ────────────────────────────────────────────────────────────
 
-class _TextListItem extends StatelessWidget {
+class _TextListItem extends StatefulWidget {
   final TextDocument text;
   final AppLocalizations l10n;
   final String totalLabel;
@@ -312,8 +327,21 @@ class _TextListItem extends StatelessWidget {
   });
 
   @override
+  State<_TextListItem> createState() => _TextListItemState();
+}
+
+class _TextListItemState extends State<_TextListItem> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
+    final text = widget.text;
+    final l10n = widget.l10n;
+
     final card = Card(
+      elevation: _isHovered
+          ? _LibraryListContentConstants.hoverElevation
+          : null,
       margin: const EdgeInsets.symmetric(
         horizontal: AppConstants.spacingL,
         vertical: AppConstants.spacingXS,
@@ -341,15 +369,15 @@ class _TextListItem extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(totalLabel),
+            Text(widget.totalLabel),
             Text(
-              unknownLabel,
+              widget.unknownLabel,
               style: TextStyle(
-                color: unknownCount > 0
+                color: widget.unknownCount > 0
                     ? context.appColors.warning
                     : context.appColors.success,
                 fontSize: AppConstants.fontSizeCaption,
-                fontWeight: unknownCount == 0 ? FontWeight.bold : null,
+                fontWeight: widget.unknownCount == 0 ? FontWeight.bold : null,
               ),
             ),
           ],
@@ -392,15 +420,15 @@ class _TextListItem extends StatelessWidget {
           ],
           onSelected: (value) {
             if (value == _ListAction.cover) {
-              onSetCover();
+              widget.onSetCover();
             } else if (value == _ListAction.edit) {
-              onEdit();
+              widget.onEdit();
             } else if (value == _ListAction.delete) {
-              onDelete();
+              widget.onDelete();
             }
           },
         ),
-        onTap: onOpen,
+        onTap: widget.onOpen,
       ),
     );
 
@@ -425,14 +453,18 @@ class _TextListItem extends StatelessWidget {
       ),
     );
 
-    return Draggable<Object>(
-      data: text,
-      feedback: feedback,
-      childWhenDragging: Opacity(
-        opacity: _LibraryListContentConstants.draggingOpacity,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Draggable<Object>(
+        data: text,
+        feedback: feedback,
+        childWhenDragging: Opacity(
+          opacity: _LibraryListContentConstants.draggingOpacity,
+          child: card,
+        ),
         child: card,
       ),
-      child: card,
     );
   }
 }
