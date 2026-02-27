@@ -351,6 +351,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newCollection => 'New Collection';
 
   @override
+  String get moveToParentFolder => 'Move to parent';
+
+  @override
   String get editCollection => 'Edit Collection';
 
   @override

@@ -163,6 +163,7 @@
     }
   },
   "newCollection": "New Collection",
+  "moveToParentFolder": "Move to parent",
   "editCollection": "Edit Collection",
   "deleteCollection": "Delete Collection?",
   "deleteCollectionConfirm": "Delete \"{name}\" and its {count} text(s)?",

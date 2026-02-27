@@ -351,6 +351,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get newCollection => 'Нова колекція';
 
   @override
+  String get moveToParentFolder => 'Перемістити вгору';
+
+  @override
   String get editCollection => 'Редагувати колекцію';
 
   @override

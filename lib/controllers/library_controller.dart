@@ -394,6 +394,36 @@ class LibraryController extends BaseController {
     return db.texts.getCountInCollection(collectionId);
   }
 
+  // ── Drag-and-drop moves ──
+
+  Future<void> moveText(TextDocument text, int? targetCollectionId) async {
+    if (text.collectionId == targetCollectionId) return;
+    await db.texts.moveToCollection(text.id!, targetCollectionId);
+  }
+
+  Future<void> moveCollection(
+    Collection collection,
+    int? targetParentId,
+  ) async {
+    if (collection.id == targetParentId) return;
+    if (targetParentId != null &&
+        await _isDescendant(targetParentId, collection.id!)) {
+      return;
+    }
+    await db.collections.move(collection.id!, targetParentId);
+  }
+
+  Future<bool> _isDescendant(int candidateId, int ancestorId) async {
+    Collection? current = await db.collections.getById(candidateId);
+    while (current?.parentId != null) {
+      if (current!.parentId == ancestorId) {
+        return true;
+      }
+      current = await db.collections.getById(current.parentId!);
+    }
+    return false;
+  }
+
   Future<void> setCoverImage(TextDocument text, String sourcePath) async {
     final sourceFile = File(sourcePath);
     final appDir = await getApplicationDocumentsDirectory();

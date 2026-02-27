@@ -60,6 +60,17 @@ class CollectionRepository extends BaseRepository {
     return result;
   }
 
+  Future<void> move(int collectionId, int? parentId) async {
+    final db = await getDatabase();
+    await db.update(
+      'collections',
+      {'parent_id': parentId},
+      where: 'id = ?',
+      whereArgs: [collectionId],
+    );
+    notifyChange();
+  }
+
   Future<int> delete(int id) async {
     final db = await getDatabase();
     final result = await db.delete('collections', where: 'id = ?', whereArgs: [id]);

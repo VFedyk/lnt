@@ -128,6 +128,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (confirm == true) await ctrl.deleteCollection(collection.id!);
   }
 
+  void _onDrop(
+    LibraryController ctrl,
+    Object item,
+    Collection? targetCollection,
+  ) {
+    final targetId = targetCollection?.id ?? ctrl.currentCollection?.parentId;
+    if (item is TextDocument) {
+      ctrl.moveText(item, targetId);
+    } else if (item is Collection) {
+      ctrl.moveCollection(item, targetId);
+    }
+  }
+
   Future<void> _setCoverImage(LibraryController ctrl, TextDocument text) async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null && result.files.single.path != null) {
@@ -637,6 +650,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       collections: ctrl.collections,
       texts: sortedTexts,
       unknownCounts: ctrl.unknownCounts,
+      isInsideCollection: ctrl.currentCollection != null,
       onOpenCollection: ctrl.openCollection,
       onEditCollection: (collection) => _editCollection(ctrl, collection),
       onDeleteCollection: (collection) => _deleteCollection(ctrl, collection),
@@ -651,6 +665,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       onSetCover: (text) => _setCoverImage(ctrl, text),
       onEditText: (text) => _editText(ctrl, text),
       onDeleteText: (text) => _deleteText(ctrl, text),
+      onDrop: (item, target) => _onDrop(ctrl, item, target),
     );
   }
 
@@ -667,6 +682,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       collections: ctrl.collections,
       texts: sortedTexts,
       unknownCounts: ctrl.unknownCounts,
+      isInsideCollection: ctrl.currentCollection != null,
       onOpenCollection: ctrl.openCollection,
       onShowCollectionOptions: (collection) =>
           _showCollectionOptions(ctrl, collection),
@@ -679,6 +695,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         ).then((_) => ctrl.recalculateUnknownCountForText(text));
       },
       onShowTextOptions: (text) => _showTextOptions(ctrl, text),
+      onDrop: (item, target) => _onDrop(ctrl, item, target),
     );
   }
 }

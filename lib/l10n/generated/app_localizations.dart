@@ -746,6 +746,12 @@ abstract class AppLocalizations {
   /// **'New Collection'**
   String get newCollection;
 
+  /// No description provided for @moveToParentFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to parent'**
+  String get moveToParentFolder;
+
   /// No description provided for @editCollection.
   ///
   /// In en, this message translates to:

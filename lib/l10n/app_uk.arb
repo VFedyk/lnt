@@ -108,6 +108,7 @@
   "importFailedTitle": "Помилка імпорту",
   "couldNotImportEpub": "Не вдалося імпортувати EPUB: {error}",
   "newCollection": "Нова колекція",
+  "moveToParentFolder": "Перемістити вгору",
   "editCollection": "Редагувати колекцію",
   "deleteCollection": "Видалити колекцію?",
   "deleteCollectionConfirm": "Видалити \"{name}\" та {count} текст(ів)?",
