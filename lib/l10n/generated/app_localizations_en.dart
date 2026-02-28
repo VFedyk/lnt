@@ -487,8 +487,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notes => 'Notes';
 
   @override
-  String textsTitle(String languageName) {
-    return 'Texts - $languageName';
+  String libraryTitle(String languageName) {
+    return 'Library - $languageName';
   }
 
   @override

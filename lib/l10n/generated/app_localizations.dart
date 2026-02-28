@@ -998,11 +998,11 @@ abstract class AppLocalizations {
   /// **'Notes'**
   String get notes;
 
-  /// No description provided for @textsTitle.
+  /// No description provided for @libraryTitle.
   ///
   /// In en, this message translates to:
-  /// **'Texts - {languageName}'**
-  String textsTitle(String languageName);
+  /// **'Library - {languageName}'**
+  String libraryTitle(String languageName);
 
   /// No description provided for @sort.
   ///

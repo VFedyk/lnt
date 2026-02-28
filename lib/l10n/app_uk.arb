@@ -150,7 +150,7 @@
   "totalParts": "Всього частин",
   "characters": "Символів",
   "notes": "Примітки",
-  "textsTitle": "Тексти - {languageName}",
+  "libraryTitle": "Бібліотека - {languageName}",
   "sort": "Сортувати",
   "textCount": "{count, plural, =1{1 текст} few{{count} тексти} other{{count} текстів}}",
   "unknownCount": "{count} невідомих",

@@ -487,8 +487,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get notes => 'Примітки';
 
   @override
-  String textsTitle(String languageName) {
-    return 'Тексти - $languageName';
+  String libraryTitle(String languageName) {
+    return 'Бібліотека - $languageName';
   }
 
   @override

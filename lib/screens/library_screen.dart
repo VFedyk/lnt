@@ -457,7 +457,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.textsTitle(widget.language.name)),
+            Text(l10n.libraryTitle(widget.language.name)),
             if (ctrl.currentCollection != null)
               Text(
                 ctrl.currentCollection!.name,

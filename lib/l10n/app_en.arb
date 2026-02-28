@@ -243,8 +243,8 @@
   "totalParts": "Total parts",
   "characters": "Characters",
   "notes": "Notes",
-  "textsTitle": "Texts - {languageName}",
-  "@textsTitle": {
+  "libraryTitle": "Library - {languageName}",
+  "@libraryTitle": {
     "placeholders": {
       "languageName": {
         "type": "String"
