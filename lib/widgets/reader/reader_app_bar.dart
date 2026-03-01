@@ -49,6 +49,22 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Text(title, overflow: TextOverflow.ellipsis),
       actions: [
         if (isSelectionMode)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFBBDEFB),
+                borderRadius: BorderRadius.circular(4.0),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                l10n.selectionMode,
+                style: const TextStyle(color: Colors.blue),
+              ),
+            ),
+          ),
+        if (isSelectionMode)
           IconButton(
             icon: const Icon(Icons.close),
             tooltip: l10n.cancelSelection,

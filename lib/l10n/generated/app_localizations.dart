@@ -1226,6 +1226,12 @@ abstract class AppLocalizations {
   /// **'Lookup \"{word}\"'**
   String lookupWord(String word);
 
+  /// No description provided for @selectionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection mode'**
+  String get selectionMode;
+
   /// No description provided for @cancelSelection.
   ///
   /// In en, this message translates to:

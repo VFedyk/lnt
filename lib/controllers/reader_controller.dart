@@ -519,6 +519,22 @@ class ReaderController extends BaseController {
     }
   }
 
+  /// Replaces the current selection with exactly the words in [startIndex]..[endIndex].
+  void selectRange(int startIndex, int endIndex) {
+    isSelectionMode = true;
+    selectedWordIndices.clear();
+    final lo = startIndex < endIndex ? startIndex : endIndex;
+    final hi = startIndex < endIndex ? endIndex : startIndex;
+    for (final token in wordTokens) {
+      if (token.isWord &&
+          token.globalIndex >= lo &&
+          token.globalIndex <= hi) {
+        selectedWordIndices.add(token.globalIndex);
+      }
+    }
+    safeNotify();
+  }
+
   void cancelSelection() {
     isSelectionMode = false;
     selectedWordIndices.clear();

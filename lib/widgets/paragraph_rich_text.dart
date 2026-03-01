@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../controllers/reader_controller.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -14,6 +15,9 @@ class ParagraphRichText extends StatelessWidget {
   final Map<int, Term> termsById;
   final void Function(String word, int position, int globalIndex) onWordTap;
   final void Function(int globalIndex) onWordLongPress;
+  final void Function(String word, int position, int globalIndex, Offset globalPosition)? onWordRightClick;
+  final void Function(int globalIndex)? onWordDragStart;
+  final void Function(int globalIndex)? onWordDragEnter;
 
   static const double _lineHeight = 1.6;
   static const double _wordPaddingH = 3.0;
@@ -45,6 +49,9 @@ class ParagraphRichText extends StatelessWidget {
     required this.termsById,
     required this.onWordTap,
     required this.onWordLongPress,
+    this.onWordRightClick,
+    this.onWordDragStart,
+    this.onWordDragEnter,
   });
 
   @override
@@ -181,6 +188,10 @@ class ParagraphRichText extends StatelessWidget {
       Widget wordContainer = GestureDetector(
         onTap: () => onWordTap(token.text, token.position, globalIndex),
         onLongPress: () => onWordLongPress(globalIndex),
+        onSecondaryTapUp: onWordRightClick != null
+            ? (details) => onWordRightClick!(
+                token.text, token.position, globalIndex, details.globalPosition)
+            : null,
         child: Container(
           padding: const EdgeInsets.symmetric(
             horizontal: _wordPaddingH,
@@ -212,6 +223,23 @@ class ParagraphRichText extends StatelessWidget {
           message: tooltipMessage,
           waitDuration: _tooltipWait,
           child: wordContainer,
+        );
+      }
+
+      if (onWordDragStart != null) {
+        final captIdx = globalIndex;
+        wordContainer = MouseRegion(
+          onEnter: (_) => onWordDragEnter!(captIdx),
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (event) {
+              if (event.kind == PointerDeviceKind.mouse &&
+                  event.buttons == kPrimaryMouseButton) {
+                onWordDragStart!(captIdx);
+              }
+            },
+            child: wordContainer,
+          ),
         );
       }
 

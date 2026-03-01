@@ -27,7 +27,16 @@ import '../widgets/term_dialog.dart';
 import '../widgets/word_list_drawer.dart';
 import '../utils/app_theme.dart';
 import '../utils/async_helpers.dart';
+import '../utils/constants.dart';
 import '../utils/snackbar_helpers.dart';
+
+enum _ContextMenuAction {
+  saveAsTerm,
+  assignForeignLanguage,
+  lookupInDictionary,
+  aiMeaning,
+  aiGrammar,
+}
 
 /// Layout, sizing, and timing constants for the reader screen
 abstract class _ReaderScreenConstants {
@@ -39,9 +48,6 @@ abstract class _ReaderScreenConstants {
   // Icon sizes
   static const double editIconSize = 18.0;
 
-  // Selection mode colors
-  static const Color selectionBannerColor = Color(0xFFBBDEFB);
-  static const Color selectionAccentColor = Colors.blue;
 }
 
 class ReaderScreen extends StatelessWidget {
@@ -72,6 +78,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
   final _aiExplanationService = AiExplanationService(settings: settings);
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _loadScheduled = false;
+  int? _dragSelectOriginIndex;
 
   @override
   void initState() {
@@ -272,6 +279,246 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
   Future<void> _handleWordLongPress(int tokenIndex) async {
     context.read<ReaderController>().handleWordLongPress(tokenIndex);
+  }
+
+  void _onWordDragStart(int tokenIndex) {
+    _dragSelectOriginIndex = tokenIndex;
+  }
+
+  void _onWordDragEnter(int tokenIndex) {
+    final origin = _dragSelectOriginIndex;
+    if (origin == null || tokenIndex == origin) return;
+    context.read<ReaderController>().selectRange(origin, tokenIndex);
+  }
+
+  void _stopDragSelect() {
+    _dragSelectOriginIndex = null;
+  }
+
+  Future<void> _handleWordRightClick(
+    String word,
+    int position,
+    int tokenIndex,
+    Offset globalPosition,
+  ) async {
+    final ctrl = context.read<ReaderController>();
+    final l10n = AppLocalizations.of(context);
+    final overlay =
+        Overlay.of(context).context.findRenderObject()! as RenderBox;
+
+    final action = await showMenu<_ContextMenuAction>(
+      context: context,
+      position: RelativeRect.fromRect(
+        globalPosition & Size.zero,
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        PopupMenuItem(
+          value: _ContextMenuAction.saveAsTerm,
+          child: Row(children: [
+            const Icon(Icons.add),
+            const SizedBox(width: AppConstants.spacingS),
+            Expanded(child: Text(l10n.saveAsTerm)),
+          ]),
+        ),
+        PopupMenuItem(
+          value: _ContextMenuAction.assignForeignLanguage,
+          child: Row(children: [
+            const Icon(Icons.language),
+            const SizedBox(width: AppConstants.spacingS),
+            Expanded(child: Text(l10n.assignForeignLanguage)),
+          ]),
+        ),
+        PopupMenuItem(
+          value: _ContextMenuAction.lookupInDictionary,
+          child: Row(children: [
+            const Icon(Icons.search),
+            const SizedBox(width: AppConstants.spacingS),
+            Expanded(child: Text(l10n.lookupInDictionary)),
+          ]),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: _ContextMenuAction.aiMeaning,
+          child: Row(children: [
+            const Icon(Icons.lightbulb_outline),
+            const SizedBox(width: AppConstants.spacingS),
+            Expanded(child: Text(l10n.explainMeaningInContext)),
+          ]),
+        ),
+        PopupMenuItem(
+          value: _ContextMenuAction.aiGrammar,
+          child: Row(children: [
+            const Icon(Icons.rule),
+            const SizedBox(width: AppConstants.spacingS),
+            Expanded(child: Text(l10n.explainGrammarInContext)),
+          ]),
+        ),
+      ],
+    );
+
+    if (!mounted) return;
+
+    final hasSelection =
+        ctrl.isSelectionMode && ctrl.selectedWordIndices.isNotEmpty;
+    final lowerWord = ctrl.normalizeWord(word);
+
+    switch (action) {
+      case _ContextMenuAction.saveAsTerm:
+        if (hasSelection) {
+          await _saveSelectionAsTerm();
+        } else {
+          await _openTermDialog(ctrl, word, position, ctrl.termsMap[lowerWord]);
+        }
+      case _ContextMenuAction.assignForeignLanguage:
+        if (hasSelection) {
+          await _assignForeignLanguage();
+        } else {
+          await _assignForeignLanguageForWord(lowerWord);
+        }
+      case _ContextMenuAction.lookupInDictionary:
+        if (hasSelection) {
+          await _lookupSelectedWords();
+        } else {
+          await _lookupWord(word);
+        }
+      case _ContextMenuAction.aiMeaning:
+        if (hasSelection) {
+          await _explainSelectionInContext(AiExplanationType.meaning);
+        } else {
+          await _explainWordInContext(word, position, AiExplanationType.meaning);
+        }
+      case _ContextMenuAction.aiGrammar:
+        if (hasSelection) {
+          await _explainSelectionInContext(AiExplanationType.grammar);
+        } else {
+          await _explainWordInContext(
+              word, position, AiExplanationType.grammar);
+        }
+      case null:
+        break;
+    }
+  }
+
+  Future<void> _assignForeignLanguageForWord(String lowerWord) async {
+    final ctrl = context.read<ReaderController>();
+    final l10n = AppLocalizations.of(context);
+
+    final allLanguages = await db.languages.getAll();
+    final otherLanguages = allLanguages
+        .where((lang) => lang.id != ctrl.language.id)
+        .toList();
+
+    if (!mounted) return;
+
+    if (otherLanguages.isEmpty) {
+      SnackbarHelpers.showInfo(context, l10n.noOtherLanguages);
+      return;
+    }
+
+    final selectedLanguage = await showDialog<Language>(
+      context: context,
+      builder: (context) =>
+          ReaderLanguagePickerDialog(l10n: l10n, languages: otherLanguages),
+    );
+
+    if (selectedLanguage == null || !mounted) return;
+
+    final targetTermsMap = await db.terms.getMapByLanguage(selectedLanguage.id!);
+    await ctrl.assignForeignWords(selectedLanguage.id!, {
+      lowerWord: targetTermsMap[lowerWord]?.id,
+    });
+  }
+
+  Future<void> _lookupWord(String word) async {
+    final ctrl = context.read<ReaderController>();
+    final dictionaries = await _dictService.getActiveDictionaries(
+      ctrl.language.id!,
+    );
+    if (!mounted) return;
+
+    final l10n = AppLocalizations.of(context);
+    if (dictionaries.isEmpty) {
+      SnackbarHelpers.showInfo(context, l10n.noDictionariesConfigured);
+      return;
+    }
+
+    final selectedDict = await showDialog<Dictionary?>(
+      context: context,
+      builder: (context) => ReaderDictionaryPickerDialog(
+        l10n: l10n,
+        selectedWords: word,
+        dictionaries: dictionaries,
+      ),
+    );
+
+    if (selectedDict != null && mounted) {
+      await _dictService.lookupWord(context, word, selectedDict.url);
+    }
+  }
+
+  Future<void> _explainWordInContext(
+    String word,
+    int position,
+    AiExplanationType type,
+  ) async {
+    final ctrl = context.read<ReaderController>();
+    final l10n = AppLocalizations.of(context);
+    final responseLanguageCode = Localizations.localeOf(context).languageCode;
+
+    if (!await _aiExplanationService.isConfigured()) {
+      if (!mounted) return;
+      SnackbarHelpers.showInfo(context, l10n.aiFeatureUnavailable);
+      return;
+    }
+
+    final sentence = ctrl.getSentenceForPosition(position);
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AiThinkingDialog(),
+    );
+
+    try {
+      final explanation = await _aiExplanationService.explainInContext(
+        type: type,
+        selectedText: word,
+        contextSentence: sentence,
+        languageName: ctrl.language.name,
+        responseLanguageCode: responseLanguageCode,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      final title = type == AiExplanationType.meaning
+          ? l10n.explainMeaningInContext
+          : l10n.explainGrammarInContext;
+
+      await showDialog<void>(
+        context: context,
+        builder: (context) => ReaderAiExplanationDialog(
+          title: title,
+          selectedText: word,
+          contextSentence: sentence,
+          explanation: explanation,
+          closeLabel: l10n.close,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      final label = type == AiExplanationType.meaning
+          ? l10n.aiMeaningExplainFailed
+          : l10n.aiGrammarExplainFailed;
+      final detail = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : e.toString();
+      SnackbarHelpers.showError(context, '$label: $detail');
+    }
   }
 
   Future<void> _assignForeignLanguage() async {
@@ -593,7 +840,18 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final ctrl = context.watch<ReaderController>();
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape &&
+            ctrl.isSelectionMode) {
+          ctrl.cancelSelection();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Scaffold(
       key: _scaffoldKey,
       endDrawer: ctrl.isLoading
           ? null
@@ -637,26 +895,30 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       ),
       body: ctrl.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ReaderContent(
-              showLegend: ctrl.showLegend,
-              termCounts: ctrl.termCounts,
-              isSelectionMode: ctrl.isSelectionMode,
-              selectedCount: ctrl.selectedWordIndices.length,
-              selectionBannerColor: _ReaderScreenConstants.selectionBannerColor,
-              selectionAccentColor: _ReaderScreenConstants.selectionAccentColor,
-              l10n: l10n,
-              rightToLeft: ctrl.language.rightToLeft,
-              scrollController: _scrollController,
-              paragraphs: ctrl.paragraphs,
-              fontSize: ctrl.fontSize,
-              selectedWordIndices: ctrl.selectedWordIndices,
-              otherLanguageTerms: ctrl.otherLanguageTerms,
-              translationsMap: ctrl.translationsMap,
-              translationsById: ctrl.translationsById,
-              termsById: ctrl.termsById,
-              onWordTap: _handleWordTap,
-              onWordLongPress: _handleWordLongPress,
+          : Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerUp: (_) => _stopDragSelect(),
+              onPointerCancel: (_) => _stopDragSelect(),
+              child: ReaderContent(
+                showLegend: ctrl.showLegend,
+                termCounts: ctrl.termCounts,
+                rightToLeft: ctrl.language.rightToLeft,
+                scrollController: _scrollController,
+                paragraphs: ctrl.paragraphs,
+                fontSize: ctrl.fontSize,
+                selectedWordIndices: ctrl.selectedWordIndices,
+                otherLanguageTerms: ctrl.otherLanguageTerms,
+                translationsMap: ctrl.translationsMap,
+                translationsById: ctrl.translationsById,
+                termsById: ctrl.termsById,
+                onWordTap: _handleWordTap,
+                onWordLongPress: _handleWordLongPress,
+                onWordRightClick: _handleWordRightClick,
+                onWordDragStart: _onWordDragStart,
+                onWordDragEnter: _onWordDragEnter,
+              ),
             ),
+      ),
     );
   }
 }

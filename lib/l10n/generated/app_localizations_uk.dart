@@ -642,6 +642,9 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
+  String get selectionMode => 'Режим вибору';
+
+  @override
   String get cancelSelection => 'Скасувати вибір';
 
   @override

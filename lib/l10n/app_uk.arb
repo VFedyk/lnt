@@ -188,6 +188,7 @@
   "errorLoadingLanguages": "Помилка завантаження мов: {error}",
   "noDictionariesConfigured": "Словники не налаштовані",
   "lookupWord": "Шукати \"{word}\"",
+  "selectionMode": "Режим вибору",
   "cancelSelection": "Скасувати вибір",
   "saveAsTerm": "Зберегти як термін",
   "assignForeignLanguage": "Призначити іноземну мову",

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../controllers/reader_controller.dart';
-import '../../l10n/generated/app_localizations.dart';
 import '../../models/term.dart';
 import '../../models/word_token.dart';
 import '../../utils/constants.dart';
@@ -11,11 +10,6 @@ import '../status_legend.dart';
 class ReaderContent extends StatelessWidget {
   final bool showLegend;
   final Map<int, int> termCounts;
-  final bool isSelectionMode;
-  final int selectedCount;
-  final Color selectionBannerColor;
-  final Color selectionAccentColor;
-  final AppLocalizations l10n;
   final bool rightToLeft;
   final ScrollController scrollController;
   final List<List<WordToken>> paragraphs;
@@ -27,16 +21,14 @@ class ReaderContent extends StatelessWidget {
   final Map<int, Term> termsById;
   final void Function(String word, int position, int globalIndex) onWordTap;
   final void Function(int globalIndex) onWordLongPress;
+  final void Function(String word, int position, int globalIndex, Offset globalPosition)? onWordRightClick;
+  final void Function(int globalIndex)? onWordDragStart;
+  final void Function(int globalIndex)? onWordDragEnter;
 
   const ReaderContent({
     super.key,
     required this.showLegend,
     required this.termCounts,
-    required this.isSelectionMode,
-    required this.selectedCount,
-    required this.selectionBannerColor,
-    required this.selectionAccentColor,
-    required this.l10n,
     required this.rightToLeft,
     required this.scrollController,
     required this.paragraphs,
@@ -48,6 +40,9 @@ class ReaderContent extends StatelessWidget {
     required this.termsById,
     required this.onWordTap,
     required this.onWordLongPress,
+    this.onWordRightClick,
+    this.onWordDragStart,
+    this.onWordDragEnter,
   });
 
   @override
@@ -55,23 +50,6 @@ class ReaderContent extends StatelessWidget {
     return Column(
       children: [
         if (showLegend) StatusLegend(termCounts: termCounts),
-        if (isSelectionMode)
-          Container(
-            padding: const EdgeInsets.all(AppConstants.spacingM),
-            color: selectionBannerColor,
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: selectionAccentColor),
-                const SizedBox(width: AppConstants.spacingS),
-                Expanded(
-                  child: Text(
-                    l10n.wordsSelected(selectedCount),
-                    style: TextStyle(color: selectionAccentColor),
-                  ),
-                ),
-              ],
-            ),
-          ),
         Expanded(
           child: Directionality(
             textDirection: rightToLeft ? TextDirection.rtl : TextDirection.ltr,
@@ -100,6 +78,9 @@ class ReaderContent extends StatelessWidget {
                   termsById: termsById,
                   onWordTap: onWordTap,
                   onWordLongPress: onWordLongPress,
+                  onWordRightClick: onWordRightClick,
+                  onWordDragStart: onWordDragStart,
+                  onWordDragEnter: onWordDragEnter,
                 );
               },
             ),

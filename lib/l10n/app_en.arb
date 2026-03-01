@@ -372,6 +372,7 @@
       }
     }
   },
+  "selectionMode": "Selection mode",
   "cancelSelection": "Cancel Selection",
   "saveAsTerm": "Save as Term",
   "assignForeignLanguage": "Assign foreign language",

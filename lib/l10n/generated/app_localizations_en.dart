@@ -640,6 +640,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get selectionMode => 'Selection mode';
+
+  @override
   String get cancelSelection => 'Cancel Selection';
 
   @override
