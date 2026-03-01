@@ -222,6 +222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       l10n: l10n,
       isApplePlatform: PlatformHelper.isApple,
       busy: busy,
+      restoreProgress: ctrl.restoreProgress,
       iCloudBackupLabel: backupLabel,
       onBackupToICloud: () => _backupToICloud(ctrl),
       onRestoreFromICloud: () => _restoreFromICloud(ctrl),

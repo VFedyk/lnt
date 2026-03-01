@@ -14,6 +14,7 @@ class SettingsController extends BaseController {
   DateTime? icloudLastBackup;
   bool isBackingUp = false;
   bool isRestoring = false;
+  double? restoreProgress;
 
   // Initial values for seeding TextEditingControllers in the screen.
   String initialApiKey = '';
@@ -111,14 +112,22 @@ class SettingsController extends BaseController {
   /// Returns true on success. Caller should confirm with user first.
   Future<bool> restoreFromICloud() async {
     isRestoring = true;
+    restoreProgress = null;
     safeNotify();
     try {
-      await backupService.restoreFromICloud();
+      await backupService.restoreFromICloud(
+        onProgress: (p) {
+          restoreProgress = p;
+          safeNotify();
+        },
+      );
       isRestoring = false;
+      restoreProgress = null;
       safeNotify();
       return true;
     } catch (_) {
       isRestoring = false;
+      restoreProgress = null;
       safeNotify();
       rethrow;
     }

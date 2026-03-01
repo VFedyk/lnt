@@ -7,6 +7,7 @@ class BackupSection extends StatelessWidget {
   final AppLocalizations l10n;
   final bool isApplePlatform;
   final bool busy;
+  final double? restoreProgress;
   final String iCloudBackupLabel;
   final VoidCallback onBackupToICloud;
   final VoidCallback onRestoreFromICloud;
@@ -19,6 +20,7 @@ class BackupSection extends StatelessWidget {
     required this.iCloudBackupLabel,
     required this.onBackupToICloud,
     required this.onRestoreFromICloud,
+    this.restoreProgress,
   });
 
   @override
@@ -37,7 +39,7 @@ class BackupSection extends StatelessWidget {
                   l10n.backupRestore,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                if (busy) ...[
+                if (busy && restoreProgress == null) ...[
                   const SizedBox(width: AppConstants.spacingM),
                   SizedBox(
                     width: AppConstants.progressIndicatorSizeS,
@@ -49,6 +51,10 @@ class BackupSection extends StatelessWidget {
                 ],
               ],
             ),
+            if (restoreProgress != null) ...[
+              const SizedBox(height: AppConstants.spacingS),
+              LinearProgressIndicator(value: restoreProgress),
+            ],
             if (isApplePlatform) ...[
               const SizedBox(height: AppConstants.spacingL),
               Text('iCloud', style: Theme.of(context).textTheme.titleSmall),

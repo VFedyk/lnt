@@ -209,7 +209,9 @@ class BackupService {
     await settings.setICloudLastBackup(DateTime.now());
   }
 
-  Future<void> restoreFromICloud() async {
+  Future<void> restoreFromICloud({
+    void Function(double)? onProgress,
+  }) async {
     final files = await ICloudStorage.gather(containerId: _icloudContainerId);
     final hasBackup = files.any((f) => f.relativePath == _backupFileName);
     if (!hasBackup) {
@@ -231,6 +233,9 @@ class BackupService {
       onProgress: (stream) {
         stream.listen(
           (progress) {
+            // Cap at 0.9: the remaining 10% is reserved for the file-flush
+            // phase after the iCloud layer reports completion.
+            onProgress?.call((progress * 0.9).clamp(0.0, 0.9));
             if (progress >= 1.0 && !completer.isCompleted) {
               completer.complete();
             }
@@ -250,10 +255,28 @@ class BackupService {
     );
     await completer.future;
 
-    // The native layer may not have flushed the file yet — poll briefly.
-    for (var i = 0; i < 10; i++) {
-      if (tempFile.existsSync() && tempFile.lengthSync() > 0) break;
+    // iCloud reports progress 1.0 before the native layer finishes copying the
+    // file to destinationFilePath. Poll until the file appears and its size
+    // has been stable for at least two consecutive checks (~1 s), so we know
+    // the write is complete and not still in progress.
+    final deadline = DateTime.now().add(const Duration(seconds: 30));
+    int lastSize = -1;
+    int stableCount = 0;
+    while (DateTime.now().isBefore(deadline)) {
       await Future.delayed(const Duration(milliseconds: 500));
+      if (!tempFile.existsSync()) {
+        lastSize = -1;
+        stableCount = 0;
+        continue;
+      }
+      final size = tempFile.lengthSync();
+      if (size > 0 && size == lastSize) {
+        stableCount++;
+        if (stableCount >= 2) break; // size stable for ≥1 s → write complete
+      } else {
+        stableCount = 0;
+        lastSize = size;
+      }
     }
 
     if (!tempFile.existsSync() || tempFile.lengthSync() == 0) {
