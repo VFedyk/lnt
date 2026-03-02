@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../l10n/generated/app_localizations.dart';
-import '../models/term.dart';
-import '../utils/constants.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../models/term.dart';
+import '../../utils/constants.dart';
 
 /// A reusable progress indicator for review screens
 ///

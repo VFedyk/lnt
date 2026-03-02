@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../l10n/generated/app_localizations.dart';
-import '../models/term.dart';
-import '../utils/constants.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../models/term.dart';
+import '../../utils/constants.dart';
 
 abstract class _StatusLegendConstants {
   static const double shadowAlpha = 0.1;

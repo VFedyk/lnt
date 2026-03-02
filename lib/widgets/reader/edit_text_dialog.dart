@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../l10n/generated/app_localizations.dart';
-import '../models/text_document.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../models/text_document.dart';
 
 class EditTextDialog extends StatefulWidget {
   final TextDocument text;

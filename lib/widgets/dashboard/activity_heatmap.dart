@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
-import '../l10n/generated/app_localizations.dart';
-import '../models/day_activity.dart';
-import '../utils/app_theme.dart';
-import '../utils/constants.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../models/day_activity.dart';
+import '../../utils/app_theme.dart';
+import '../../utils/constants.dart';
 import 'custom_chart_tooltip.dart';
 
 abstract class _HeatmapConstants {

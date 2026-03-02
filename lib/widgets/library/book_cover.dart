@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../utils/app_theme.dart';
-import '../utils/constants.dart';
-import '../utils/cover_image_helper.dart';
+import '../../utils/app_theme.dart';
+import '../../utils/constants.dart';
+import '../../utils/cover_image_helper.dart';
 
 abstract class _BookCoverConstants {
   // Layout

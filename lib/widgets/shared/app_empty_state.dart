@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
+import '../../utils/constants.dart';
 
 /// A reusable empty state widget used across the app
 ///

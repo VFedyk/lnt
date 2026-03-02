@@ -3,56 +3,45 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import '../l10n/generated/app_localizations.dart';
-import '../models/collection.dart';
-import '../utils/constants.dart';
-import '../utils/cover_image_helper.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../models/text_document.dart';
+import '../../utils/constants.dart';
+import '../../utils/cover_image_helper.dart';
 
-abstract class _CollectionDialogConstants {
+abstract class _TextEditDialogConstants {
   static const double coverPickerWidth = 100.0;
   static const double coverPickerHeight = 150.0;
   static const double coverPickerIconSize = 32.0;
-  static const int descriptionMaxLines = 2;
+  static const int contentMaxLines = 10;
 }
 
-class CollectionDialog extends StatefulWidget {
-  final int languageId;
-  final int? parentId;
-  final Collection? existingCollection;
+class TextEditDialog extends StatefulWidget {
+  final TextDocument text;
 
-  const CollectionDialog({
-    super.key,
-    required this.languageId,
-    this.parentId,
-    this.existingCollection,
-  });
-
-  bool get isEditing => existingCollection != null;
+  const TextEditDialog({super.key, required this.text});
 
   @override
-  State<CollectionDialog> createState() => _CollectionDialogState();
+  State<TextEditDialog> createState() => _TextEditDialogState();
 }
 
-class _CollectionDialogState extends State<CollectionDialog> {
+class _TextEditDialogState extends State<TextEditDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  late final TextEditingController _titleController;
+  late final TextEditingController _contentController;
   String? _coverImagePath;
 
   @override
   void initState() {
     super.initState();
-    if (widget.existingCollection != null) {
-      _nameController.text = widget.existingCollection!.name;
-      _descriptionController.text = widget.existingCollection!.description;
-      _coverImagePath = CoverImageHelper.resolve(widget.existingCollection!.coverImage);
-    }
+    _titleController = TextEditingController(text: widget.text.title);
+    _contentController = TextEditingController(text: widget.text.content);
+    _coverImagePath = CoverImageHelper.resolve(widget.text.coverImage);
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
+    _titleController.dispose();
+    _contentController.dispose();
     super.dispose();
   }
 
@@ -91,7 +80,7 @@ class _CollectionDialogState extends State<CollectionDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(widget.isEditing ? l10n.editCollection : l10n.newCollection),
+      title: Text(l10n.editText),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -101,8 +90,8 @@ class _CollectionDialogState extends State<CollectionDialog> {
               GestureDetector(
                 onTap: _pickCoverImage,
                 child: Container(
-                  width: _CollectionDialogConstants.coverPickerWidth,
-                  height: _CollectionDialogConstants.coverPickerHeight,
+                  width: _TextEditDialogConstants.coverPickerWidth,
+                  height: _TextEditDialogConstants.coverPickerHeight,
                   decoration: BoxDecoration(
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
@@ -120,7 +109,7 @@ class _CollectionDialogState extends State<CollectionDialog> {
                           children: [
                             Icon(
                               Icons.add_photo_alternate,
-                              size: _CollectionDialogConstants.coverPickerIconSize,
+                              size: _TextEditDialogConstants.coverPickerIconSize,
                               color: AppConstants.subtitleColor,
                             ),
                             const SizedBox(height: AppConstants.spacingXS),
@@ -143,18 +132,19 @@ class _CollectionDialogState extends State<CollectionDialog> {
                 ),
               const SizedBox(height: AppConstants.spacingL),
               TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: l10n.name),
+                controller: _titleController,
+                decoration: InputDecoration(labelText: l10n.title),
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
-                autofocus: !widget.isEditing,
               ),
-              const SizedBox(height: AppConstants.spacingS),
+              const SizedBox(height: AppConstants.spacingL),
               TextFormField(
-                controller: _descriptionController,
+                controller: _contentController,
                 decoration: InputDecoration(
-                  labelText: l10n.descriptionOptional,
+                  labelText: l10n.textContent,
+                  alignLabelWithHint: true,
                 ),
-                maxLines: _CollectionDialogConstants.descriptionMaxLines,
+                maxLines: _TextEditDialogConstants.contentMaxLines,
+                validator: (v) => v?.isEmpty == true ? l10n.required : null,
               ),
             ],
           ),
@@ -171,26 +161,17 @@ class _CollectionDialogState extends State<CollectionDialog> {
               final relativeCover = _coverImagePath != null
                   ? CoverImageHelper.toRelative(_coverImagePath!)
                   : null;
-              final collection = widget.isEditing
-                  ? widget.existingCollection!.copyWith(
-                      name: _nameController.text,
-                      description: _descriptionController.text,
-                      coverImage: relativeCover,
-                      clearCoverImage:
-                          _coverImagePath == null &&
-                          widget.existingCollection!.coverImage != null,
-                    )
-                  : Collection(
-                      languageId: widget.languageId,
-                      parentId: widget.parentId,
-                      name: _nameController.text,
-                      description: _descriptionController.text,
-                      coverImage: relativeCover,
-                    );
-              Navigator.pop(context, collection);
+              final updatedText = widget.text.copyWith(
+                title: _titleController.text,
+                content: _contentController.text,
+                coverImage: relativeCover,
+                clearCoverImage:
+                    _coverImagePath == null && widget.text.coverImage != null,
+              );
+              Navigator.pop(context, updatedText);
             }
           },
-          child: Text(widget.isEditing ? l10n.save : l10n.create),
+          child: Text(l10n.save),
         ),
       ],
     );

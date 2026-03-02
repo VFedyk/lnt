@@ -8,8 +8,8 @@ import '../models/term.dart';
 import '../service_locator.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
-import '../widgets/app_empty_state.dart';
-import '../widgets/review_progress_indicator.dart';
+import '../widgets/shared/app_empty_state.dart';
+import '../widgets/shared/review_progress_indicator.dart';
 
 enum TypingDirection { sourceToTarget, targetToSource }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../l10n/generated/app_localizations.dart';
-import '../models/dictionary.dart';
-import '../service_locator.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../models/dictionary.dart';
+import '../../service_locator.dart';
 
 abstract class _DictionaryDialogConstants {
   static const double fieldSpacing = 16.0;

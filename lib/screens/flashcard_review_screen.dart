@@ -12,9 +12,9 @@ import '../service_locator.dart';
 import '../services/dictionary_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
-import '../widgets/app_empty_state.dart';
-import '../widgets/review_progress_indicator.dart';
-import '../widgets/term_dialog.dart';
+import '../widgets/shared/app_empty_state.dart';
+import '../widgets/shared/review_progress_indicator.dart';
+import '../widgets/shared/term_dialog.dart';
 
 abstract class _FlashcardReviewConstants {
   static const double cardElevation = 4.0;

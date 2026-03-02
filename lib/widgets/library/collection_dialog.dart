@@ -3,45 +3,56 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import '../l10n/generated/app_localizations.dart';
-import '../models/text_document.dart';
-import '../utils/constants.dart';
-import '../utils/cover_image_helper.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../models/collection.dart';
+import '../../utils/constants.dart';
+import '../../utils/cover_image_helper.dart';
 
-abstract class _TextEditDialogConstants {
+abstract class _CollectionDialogConstants {
   static const double coverPickerWidth = 100.0;
   static const double coverPickerHeight = 150.0;
   static const double coverPickerIconSize = 32.0;
-  static const int contentMaxLines = 10;
+  static const int descriptionMaxLines = 2;
 }
 
-class TextEditDialog extends StatefulWidget {
-  final TextDocument text;
+class CollectionDialog extends StatefulWidget {
+  final int languageId;
+  final int? parentId;
+  final Collection? existingCollection;
 
-  const TextEditDialog({super.key, required this.text});
+  const CollectionDialog({
+    super.key,
+    required this.languageId,
+    this.parentId,
+    this.existingCollection,
+  });
+
+  bool get isEditing => existingCollection != null;
 
   @override
-  State<TextEditDialog> createState() => _TextEditDialogState();
+  State<CollectionDialog> createState() => _CollectionDialogState();
 }
 
-class _TextEditDialogState extends State<TextEditDialog> {
+class _CollectionDialogState extends State<CollectionDialog> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _titleController;
-  late final TextEditingController _contentController;
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
   String? _coverImagePath;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.text.title);
-    _contentController = TextEditingController(text: widget.text.content);
-    _coverImagePath = CoverImageHelper.resolve(widget.text.coverImage);
+    if (widget.existingCollection != null) {
+      _nameController.text = widget.existingCollection!.name;
+      _descriptionController.text = widget.existingCollection!.description;
+      _coverImagePath = CoverImageHelper.resolve(widget.existingCollection!.coverImage);
+    }
   }
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
+    _nameController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -80,7 +91,7 @@ class _TextEditDialogState extends State<TextEditDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(l10n.editText),
+      title: Text(widget.isEditing ? l10n.editCollection : l10n.newCollection),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -90,8 +101,8 @@ class _TextEditDialogState extends State<TextEditDialog> {
               GestureDetector(
                 onTap: _pickCoverImage,
                 child: Container(
-                  width: _TextEditDialogConstants.coverPickerWidth,
-                  height: _TextEditDialogConstants.coverPickerHeight,
+                  width: _CollectionDialogConstants.coverPickerWidth,
+                  height: _CollectionDialogConstants.coverPickerHeight,
                   decoration: BoxDecoration(
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
@@ -109,7 +120,7 @@ class _TextEditDialogState extends State<TextEditDialog> {
                           children: [
                             Icon(
                               Icons.add_photo_alternate,
-                              size: _TextEditDialogConstants.coverPickerIconSize,
+                              size: _CollectionDialogConstants.coverPickerIconSize,
                               color: AppConstants.subtitleColor,
                             ),
                             const SizedBox(height: AppConstants.spacingXS),
@@ -132,19 +143,18 @@ class _TextEditDialogState extends State<TextEditDialog> {
                 ),
               const SizedBox(height: AppConstants.spacingL),
               TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(labelText: l10n.title),
+                controller: _nameController,
+                decoration: InputDecoration(labelText: l10n.name),
                 validator: (v) => v?.isEmpty == true ? l10n.required : null,
+                autofocus: !widget.isEditing,
               ),
-              const SizedBox(height: AppConstants.spacingL),
+              const SizedBox(height: AppConstants.spacingS),
               TextFormField(
-                controller: _contentController,
+                controller: _descriptionController,
                 decoration: InputDecoration(
-                  labelText: l10n.textContent,
-                  alignLabelWithHint: true,
+                  labelText: l10n.descriptionOptional,
                 ),
-                maxLines: _TextEditDialogConstants.contentMaxLines,
-                validator: (v) => v?.isEmpty == true ? l10n.required : null,
+                maxLines: _CollectionDialogConstants.descriptionMaxLines,
               ),
             ],
           ),
@@ -161,17 +171,26 @@ class _TextEditDialogState extends State<TextEditDialog> {
               final relativeCover = _coverImagePath != null
                   ? CoverImageHelper.toRelative(_coverImagePath!)
                   : null;
-              final updatedText = widget.text.copyWith(
-                title: _titleController.text,
-                content: _contentController.text,
-                coverImage: relativeCover,
-                clearCoverImage:
-                    _coverImagePath == null && widget.text.coverImage != null,
-              );
-              Navigator.pop(context, updatedText);
+              final collection = widget.isEditing
+                  ? widget.existingCollection!.copyWith(
+                      name: _nameController.text,
+                      description: _descriptionController.text,
+                      coverImage: relativeCover,
+                      clearCoverImage:
+                          _coverImagePath == null &&
+                          widget.existingCollection!.coverImage != null,
+                    )
+                  : Collection(
+                      languageId: widget.languageId,
+                      parentId: widget.parentId,
+                      name: _nameController.text,
+                      description: _descriptionController.text,
+                      coverImage: relativeCover,
+                    );
+              Navigator.pop(context, collection);
             }
           },
-          child: Text(l10n.save),
+          child: Text(widget.isEditing ? l10n.save : l10n.create),
         ),
       ],
     );

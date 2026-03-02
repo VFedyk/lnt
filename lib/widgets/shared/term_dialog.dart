@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../l10n/generated/app_localizations.dart';
-import '../models/term.dart';
-import '../models/dictionary.dart';
-import '../models/language.dart';
-import '../service_locator.dart';
-import '../services/deepl_service.dart';
-import '../services/libretranslate_service.dart';
-import '../utils/constants.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../models/term.dart';
+import '../../models/dictionary.dart';
+import '../../models/language.dart';
+import '../../service_locator.dart';
+import '../../services/deepl_service.dart';
+import '../../services/libretranslate_service.dart';
+import '../../utils/constants.dart';
 import 'base_term_search_dialog.dart';
 import 'translation_mixin.dart';
 

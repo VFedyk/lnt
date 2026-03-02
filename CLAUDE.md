@@ -25,7 +25,14 @@ lib/
 ├── services/              # Business logic (registered via get_it)
 ├── controllers/           # Screen-level ChangeNotifier controllers
 ├── screens/               # Full-page UI screens (thin UI layer)
-├── widgets/               # Reusable UI components and dialogs
+├── widgets/               # UI components organized by screen
+│   ├── shared/            # Used by 2+ screens (app_empty_state, term_dialog, review_progress_*, animated_counter, translation_mixin, base_term_search_dialog)
+│   ├── dashboard/         # dashboard_tab.dart only (activity_heatmap, dashboard_charts, custom_chart_tooltip)
+│   ├── dictionaries/      # dictionaries_screen.dart only
+│   ├── languages/         # languages_screen.dart only
+│   ├── library/           # library_screen.dart only (dialogs + grid/list/search/status widgets + book_cover)
+│   ├── reader/            # reader_screen.dart only (dialogs, reader_content, paragraph_rich_text, status_legend, word_list_drawer)
+│   └── settings/          # settings_screen.dart only (section widgets)
 ├── utils/                 # Helpers, constants, CoverImageHelper
 └── l10n/                  # Localization (ARB files + generated)
 ```

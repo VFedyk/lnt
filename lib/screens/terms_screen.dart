@@ -10,8 +10,8 @@ import '../services/import_export_service.dart';
 import '../utils/async_helpers.dart';
 import '../utils/constants.dart';
 import '../utils/snackbar_helpers.dart';
-import '../widgets/app_empty_state.dart';
-import '../widgets/term_dialog.dart';
+import '../widgets/shared/app_empty_state.dart';
+import '../widgets/shared/term_dialog.dart';
 
 abstract class _TermsConstants {
   static const double filterChipAvatarRadius = 8.0;

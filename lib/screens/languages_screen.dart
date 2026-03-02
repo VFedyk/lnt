@@ -4,8 +4,8 @@ import '../models/language.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
 import '../utils/dialog_helpers.dart';
-import '../widgets/app_empty_state.dart';
-import '../widgets/language_dialog.dart';
+import '../widgets/shared/app_empty_state.dart';
+import '../widgets/languages/language_dialog.dart';
 import 'dictionaries_screen.dart';
 
 class LanguagesScreen extends StatefulWidget {

@@ -6,7 +6,7 @@ import '../main.dart';
 import '../models/language.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
-import '../widgets/app_empty_state.dart';
+import '../widgets/shared/app_empty_state.dart';
 import 'dashboard_tab.dart';
 import 'languages_screen.dart';
 import 'library_screen.dart';

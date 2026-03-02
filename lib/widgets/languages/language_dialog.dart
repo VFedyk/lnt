@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../l10n/generated/app_localizations.dart';
-import '../models/language.dart';
-import '../utils/constants.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../models/language.dart';
+import '../../utils/constants.dart';
 
 abstract class _LanguageDialogConstants {
   static const double infoIconSize = 20.0;

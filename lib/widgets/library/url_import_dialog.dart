@@ -3,11 +3,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import '../l10n/generated/app_localizations.dart';
-import '../models/text_document.dart';
-import '../services/url_import_service.dart';
-import '../utils/constants.dart';
-import '../utils/cover_image_helper.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../models/text_document.dart';
+import '../../services/url_import_service.dart';
+import '../../utils/constants.dart';
+import '../../utils/cover_image_helper.dart';
 
 abstract class _UrlImportDialogConstants {
   static const double urlCoverWidth = 80.0;

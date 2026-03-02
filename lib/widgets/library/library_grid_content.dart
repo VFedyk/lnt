@@ -4,7 +4,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../models/collection.dart';
 import '../../models/text_document.dart';
 import '../../utils/constants.dart';
-import '../book_cover.dart';
+import 'book_cover.dart';
 
 abstract class _LibraryGridContentConstants {
   static const double maxCrossAxisExtent = 140.0;

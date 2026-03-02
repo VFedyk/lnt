@@ -5,8 +5,8 @@ import '../models/language.dart';
 import '../models/dictionary.dart';
 import '../service_locator.dart';
 import '../utils/dialog_helpers.dart';
-import '../widgets/app_empty_state.dart';
-import '../widgets/dictionary_dialog.dart';
+import '../widgets/shared/app_empty_state.dart';
+import '../widgets/dictionaries/dictionary_dialog.dart';
 
 class _DictionariesScreenConstants {
   static const double listPadding = 16.0;

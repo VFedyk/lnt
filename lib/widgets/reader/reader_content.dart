@@ -4,8 +4,8 @@ import '../../controllers/reader_controller.dart';
 import '../../models/term.dart';
 import '../../models/word_token.dart';
 import '../../utils/constants.dart';
-import '../paragraph_rich_text.dart';
-import '../status_legend.dart';
+import 'paragraph_rich_text.dart';
+import 'status_legend.dart';
 
 class ReaderContent extends StatelessWidget {
   final bool showLegend;
