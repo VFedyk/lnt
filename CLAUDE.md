@@ -107,3 +107,8 @@ flutter build macos          # Build macOS
 
 - Base: `package:flutter_lints/flutter.yaml`
 - `flutter analyze` must report no issues before committing
+
+## Workflow rules
+
+- After every large change, run `flutter analyze` and `flutter test` and fix all issues before finishing.
+- After any considerable architectural change (new layers, new packages, changed data flow), update this file to reflect the new state.
