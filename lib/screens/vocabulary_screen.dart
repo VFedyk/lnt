@@ -1,4 +1,4 @@
-// FILE: lib/screens/terms_screen.dart
+// FILE: lib/screens/vocabulary_screen.dart
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
@@ -20,16 +20,16 @@ abstract class _TermsConstants {
   static const int wellKnownStatusValue = 99;
 }
 
-class TermsScreen extends StatefulWidget {
+class VocabularyScreen extends StatefulWidget {
   final Language language;
 
-  const TermsScreen({super.key, required this.language});
+  const VocabularyScreen({super.key, required this.language});
 
   @override
-  State<TermsScreen> createState() => _TermsScreenState();
+  State<VocabularyScreen> createState() => _VocabularyScreenState();
 }
 
-class _TermsScreenState extends State<TermsScreen> {
+class _VocabularyScreenState extends State<VocabularyScreen> {
   List<Term> _terms = [];
   List<Term> _filteredTerms = [];
   Map<int, List<Translation>> _translationsMap = {};
@@ -37,6 +37,7 @@ class _TermsScreenState extends State<TermsScreen> {
   bool _loadInProgress = false;
   bool _pendingReload = false;
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
   final _importService = ImportExportService();
   int? _statusFilter;
 
@@ -51,6 +52,7 @@ class _TermsScreenState extends State<TermsScreen> {
   void dispose() {
     dataChanges.terms.removeListener(_loadTerms);
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -62,7 +64,14 @@ class _TermsScreenState extends State<TermsScreen> {
     _loadInProgress = true;
     _pendingReload = false;
 
-    setState(() => _isLoading = true);
+    final isInitialLoad = _terms.isEmpty;
+    if (isInitialLoad) setState(() => _isLoading = true);
+
+    final scrollOffset =
+        !isInitialLoad && _scrollController.hasClients
+            ? _scrollController.offset
+            : 0.0;
+
     try {
       final terms = await db.terms.getAll(languageId: widget.language.id!);
       // Batch load translations for all terms
@@ -78,6 +87,15 @@ class _TermsScreenState extends State<TermsScreen> {
         _applyFilters();
         _isLoading = false;
       });
+      if (scrollOffset > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.jumpTo(
+              scrollOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+            );
+          }
+        });
+      }
     } finally {
       _loadInProgress = false;
       if (_pendingReload && mounted) {
@@ -359,6 +377,7 @@ class _TermsScreenState extends State<TermsScreen> {
     }
 
     return ListView.builder(
+      controller: _scrollController,
       itemCount: _filteredTerms.length,
       itemBuilder: (context, index) {
         final term = _filteredTerms[index];

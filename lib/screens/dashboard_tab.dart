@@ -20,7 +20,7 @@ import '../models/chart_data.dart';
 import '../utils/chart_helpers.dart';
 import 'reader_screen.dart';
 import 'library_screen.dart';
-import 'terms_screen.dart';
+import 'vocabulary_screen.dart';
 
 abstract class _DashboardConstants {
   static const int recentTextsLimit = 5;
@@ -591,7 +591,7 @@ class _DashboardTabState extends State<DashboardTab> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => TermsScreen(language: widget.language),
+                        builder: (_) => VocabularyScreen(language: widget.language),
                       ),
                     );
                   },

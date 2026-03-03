@@ -10,7 +10,7 @@ import '../widgets/shared/app_empty_state.dart';
 import 'dashboard_tab.dart';
 import 'languages_screen.dart';
 import 'library_screen.dart';
-import 'terms_screen.dart';
+import 'vocabulary_screen.dart';
 import 'review_screen.dart';
 import 'settings_screen.dart';
 
@@ -165,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case HomeTab.texts:
         return LibraryScreen(key: langKey, language: _selectedLanguage!);
       case HomeTab.terms:
-        return TermsScreen(key: langKey, language: _selectedLanguage!);
+        return VocabularyScreen(key: langKey, language: _selectedLanguage!);
       case HomeTab.review:
         return ReviewScreen(key: langKey, language: _selectedLanguage!);
       case HomeTab.languages:
