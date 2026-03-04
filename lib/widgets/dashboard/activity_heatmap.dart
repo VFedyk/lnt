@@ -16,9 +16,9 @@ abstract class _HeatmapConstants {
   static const double legendCellSize = 10.0;
   static const double legendSpacing = 2.0;
   static const int defaultWeeks = 26;
-  static const int intensityThreshold1 = 2;
-  static const int intensityThreshold2 = 5;
-  static const int intensityThreshold3 = 10;
+  static const int intensityThreshold1 = 50;
+  static const int intensityThreshold2 = 100;
+  static const int intensityThreshold3 = 300;
   static const double intensityAlpha1 = 0.25;
   static const double intensityAlpha2 = 0.50;
   static const double intensityAlpha3 = 0.75;
@@ -89,11 +89,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     }
   }
 
-  void _handleTap(
-    BuildContext context,
-    TapUpDetails details,
-    int weeksToShow,
-  ) {
+  void _handleTap(BuildContext context, TapUpDetails details, int weeksToShow) {
     final startDate = _getStartDate(weeksToShow);
     final localPos = details.localPosition;
 
@@ -134,15 +130,12 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     _currentHoveredDateKey = null;
   }
 
-  void _handleHover(
-    BuildContext context,
-    PointerEvent event,
-    int weeksToShow,
-  ) {
+  void _handleHover(BuildContext context, PointerEvent event, int weeksToShow) {
     if (!widget.useTooltip) return;
 
     // Get render box for coordinate conversion
-    final RenderBox? renderBox = _heatmapKey.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? renderBox =
+        _heatmapKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
     final startDate = _getStartDate(weeksToShow);
@@ -202,12 +195,18 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     final dateStr = DateFormat.yMMMd().format(date);
 
     // Calculate chart bounds to constrain tooltip within the heatmap area
-    final RenderBox? renderBox = _heatmapKey.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? renderBox =
+        _heatmapKey.currentContext?.findRenderObject() as RenderBox?;
     Rect? chartBounds;
     if (renderBox != null) {
       final position = renderBox.localToGlobal(Offset.zero);
       final size = renderBox.size;
-      chartBounds = Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
+      chartBounds = Rect.fromLTWH(
+        position.dx,
+        position.dy,
+        size.width,
+        size.height,
+      );
     }
 
     _tooltipOverlay = CustomChartTooltip.showTooltip(
@@ -368,10 +367,10 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                           : double.infinity;
                       final effectiveWeeks = availableWidth.isFinite
                           ? ((availableWidth -
-                                          _HeatmapConstants.dayLabelWidth) /
-                                      cellTotal)
-                                  .floor()
-                                  .clamp(1, widget.weeksToShow)
+                                        _HeatmapConstants.dayLabelWidth) /
+                                    cellTotal)
+                                .floor()
+                                .clamp(1, widget.weeksToShow)
                           : widget.weeksToShow;
 
                       return _buildHeatmapGrid(
@@ -396,7 +395,8 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     required Color primary,
     required Color emptyColor,
   }) {
-    final cellTotal = _HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing;
+    final cellTotal =
+        _HeatmapConstants.cellSize + _HeatmapConstants.cellSpacing;
     final startDate = _getStartDate(weeksToShow);
     final gridWidth = _HeatmapConstants.dayLabelWidth + weeksToShow * cellTotal;
     final gridHeight =
