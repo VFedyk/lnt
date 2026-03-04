@@ -1136,6 +1136,216 @@ abstract class AppLocalizations {
   /// **'Manage Dictionaries'**
   String get manageDictionaries;
 
+  /// No description provided for @langArabic.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic'**
+  String get langArabic;
+
+  /// No description provided for @langBulgarian.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulgarian'**
+  String get langBulgarian;
+
+  /// No description provided for @langChineseMandarin.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese (Mandarin)'**
+  String get langChineseMandarin;
+
+  /// No description provided for @langCzech.
+  ///
+  /// In en, this message translates to:
+  /// **'Czech'**
+  String get langCzech;
+
+  /// No description provided for @langDanish.
+  ///
+  /// In en, this message translates to:
+  /// **'Danish'**
+  String get langDanish;
+
+  /// No description provided for @langDutch.
+  ///
+  /// In en, this message translates to:
+  /// **'Dutch'**
+  String get langDutch;
+
+  /// No description provided for @langEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get langEnglish;
+
+  /// No description provided for @langEstonian.
+  ///
+  /// In en, this message translates to:
+  /// **'Estonian'**
+  String get langEstonian;
+
+  /// No description provided for @langFinnish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finnish'**
+  String get langFinnish;
+
+  /// No description provided for @langFrench.
+  ///
+  /// In en, this message translates to:
+  /// **'French'**
+  String get langFrench;
+
+  /// No description provided for @langGerman.
+  ///
+  /// In en, this message translates to:
+  /// **'German'**
+  String get langGerman;
+
+  /// No description provided for @langGreek.
+  ///
+  /// In en, this message translates to:
+  /// **'Greek'**
+  String get langGreek;
+
+  /// No description provided for @langHebrew.
+  ///
+  /// In en, this message translates to:
+  /// **'Hebrew'**
+  String get langHebrew;
+
+  /// No description provided for @langHindi.
+  ///
+  /// In en, this message translates to:
+  /// **'Hindi'**
+  String get langHindi;
+
+  /// No description provided for @langHungarian.
+  ///
+  /// In en, this message translates to:
+  /// **'Hungarian'**
+  String get langHungarian;
+
+  /// No description provided for @langIndonesian.
+  ///
+  /// In en, this message translates to:
+  /// **'Indonesian'**
+  String get langIndonesian;
+
+  /// No description provided for @langIrish.
+  ///
+  /// In en, this message translates to:
+  /// **'Irish'**
+  String get langIrish;
+
+  /// No description provided for @langItalian.
+  ///
+  /// In en, this message translates to:
+  /// **'Italian'**
+  String get langItalian;
+
+  /// No description provided for @langJapanese.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese'**
+  String get langJapanese;
+
+  /// No description provided for @langKorean.
+  ///
+  /// In en, this message translates to:
+  /// **'Korean'**
+  String get langKorean;
+
+  /// No description provided for @langLatvian.
+  ///
+  /// In en, this message translates to:
+  /// **'Latvian'**
+  String get langLatvian;
+
+  /// No description provided for @langLithuanian.
+  ///
+  /// In en, this message translates to:
+  /// **'Lithuanian'**
+  String get langLithuanian;
+
+  /// No description provided for @langNorwegian.
+  ///
+  /// In en, this message translates to:
+  /// **'Norwegian'**
+  String get langNorwegian;
+
+  /// No description provided for @langPolish.
+  ///
+  /// In en, this message translates to:
+  /// **'Polish'**
+  String get langPolish;
+
+  /// No description provided for @langPortuguese.
+  ///
+  /// In en, this message translates to:
+  /// **'Portuguese'**
+  String get langPortuguese;
+
+  /// No description provided for @langRomanian.
+  ///
+  /// In en, this message translates to:
+  /// **'Romanian'**
+  String get langRomanian;
+
+  /// No description provided for @langRussian.
+  ///
+  /// In en, this message translates to:
+  /// **'Russian'**
+  String get langRussian;
+
+  /// No description provided for @langSlovak.
+  ///
+  /// In en, this message translates to:
+  /// **'Slovak'**
+  String get langSlovak;
+
+  /// No description provided for @langSlovenian.
+  ///
+  /// In en, this message translates to:
+  /// **'Slovenian'**
+  String get langSlovenian;
+
+  /// No description provided for @langSpanish.
+  ///
+  /// In en, this message translates to:
+  /// **'Spanish'**
+  String get langSpanish;
+
+  /// No description provided for @langSwedish.
+  ///
+  /// In en, this message translates to:
+  /// **'Swedish'**
+  String get langSwedish;
+
+  /// No description provided for @langThai.
+  ///
+  /// In en, this message translates to:
+  /// **'Thai'**
+  String get langThai;
+
+  /// No description provided for @langTurkish.
+  ///
+  /// In en, this message translates to:
+  /// **'Turkish'**
+  String get langTurkish;
+
+  /// No description provided for @langUkrainian.
+  ///
+  /// In en, this message translates to:
+  /// **'Ukrainian'**
+  String get langUkrainian;
+
+  /// No description provided for @langVietnamese.
+  ///
+  /// In en, this message translates to:
+  /// **'Vietnamese'**
+  String get langVietnamese;
+
   /// No description provided for @languageNameLabel.
   ///
   /// In en, this message translates to:

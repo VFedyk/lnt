@@ -588,6 +588,111 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manageDictionaries => 'Manage Dictionaries';
 
   @override
+  String get langArabic => 'Arabic';
+
+  @override
+  String get langBulgarian => 'Bulgarian';
+
+  @override
+  String get langChineseMandarin => 'Chinese (Mandarin)';
+
+  @override
+  String get langCzech => 'Czech';
+
+  @override
+  String get langDanish => 'Danish';
+
+  @override
+  String get langDutch => 'Dutch';
+
+  @override
+  String get langEnglish => 'English';
+
+  @override
+  String get langEstonian => 'Estonian';
+
+  @override
+  String get langFinnish => 'Finnish';
+
+  @override
+  String get langFrench => 'French';
+
+  @override
+  String get langGerman => 'German';
+
+  @override
+  String get langGreek => 'Greek';
+
+  @override
+  String get langHebrew => 'Hebrew';
+
+  @override
+  String get langHindi => 'Hindi';
+
+  @override
+  String get langHungarian => 'Hungarian';
+
+  @override
+  String get langIndonesian => 'Indonesian';
+
+  @override
+  String get langIrish => 'Irish';
+
+  @override
+  String get langItalian => 'Italian';
+
+  @override
+  String get langJapanese => 'Japanese';
+
+  @override
+  String get langKorean => 'Korean';
+
+  @override
+  String get langLatvian => 'Latvian';
+
+  @override
+  String get langLithuanian => 'Lithuanian';
+
+  @override
+  String get langNorwegian => 'Norwegian';
+
+  @override
+  String get langPolish => 'Polish';
+
+  @override
+  String get langPortuguese => 'Portuguese';
+
+  @override
+  String get langRomanian => 'Romanian';
+
+  @override
+  String get langRussian => 'Russian';
+
+  @override
+  String get langSlovak => 'Slovak';
+
+  @override
+  String get langSlovenian => 'Slovenian';
+
+  @override
+  String get langSpanish => 'Spanish';
+
+  @override
+  String get langSwedish => 'Swedish';
+
+  @override
+  String get langThai => 'Thai';
+
+  @override
+  String get langTurkish => 'Turkish';
+
+  @override
+  String get langUkrainian => 'Ukrainian';
+
+  @override
+  String get langVietnamese => 'Vietnamese';
+
+  @override
   String get languageNameLabel => 'Language Name';
 
   @override

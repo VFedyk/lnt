@@ -590,6 +590,111 @@ class AppLocalizationsUk extends AppLocalizations {
   String get manageDictionaries => 'Керувати словниками';
 
   @override
+  String get langArabic => 'Арабська';
+
+  @override
+  String get langBulgarian => 'Болгарська';
+
+  @override
+  String get langChineseMandarin => 'Китайська (мандаринська)';
+
+  @override
+  String get langCzech => 'Чеська';
+
+  @override
+  String get langDanish => 'Данська';
+
+  @override
+  String get langDutch => 'Нідерландська';
+
+  @override
+  String get langEnglish => 'Англійська';
+
+  @override
+  String get langEstonian => 'Естонська';
+
+  @override
+  String get langFinnish => 'Фінська';
+
+  @override
+  String get langFrench => 'Французька';
+
+  @override
+  String get langGerman => 'Німецька';
+
+  @override
+  String get langGreek => 'Грецька';
+
+  @override
+  String get langHebrew => 'Іврит';
+
+  @override
+  String get langHindi => 'Хінді';
+
+  @override
+  String get langHungarian => 'Угорська';
+
+  @override
+  String get langIndonesian => 'Індонезійська';
+
+  @override
+  String get langIrish => 'Ірландська';
+
+  @override
+  String get langItalian => 'Італійська';
+
+  @override
+  String get langJapanese => 'Японська';
+
+  @override
+  String get langKorean => 'Корейська';
+
+  @override
+  String get langLatvian => 'Латвійська';
+
+  @override
+  String get langLithuanian => 'Литовська';
+
+  @override
+  String get langNorwegian => 'Норвезька';
+
+  @override
+  String get langPolish => 'Польська';
+
+  @override
+  String get langPortuguese => 'Португальська';
+
+  @override
+  String get langRomanian => 'Румунська';
+
+  @override
+  String get langRussian => 'Російська';
+
+  @override
+  String get langSlovak => 'Словацька';
+
+  @override
+  String get langSlovenian => 'Словенська';
+
+  @override
+  String get langSpanish => 'Іспанська';
+
+  @override
+  String get langSwedish => 'Шведська';
+
+  @override
+  String get langThai => 'Тайська';
+
+  @override
+  String get langTurkish => 'Турецька';
+
+  @override
+  String get langUkrainian => 'Українська';
+
+  @override
+  String get langVietnamese => 'В\'єтнамська';
+
+  @override
   String get languageNameLabel => 'Назва мови';
 
   @override
