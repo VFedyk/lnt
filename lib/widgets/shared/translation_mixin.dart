@@ -19,6 +19,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
   bool get isTranslating => _isTranslating;
 
   String get languageName;
+  String get languageCode; // ISO 639-1, lowercase (e.g. 'ja', 'de')
   TextEditingController get sourceTextController;
   TextEditingController get translationTextController;
 
@@ -40,7 +41,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
     TranslationResult result;
 
     if (provider == TranslationProvider.deepL) {
-      final sourceCode = DeepLService.getDeepLLanguageCode(languageName);
+      final sourceCode = DeepLService.deeplCode(languageCode);
       if (sourceCode == null) {
         _showLanguageNotSupported('DeepL');
         setState(() => _isTranslating = false);
@@ -52,7 +53,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
         targetLang: targetLang,
       );
     } else {
-      final sourceCode = LibreTranslateService.getLanguageCode(languageName);
+      final sourceCode = LibreTranslateService.libreCode(languageCode);
       if (sourceCode == null) {
         _showLanguageNotSupported('LibreTranslate');
         setState(() => _isTranslating = false);

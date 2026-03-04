@@ -68,6 +68,9 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
   String get languageName => _selectedLanguageName;
 
   @override
+  String get languageCode => _selectedLanguageCode();
+
+  @override
   TextEditingController get sourceTextController => _termController;
 
   @override
@@ -150,6 +153,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
       builder: (ctx) => BaseTermSearchDialog(
         languageId: _selectedLanguageId,
         languageName: _selectedLanguageName,
+        languageCode: _selectedLanguageCode(),
         excludeTermId: widget.term.id,
         initialWord: _termController.text,
       ),
@@ -415,9 +419,9 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
       child: label,
       itemBuilder: (context) => _languages.map((lang) {
         final isDeepLSupported =
-            DeepLService.getDeepLLanguageCode(lang.name) != null;
+            DeepLService.deeplCode(lang.languageCode) != null;
         final isLTSupported =
-            LibreTranslateService.getLanguageCode(lang.name) != null;
+            LibreTranslateService.libreCode(lang.languageCode) != null;
         final isSupported =
             (hasDeepL && isDeepLSupported) ||
             (hasLibreTranslate && isLTSupported);

@@ -32,8 +32,8 @@ lib/
 │   ├── languages/         # languages_screen.dart only
 │   ├── library/           # library_screen.dart only (dialogs + grid/list/search/status widgets + book_cover)
 │   ├── reader/            # reader_screen.dart only (dialogs, reader_content, paragraph_rich_text, status_legend, word_list_drawer)
-│   └── settings/          # settings_screen.dart only (section widgets)
-├── utils/                 # Helpers, constants, CoverImageHelper
+│   └── settings/          # settings_screen.dart only (section widgets incl. target_language_section)
+├── utils/                 # Helpers, constants, CoverImageHelper, language_utils
 └── l10n/                  # Localization (ARB files + generated)
 ```
 
@@ -54,6 +54,9 @@ flutter build macos          # Build macOS
 - Repositories use lazy `() => database` callback — DB can be closed and reopened
 - **Reactive data layer**: `DataChangeNotifier` (singleton via get_it) holds per-domain `DomainNotifier` instances (`dataChanges.terms`, `.texts`, `.languages`, `.collections`, `.reviewCards`). Repositories call `notifyChange()` after mutations; screens/controllers `addListener` on relevant domains and auto-reload. Use `dataChanges.notifyAll()` for bulk invalidation (e.g. backup restore).
 - **Localization**: Always add strings to both `app_en.arb` and `app_uk.arb`, then run `flutter gen-l10n`
+- **Language utilities** (`lib/utils/language_utils.dart`): `localizedLangName(l10n, isoCode)` returns a locale-aware display name; `langSortKey(s, locale)` returns a sort key that correctly orders Ukrainian special letters (Є, І, Ї, Ґ)
+- **Translation provider lookups**: Use `DeepLService.deeplCode(isoCode)` and `LibreTranslateService.libreCode(isoCode)` (ISO 639-1, case-insensitive) — **not** name-based. `TranslationMixin` requires `String get languageCode` in addition to `languageName`
+- **Target language**: stored via `settings.getDeepLTargetLang()` / `setDeepLTargetLang()` as uppercase DeepL code (e.g. `'EN'`, `'UK'`). Displayed and sorted via `TargetLanguageSection` on the settings screen (placed under app language, not inside the DeepL card)
 - **Cover images**: stored as relative paths (`covers/<name>.jpg`) in documents dir, resolved at runtime by `CoverImageHelper`
 - **Backup**: zip archive containing `lnt.db` + `covers/` directory
 - **iCloud container**: `iCloud.lnt-db-backup`

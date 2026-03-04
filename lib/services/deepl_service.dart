@@ -107,40 +107,15 @@ class DeepLService {
     }
   }
 
-  /// Maps common language names to DeepL language codes
-  static String? getDeepLLanguageCode(String languageName) {
-    final normalized = languageName.toLowerCase().trim();
-    const languageMap = {
-      'english': 'EN',
-      'german': 'DE',
-      'french': 'FR',
-      'spanish': 'ES',
-      'italian': 'IT',
-      'dutch': 'NL',
-      'polish': 'PL',
-      'portuguese': 'PT',
-      'russian': 'RU',
-      'japanese': 'JA',
-      'chinese': 'ZH',
-      'korean': 'KO',
-      'bulgarian': 'BG',
-      'czech': 'CS',
-      'danish': 'DA',
-      'greek': 'EL',
-      'estonian': 'ET',
-      'finnish': 'FI',
-      'hungarian': 'HU',
-      'indonesian': 'ID',
-      'latvian': 'LV',
-      'lithuanian': 'LT',
-      'norwegian': 'NB',
-      'romanian': 'RO',
-      'slovak': 'SK',
-      'slovenian': 'SL',
-      'swedish': 'SV',
-      'turkish': 'TR',
-      'ukrainian': 'UK',
+  /// Returns the DeepL source-language code for [isoCode] (ISO 639-1,
+  /// case-insensitive), or null if the language is not supported by DeepL.
+  static String? deeplCode(String isoCode) {
+    const supported = {
+      'bg', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fi', 'fr',
+      'hu', 'id', 'it', 'ja', 'ko', 'lt', 'lv', 'nb', 'nl', 'pl',
+      'pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'tr', 'uk', 'zh',
     };
-    return languageMap[normalized];
+    final lower = isoCode.toLowerCase().trim();
+    return supported.contains(lower) ? lower.toUpperCase() : null;
   }
 }

@@ -15,12 +15,14 @@ class BaseTermSearchDialog extends StatefulWidget {
   final int languageId;
   final int? excludeTermId;
   final String languageName;
+  final String languageCode;
   final String? initialWord;
 
   const BaseTermSearchDialog({
     super.key,
     required this.languageId,
     required this.languageName,
+    required this.languageCode,
     this.excludeTermId,
     this.initialWord,
   });
@@ -41,6 +43,9 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
 
   @override
   String get languageName => widget.languageName;
+
+  @override
+  String get languageCode => widget.languageCode;
 
   @override
   TextEditingController get sourceTextController => _searchController;
@@ -126,6 +131,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
       builder: (ctx) => _AddTranslationDialog(
         term: term,
         languageName: widget.languageName,
+        languageCode: widget.languageCode,
       ),
     );
 
@@ -322,10 +328,12 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
 class _AddTranslationDialog extends StatefulWidget {
   final Term term;
   final String languageName;
+  final String languageCode;
 
   const _AddTranslationDialog({
     required this.term,
     required this.languageName,
+    required this.languageCode,
   });
 
   @override
@@ -340,6 +348,9 @@ class _AddTranslationDialogState extends State<_AddTranslationDialog>
 
   @override
   String get languageName => widget.languageName;
+
+  @override
+  String get languageCode => widget.languageCode;
 
   @override
   TextEditingController get sourceTextController => _sourceController;

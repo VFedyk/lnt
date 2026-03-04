@@ -65,46 +65,16 @@ class LibreTranslateService {
     return TranslationError.serverError;
   }
 
-  /// Maps common language names to LibreTranslate ISO 639-1 codes (lowercase)
-  static String? getLanguageCode(String languageName) {
-    final normalized = languageName.toLowerCase().trim();
-    const languageMap = {
-      'english': 'en',
-      'german': 'de',
-      'french': 'fr',
-      'spanish': 'es',
-      'italian': 'it',
-      'dutch': 'nl',
-      'polish': 'pl',
-      'portuguese': 'pt',
-      'russian': 'ru',
-      'japanese': 'ja',
-      'chinese': 'zh',
-      'korean': 'ko',
-      'bulgarian': 'bg',
-      'czech': 'cs',
-      'danish': 'da',
-      'greek': 'el',
-      'estonian': 'et',
-      'finnish': 'fi',
-      'hungarian': 'hu',
-      'indonesian': 'id',
-      'latvian': 'lv',
-      'lithuanian': 'lt',
-      'norwegian': 'nb',
-      'romanian': 'ro',
-      'slovak': 'sk',
-      'slovenian': 'sl',
-      'swedish': 'sv',
-      'turkish': 'tr',
-      'ukrainian': 'uk',
-      'arabic': 'ar',
-      'hindi': 'hi',
-      'hebrew': 'he',
-      'thai': 'th',
-      'vietnamese': 'vi',
-      'irish': 'ga',
+  /// Returns the LibreTranslate ISO 639-1 code for [isoCode]
+  /// (case-insensitive), or null if the language is not supported.
+  static String? libreCode(String isoCode) {
+    const supported = {
+      'ar', 'bg', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fi',
+      'fr', 'ga', 'he', 'hi', 'hu', 'id', 'it', 'ja', 'ko', 'lt',
+      'lv', 'nb', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sv',
+      'th', 'tr', 'uk', 'vi', 'zh',
     };
-    return languageMap[normalized];
+    final lower = isoCode.toLowerCase().trim();
+    return supported.contains(lower) ? lower : null;
   }
 }
