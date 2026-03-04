@@ -63,7 +63,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
   void _prefillSearch() {
     if (widget.initialWord == null || widget.initialWord!.isEmpty) return;
 
-    final isEnglish = widget.languageName.toLowerCase() == 'english';
+    final isEnglish = widget.languageCode.toLowerCase() == 'en';
     final searchWord = isEnglish
         ? _snowballStemmer.stem(widget.initialWord!)
         : widget.initialWord!;
