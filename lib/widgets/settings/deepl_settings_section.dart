@@ -12,9 +12,6 @@ class DeepLSettingsSection extends StatelessWidget {
   final ValueChanged<bool> onApiTypeChanged;
   final bool showUsage;
   final Widget? usageWidget;
-  final String targetLang;
-  final Map<String, String> targetLanguages;
-  final ValueChanged<String> onTargetLangChanged;
 
   const DeepLSettingsSection({
     super.key,
@@ -26,9 +23,6 @@ class DeepLSettingsSection extends StatelessWidget {
     required this.onApiTypeChanged,
     required this.showUsage,
     required this.usageWidget,
-    required this.targetLang,
-    required this.targetLanguages,
-    required this.onTargetLangChanged,
   });
 
   @override
@@ -94,38 +88,6 @@ class DeepLSettingsSection extends StatelessWidget {
               ),
             ),
             if (showUsage && usageWidget != null) usageWidget!,
-            const SizedBox(height: AppConstants.spacingL),
-            Text(
-              l10n.targetLanguage,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: AppConstants.spacingS),
-            DropdownButtonFormField<String>(
-              initialValue: targetLang,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: AppConstants.spacingM,
-                  vertical: AppConstants.spacingS,
-                ),
-              ),
-              items: targetLanguages.entries
-                  .map(
-                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) onTargetLangChanged(value);
-              },
-            ),
-            const SizedBox(height: AppConstants.spacingS),
-            Text(
-              l10n.languageForTranslations,
-              style: TextStyle(
-                color: AppConstants.subtitleColor,
-                fontSize: AppConstants.fontSizeCaption,
-              ),
-            ),
           ],
         ),
       ),

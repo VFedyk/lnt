@@ -21,6 +21,7 @@ import '../widgets/settings/database_section.dart';
 import '../widgets/settings/deepl_settings_section.dart';
 import '../widgets/settings/deepl_usage_section.dart';
 import '../widgets/settings/libretranslate_settings_section.dart';
+import '../widgets/settings/target_language_section.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -41,38 +42,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _obscureAiApiKey = true;
   String _aiProvider = SettingsService.aiProviderAuto;
   bool _controllersSeeded = false;
-
-  static const _targetLanguages = {
-    'EN': 'English',
-    'UK': 'Ukrainian',
-    'DE': 'German',
-    'FR': 'French',
-    'ES': 'Spanish',
-    'IT': 'Italian',
-    'NL': 'Dutch',
-    'PL': 'Polish',
-    'PT': 'Portuguese',
-    'RU': 'Russian',
-    'JA': 'Japanese',
-    'ZH': 'Chinese',
-    'KO': 'Korean',
-    'BG': 'Bulgarian',
-    'CS': 'Czech',
-    'DA': 'Danish',
-    'EL': 'Greek',
-    'ET': 'Estonian',
-    'FI': 'Finnish',
-    'HU': 'Hungarian',
-    'ID': 'Indonesian',
-    'LV': 'Latvian',
-    'LT': 'Lithuanian',
-    'NB': 'Norwegian',
-    'RO': 'Romanian',
-    'SK': 'Slovak',
-    'SL': 'Slovenian',
-    'SV': 'Swedish',
-    'TR': 'Turkish',
-  };
 
   @override
   void dispose() {
@@ -255,6 +224,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           context.read<AppState>().setLocale(locale);
                         },
                       ),
+                      const SizedBox(height: AppConstants.spacingL),
+                      TargetLanguageSection(
+                        l10n: AppLocalizations.of(context),
+                        targetLang: ctrl.targetLang,
+                        onChanged: ctrl.setTargetLang,
+                      ),
                       if (PlatformHelper.isDesktop) ...[
                         const SizedBox(height: AppConstants.spacingL),
                         _buildDatabaseSection(ctrl),
@@ -274,9 +249,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         showUsage:
                             ctrl.isApiFree && _apiKeyController.text.isNotEmpty,
                         usageWidget: _buildUsageSection(ctrl),
-                        targetLang: ctrl.targetLang,
-                        targetLanguages: _targetLanguages,
-                        onTargetLangChanged: ctrl.setTargetLang,
                       ),
                       const SizedBox(height: AppConstants.spacingL),
                       LibreTranslateSettingsSection(

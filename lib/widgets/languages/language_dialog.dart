@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../models/language.dart';
 import '../../utils/constants.dart';
+import '../../utils/language_utils.dart';
 
 class _LangPreset {
   final String name;
@@ -83,58 +84,6 @@ class LanguageDialog extends StatefulWidget {
   State<LanguageDialog> createState() => _LanguageDialogState();
 }
 
-String _localizedLangName(AppLocalizations l10n, String code) => switch (code) {
-  'ar' => l10n.langArabic,
-  'bg' => l10n.langBulgarian,
-  'zh' => l10n.langChineseMandarin,
-  'cs' => l10n.langCzech,
-  'da' => l10n.langDanish,
-  'nl' => l10n.langDutch,
-  'en' => l10n.langEnglish,
-  'et' => l10n.langEstonian,
-  'fi' => l10n.langFinnish,
-  'fr' => l10n.langFrench,
-  'de' => l10n.langGerman,
-  'el' => l10n.langGreek,
-  'he' => l10n.langHebrew,
-  'hi' => l10n.langHindi,
-  'hu' => l10n.langHungarian,
-  'id' => l10n.langIndonesian,
-  'ga' => l10n.langIrish,
-  'it' => l10n.langItalian,
-  'ja' => l10n.langJapanese,
-  'ko' => l10n.langKorean,
-  'lv' => l10n.langLatvian,
-  'lt' => l10n.langLithuanian,
-  'nb' => l10n.langNorwegian,
-  'pl' => l10n.langPolish,
-  'pt' => l10n.langPortuguese,
-  'ro' => l10n.langRomanian,
-  'ru' => l10n.langRussian,
-  'sk' => l10n.langSlovak,
-  'sl' => l10n.langSlovenian,
-  'es' => l10n.langSpanish,
-  'sv' => l10n.langSwedish,
-  'th' => l10n.langThai,
-  'tr' => l10n.langTurkish,
-  'uk' => l10n.langUkrainian,
-  'vi' => l10n.langVietnamese,
-  _ => code,
-};
-
-// Returns a sort key that places Ukrainian special letters (Є, І, Ї, Ґ) in
-// their correct alphabetical positions. Their Unicode code points fall before
-// А (U+0410), so a plain compareTo puts them first — we remap them using
-// their nearest in-block neighbor plus a private-use suffix.
-String _langSortKey(String s, Locale locale) {
-  final lower = s.toLowerCase();
-  if (locale.languageCode != 'uk') return lower;
-  return lower
-      .replaceAll('\u0454', '\u0435\uE000') // є → after е (U+0435), before ж
-      .replaceAll('\u0456', '\u0438\uE001') // і → after и (U+0438), before й
-      .replaceAll('\u0457', '\u0438\uE002') // ї → after і, before й
-      .replaceAll('\u0491', '\u0433\uE000'); // ґ → after г (U+0433), before д
-}
 
 class _LanguageDialogState extends State<LanguageDialog> {
   final _formKey = GlobalKey<FormState>();
@@ -173,8 +122,8 @@ class _LanguageDialogState extends State<LanguageDialog> {
     final locale = Localizations.localeOf(context);
     final isCJK = _selectedPreset?.splitByCharacter ?? false;
     final sortedPresets = [..._kPresets]
-      ..sort((a, b) => _langSortKey(_localizedLangName(l10n, a.code), locale)
-          .compareTo(_langSortKey(_localizedLangName(l10n, b.code), locale)));
+      ..sort((a, b) => langSortKey(localizedLangName(l10n, a.code), locale)
+          .compareTo(langSortKey(localizedLangName(l10n, b.code), locale)));
 
     return AlertDialog(
       title: Text(
@@ -195,7 +144,7 @@ class _LanguageDialogState extends State<LanguageDialog> {
                   final flag = preset.flagEmoji;
                   return DropdownMenuItem<_LangPreset>(
                     value: preset,
-                    child: Text('${flag.isNotEmpty ? '$flag ' : ''}${_localizedLangName(l10n, preset.code)}'),
+                    child: Text('${flag.isNotEmpty ? '$flag ' : ''}${localizedLangName(l10n, preset.code)}'),
                   );
                 }).toList(),
                 onChanged: _onPresetChanged,
@@ -278,7 +227,7 @@ class _LanguageDialogState extends State<LanguageDialog> {
               final existing = widget.language;
               final lang = Language(
                 id: existing?.id,
-                name: _localizedLangName(l10n, preset.code),
+                name: localizedLangName(l10n, preset.code),
                 languageCode: preset.code,
                 rightToLeft: preset.rightToLeft,
                 showRomanization: _showRomanization,
