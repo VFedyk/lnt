@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../models/dictionary.dart';
 import '../models/language.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
@@ -26,8 +27,10 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
   }
 
   Future<void> _loadLanguages() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     final languages = await db.languages.getAll();
+    if (!mounted) return;
     setState(() {
       _languages = languages;
       _isLoading = false;
@@ -43,7 +46,18 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
     if (result != null) {
       if (language == null) {
         final langId = await db.languages.create(result);
-        // After creating language, prompt to add dictionaries
+        // Auto-create a Google Translate dictionary for the new language.
+        final targetLang = await settings.getDeepLTargetLang();
+        final sl = result.languageCode.toLowerCase();
+        final tl = targetLang.toLowerCase();
+        await db.dictionaries.create(
+          Dictionary(
+            languageId: langId,
+            name: 'Google Translate ${sl.toUpperCase()}-${tl.toUpperCase()}',
+            url: 'https://translate.google.com/?sl=$sl&tl=$tl&text=###&op=translate',
+          ),
+        );
+        // After creating language, prompt to add more dictionaries
         if (mounted) {
           final l10n = AppLocalizations.of(context);
           final shouldAddDict = await DialogHelpers.showConfirmationDialog(
