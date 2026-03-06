@@ -1,4 +1,3 @@
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -21,10 +20,10 @@ class DictionaryService {
     final encodedWord = Uri.encodeComponent(word.trim());
     final url = dictUrl.replaceAll('###', encodedWord);
 
-    // Use in-app webview only for mobile platforms
-    final useMobileWebView = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+    // Use in-app webview for all native platforms (mobile and desktop)
+    final useWebView = !kIsWeb;
 
-    if (useMobileWebView) {
+    if (useWebView) {
       // Mobile: Use in-app webview
       await Navigator.push(
         context,
@@ -33,7 +32,7 @@ class DictionaryService {
         ),
       );
     } else {
-      // Desktop/Web: Use external browser
+      // Web: Use external browser
       await lookupWordExternal(word, dictUrl);
     }
   }
@@ -65,9 +64,7 @@ class DictionaryService {
 
   // Get all dictionaries for a language
   Future<List<Dictionary>> getAllDictionaries(int languageId) async {
-    return await db.dictionaries.getAll(
-      languageId: languageId,
-    );
+    return await db.dictionaries.getAll(languageId: languageId);
   }
 
   // Check if any dictionaries are configured

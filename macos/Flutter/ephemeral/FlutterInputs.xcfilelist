@@ -2154,6 +2154,7 @@
 /Users/v/Projects/lnt/lib/utils/cover_image_helper.dart
 /Users/v/Projects/lnt/lib/utils/dialog_helpers.dart
 /Users/v/Projects/lnt/lib/utils/helpers.dart
+/Users/v/Projects/lnt/lib/utils/language_utils.dart
 /Users/v/Projects/lnt/lib/utils/snackbar_helpers.dart
 /Users/v/Projects/lnt/lib/widgets/dashboard/activity_heatmap.dart
 /Users/v/Projects/lnt/lib/widgets/dashboard/custom_chart_tooltip.dart
@@ -2193,6 +2194,7 @@
 /Users/v/Projects/lnt/lib/widgets/settings/deepl_settings_section.dart
 /Users/v/Projects/lnt/lib/widgets/settings/deepl_usage_section.dart
 /Users/v/Projects/lnt/lib/widgets/settings/libretranslate_settings_section.dart
+/Users/v/Projects/lnt/lib/widgets/settings/target_language_section.dart
 /Users/v/Projects/lnt/lib/widgets/shared/animated_counter.dart
 /Users/v/Projects/lnt/lib/widgets/shared/app_empty_state.dart
 /Users/v/Projects/lnt/lib/widgets/shared/base_term_search_dialog.dart
