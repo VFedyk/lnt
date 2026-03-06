@@ -155,7 +155,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
         sentence: term.sentence,
         dictionaries: dictionaries,
         onLookup: (ctx, dict) =>
-            _dictService.lookupWord(ctx, term.text, dict.url),
+            _dictService.lookupWord(ctx, term.text, dict),
         languageId: controller.language.id!,
         languageName: controller.language.name,
         languageCode: controller.language.languageCode,

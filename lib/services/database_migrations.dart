@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 13;
+const int databaseVersion = 14;
 
 /// Handle database upgrades from older versions
 Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -171,6 +171,11 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
       'ALTER TABLE languages ADD COLUMN use_word_segmentation INTEGER DEFAULT 0',
     );
   }
+  if (oldVersion < 14) {
+    await db.execute(
+      'ALTER TABLE dictionaries ADD COLUMN custom_css TEXT',
+    );
+  }
 }
 
 /// Create fresh database with all tables
@@ -285,6 +290,7 @@ Future<void> onCreate(Database db, int version) async {
       url TEXT NOT NULL,
       sort_order INTEGER DEFAULT 0,
       is_active INTEGER DEFAULT 1,
+      custom_css TEXT,
       FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE
     )
   ''');

@@ -513,6 +513,8 @@
   "urlTemplateHint": "https://example.com/dict?word=###",
   "urlTemplateHelper": "Use ### as placeholder for the word",
   "urlMustContainPlaceholder": "URL must contain ###",
+  "customCss": "Custom CSS",
+  "customCssHelper": "Injected into each page after it loads",
   "active": "Active",
   "showInDictionaryLookupMenu": "Show in dictionary lookup menu",
   "quickTemplates": "Quick Templates:",

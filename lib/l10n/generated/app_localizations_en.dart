@@ -951,6 +951,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get urlMustContainPlaceholder => 'URL must contain ###';
 
   @override
+  String get customCss => 'Custom CSS';
+
+  @override
+  String get customCssHelper => 'Injected into each page after it loads';
+
+  @override
   String get active => 'Active';
 
   @override

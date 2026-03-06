@@ -956,6 +956,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get urlMustContainPlaceholder => 'URL повинен містити ###';
 
   @override
+  String get customCss => 'Власний CSS';
+
+  @override
+  String get customCssHelper => 'Вставляється на сторінку після завантаження';
+
+  @override
   String get active => 'Активний';
 
   @override

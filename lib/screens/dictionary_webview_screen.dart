@@ -1,4 +1,5 @@
 // FILE: lib/screens/dictionary_webview_screen.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,11 +14,13 @@ abstract class _WebViewConstants {
 class DictionaryWebViewScreen extends StatefulWidget {
   final String url;
   final String word;
+  final String? customCss;
 
   const DictionaryWebViewScreen({
     super.key,
     required this.url,
     required this.word,
+    this.customCss,
   });
 
   @override
@@ -56,6 +59,7 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
               _isLoading = false;
               _currentUrl = url;
             });
+            _injectCustomCss();
           },
           onWebResourceError: (error) {
             setState(() => _isLoading = false);
@@ -87,6 +91,31 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
         ),
       )
       ..loadRequest(Uri.parse(widget.url));
+
+  }
+
+  Future<void> _injectCustomCss() async {
+    final css = widget.customCss;
+    if (css == null || css.isEmpty) return;
+    final cssJson = jsonEncode(css);
+    // Constructable Stylesheets (new CSSStyleSheet()) bypass CSP style-src
+    // restrictions that block <style> element injection. Adding !important to
+    // all declarations makes our rules win over inline styles set by React and
+    // other frameworks, since author !important > normal inline styles in the
+    // CSS cascade.
+    await _controller.runJavaScript(
+      '(function(){'
+      'var raw=$cssJson;'
+      'var css=raw.replace(/([\\w-]+\\s*:\\s*[^;!{}]+?)\\s*(;|})/g,'
+      'function(m,d,e){return d+" !important"+e;});'
+      'try{'
+      'var sheet=new CSSStyleSheet();'
+      'sheet.replaceSync(css);'
+      'document.adoptedStyleSheets='
+      '(document.adoptedStyleSheets||[]).concat([sheet]);'
+      '}catch(e){}'
+      '})()',
+    );
   }
 
   @override

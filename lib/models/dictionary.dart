@@ -6,6 +6,7 @@ class Dictionary {
   final String url;
   final int sortOrder;
   final bool isActive;
+  final String? customCss;
 
   Dictionary({
     this.id,
@@ -14,6 +15,7 @@ class Dictionary {
     required this.url,
     this.sortOrder = 0,
     this.isActive = true,
+    this.customCss,
   });
 
   Map<String, dynamic> toMap() {
@@ -24,6 +26,7 @@ class Dictionary {
       'url': url,
       'sort_order': sortOrder,
       'is_active': isActive ? 1 : 0,
+      'custom_css': customCss,
     };
   }
 
@@ -35,6 +38,7 @@ class Dictionary {
       url: map['url'],
       sortOrder: map['sort_order'] ?? 0,
       isActive: map['is_active'] == 1,
+      customCss: map['custom_css'] as String?,
     );
   }
 
@@ -45,6 +49,7 @@ class Dictionary {
     String? url,
     int? sortOrder,
     bool? isActive,
+    String? customCss,
   }) {
     return Dictionary(
       id: id ?? this.id,
@@ -53,6 +58,7 @@ class Dictionary {
       url: url ?? this.url,
       sortOrder: sortOrder ?? this.sortOrder,
       isActive: isActive ?? this.isActive,
+      customCss: customCss ?? this.customCss,
     );
   }
 

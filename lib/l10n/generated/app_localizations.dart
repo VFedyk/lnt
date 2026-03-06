@@ -1820,6 +1820,18 @@ abstract class AppLocalizations {
   /// **'URL must contain ###'**
   String get urlMustContainPlaceholder;
 
+  /// No description provided for @customCss.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom CSS'**
+  String get customCss;
+
+  /// No description provided for @customCssHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Injected into each page after it loads'**
+  String get customCssHelper;
+
   /// No description provided for @active.
   ///
   /// In en, this message translates to:

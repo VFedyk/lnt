@@ -229,7 +229,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           term: existingTerm,
           sentence: sentence,
           dictionaries: dictionaries,
-          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
+          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict),
           languageId: ctrl.language.id!,
           languageName: ctrl.language.name,
           languageCode: ctrl.language.languageCode,
@@ -258,7 +258,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           term: newTerm,
           sentence: sentence,
           dictionaries: dictionaries,
-          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict.url),
+          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict),
           languageId: ctrl.language.id!,
           languageName: ctrl.language.name,
           languageCode: ctrl.language.languageCode,
@@ -453,7 +453,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     );
 
     if (selectedDict != null && mounted) {
-      await _dictService.lookupWord(context, word, selectedDict.url);
+      await _dictService.lookupWord(context, word, selectedDict);
     }
   }
 
@@ -598,7 +598,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     );
 
     if (selectedDict != null && mounted) {
-      await _dictService.lookupWord(context, selectedWords, selectedDict.url);
+      await _dictService.lookupWord(context, selectedWords, selectedDict);
       ctrl.cancelSelection();
     }
   }
@@ -633,7 +633,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           sentence: sentence,
           dictionaries: dictionaries,
           onLookup: (ctx, dict) =>
-              _dictService.lookupWord(ctx, selectedWords, dict.url),
+              _dictService.lookupWord(ctx, selectedWords, dict),
           languageId: ctrl.language.id!,
           languageName: ctrl.language.name,
           languageCode: ctrl.language.languageCode,
@@ -655,7 +655,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           sentence: sentence,
           dictionaries: dictionaries,
           onLookup: (ctx, dict) =>
-              _dictService.lookupWord(ctx, selectedWords, dict.url),
+              _dictService.lookupWord(ctx, selectedWords, dict),
           languageId: ctrl.language.id!,
           languageName: ctrl.language.name,
           languageCode: ctrl.language.languageCode,

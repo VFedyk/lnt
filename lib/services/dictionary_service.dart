@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-// import '../models/language.dart';
 import '../models/dictionary.dart';
 import '../service_locator.dart';
 import '../screens/dictionary_webview_screen.dart';
@@ -11,29 +10,32 @@ class DictionaryService {
   Future<void> lookupWord(
     BuildContext context,
     String word,
-    String dictUrl,
+    Dictionary dictionary,
   ) async {
-    if (dictUrl.isEmpty) {
+    if (dictionary.url.isEmpty) {
       throw Exception('Dictionary URL not configured');
     }
 
     final encodedWord = Uri.encodeComponent(word.trim());
-    final url = dictUrl.replaceAll('###', encodedWord);
+    final url = dictionary.url.replaceAll('###', encodedWord);
 
     // Use in-app webview for all native platforms (mobile and desktop)
     final useWebView = !kIsWeb;
 
     if (useWebView) {
-      // Mobile: Use in-app webview
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => DictionaryWebViewScreen(url: url, word: word),
+          builder: (context) => DictionaryWebViewScreen(
+            url: url,
+            word: word,
+            customCss: dictionary.customCss,
+          ),
         ),
       );
     } else {
       // Web: Use external browser
-      await lookupWordExternal(word, dictUrl);
+      await lookupWordExternal(word, dictionary.url);
     }
   }
 

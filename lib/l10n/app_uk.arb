@@ -287,6 +287,8 @@
   "urlTemplateHint": "https://example.com/dict?word=###",
   "urlTemplateHelper": "Використовуйте ### як заповнювач для слова",
   "urlMustContainPlaceholder": "URL повинен містити ###",
+  "customCss": "Власний CSS",
+  "customCssHelper": "Вставляється на сторінку після завантаження",
   "active": "Активний",
   "showInDictionaryLookupMenu": "Показувати в меню пошуку",
   "quickTemplates": "Швидкі шаблони:",

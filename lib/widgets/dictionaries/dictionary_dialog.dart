@@ -14,6 +14,8 @@ abstract class _DictionaryDialogConstants {
   static const double templateVerticalPadding = 4.0;
   static const double templateFontSize = 12.0;
   static const int urlFieldMaxLines = 3;
+  static const int cssFieldMaxLines = 6;
+  static const double cssFontSize = 12.0;
 }
 
 class DictionaryDialog extends StatefulWidget {
@@ -36,6 +38,7 @@ class _DictionaryDialogState extends State<DictionaryDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _urlController;
+  late TextEditingController _cssController;
   late bool _isActive;
   String _targetLang = '';
 
@@ -45,6 +48,7 @@ class _DictionaryDialogState extends State<DictionaryDialog> {
     final dict = widget.dictionary;
     _nameController = TextEditingController(text: dict?.name ?? '');
     _urlController = TextEditingController(text: dict?.url ?? '');
+    _cssController = TextEditingController(text: dict?.customCss ?? '');
     _isActive = dict?.isActive ?? true;
     _loadTargetLang();
   }
@@ -60,6 +64,7 @@ class _DictionaryDialogState extends State<DictionaryDialog> {
   void dispose() {
     _nameController.dispose();
     _urlController.dispose();
+    _cssController.dispose();
     super.dispose();
   }
 
@@ -104,6 +109,22 @@ class _DictionaryDialogState extends State<DictionaryDialog> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(
+                height: _DictionaryDialogConstants.fieldSpacing,
+              ),
+              TextFormField(
+                controller: _cssController,
+                decoration: InputDecoration(
+                  labelText: l10n.customCss,
+                  hintText: 'body { color: white; background: black; }',
+                  helperText: l10n.customCssHelper,
+                ),
+                maxLines: _DictionaryDialogConstants.cssFieldMaxLines,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: _DictionaryDialogConstants.cssFontSize,
+                ),
               ),
               const SizedBox(
                 height: _DictionaryDialogConstants.fieldSpacing,
@@ -185,6 +206,7 @@ class _DictionaryDialogState extends State<DictionaryDialog> {
         TextButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
+              final cssText = _cssController.text.trim();
               final dict = Dictionary(
                 id: widget.dictionary?.id,
                 languageId: widget.languageId,
@@ -192,6 +214,7 @@ class _DictionaryDialogState extends State<DictionaryDialog> {
                 url: _urlController.text,
                 sortOrder: widget.dictionary?.sortOrder ?? 0,
                 isActive: _isActive,
+                customCss: cssText.isEmpty ? null : cssText,
               );
               Navigator.pop(context, dict);
             }
