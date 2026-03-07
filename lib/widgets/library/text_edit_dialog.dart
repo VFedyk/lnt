@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -46,7 +47,10 @@ class _TextEditDialogState extends State<TextEditDialog> {
   }
 
   Future<void> _pickCoverImage() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+    );
 
     if (result != null && result.files.single.path != null) {
       final sourcePath = result.files.single.path!;
@@ -96,33 +100,40 @@ class _TextEditDialogState extends State<TextEditDialog> {
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                     border: Border.all(color: Colors.grey[400]!),
-                    image: _coverImagePath != null
-                        ? DecorationImage(
-                            image: FileImage(File(_coverImagePath!)),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
                   ),
-                  child: _coverImagePath == null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate,
-                              size: _TextEditDialogConstants.coverPickerIconSize,
-                              color: AppConstants.subtitleColor,
-                            ),
-                            const SizedBox(height: AppConstants.spacingXS),
-                            Text(
-                              l10n.addCover,
-                              style: TextStyle(
-                                fontSize: AppConstants.fontSizeCaption,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
+                    child: _coverImagePath == null
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate,
+                                size: _TextEditDialogConstants.coverPickerIconSize,
                                 color: AppConstants.subtitleColor,
                               ),
-                            ),
-                          ],
-                        )
-                      : null,
+                              const SizedBox(height: AppConstants.spacingXS),
+                              Text(
+                                l10n.addCover,
+                                style: TextStyle(
+                                  fontSize: AppConstants.fontSizeCaption,
+                                  color: AppConstants.subtitleColor,
+                                ),
+                              ),
+                            ],
+                          )
+                        : SizedBox.expand(
+                            child: _coverImagePath!.toLowerCase().endsWith('.svg')
+                                ? SvgPicture.file(
+                                    File(_coverImagePath!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    File(_coverImagePath!),
+                                    fit: BoxFit.cover,
+                                  ),
+                          ),
+                  ),
                 ),
               ),
               if (_coverImagePath != null)

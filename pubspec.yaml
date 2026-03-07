@@ -63,6 +63,7 @@ dependencies:
   archive: ^4.0.4
   flutter_tts: ^4.2.0
   fl_chart: ^1.1.1
+  flutter_svg: ^2.0.0
   flutter_markdown: ^0.7.7+1
   jieba_flutter:
     git:

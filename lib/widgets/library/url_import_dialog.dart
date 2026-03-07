@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -86,7 +87,10 @@ class _UrlImportDialogState extends State<UrlImportDialog> {
   }
 
   Future<void> _pickCoverImage() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+    );
 
     if (result != null && result.files.single.path != null) {
       final sourcePath = result.files.single.path!;
@@ -186,19 +190,26 @@ class _UrlImportDialogState extends State<UrlImportDialog> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
                         child: _coverImagePath != null
-                            ? Image.file(
-                                File(_coverImagePath!),
-                                width: _UrlImportDialogConstants.urlCoverWidth,
-                                height: _UrlImportDialogConstants.urlCoverHeight,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
-                                      width: _UrlImportDialogConstants.urlCoverWidth,
-                                      height: _UrlImportDialogConstants.urlCoverHeight,
-                                      color: Colors.grey[200],
-                                      child: const Icon(Icons.broken_image),
-                                    ),
-                              )
+                            ? (_coverImagePath!.toLowerCase().endsWith('.svg')
+                                ? SvgPicture.file(
+                                    File(_coverImagePath!),
+                                    width: _UrlImportDialogConstants.urlCoverWidth,
+                                    height: _UrlImportDialogConstants.urlCoverHeight,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    File(_coverImagePath!),
+                                    width: _UrlImportDialogConstants.urlCoverWidth,
+                                    height: _UrlImportDialogConstants.urlCoverHeight,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        Container(
+                                          width: _UrlImportDialogConstants.urlCoverWidth,
+                                          height: _UrlImportDialogConstants.urlCoverHeight,
+                                          color: Colors.grey[200],
+                                          child: const Icon(Icons.broken_image),
+                                        ),
+                                  ))
                             : Container(
                                 width: _UrlImportDialogConstants.urlCoverWidth,
                                 height: _UrlImportDialogConstants.urlCoverHeight,

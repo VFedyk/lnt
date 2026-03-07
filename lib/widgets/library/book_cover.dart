@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/constants.dart';
 import '../../utils/cover_image_helper.dart';
@@ -141,13 +142,14 @@ class BookCover extends StatelessWidget {
     if (resolvedPath != null && resolvedPath.isNotEmpty) {
       final file = File(resolvedPath);
       if (file.existsSync()) {
+        final isSvg = resolvedPath.toLowerCase().endsWith('.svg');
         return Stack(
           fit: StackFit.expand,
           children: [
-            Image.file(
-              file,
-              fit: BoxFit.cover,
-            ),
+            if (isSvg)
+              SvgPicture.file(file, fit: BoxFit.cover)
+            else
+              Image.file(file, fit: BoxFit.cover),
             if (isCompleted) _buildCompletedBadge(context),
             if (isFolder) _buildFolderBadge(),
           ],
