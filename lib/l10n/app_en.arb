@@ -758,5 +758,10 @@
         "type": "int"
       }
     }
-  }
+  },
+  "multipleChoiceReview": "Multiple Choice",
+  "multipleChoiceSourceToTarget": "Multiple Choice: Source → Target",
+  "multipleChoiceTargetToSource": "Multiple Choice: Target → Source",
+  "multipleChoiceSourceToTargetDescription": "Choose the correct translation for each word",
+  "multipleChoiceTargetToSourceDescription": "Choose the correct word for each translation"
 }

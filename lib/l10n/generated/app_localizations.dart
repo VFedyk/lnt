@@ -2521,6 +2521,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Texts Finished: {count}'**
   String chartTooltipTextsFinished(int count);
+
+  /// No description provided for @multipleChoiceReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple Choice'**
+  String get multipleChoiceReview;
+
+  /// No description provided for @multipleChoiceSourceToTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple Choice: Source → Target'**
+  String get multipleChoiceSourceToTarget;
+
+  /// No description provided for @multipleChoiceTargetToSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple Choice: Target → Source'**
+  String get multipleChoiceTargetToSource;
+
+  /// No description provided for @multipleChoiceSourceToTargetDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the correct translation for each word'**
+  String get multipleChoiceSourceToTargetDescription;
+
+  /// No description provided for @multipleChoiceTargetToSourceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the correct word for each translation'**
+  String get multipleChoiceTargetToSourceDescription;
 }
 
 class _AppLocalizationsDelegate

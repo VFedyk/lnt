@@ -8,6 +8,7 @@ import '../widgets/shared/animated_counter.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/shared/review_progress_ring.dart';
 import 'flashcard_review_screen.dart';
+import 'multiple_choice_review_screen.dart';
 import 'statistics_screen.dart';
 import 'typing_review_screen.dart';
 
@@ -220,6 +221,72 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     builder: (_) => TypingReviewScreen(
                       language: widget.language,
                       direction: TypingDirection.targetToSource,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingS),
+
+          // Multiple Choice: Source → Target
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.quiz),
+              title: Text(l10n.multipleChoiceSourceToTarget),
+              subtitle: Text(l10n.multipleChoiceSourceToTargetDescription),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_dueCount > 0)
+                    Badge(
+                      label: Text(_dueCount.toString()),
+                      child: const SizedBox.shrink(),
+                    ),
+                  const SizedBox(width: AppConstants.spacingS),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MultipleChoiceReviewScreen(
+                      language: widget.language,
+                      direction: MultipleChoiceDirection.sourceToTarget,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingS),
+
+          // Multiple Choice: Target → Source
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.quiz),
+              title: Text(l10n.multipleChoiceTargetToSource),
+              subtitle: Text(l10n.multipleChoiceTargetToSourceDescription),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_dueCount > 0)
+                    Badge(
+                      label: Text(_dueCount.toString()),
+                      child: const SizedBox.shrink(),
+                    ),
+                  const SizedBox(width: AppConstants.spacingS),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MultipleChoiceReviewScreen(
+                      language: widget.language,
+                      direction: MultipleChoiceDirection.targetToSource,
                     ),
                   ),
                 );

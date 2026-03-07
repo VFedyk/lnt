@@ -1353,4 +1353,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String chartTooltipTextsFinished(int count) {
     return 'Texts Finished: $count';
   }
+
+  @override
+  String get multipleChoiceReview => 'Multiple Choice';
+
+  @override
+  String get multipleChoiceSourceToTarget => 'Multiple Choice: Source → Target';
+
+  @override
+  String get multipleChoiceTargetToSource => 'Multiple Choice: Target → Source';
+
+  @override
+  String get multipleChoiceSourceToTargetDescription =>
+      'Choose the correct translation for each word';
+
+  @override
+  String get multipleChoiceTargetToSourceDescription =>
+      'Choose the correct word for each translation';
 }

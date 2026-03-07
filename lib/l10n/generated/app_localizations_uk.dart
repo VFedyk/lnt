@@ -1360,4 +1360,21 @@ class AppLocalizationsUk extends AppLocalizations {
   String chartTooltipTextsFinished(int count) {
     return 'Завершено текстів: $count';
   }
+
+  @override
+  String get multipleChoiceReview => 'Вибір з варіантів';
+
+  @override
+  String get multipleChoiceSourceToTarget => 'Вибір: Мова → Переклад';
+
+  @override
+  String get multipleChoiceTargetToSource => 'Вибір: Переклад → Мова';
+
+  @override
+  String get multipleChoiceSourceToTargetDescription =>
+      'Оберіть правильний переклад для кожного слова';
+
+  @override
+  String get multipleChoiceTargetToSourceDescription =>
+      'Оберіть правильне слово для кожного перекладу';
 }
