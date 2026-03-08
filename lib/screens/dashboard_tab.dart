@@ -424,9 +424,22 @@ class _DashboardTabState extends State<DashboardTab> {
           const SizedBox(height: AppConstants.spacingL),
           _buildQuickActions(),
           const SizedBox(height: AppConstants.spacingL),
-          _buildRecentlyReadTexts(),
-          const SizedBox(height: AppConstants.spacingL),
-          _buildRecentlyAddedTexts(),
+          if (useDesktopStyleLayout)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _buildRecentlyReadTexts()),
+                  const SizedBox(width: AppConstants.spacingL),
+                  Expanded(child: _buildRecentlyAddedTexts()),
+                ],
+              ),
+            )
+          else ...[
+            _buildRecentlyReadTexts(),
+            const SizedBox(height: AppConstants.spacingL),
+            _buildRecentlyAddedTexts(),
+          ],
         ],
       ),
     );
@@ -500,7 +513,11 @@ class _DashboardTabState extends State<DashboardTab> {
         ),
       );
     }
-    return Icon(fallbackIcon);
+    return SizedBox(
+      width: _DashboardConstants.thumbnailWidth,
+      height: _DashboardConstants.thumbnailHeight,
+      child: Icon(fallbackIcon, size: _DashboardConstants.thumbnailWidth),
+    );
   }
 
   Widget _buildChartsSection(bool useDesktopStyleLayout) {
