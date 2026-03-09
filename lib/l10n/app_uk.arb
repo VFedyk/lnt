@@ -240,6 +240,8 @@
   "explainGrammarInContext": "Пояснити граматику в контексті",
   "aiMeaningExplainFailed": "Не вдалося пояснити значення в контексті",
   "aiGrammarExplainFailed": "Не вдалося пояснити граматику в контексті",
+  "translateWithAi": "Перекласти за допомогою AI",
+  "aiTranslateFailed": "Не вдалося перекласти за допомогою AI",
   "pronounce": "Вимовити",
   "toggleLegend": "Легенда",
   "wordList": "Список слів",

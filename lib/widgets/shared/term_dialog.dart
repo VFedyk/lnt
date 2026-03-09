@@ -4,6 +4,7 @@ import '../../models/term.dart';
 import '../../models/dictionary.dart';
 import '../../models/language.dart';
 import '../../service_locator.dart';
+import '../../services/ai_explanation_service.dart';
 import '../../services/deepl_service.dart';
 import '../../services/libretranslate_service.dart';
 import '../../utils/constants.dart';
@@ -55,9 +56,16 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
 
   // Multiple translations support
   List<Translation> _translations = [];
+  // Stable unique keys for each translation slot — prevents index-based key
+  // collisions when items are deleted (TextFormField initialValue stays correct).
+  final List<Object> _translationKeys = [];
   // baseTranslationId -> (translation, its parent term)
   final Map<int, ({Translation translation, Term term})> _baseTranslations = {};
   late TextEditingController _translationController;
+
+  // AI translation
+  bool _hasAi = false;
+  bool _isAiTranslating = false;
 
   // Language selection
   List<Language> _languages = [];
@@ -95,6 +103,46 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     _loadTranslations();
     checkTranslationProviders();
     _loadLanguages();
+    _checkAiProvider();
+  }
+
+  Future<void> _checkAiProvider() async {
+    final hasAi = await AiExplanationService(settings: settings).isConfigured();
+    if (mounted) {
+      setState(() => _hasAi = hasAi);
+    }
+  }
+
+  Future<void> _aiTranslateWord() async {
+    setState(() => _isAiTranslating = true);
+    final l10n = AppLocalizations.of(context);
+    try {
+      final meanings = await AiExplanationService(settings: settings).translateWord(
+        word: _termController.text.trim(),
+        contextSentence: _sentenceController.text.trim(),
+        languageName: _selectedLanguageName,
+      );
+      if (mounted && meanings.isNotEmpty) {
+        setState(() {
+          for (final meaning in meanings) {
+            _translations.add(Translation(
+              termId: widget.term.id ?? 0,
+              meaning: meaning,
+              sortOrder: _translations.length,
+            ));
+            _translationKeys.add(Object());
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.aiTranslateFailed)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isAiTranslating = false);
+    }
   }
 
   Future<void> _loadTranslations() async {
@@ -113,6 +161,9 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
               ),
             ];
           }
+          _translationKeys
+            ..clear()
+            ..addAll(List.generate(_translations.length, (_) => Object()));
         });
         // Load base translations
         _loadBaseTranslations();
@@ -123,6 +174,9 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
         _translations = [
           Translation(termId: 0, meaning: widget.term.translation),
         ];
+        _translationKeys
+          ..clear()
+          ..add(Object());
       });
     }
   }
@@ -307,12 +361,14 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
         meaning: '',
         sortOrder: _translations.length,
       ));
+      _translationKeys.add(Object());
     });
   }
 
   void _removeTranslation(int index) {
     setState(() {
       _translations.removeAt(index);
+      _translationKeys.removeAt(index);
     });
   }
 
@@ -469,43 +525,53 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (hasAnyTranslationProvider)
-                  if (isTranslating)
-                    const SizedBox(
-                      width: AppConstants.progressIndicatorSizeS,
-                      height: AppConstants.progressIndicatorSizeS,
-                      child: CircularProgressIndicator(
-                        strokeWidth: AppConstants.progressStrokeWidth,
+                if (isTranslating || _isAiTranslating)
+                  const SizedBox(
+                    width: AppConstants.progressIndicatorSizeS,
+                    height: AppConstants.progressIndicatorSizeS,
+                    child: CircularProgressIndicator(
+                      strokeWidth: AppConstants.progressStrokeWidth,
+                    ),
+                  )
+                else ...[
+                  if (hasAnyTranslationProvider)
+                    if (hasMultipleTranslationProviders)
+                      PopupMenuButton<TranslationProvider>(
+                        icon: const Icon(Icons.translate, size: AppConstants.iconSizeS),
+                        tooltip: l10n.translate,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onSelected: _translateAndAddFirstWithProvider,
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: TranslationProvider.deepL,
+                            child: Text(l10n.translateWithDeepL),
+                          ),
+                          PopupMenuItem(
+                            value: TranslationProvider.libreTranslate,
+                            child: Text(l10n.translateWithLibreTranslate),
+                          ),
+                        ],
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.translate, size: AppConstants.iconSizeS),
+                        tooltip: hasDeepL ? l10n.translateWithDeepL : l10n.translateWithLibreTranslate,
+                        onPressed: () => _translateAndAddFirstWithProvider(
+                          hasDeepL ? TranslationProvider.deepL : TranslationProvider.libreTranslate,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                       ),
-                    )
-                  else if (hasMultipleTranslationProviders)
-                    PopupMenuButton<TranslationProvider>(
-                      icon: const Icon(Icons.translate, size: AppConstants.iconSizeS),
-                      tooltip: l10n.translate,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onSelected: _translateAndAddFirstWithProvider,
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: TranslationProvider.deepL,
-                          child: Text(l10n.translateWithDeepL),
-                        ),
-                        PopupMenuItem(
-                          value: TranslationProvider.libreTranslate,
-                          child: Text(l10n.translateWithLibreTranslate),
-                        ),
-                      ],
-                    )
-                  else
+                  if (_hasAi)
                     IconButton(
-                      icon: const Icon(Icons.translate, size: AppConstants.iconSizeS),
-                      tooltip: hasDeepL ? l10n.translateWithDeepL : l10n.translateWithLibreTranslate,
-                      onPressed: () => _translateAndAddFirstWithProvider(
-                        hasDeepL ? TranslationProvider.deepL : TranslationProvider.libreTranslate,
-                      ),
+                      icon: const Icon(Icons.auto_awesome, size: AppConstants.iconSizeS),
+                      tooltip: l10n.translateWithAi,
+                      onPressed: _aiTranslateWord,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
+                ],
                 const SizedBox(width: AppConstants.spacingS),
                 IconButton(
                   icon: const Icon(Icons.add, size: AppConstants.iconSizeS),
@@ -542,10 +608,8 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     int index,
     Translation translation,
   ) {
-    // Use a stable key based on the translation's id or index
-    final itemKey = ValueKey(translation.id ?? 'new_$index');
     return Container(
-      key: itemKey,
+      key: ValueKey(_translationKeys[index]),
       margin: const EdgeInsets.only(bottom: AppConstants.spacingS),
       padding: const EdgeInsets.all(AppConstants.spacingS),
       decoration: BoxDecoration(
@@ -640,6 +704,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
           meaning: _translationController.text,
           sortOrder: 0,
         ));
+        _translationKeys.add(Object());
       });
     }
   }

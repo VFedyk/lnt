@@ -801,6 +801,12 @@ class AppLocalizationsUk extends AppLocalizations {
       'Не вдалося пояснити граматику в контексті';
 
   @override
+  String get translateWithAi => 'Перекласти за допомогою AI';
+
+  @override
+  String get aiTranslateFailed => 'Не вдалося перекласти за допомогою AI';
+
+  @override
   String get pronounce => 'Вимовити';
 
   @override

@@ -424,6 +424,8 @@
   "explainGrammarInContext": "Explain grammar in context",
   "aiMeaningExplainFailed": "Could not explain meaning in context",
   "aiGrammarExplainFailed": "Could not explain grammar in context",
+  "translateWithAi": "Translate with AI",
+  "aiTranslateFailed": "Could not translate with AI",
   "pronounce": "Pronounce",
   "toggleLegend": "Toggle Legend",
   "wordList": "Word List",

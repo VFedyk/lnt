@@ -8,6 +8,19 @@ import 'settings_service.dart';
 
 enum AiExplanationType { meaning, grammar }
 
+// Maps common DeepL target language codes to human-readable names for prompts.
+const Map<String, String> _deeplCodeToName = {
+  'EN': 'English', 'EN-US': 'English', 'EN-GB': 'English',
+  'UK': 'Ukrainian', 'DE': 'German', 'FR': 'French', 'ES': 'Spanish',
+  'IT': 'Italian', 'PT': 'Portuguese', 'PT-BR': 'Portuguese', 'PT-PT': 'Portuguese',
+  'NL': 'Dutch', 'PL': 'Polish', 'RU': 'Russian', 'JA': 'Japanese',
+  'ZH': 'Chinese', 'KO': 'Korean', 'AR': 'Arabic', 'BG': 'Bulgarian',
+  'CS': 'Czech', 'DA': 'Danish', 'EL': 'Greek', 'ET': 'Estonian',
+  'FI': 'Finnish', 'HU': 'Hungarian', 'ID': 'Indonesian', 'LT': 'Lithuanian',
+  'LV': 'Latvian', 'NB': 'Norwegian', 'RO': 'Romanian', 'SK': 'Slovak',
+  'SL': 'Slovenian', 'SV': 'Swedish', 'TR': 'Turkish',
+};
+
 enum _AiApiProvider { openAI, anthropic, ollama }
 
 class AiExplanationService {
@@ -26,6 +39,92 @@ class AiExplanationService {
       return model.isNotEmpty && apiUrl.isNotEmpty;
     }
     return apiKey != null && apiKey.trim().isNotEmpty;
+  }
+
+  Future<List<String>> translateWord({
+    required String word,
+    required String contextSentence,
+    required String languageName,
+  }) async {
+    final apiKey = (await _settings.getAiApiKey())?.trim() ?? '';
+    final model = (await _settings.getAiModel()).trim();
+    final apiUrl = (await _settings.getAiApiUrl()).trim();
+    final provider = await _resolveProvider(apiUrl: apiUrl, model: model);
+
+    if (provider != _AiApiProvider.ollama && apiKey.isEmpty) {
+      throw Exception('AI not configured');
+    }
+    if (model.isEmpty || apiUrl.isEmpty) {
+      throw Exception('AI not configured');
+    }
+
+    final targetLangCode = await _settings.getDeepLTargetLang();
+    final targetLangName =
+        _deeplCodeToName[targetLangCode.toUpperCase()] ?? targetLangCode;
+
+    final contextPart = contextSentence.trim().isNotEmpty
+        ? '\nContext: "${contextSentence.trim()}"'
+        : '';
+
+    final systemPrompt =
+        'You are a precise dictionary tool. '
+        'Return only the requested translations without any additional commentary.';
+    final userPrompt =
+        'Translate the word or phrase "$word" from $languageName into $targetLangName.$contextPart\n'
+        'Return only the translations, one per line. '
+        'If there are multiple distinct meanings, list each separately. '
+        'No explanations, no numbering, no extra text.';
+
+    final resolvedApiUrl = _resolveApiUrl(provider: provider, apiUrl: apiUrl);
+    final body = _buildRequestBody(
+      provider: provider,
+      model: model,
+      systemPrompt: systemPrompt,
+      userPrompt: userPrompt,
+      apiUrl: resolvedApiUrl,
+    );
+    final headers = _buildHeaders(
+      provider: provider,
+      apiKey: apiKey,
+      hasApiKey: apiKey.isNotEmpty,
+    );
+
+    final timeout = provider == _AiApiProvider.ollama
+        ? const Duration(seconds: 120)
+        : const Duration(seconds: 30);
+
+    try {
+      final response = await http
+          .post(Uri.parse(resolvedApiUrl), headers: headers, body: body)
+          .timeout(timeout);
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(
+          'AI request failed (${response.statusCode}): ${response.body}',
+        );
+      }
+
+      final content = _parseResponseContent(
+        provider: provider,
+        responseBody: response.body,
+      );
+      if (content == null || content.trim().isEmpty) {
+        throw Exception('Empty AI response');
+      }
+
+      final lines = content
+          .split('\n')
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty && !l.startsWith('#'))
+          .take(6)
+          .toList();
+      return lines;
+    } on TimeoutException {
+      throw Exception('AI request timed out');
+    } catch (e, stackTrace) {
+      AppLogger.error('AI translation failed', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   Future<String> explainInContext({

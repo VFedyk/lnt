@@ -1538,6 +1538,18 @@ abstract class AppLocalizations {
   /// **'Could not explain grammar in context'**
   String get aiGrammarExplainFailed;
 
+  /// No description provided for @translateWithAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate with AI'**
+  String get translateWithAi;
+
+  /// No description provided for @aiTranslateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not translate with AI'**
+  String get aiTranslateFailed;
+
   /// No description provided for @pronounce.
   ///
   /// In en, this message translates to:
