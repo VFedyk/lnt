@@ -399,6 +399,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get noTermsFound => 'Термінів не знайдено';
 
   @override
+  String get hideIgnored => 'Сховати ігноровані';
+
+  @override
+  String get addedAt => 'Додано';
+
+  @override
   String get importCsv => 'Імпорт CSV';
 
   @override

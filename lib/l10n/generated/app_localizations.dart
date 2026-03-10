@@ -830,6 +830,18 @@ abstract class AppLocalizations {
   /// **'No terms found'**
   String get noTermsFound;
 
+  /// No description provided for @hideIgnored.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide ignored'**
+  String get hideIgnored;
+
+  /// No description provided for @addedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get addedAt;
+
   /// No description provided for @importCsv.
   ///
   /// In en, this message translates to:

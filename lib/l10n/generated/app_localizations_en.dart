@@ -399,6 +399,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTermsFound => 'No terms found';
 
   @override
+  String get hideIgnored => 'Hide ignored';
+
+  @override
+  String get addedAt => 'Added';
+
+  @override
   String get importCsv => 'Import CSV';
 
   @override

@@ -1,6 +1,7 @@
 // FILE: lib/screens/vocabulary_screen.dart
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:intl/intl.dart';
 import 'dart:io';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
@@ -18,6 +19,8 @@ abstract class _TermsConstants {
   static const int statusFilterCount = 7;
   static const int wellKnownStatusIndex = 6;
   static const int wellKnownStatusValue = 99;
+  static const double wideLayoutBreakpoint = 600.0;
+  static const double statusDotSize = 10.0;
 }
 
 class VocabularyScreen extends StatefulWidget {
@@ -40,6 +43,9 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
   final _scrollController = ScrollController();
   final _importService = ImportExportService();
   int? _statusFilter;
+  bool _hideIgnored = true;
+  int? _sortColumnIndex;
+  bool _sortAscending = true;
 
   @override
   void initState() {
@@ -108,6 +114,10 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
 
   void _applyFilters() {
     var filtered = _terms;
+
+    if (_hideIgnored && _statusFilter == null) {
+      filtered = filtered.where((t) => t.status != AppConstants.statusIgnored).toList();
+    }
 
     if (_statusFilter != null) {
       filtered = filtered.where((t) => t.status == _statusFilter).toList();
@@ -354,6 +364,17 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                           ),
                         );
                       }),
+                      const SizedBox(width: AppConstants.spacingS),
+                      FilterChip(
+                        label: Text(l10n.hideIgnored),
+                        selected: _hideIgnored,
+                        onSelected: _statusFilter == null
+                            ? (val) => setState(() {
+                                  _hideIgnored = val;
+                                  _applyFilters();
+                                })
+                            : null,
+                      ),
                     ],
                   ),
                 ),
@@ -370,77 +391,299 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
     );
   }
 
+  List<Term> get _sortedTerms {
+    final terms = List<Term>.from(_filteredTerms);
+    terms.sort((a, b) {
+      int cmp;
+      switch (_sortColumnIndex) {
+        case 0:
+          cmp = a.text.compareTo(b.text);
+        case 1:
+          cmp = _termTranslationText(a).compareTo(_termTranslationText(b));
+        case 2:
+          cmp = a.createdAt.compareTo(b.createdAt);
+        default:
+          // Default: newest first
+          cmp = b.createdAt.compareTo(a.createdAt);
+      }
+      return _sortAscending ? cmp : -cmp;
+    });
+    return terms;
+  }
+
+  String _termTranslationText(Term term) {
+    final translations = term.id != null ? _translationsMap[term.id!] : null;
+    if (translations != null && translations.isNotEmpty) {
+      return translations.map((t) => t.meaning).join(', ');
+    }
+    return term.translation;
+  }
+
   Widget _buildTermsList() {
     final l10n = AppLocalizations.of(context);
     if (_filteredTerms.isEmpty) {
       return AppEmptyState(icon: Icons.search_off, title: l10n.noTermsFound);
     }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= _TermsConstants.wideLayoutBreakpoint) {
+          return _buildDataTable(l10n);
+        }
+        return _buildCompactList(l10n);
+      },
+    );
+  }
 
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: _filteredTerms.length,
-      itemBuilder: (context, index) {
-        final term = _filteredTerms[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(
+  Widget _buildDataTable(AppLocalizations l10n) {
+    final terms = _sortedTerms;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      children: [
+        // Sticky header
+        Container(
+          color: colorScheme.surfaceContainerHighest,
+          padding: const EdgeInsets.symmetric(
             horizontal: AppConstants.spacingL,
-            vertical: AppConstants.spacingXS,
+            vertical: AppConstants.spacingS,
           ),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: term.statusColor,
-              child: Text(
-                term.status.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: AppConstants.fontSizeCaption,
+          child: Row(
+            children: [
+              const SizedBox(width: _TermsConstants.statusDotSize + AppConstants.spacingM),
+              Expanded(
+                child: _SortableHeader(
+                  label: l10n.term,
+                  active: _sortColumnIndex == 0,
+                  ascending: _sortAscending,
+                  onTap: () => setState(() {
+                    if (_sortColumnIndex == 0) {
+                      _sortAscending = !_sortAscending;
+                    } else {
+                      _sortColumnIndex = 0;
+                      _sortAscending = true;
+                    }
+                  }),
+                  style: textTheme.labelLarge,
                 ),
               ),
-            ),
-            title: Text(term.text),
-            subtitle: _buildTermSubtitle(term, l10n),
-            trailing: PopupMenuButton(
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.edit),
-                      const SizedBox(width: AppConstants.spacingS),
-                      Text(l10n.edit),
-                    ],
-                  ),
+              const SizedBox(width: AppConstants.spacingL),
+              Expanded(
+                flex: 2,
+                child: _SortableHeader(
+                  label: l10n.translation,
+                  active: _sortColumnIndex == 1,
+                  ascending: _sortAscending,
+                  onTap: () => setState(() {
+                    if (_sortColumnIndex == 1) {
+                      _sortAscending = !_sortAscending;
+                    } else {
+                      _sortColumnIndex = 1;
+                      _sortAscending = true;
+                    }
+                  }),
+                  style: textTheme.labelLarge,
                 ),
-                PopupMenuItem(
-                  value: 'delete',
+              ),
+              const SizedBox(width: AppConstants.spacingL),
+              _SortableHeader(
+                label: l10n.addedAt,
+                active: _sortColumnIndex == 2,
+                ascending: _sortAscending,
+                onTap: () => setState(() {
+                  if (_sortColumnIndex == 2) {
+                    _sortAscending = !_sortAscending;
+                  } else {
+                    _sortColumnIndex = 2;
+                    _sortAscending = true;
+                  }
+                }),
+                style: textTheme.labelLarge,
+              ),
+              const SizedBox(width: AppConstants.spacingXL),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        // Virtualized rows
+        Expanded(
+          child: ListView.separated(
+            controller: _scrollController,
+            itemCount: terms.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final term = terms[index];
+              final translationText = _termTranslationText(term);
+              return InkWell(
+                onTap: () => _editTerm(term),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.spacingL,
+                    vertical: AppConstants.spacingS,
+                  ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.delete,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      const SizedBox(width: AppConstants.spacingS),
-                      Text(
-                        l10n.delete,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+                      Tooltip(
+                        message: TermStatus.localizedNameFor(term.status, l10n),
+                        child: Container(
+                          width: _TermsConstants.statusDotSize,
+                          height: _TermsConstants.statusDotSize,
+                          decoration: BoxDecoration(
+                            color: term.statusColor,
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: AppConstants.spacingM),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(term.text),
+                            if (term.romanization.isNotEmpty)
+                              Text(
+                                term.romanization,
+                                style: TextStyle(
+                                  color: AppConstants.subtitleColor,
+                                  fontSize: AppConstants.fontSizeCaption,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: AppConstants.spacingL),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          translationText,
+                          style: TextStyle(color: AppConstants.subtitleColor),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                      ),
+                      const SizedBox(width: AppConstants.spacingL),
+                      Text(
+                        DateFormat('dd MMM yyyy').format(term.createdAt),
+                        style: TextStyle(
+                          color: AppConstants.subtitleColor,
+                          fontSize: AppConstants.fontSizeCaption,
+                        ),
+                      ),
+                      _buildRowMenu(term, l10n),
                     ],
                   ),
                 ),
-              ],
-              onSelected: (value) {
-                if (value == 'edit') {
-                  _editTerm(term);
-                } else if (value == 'delete') {
-                  _deleteTerm(term);
-                }
-              },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactList(AppLocalizations l10n) {
+    final terms = _sortedTerms;
+    return ListView.separated(
+      controller: _scrollController,
+      itemCount: terms.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final term = terms[index];
+        final translationText = _termTranslationText(term);
+        return InkWell(
+          onTap: () => _editTerm(term),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.spacingL,
+              vertical: AppConstants.spacingS,
             ),
-            onTap: () => _editTerm(term),
+            child: Row(
+              children: [
+                Tooltip(
+                  message: TermStatus.localizedNameFor(term.status, l10n),
+                  child: Container(
+                    width: _TermsConstants.statusDotSize,
+                    height: _TermsConstants.statusDotSize,
+                    decoration: BoxDecoration(
+                      color: term.statusColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppConstants.spacingM),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        term.text,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      if (term.romanization.isNotEmpty)
+                        Text(
+                          term.romanization,
+                          style: TextStyle(
+                            color: AppConstants.subtitleColor,
+                            fontSize: AppConstants.fontSizeCaption,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppConstants.spacingM),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    translationText,
+                    style: TextStyle(color: AppConstants.subtitleColor),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                ),
+                _buildRowMenu(term, l10n),
+              ],
+            ),
           ),
         );
+      },
+    );
+  }
+
+  Widget _buildRowMenu(Term term, AppLocalizations l10n) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, size: AppConstants.iconSizeS),
+      padding: EdgeInsets.zero,
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              const Icon(Icons.edit),
+              const SizedBox(width: AppConstants.spacingS),
+              Text(l10n.edit),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+              const SizedBox(width: AppConstants.spacingS),
+              Text(
+                l10n.delete,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ],
+          ),
+        ),
+      ],
+      onSelected: (value) {
+        if (value == 'edit') {
+          _editTerm(term);
+        } else if (value == 'delete') {
+          _deleteTerm(term);
+        }
       },
     );
   }
@@ -450,41 +693,6 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
     final translations = _translationsMap[termId];
     if (translations == null) return false;
     return translations.any((t) => t.meaning.toLowerCase().contains(query));
-  }
-
-  Widget? _buildTermSubtitle(Term term, AppLocalizations l10n) {
-    final translations = term.id != null ? _translationsMap[term.id!] : null;
-    final hasTranslations = translations != null && translations.isNotEmpty;
-    final hasLegacyTranslation = term.translation.isNotEmpty;
-    final hasRomanization = term.romanization.isNotEmpty;
-
-    if (!hasTranslations && !hasLegacyTranslation && !hasRomanization) {
-      return null;
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (hasTranslations)
-          ...translations.map(
-            (t) => Text(
-              t.partOfSpeech != null
-                  ? '${t.meaning} (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})'
-                  : t.meaning,
-            ),
-          )
-        else if (hasLegacyTranslation)
-          Text(term.translation),
-        if (hasRomanization)
-          Text(
-            term.romanization,
-            style: TextStyle(
-              color: AppConstants.subtitleColor,
-              fontSize: AppConstants.fontSizeCaption,
-            ),
-          ),
-      ],
-    );
   }
 
   Color _getStatusColor(int status) {
@@ -506,5 +714,42 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
       default:
         return Colors.grey;
     }
+  }
+}
+
+class _SortableHeader extends StatelessWidget {
+  final String label;
+  final bool active;
+  final bool ascending;
+  final VoidCallback onTap;
+  final TextStyle? style;
+
+  const _SortableHeader({
+    required this.label,
+    required this.active,
+    required this.ascending,
+    required this.onTap,
+    this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: style),
+          if (active) ...[
+            const SizedBox(width: AppConstants.spacingXS),
+            Icon(
+              ascending ? Icons.arrow_upward : Icons.arrow_downward,
+              size: AppConstants.iconSizeS,
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

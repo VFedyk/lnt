@@ -122,6 +122,8 @@
   "addCover": "Додати обкладинку",
   "removeCover": "Видалити обкладинку",
   "noTermsFound": "Термінів не знайдено",
+  "hideIgnored": "Сховати ігноровані",
+  "addedAt": "Додано",
   "importCsv": "Імпорт CSV",
   "exportCsv": "Експорт CSV",
   "exportAnki": "Експорт Anki",

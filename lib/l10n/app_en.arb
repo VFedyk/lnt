@@ -201,6 +201,8 @@
   "addCover": "Add Cover",
   "removeCover": "Remove Cover",
   "noTermsFound": "No terms found",
+  "hideIgnored": "Hide ignored",
+  "addedAt": "Added",
   "importCsv": "Import CSV",
   "exportCsv": "Export CSV",
   "exportAnki": "Export Anki",
