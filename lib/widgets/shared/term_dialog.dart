@@ -117,28 +117,31 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     setState(() => _isAiTranslating = true);
     final l10n = AppLocalizations.of(context);
     try {
-      final meanings = await AiExplanationService(settings: settings).translateWord(
-        word: _termController.text.trim(),
-        contextSentence: _sentenceController.text.trim(),
-        languageName: _selectedLanguageName,
-      );
+      final meanings = await AiExplanationService(settings: settings)
+          .translateWord(
+            word: _termController.text.trim(),
+            contextSentence: _sentenceController.text.trim(),
+            languageName: _selectedLanguageName,
+          );
       if (mounted && meanings.isNotEmpty) {
         setState(() {
           for (final meaning in meanings) {
-            _translations.add(Translation(
-              termId: widget.term.id ?? 0,
-              meaning: meaning,
-              sortOrder: _translations.length,
-            ));
+            _translations.add(
+              Translation(
+                termId: widget.term.id ?? 0,
+                meaning: meaning,
+                sortOrder: _translations.length,
+              ),
+            );
             _translationKeys.add(Object());
           }
         });
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.aiTranslateFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.aiTranslateFailed)));
       }
     } finally {
       if (mounted) setState(() => _isAiTranslating = false);
@@ -147,8 +150,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
 
   Future<void> _loadTranslations() async {
     if (widget.term.id != null) {
-      final translations = await db.translations
-          .getByTermId(widget.term.id!);
+      final translations = await db.translations.getByTermId(widget.term.id!);
       if (mounted) {
         setState(() {
           _translations = translations;
@@ -193,7 +195,12 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
         if (translation != null && mounted) {
           final term = await db.terms.getById(translation.termId);
           if (term != null && mounted) {
-            setState(() => _baseTranslations[translationId] = (translation: translation, term: term));
+            setState(
+              () => _baseTranslations[translationId] = (
+                translation: translation,
+                term: term,
+              ),
+            );
           }
         }
       }
@@ -227,10 +234,9 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
         meaning: selectedTerm.translation,
       );
       // Save the legacy translation to the translations table
-      await db.translations.replaceForTerm(
-        selectedTerm.id!,
-        [legacyTranslation],
-      );
+      await db.translations.replaceForTerm(selectedTerm.id!, [
+        legacyTranslation,
+      ]);
       // Reload to get the saved translation with its new ID
       termTranslations = await db.translations.getByTermId(selectedTerm.id!);
       if (!mounted) return;
@@ -240,7 +246,9 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     if (termTranslations.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No translations available for this term')),
+          const SnackBar(
+            content: Text('No translations available for this term'),
+          ),
         );
       }
       return;
@@ -254,7 +262,10 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
         _translations[index] = _translations[index].copyWith(
           baseTranslationId: baseTranslation.id,
         );
-        _baseTranslations[baseTranslation.id!] = (translation: baseTranslation, term: selectedTerm);
+        _baseTranslations[baseTranslation.id!] = (
+          translation: baseTranslation,
+          term: selectedTerm,
+        );
       });
       return;
     }
@@ -274,7 +285,10 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
         _translations[index] = _translations[index].copyWith(
           baseTranslationId: selectedTranslation.id,
         );
-        _baseTranslations[selectedTranslation.id!] = (translation: selectedTranslation, term: selectedTerm);
+        _baseTranslations[selectedTranslation.id!] = (
+          translation: selectedTranslation,
+          term: selectedTerm,
+        );
       });
     }
   }
@@ -282,13 +296,15 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
   void _removeBaseTranslationFromTranslation(int index) {
     final translation = _translations[index];
     setState(() {
-      _translations[index] = translation.copyWith(
-        clearBaseTranslationId: true,
-      );
+      _translations[index] = translation.copyWith(clearBaseTranslationId: true);
     });
   }
 
-  Widget _buildBaseTermSelector(AppLocalizations l10n, int index, Translation translation) {
+  Widget _buildBaseTermSelector(
+    AppLocalizations l10n,
+    int index,
+    Translation translation,
+  ) {
     final baseInfo = translation.baseTranslationId != null
         ? _baseTranslations[translation.baseTranslationId!]
         : null;
@@ -356,11 +372,13 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
 
   void _addTranslation() {
     setState(() {
-      _translations.add(Translation(
-        termId: widget.term.id ?? 0,
-        meaning: '',
-        sortOrder: _translations.length,
-      ));
+      _translations.add(
+        Translation(
+          termId: widget.term.id ?? 0,
+          meaning: '',
+          sortOrder: _translations.length,
+        ),
+      );
       _translationKeys.add(Object());
     });
   }
@@ -372,7 +390,11 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     });
   }
 
-  void _updateTranslation(int index, Translation updated, {bool rebuild = false}) {
+  void _updateTranslation(
+    int index,
+    Translation updated, {
+    bool rebuild = false,
+  }) {
     if (rebuild) {
       setState(() {
         _translations[index] = updated;
@@ -399,7 +421,8 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     if (selected != null && selected.languageCode.isNotEmpty) {
       return selected.languageCode.toLowerCase();
     }
-    if (_selectedLanguageId == widget.languageId && widget.languageCode.isNotEmpty) {
+    if (_selectedLanguageId == widget.languageId &&
+        widget.languageCode.isNotEmpty) {
       return widget.languageCode.toLowerCase();
     }
     return '';
@@ -537,7 +560,10 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                   if (hasAnyTranslationProvider)
                     if (hasMultipleTranslationProviders)
                       PopupMenuButton<TranslationProvider>(
-                        icon: const Icon(Icons.translate, size: AppConstants.iconSizeS),
+                        icon: const Icon(
+                          Icons.translate,
+                          size: AppConstants.iconSizeS,
+                        ),
                         tooltip: l10n.translate,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -555,17 +581,29 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                       )
                     else
                       IconButton(
-                        icon: const Icon(Icons.translate, size: AppConstants.iconSizeS),
-                        tooltip: hasDeepL ? l10n.translateWithDeepL : l10n.translateWithLibreTranslate,
+                        icon: const Icon(
+                          Icons.translate,
+                          size: AppConstants.iconSizeS,
+                        ),
+                        tooltip: hasDeepL
+                            ? l10n.translateWithDeepL
+                            : l10n.translateWithLibreTranslate,
                         onPressed: () => _translateAndAddFirstWithProvider(
-                          hasDeepL ? TranslationProvider.deepL : TranslationProvider.libreTranslate,
+                          hasDeepL
+                              ? TranslationProvider.deepL
+                              : TranslationProvider.libreTranslate,
                         ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
+                  if (hasAnyTranslationProvider && _hasAi)
+                    const SizedBox(width: AppConstants.spacingS),
                   if (_hasAi)
                     IconButton(
-                      icon: const Icon(Icons.auto_awesome, size: AppConstants.iconSizeS),
+                      icon: const Icon(
+                        Icons.auto_awesome,
+                        size: AppConstants.iconSizeS,
+                      ),
                       tooltip: l10n.translateWithAi,
                       onPressed: _aiTranslateWord,
                       padding: EdgeInsets.zero,
@@ -659,16 +697,24 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                   value: translation.partOfSpeech,
                   isExpanded: true,
                   underline: const SizedBox(),
-                  hint: Text(l10n.partOfSpeech, style: TextStyle(color: AppConstants.subtitleColor)),
+                  hint: Text(
+                    l10n.partOfSpeech,
+                    style: TextStyle(color: AppConstants.subtitleColor),
+                  ),
                   items: [
                     DropdownMenuItem<String?>(
                       value: null,
-                      child: Text('—', style: TextStyle(color: AppConstants.subtitleColor)),
+                      child: Text(
+                        '—',
+                        style: TextStyle(color: AppConstants.subtitleColor),
+                      ),
                     ),
-                    ...PartOfSpeech.all.map((pos) => DropdownMenuItem(
-                          value: pos,
-                          child: Text(PartOfSpeech.localizedNameFor(pos, l10n)),
-                        )),
+                    ...PartOfSpeech.all.map(
+                      (pos) => DropdownMenuItem(
+                        value: pos,
+                        child: Text(PartOfSpeech.localizedNameFor(pos, l10n)),
+                      ),
+                    ),
                   ],
                   onChanged: (value) {
                     // Use current list value to preserve baseTranslationId and other fields
@@ -684,9 +730,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                 ),
               ),
               const SizedBox(width: AppConstants.spacingM),
-              Expanded(
-                child: _buildBaseTermSelector(l10n, index, translation),
-              ),
+              Expanded(child: _buildBaseTermSelector(l10n, index, translation)),
             ],
           ),
         ],
@@ -694,16 +738,20 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     );
   }
 
-  Future<void> _translateAndAddFirstWithProvider(TranslationProvider provider) async {
+  Future<void> _translateAndAddFirstWithProvider(
+    TranslationProvider provider,
+  ) async {
     _translationController.text = '';
     await translateWithProvider(provider);
     if (_translationController.text.isNotEmpty) {
       setState(() {
-        _translations.add(Translation(
-          termId: widget.term.id ?? 0,
-          meaning: _translationController.text,
-          sortOrder: 0,
-        ));
+        _translations.add(
+          Translation(
+            termId: widget.term.id ?? 0,
+            meaning: _translationController.text,
+            sortOrder: 0,
+          ),
+        );
         _translationKeys.add(Object());
       });
     }
@@ -748,10 +796,8 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
             IconButton(
               icon: const Icon(Icons.volume_up),
               tooltip: l10n.pronounce,
-              onPressed: () => ttsService.speak(
-                widget.term.lowerText,
-                widget.languageCode,
-              ),
+              onPressed: () =>
+                  ttsService.speak(widget.term.lowerText, widget.languageCode),
             ),
           if (widget.dictionaries.isNotEmpty)
             PopupMenuButton<Dictionary>(
@@ -811,23 +857,28 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                     ),
                     label: Text(
                       TermStatus.localizedNameFor(_status, l10n),
-                      style: const TextStyle(fontSize: AppConstants.fontSizeCaption),
+                      style: const TextStyle(
+                        fontSize: AppConstants.fontSizeCaption,
+                      ),
                     ),
                   ),
                   const Spacer(),
                   if (_status == TermStatus.ignored)
                     TextButton(
-                      onPressed: () => setState(() => _status = TermStatus.unknown),
+                      onPressed: () =>
+                          setState(() => _status = TermStatus.unknown),
                       child: Text(l10n.unignore),
                     )
                   else ...[
                     if (_status != TermStatus.wellKnown)
                       TextButton(
-                        onPressed: () => setState(() => _status = TermStatus.wellKnown),
+                        onPressed: () =>
+                            setState(() => _status = TermStatus.wellKnown),
                         child: Text(l10n.markWellKnown),
                       ),
                     TextButton(
-                      onPressed: () => setState(() => _status = TermStatus.ignored),
+                      onPressed: () =>
+                          setState(() => _status = TermStatus.ignored),
                       child: Text(l10n.ignore),
                     ),
                   ],
@@ -898,10 +949,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
             );
             Navigator.pop(
               context,
-              TermDialogResult(
-                term: updatedTerm,
-                translations: _translations,
-              ),
+              TermDialogResult(term: updatedTerm, translations: _translations),
             );
           },
           child: Text(l10n.save),
@@ -909,7 +957,6 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
       ],
     );
   }
-
 }
 
 /// Dialog for picking a translation from a term

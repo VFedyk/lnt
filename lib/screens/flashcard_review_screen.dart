@@ -505,17 +505,40 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
               const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
               const Divider(),
               const SizedBox(height: AppConstants.spacingM),
-              ...item.translations.map(
-                (t) => Padding(
-                  padding: const EdgeInsets.only(bottom: AppConstants.spacingS),
-                  child: Text(
-                    t.partOfSpeech != null && t.partOfSpeech!.isNotEmpty
-                        ? '${t.meaning} (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})'
-                        : t.meaning,
-                    style: const TextStyle(
-                      fontSize: _FlashcardReviewConstants.translationFontSize,
-                    ),
-                    textAlign: TextAlign.center,
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: item.translations.map(
+                      (t) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppConstants.spacingS),
+                        child: t.partOfSpeech != null && t.partOfSpeech!.isNotEmpty
+                            ? RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    fontSize: _FlashcardReviewConstants.translationFontSize,
+                                  ),
+                                  children: [
+                                    TextSpan(text: t.meaning),
+                                    TextSpan(
+                                      text: ' (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})',
+                                      style: TextStyle(
+                                        color: AppConstants.subtitleColor,
+                                        fontSize: _FlashcardReviewConstants.translationFontSize - 2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Text(
+                                t.meaning,
+                                style: const TextStyle(
+                                  fontSize: _FlashcardReviewConstants.translationFontSize,
+                                ),
+                              ),
+                      ),
+                    ).toList(),
                   ),
                 ),
               ),
