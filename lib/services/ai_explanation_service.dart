@@ -132,7 +132,6 @@ class AiExplanationService {
     required String selectedText,
     required String contextSentence,
     required String languageName,
-    required String responseLanguageCode,
   }) async {
     final apiKey = (await _settings.getAiApiKey())?.trim() ?? '';
     final model = (await _settings.getAiModel()).trim();
@@ -146,9 +145,9 @@ class AiExplanationService {
       throw Exception('AI not configured');
     }
 
-    final responseLanguage = responseLanguageCode == 'uk'
-        ? 'Ukrainian'
-        : 'English';
+    final targetLangCode = await _settings.getDeepLTargetLang();
+    final responseLanguage =
+        _deeplCodeToName[targetLangCode.toUpperCase()] ?? targetLangCode;
     final task = switch (type) {
       AiExplanationType.meaning =>
         'Explain the meaning of the selected text in the given sentence context.',

@@ -464,7 +464,6 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
   ) async {
     final ctrl = context.read<ReaderController>();
     final l10n = AppLocalizations.of(context);
-    final responseLanguageCode = Localizations.localeOf(context).languageCode;
 
     if (!await _aiExplanationService.isConfigured()) {
       if (!mounted) return;
@@ -488,7 +487,6 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         selectedText: word,
         contextSentence: sentence,
         languageName: ctrl.language.name,
-        responseLanguageCode: responseLanguageCode,
       );
 
       if (!mounted) return;
@@ -678,7 +676,6 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final ctrl = context.read<ReaderController>();
     if (ctrl.selectedWordIndices.isEmpty) return;
     final l10n = AppLocalizations.of(context);
-    final responseLanguageCode = Localizations.localeOf(context).languageCode;
 
     if (!await _aiExplanationService.isConfigured()) {
       if (!mounted) return;
@@ -709,7 +706,6 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         selectedText: selectedWords,
         contextSentence: sentence,
         languageName: ctrl.language.name,
-        responseLanguageCode: responseLanguageCode,
       );
 
       if (!mounted) return;
