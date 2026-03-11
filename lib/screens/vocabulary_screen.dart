@@ -6,7 +6,9 @@ import 'dart:io';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/term.dart';
+import '../models/dictionary.dart';
 import '../service_locator.dart';
+import '../services/dictionary_service.dart';
 import '../services/import_export_service.dart';
 import '../utils/async_helpers.dart';
 import '../utils/constants.dart';
@@ -42,6 +44,8 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   final _importService = ImportExportService();
+  final _dictService = DictionaryService();
+  List<Dictionary> _dictionaries = [];
   int? _statusFilter;
   bool _hideIgnored = true;
   int? _sortColumnIndex;
@@ -52,6 +56,12 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
     super.initState();
     dataChanges.terms.addListener(_loadTerms);
     _loadTerms();
+    _loadDictionaries();
+  }
+
+  Future<void> _loadDictionaries() async {
+    final dicts = await _dictService.getActiveDictionaries(widget.language.id!);
+    if (mounted) setState(() => _dictionaries = dicts);
   }
 
   @override
@@ -221,8 +231,8 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
       builder: (dialogContext) => TermDialog(
         term: term,
         sentence: term.sentence,
-        onLookup: (ctx, dictNum) {},
-        dictionaries: const [],
+        onLookup: (ctx, dict) => _dictService.lookupWord(ctx, term.text, dict),
+        dictionaries: _dictionaries,
         languageId: widget.language.id!,
         languageName: widget.language.name,
         languageCode: widget.language.languageCode,

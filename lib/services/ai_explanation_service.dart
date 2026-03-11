@@ -41,7 +41,7 @@ class AiExplanationService {
     return apiKey != null && apiKey.trim().isNotEmpty;
   }
 
-  Future<List<String>> translateWord({
+  Future<List<({String meaning, String? partOfSpeech})>> translateWord({
     required String word,
     required String contextSentence,
     required String languageName,
@@ -62,6 +62,10 @@ class AiExplanationService {
     final targetLangName =
         _deeplCodeToName[targetLangCode.toUpperCase()] ?? targetLangCode;
 
+    const validPos =
+        'noun, verb, adjective, adverb, pronoun, preposition, '
+        'conjunction, interjection, article, numeral, particle, other';
+
     final contextPart = contextSentence.trim().isNotEmpty
         ? '\nContext: "${contextSentence.trim()}"'
         : '';
@@ -71,9 +75,9 @@ class AiExplanationService {
         'Return only the requested translations without any additional commentary.';
     final userPrompt =
         'Translate the word or phrase "$word" from $languageName into $targetLangName.$contextPart\n'
-        'Return only the translations, one per line. '
-        'If there are multiple distinct meanings, list each separately. '
-        'No explanations, no numbering, no extra text.';
+        'For each distinct meaning return exactly one line in the format: translation | part_of_speech\n'
+        'part_of_speech must be one of: $validPos\n'
+        'No explanations, no numbering, no extra text. Maximum 6 lines.';
 
     final resolvedApiUrl = _resolveApiUrl(provider: provider, apiUrl: apiUrl);
     final body = _buildRequestBody(
@@ -92,6 +96,11 @@ class AiExplanationService {
     final timeout = provider == _AiApiProvider.ollama
         ? const Duration(seconds: 120)
         : const Duration(seconds: 30);
+
+    const validPosSet = {
+      'noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition',
+      'conjunction', 'interjection', 'article', 'numeral', 'particle', 'other',
+    };
 
     try {
       final response = await http
@@ -112,13 +121,22 @@ class AiExplanationService {
         throw Exception('Empty AI response');
       }
 
-      final lines = content
+      return content
           .split('\n')
           .map((l) => l.trim())
           .where((l) => l.isNotEmpty && !l.startsWith('#'))
           .take(6)
+          .map((line) {
+            final pipeIndex = line.lastIndexOf('|');
+            if (pipeIndex < 0) return (meaning: line, partOfSpeech: null);
+            final meaning = line.substring(0, pipeIndex).trim();
+            final pos = line.substring(pipeIndex + 1).trim().toLowerCase();
+            return (
+              meaning: meaning.isEmpty ? line : meaning,
+              partOfSpeech: validPosSet.contains(pos) ? pos : null,
+            );
+          })
           .toList();
-      return lines;
     } on TimeoutException {
       throw Exception('AI request timed out');
     } catch (e, stackTrace) {

@@ -125,11 +125,12 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
           );
       if (mounted && meanings.isNotEmpty) {
         setState(() {
-          for (final meaning in meanings) {
+          for (final entry in meanings) {
             _translations.add(
               Translation(
                 termId: widget.term.id ?? 0,
-                meaning: meaning,
+                meaning: entry.meaning,
+                partOfSpeech: entry.partOfSpeech,
                 sortOrder: _translations.length,
               ),
             );
