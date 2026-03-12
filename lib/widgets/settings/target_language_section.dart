@@ -9,11 +9,12 @@ class TargetLanguageSection extends StatelessWidget {
   final String targetLang;
   final ValueChanged<String> onChanged;
 
-  // DeepL-supported language codes (uppercase ISO 639-1 / DeepL format).
+  // Union of DeepL and LibreTranslate supported language codes (uppercase ISO 639-1).
   static const _codes = [
-    'BG', 'CS', 'DA', 'DE', 'EL', 'EN', 'ES', 'ET', 'FI', 'FR',
-    'HU', 'ID', 'IT', 'JA', 'KO', 'LT', 'LV', 'NB', 'NL', 'PL',
-    'PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'TR', 'UK', 'ZH',
+    'AR', 'BG', 'CS', 'DA', 'DE', 'EL', 'EN', 'ES', 'ET', 'FI',
+    'FR', 'GA', 'HE', 'HI', 'HU', 'ID', 'IT', 'JA', 'KO', 'LT',
+    'LV', 'NB', 'NL', 'PL', 'PT', 'RO', 'RU', 'SK', 'SL', 'SV',
+    'TH', 'TR', 'UK', 'VI', 'ZH',
   ];
 
   const TargetLanguageSection({

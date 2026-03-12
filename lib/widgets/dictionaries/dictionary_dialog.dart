@@ -54,7 +54,7 @@ class _DictionaryDialogState extends State<DictionaryDialog> {
   }
 
   Future<void> _loadTargetLang() async {
-    final targetLang = await settings.getDeepLTargetLang();
+    final targetLang = await settings.getTargetLang();
     if (mounted) {
       setState(() => _targetLang = targetLang.toLowerCase());
     }

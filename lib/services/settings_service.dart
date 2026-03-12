@@ -7,7 +7,8 @@ class SettingsService {
 
   static const String _deepLApiKeyKey = 'deepl_api_key';
   static const String _deepLApiTypeKey = 'deepl_api_type'; // 'free' or 'pro'
-  static const String _deepLTargetLangKey = 'deepl_target_lang';
+  static const String _targetLangKey = 'target_lang';
+  static const String _deepLTargetLangKey = 'deepl_target_lang'; // legacy
   static const String defaultTargetLang = 'EN';
 
   // Window size persistence
@@ -72,14 +73,22 @@ class SettingsService {
     return key != null && key.isNotEmpty;
   }
 
-  Future<String> getDeepLTargetLang() async {
+  Future<String> getTargetLang() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_deepLTargetLangKey) ?? defaultTargetLang;
+    // Migrate from old DeepL-specific key if new key is absent.
+    if (!prefs.containsKey(_targetLangKey) &&
+        prefs.containsKey(_deepLTargetLangKey)) {
+      final legacy = prefs.getString(_deepLTargetLangKey)!;
+      await prefs.setString(_targetLangKey, legacy);
+      await prefs.remove(_deepLTargetLangKey);
+      return legacy;
+    }
+    return prefs.getString(_targetLangKey) ?? defaultTargetLang;
   }
 
-  Future<void> setDeepLTargetLang(String langCode) async {
+  Future<void> setTargetLang(String langCode) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_deepLTargetLangKey, langCode);
+    await prefs.setString(_targetLangKey, langCode);
   }
 
   // Window size persistence

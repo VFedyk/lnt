@@ -8,17 +8,18 @@ import 'settings_service.dart';
 
 enum AiExplanationType { meaning, grammar }
 
-// Maps common DeepL target language codes to human-readable names for prompts.
-const Map<String, String> _deeplCodeToName = {
-  'EN': 'English', 'EN-US': 'English', 'EN-GB': 'English',
-  'UK': 'Ukrainian', 'DE': 'German', 'FR': 'French', 'ES': 'Spanish',
-  'IT': 'Italian', 'PT': 'Portuguese', 'PT-BR': 'Portuguese', 'PT-PT': 'Portuguese',
-  'NL': 'Dutch', 'PL': 'Polish', 'RU': 'Russian', 'JA': 'Japanese',
-  'ZH': 'Chinese', 'KO': 'Korean', 'AR': 'Arabic', 'BG': 'Bulgarian',
-  'CS': 'Czech', 'DA': 'Danish', 'EL': 'Greek', 'ET': 'Estonian',
-  'FI': 'Finnish', 'HU': 'Hungarian', 'ID': 'Indonesian', 'LT': 'Lithuanian',
-  'LV': 'Latvian', 'NB': 'Norwegian', 'RO': 'Romanian', 'SK': 'Slovak',
-  'SL': 'Slovenian', 'SV': 'Swedish', 'TR': 'Turkish',
+// Maps target language codes (uppercase ISO 639-1) to human-readable names for prompts.
+const Map<String, String> _langCodeToName = {
+  'AR': 'Arabic', 'BG': 'Bulgarian', 'CS': 'Czech', 'DA': 'Danish',
+  'DE': 'German', 'EL': 'Greek', 'EN': 'English', 'EN-US': 'English',
+  'EN-GB': 'English', 'ES': 'Spanish', 'ET': 'Estonian', 'FI': 'Finnish',
+  'FR': 'French', 'GA': 'Irish', 'HE': 'Hebrew', 'HI': 'Hindi',
+  'HU': 'Hungarian', 'ID': 'Indonesian', 'IT': 'Italian', 'JA': 'Japanese',
+  'KO': 'Korean', 'LT': 'Lithuanian', 'LV': 'Latvian', 'NB': 'Norwegian',
+  'NL': 'Dutch', 'PL': 'Polish', 'PT': 'Portuguese', 'PT-BR': 'Portuguese',
+  'PT-PT': 'Portuguese', 'RO': 'Romanian', 'RU': 'Russian', 'SK': 'Slovak',
+  'SL': 'Slovenian', 'SV': 'Swedish', 'TH': 'Thai', 'TR': 'Turkish',
+  'UK': 'Ukrainian', 'VI': 'Vietnamese', 'ZH': 'Chinese',
 };
 
 enum _AiApiProvider { openAI, anthropic, ollama }
@@ -58,9 +59,9 @@ class AiExplanationService {
       throw Exception('AI not configured');
     }
 
-    final targetLangCode = await _settings.getDeepLTargetLang();
+    final targetLangCode = await _settings.getTargetLang();
     final targetLangName =
-        _deeplCodeToName[targetLangCode.toUpperCase()] ?? targetLangCode;
+        _langCodeToName[targetLangCode.toUpperCase()] ?? targetLangCode;
 
     const validPos =
         'noun, verb, adjective, adverb, pronoun, preposition, '
@@ -163,9 +164,9 @@ class AiExplanationService {
       throw Exception('AI not configured');
     }
 
-    final targetLangCode = await _settings.getDeepLTargetLang();
+    final targetLangCode = await _settings.getTargetLang();
     final responseLanguage =
-        _deeplCodeToName[targetLangCode.toUpperCase()] ?? targetLangCode;
+        _langCodeToName[targetLangCode.toUpperCase()] ?? targetLangCode;
     final task = switch (type) {
       AiExplanationType.meaning =>
         'Explain the meaning of the selected text in the given sentence context.',

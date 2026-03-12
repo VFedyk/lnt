@@ -47,7 +47,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
       if (language == null) {
         final langId = await db.languages.create(result);
         // Auto-create a Google Translate dictionary for the new language.
-        final targetLang = await settings.getDeepLTargetLang();
+        final targetLang = await settings.getTargetLang();
         final sl = result.languageCode.toLowerCase();
         final tl = targetLang.toLowerCase();
         await db.dictionaries.create(

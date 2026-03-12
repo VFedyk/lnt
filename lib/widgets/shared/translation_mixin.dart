@@ -37,12 +37,13 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
   Future<void> translateWithProvider(TranslationProvider provider) async {
     setState(() => _isTranslating = true);
 
-    final targetLang = await settings.getDeepLTargetLang();
+    final targetLang = await settings.getTargetLang();
     TranslationResult result;
 
     if (provider == TranslationProvider.deepL) {
       final sourceCode = DeepLService.deeplCode(languageCode);
-      if (sourceCode == null) {
+      final targetCode = DeepLService.deeplCode(targetLang);
+      if (sourceCode == null || targetCode == null) {
         _showLanguageNotSupported('DeepL');
         setState(() => _isTranslating = false);
         return;
@@ -50,11 +51,12 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
       result = await deepLService.translate(
         text: sourceTextController.text.trim(),
         sourceLang: sourceCode,
-        targetLang: targetLang,
+        targetLang: targetCode,
       );
     } else {
       final sourceCode = LibreTranslateService.libreCode(languageCode);
-      if (sourceCode == null) {
+      final targetCode = LibreTranslateService.libreCode(targetLang);
+      if (sourceCode == null || targetCode == null) {
         _showLanguageNotSupported('LibreTranslate');
         setState(() => _isTranslating = false);
         return;
@@ -62,7 +64,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
       result = await libreTranslateService.translate(
         text: sourceTextController.text.trim(),
         sourceLang: sourceCode,
-        targetLang: targetLang.toLowerCase(),
+        targetLang: targetCode,
       );
     }
 

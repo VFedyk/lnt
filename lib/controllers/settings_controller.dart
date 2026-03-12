@@ -28,7 +28,7 @@ class SettingsController extends BaseController {
   Future<void> loadSettings() async {
     final apiKey = await settings.getDeepLApiKey();
     final isFree = await settings.isDeepLApiFree();
-    final tgtLang = await settings.getDeepLTargetLang();
+    final tgtLang = await settings.getTargetLang();
     final ltUrl = await settings.getLibreTranslateUrl();
     final ltApiKey = await settings.getLibreTranslateApiKey();
     final aiApiKey = await settings.getAiApiKey();
@@ -83,7 +83,7 @@ class SettingsController extends BaseController {
   }) async {
     await settings.setDeepLApiKey(apiKey.trim());
     await settings.setDeepLApiFree(isApiFree);
-    await settings.setDeepLTargetLang(targetLang);
+    await settings.setTargetLang(targetLang);
     await settings.setLibreTranslateUrl(ltUrl.trim());
     await settings.setLibreTranslateApiKey(ltApiKey.trim());
     await settings.setAiApiKey(aiApiKey.trim());
