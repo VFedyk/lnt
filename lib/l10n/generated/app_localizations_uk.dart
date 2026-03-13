@@ -193,6 +193,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get aiProviderOllama => 'Ollama';
 
   @override
+  String get aiRefreshModels => 'Оновити список моделей';
+
+  @override
   String get saveSettings => 'Зберегти налаштування';
 
   @override

@@ -276,6 +276,144 @@ Return:
     return _AiApiProvider.openAI;
   }
 
+  // ---------------------------------------------------------------------------
+  // Model listing
+  // ---------------------------------------------------------------------------
+
+  /// Fetches the list of available model IDs from the provider.
+  /// [provider] is one of [SettingsService.aiProvider*] constants.
+  /// Throws on network or auth failure.
+  static Future<List<String>> fetchModels({
+    required String provider,
+    required String apiKey,
+    required String apiUrl,
+  }) async {
+    final resolved = _resolveProviderStatic(provider: provider, apiUrl: apiUrl);
+    switch (resolved) {
+      case _AiApiProvider.anthropic:
+        return _fetchAnthropicModels(apiKey: apiKey);
+      case _AiApiProvider.ollama:
+        return _fetchOllamaModels(apiUrl: apiUrl);
+      case _AiApiProvider.openAI:
+        return _fetchOpenAiCompatibleModels(apiKey: apiKey, apiUrl: apiUrl);
+    }
+  }
+
+  static _AiApiProvider _resolveProviderStatic({
+    required String provider,
+    required String apiUrl,
+  }) {
+    switch (provider) {
+      case SettingsService.aiProviderOpenAiCompatible:
+        return _AiApiProvider.openAI;
+      case SettingsService.aiProviderAnthropic:
+        return _AiApiProvider.anthropic;
+      case SettingsService.aiProviderOllama:
+        return _AiApiProvider.ollama;
+      case SettingsService.aiProviderAuto:
+      default:
+        final lowerUrl = apiUrl.toLowerCase();
+        if (lowerUrl.contains('/api/chat') ||
+            lowerUrl.contains('/api/generate') ||
+            lowerUrl.contains('localhost:11434') ||
+            lowerUrl.contains('127.0.0.1:11434')) {
+          return _AiApiProvider.ollama;
+        }
+        if (lowerUrl.contains('anthropic.com')) {
+          return _AiApiProvider.anthropic;
+        }
+        return _AiApiProvider.openAI;
+    }
+  }
+
+  static Future<List<String>> _fetchAnthropicModels({
+    required String apiKey,
+  }) async {
+    final response = await http
+        .get(
+          Uri.parse('https://api.anthropic.com/v1/models'),
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+        )
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to fetch models (${response.statusCode})');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final items = data['data'] as List<dynamic>? ?? [];
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map((m) => m['id'] as String?)
+        .whereType<String>()
+        .toList();
+  }
+
+  static Future<List<String>> _fetchOpenAiCompatibleModels({
+    required String apiKey,
+    required String apiUrl,
+  }) async {
+    final modelsUrl = _openAiModelsUrl(apiUrl);
+    final response = await http
+        .get(
+          Uri.parse(modelsUrl),
+          headers: {'Authorization': 'Bearer $apiKey'},
+        )
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to fetch models (${response.statusCode})');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final items = data['data'] as List<dynamic>? ?? [];
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map((m) => m['id'] as String?)
+        .whereType<String>()
+        .toList()
+      ..sort();
+  }
+
+  static Future<List<String>> _fetchOllamaModels({
+    required String apiUrl,
+  }) async {
+    final tagsUrl = _ollamaTagsUrl(apiUrl);
+    final response = await http
+        .get(Uri.parse(tagsUrl))
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to fetch models (${response.statusCode})');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final items = data['models'] as List<dynamic>? ?? [];
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map((m) => m['name'] as String?)
+        .whereType<String>()
+        .toList()
+      ..sort();
+  }
+
+  /// Converts a chat-completions URL into a /v1/models URL.
+  static String _openAiModelsUrl(String chatUrl) {
+    final uri = Uri.tryParse(chatUrl);
+    if (uri == null) return 'https://api.openai.com/v1/models';
+    final path = uri.path;
+    final v1Idx = path.indexOf('/v1');
+    final newPath = v1Idx >= 0 ? '${path.substring(0, v1Idx)}/v1/models' : '/v1/models';
+    return '${uri.scheme}://${uri.authority}$newPath';
+  }
+
+  /// Converts an Ollama chat/generate URL into an /api/tags URL.
+  static String _ollamaTagsUrl(String apiUrl) {
+    final uri = Uri.tryParse(apiUrl);
+    if (uri == null) return apiUrl;
+    final lowerPath = uri.path.toLowerCase();
+    final apiIdx = lowerPath.indexOf('/api/');
+    final newPath = apiIdx >= 0 ? '${uri.path.substring(0, apiIdx)}/api/tags' : '/api/tags';
+    return '${uri.scheme}://${uri.authority}$newPath';
+  }
+
   String _resolveApiUrl({
     required _AiApiProvider provider,
     required String apiUrl,

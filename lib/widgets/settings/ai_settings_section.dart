@@ -1,10 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../../services/ai_explanation_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/constants.dart';
 
-class AiSettingsSection extends StatelessWidget {
+class AiSettingsSection extends StatefulWidget {
   final AppLocalizations l10n;
   final String provider;
   final ValueChanged<String> onProviderChanged;
@@ -27,7 +30,181 @@ class AiSettingsSection extends StatelessWidget {
   });
 
   @override
+  State<AiSettingsSection> createState() => _AiSettingsSectionState();
+}
+
+class _AiSettingsSectionState extends State<AiSettingsSection> {
+  List<String>? _availableModels;
+  bool _isFetching = false;
+  String? _fetchError;
+  Timer? _fetchTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.apiKeyController.addListener(_onAuthFieldChanged);
+    widget.apiUrlController.addListener(_onAuthFieldChanged);
+    _scheduleFetch(immediate: true);
+  }
+
+  @override
+  void didUpdateWidget(AiSettingsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.apiKeyController != widget.apiKeyController ||
+        oldWidget.apiUrlController != widget.apiUrlController) {
+      oldWidget.apiKeyController.removeListener(_onAuthFieldChanged);
+      oldWidget.apiUrlController.removeListener(_onAuthFieldChanged);
+      widget.apiKeyController.addListener(_onAuthFieldChanged);
+      widget.apiUrlController.addListener(_onAuthFieldChanged);
+    }
+    if (oldWidget.provider != widget.provider) {
+      _resetModels();
+      _scheduleFetch();
+    }
+  }
+
+  @override
+  void dispose() {
+    _fetchTimer?.cancel();
+    widget.apiKeyController.removeListener(_onAuthFieldChanged);
+    widget.apiUrlController.removeListener(_onAuthFieldChanged);
+    super.dispose();
+  }
+
+  void _onAuthFieldChanged() => _scheduleFetch();
+
+  void _scheduleFetch({bool immediate = false}) {
+    _fetchTimer?.cancel();
+    _fetchTimer = Timer(
+      immediate ? Duration.zero : const Duration(milliseconds: 800),
+      _fetchModels,
+    );
+  }
+
+  void _resetModels() {
+    if (mounted) setState(() { _availableModels = null; _fetchError = null; });
+  }
+
+  bool _canFetch() {
+    final apiKey = widget.apiKeyController.text.trim();
+    final apiUrl = widget.apiUrlController.text.trim();
+    switch (widget.provider) {
+      case SettingsService.aiProviderAnthropic:
+        return apiKey.isNotEmpty;
+      case SettingsService.aiProviderOllama:
+        return apiUrl.isNotEmpty;
+      case SettingsService.aiProviderOpenAiCompatible:
+        return apiKey.isNotEmpty && apiUrl.isNotEmpty;
+      case SettingsService.aiProviderAuto:
+      default:
+        final lowerUrl = apiUrl.toLowerCase();
+        if (lowerUrl.contains('localhost:11434') ||
+            lowerUrl.contains('127.0.0.1:11434') ||
+            lowerUrl.contains('/api/chat') ||
+            lowerUrl.contains('/api/generate')) {
+          return apiUrl.isNotEmpty;
+        }
+        return apiKey.isNotEmpty && apiUrl.isNotEmpty;
+    }
+  }
+
+  Future<void> _fetchModels() async {
+    if (!_canFetch()) {
+      _resetModels();
+      return;
+    }
+    if (!mounted) return;
+    setState(() { _isFetching = true; _fetchError = null; });
+    try {
+      final models = await AiExplanationService.fetchModels(
+        provider: widget.provider,
+        apiKey: widget.apiKeyController.text.trim(),
+        apiUrl: widget.apiUrlController.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() { _availableModels = models; _isFetching = false; });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _isFetching = false; _fetchError = e.toString(); _availableModels = null; });
+    }
+  }
+
+  Widget _buildModelField(BuildContext context) {
+    final l10n = widget.l10n;
+
+    if (_isFetching) {
+      return TextField(
+        controller: widget.modelController,
+        readOnly: true,
+        decoration: InputDecoration(
+          labelText: l10n.aiModelName,
+          border: const OutlineInputBorder(),
+          suffixIcon: const Padding(
+            padding: EdgeInsets.all(12),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_availableModels != null && _availableModels!.isNotEmpty) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: DropdownMenu<String>(
+              controller: widget.modelController,
+              expandedInsets: EdgeInsets.zero,
+              label: Text(l10n.aiModelName),
+              inputDecorationTheme: const InputDecorationTheme(
+                border: OutlineInputBorder(),
+              ),
+              dropdownMenuEntries: _availableModels!
+                  .map((m) => DropdownMenuEntry(value: m, label: m))
+                  .toList(),
+              onSelected: (value) {
+                if (value != null) widget.modelController.text = value;
+              },
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: l10n.aiRefreshModels,
+            onPressed: _fetchModels,
+          ),
+        ],
+      );
+    }
+
+    return TextField(
+      controller: widget.modelController,
+      decoration: InputDecoration(
+        labelText: l10n.aiModelName,
+        border: const OutlineInputBorder(),
+        hintText: SettingsService.defaultAiModel,
+        suffixIcon: _canFetch()
+            ? IconButton(
+                icon: Icon(
+                  Icons.refresh,
+                  color: _fetchError != null
+                      ? Theme.of(context).colorScheme.error
+                      : null,
+                ),
+                tooltip: l10n.aiRefreshModels,
+                onPressed: _fetchModels,
+              )
+            : null,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final l10n = widget.l10n;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.spacingL),
@@ -54,7 +231,7 @@ class AiSettingsSection extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spacingL),
             DropdownButtonFormField<String>(
-              initialValue: provider,
+              initialValue: widget.provider,
               decoration: InputDecoration(
                 labelText: l10n.aiProvider,
                 border: const OutlineInputBorder(),
@@ -78,7 +255,7 @@ class AiSettingsSection extends StatelessWidget {
                 ),
               ],
               onChanged: (value) {
-                if (value != null) onProviderChanged(value);
+                if (value != null) widget.onProviderChanged(value);
               },
             ),
             const SizedBox(height: AppConstants.spacingS),
@@ -91,31 +268,36 @@ class AiSettingsSection extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spacingL),
             TextField(
-              controller: apiKeyController,
+              controller: widget.apiKeyController,
               decoration: InputDecoration(
                 labelText: l10n.aiApiKey,
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    obscureApiKey ? Icons.visibility : Icons.visibility_off,
+                    widget.obscureApiKey
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                   ),
-                  onPressed: onToggleObscureApiKey,
+                  onPressed: widget.onToggleObscureApiKey,
                 ),
               ),
-              obscureText: obscureApiKey,
+              obscureText: widget.obscureApiKey,
             ),
             const SizedBox(height: AppConstants.spacingL),
-            TextField(
-              controller: modelController,
-              decoration: InputDecoration(
-                labelText: l10n.aiModelName,
-                border: const OutlineInputBorder(),
-                hintText: SettingsService.defaultAiModel,
+            _buildModelField(context),
+            if (_fetchError != null) ...[
+              const SizedBox(height: AppConstants.spacingXS),
+              Text(
+                _fetchError!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: AppConstants.fontSizeCaption,
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: AppConstants.spacingL),
             TextField(
-              controller: apiUrlController,
+              controller: widget.apiUrlController,
               decoration: InputDecoration(
                 labelText: l10n.aiApiUrl,
                 border: const OutlineInputBorder(),

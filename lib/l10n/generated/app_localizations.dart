@@ -458,6 +458,12 @@ abstract class AppLocalizations {
   /// **'Ollama'**
   String get aiProviderOllama;
 
+  /// No description provided for @aiRefreshModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh model list'**
+  String get aiRefreshModels;
+
   /// No description provided for @saveSettings.
   ///
   /// In en, this message translates to:

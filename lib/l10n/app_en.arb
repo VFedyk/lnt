@@ -63,6 +63,7 @@
   "aiProviderOpenAiCompatible": "OpenAI-compatible",
   "aiProviderAnthropic": "Anthropic",
   "aiProviderOllama": "Ollama",
+  "aiRefreshModels": "Refresh model list",
   "saveSettings": "Save Settings",
   "settingsSaved": "Settings saved",
   "monthlyUsage": "Monthly Usage",

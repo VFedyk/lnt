@@ -60,6 +60,7 @@
   "aiProviderOpenAiCompatible": "OpenAI-compatible",
   "aiProviderAnthropic": "Anthropic",
   "aiProviderOllama": "Ollama",
+  "aiRefreshModels": "Оновити список моделей",
   "saveSettings": "Зберегти налаштування",
   "settingsSaved": "Налаштування збережено",
   "monthlyUsage": "Місячне використання",

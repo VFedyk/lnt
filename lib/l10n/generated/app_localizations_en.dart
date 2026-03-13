@@ -193,6 +193,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiProviderOllama => 'Ollama';
 
   @override
+  String get aiRefreshModels => 'Refresh model list';
+
+  @override
   String get saveSettings => 'Save Settings';
 
   @override
