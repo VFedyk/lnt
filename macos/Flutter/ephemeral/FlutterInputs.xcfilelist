@@ -2210,6 +2210,7 @@
 /Users/v/Projects/lnt/lib/screens/review_screen.dart
 /Users/v/Projects/lnt/lib/screens/settings_screen.dart
 /Users/v/Projects/lnt/lib/screens/statistics_screen.dart
+/Users/v/Projects/lnt/lib/screens/stroke_review_screen.dart
 /Users/v/Projects/lnt/lib/screens/typing_review_screen.dart
 /Users/v/Projects/lnt/lib/screens/vocabulary_screen.dart
 /Users/v/Projects/lnt/lib/service_locator.dart
@@ -2282,6 +2283,7 @@
 /Users/v/Projects/lnt/lib/widgets/shared/animated_counter.dart
 /Users/v/Projects/lnt/lib/widgets/shared/app_empty_state.dart
 /Users/v/Projects/lnt/lib/widgets/shared/base_term_search_dialog.dart
+/Users/v/Projects/lnt/lib/widgets/shared/handwriting_canvas.dart
 /Users/v/Projects/lnt/lib/widgets/shared/review_progress_indicator.dart
 /Users/v/Projects/lnt/lib/widgets/shared/review_progress_ring.dart
 /Users/v/Projects/lnt/lib/widgets/shared/term_dialog.dart

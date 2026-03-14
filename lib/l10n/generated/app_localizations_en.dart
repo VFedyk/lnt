@@ -1385,4 +1385,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get multipleChoiceTargetToSourceDescription =>
       'Choose the correct word for each translation';
+
+  @override
+  String get writingPractice => 'Writing Practice';
+
+  @override
+  String get writingPracticeDescription =>
+      'Practice writing characters from memory';
 }

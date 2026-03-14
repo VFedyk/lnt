@@ -1392,4 +1392,11 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get multipleChoiceTargetToSourceDescription =>
       'Оберіть правильне слово для кожного перекладу';
+
+  @override
+  String get writingPractice => 'Практика написання';
+
+  @override
+  String get writingPracticeDescription =>
+      'Практикуйте написання ієрогліфів по пам\'яті';
 }

@@ -2581,6 +2581,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose the correct word for each translation'**
   String get multipleChoiceTargetToSourceDescription;
+
+  /// No description provided for @writingPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing Practice'**
+  String get writingPractice;
+
+  /// No description provided for @writingPracticeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice writing characters from memory'**
+  String get writingPracticeDescription;
 }
 
 class _AppLocalizationsDelegate
