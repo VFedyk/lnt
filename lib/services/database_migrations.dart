@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 14;
+const int databaseVersion = 15;
 
 /// Handle database upgrades from older versions
 Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -176,6 +176,36 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
       'ALTER TABLE dictionaries ADD COLUMN custom_css TEXT',
     );
   }
+  if (oldVersion < 15) {
+    await db.execute('''
+      CREATE TABLE term_status_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        term_id INTEGER NOT NULL,
+        status INTEGER NOT NULL,
+        changed_at TEXT NOT NULL,
+        FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_term_status_log_term ON term_status_log(term_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_term_status_log_date ON term_status_log(changed_at)',
+    );
+    // Backfill: insert initial entry for every existing term at created_at
+    // with status=1 (unknown), plus a current-state entry at last_accessed.
+    // This seeds the log so the history chart has something to show.
+    await db.rawInsert('''
+      INSERT INTO term_status_log (term_id, status, changed_at)
+      SELECT id, 1, created_at FROM terms
+    ''');
+    // Insert current status at last_accessed (only when status differs from unknown)
+    await db.rawInsert('''
+      INSERT INTO term_status_log (term_id, status, changed_at)
+      SELECT id, status, last_accessed FROM terms
+      WHERE status != 1
+    ''');
+  }
 }
 
 /// Create fresh database with all tables
@@ -347,5 +377,20 @@ Future<void> onCreate(Database db, int version) async {
   );
   await db.execute(
     'CREATE INDEX idx_review_logs_term_date ON review_logs(term_id, reviewed_at)',
+  );
+  await db.execute('''
+    CREATE TABLE term_status_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      term_id INTEGER NOT NULL,
+      status INTEGER NOT NULL,
+      changed_at TEXT NOT NULL,
+      FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX idx_term_status_log_term ON term_status_log(term_id)',
+  );
+  await db.execute(
+    'CREATE INDEX idx_term_status_log_date ON term_status_log(changed_at)',
   );
 }

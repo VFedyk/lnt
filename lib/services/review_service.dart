@@ -72,6 +72,13 @@ class ReviewService {
             where: 'id = ?',
             whereArgs: [record.termId],
           );
+          // Log status change for history chart (always log so graph has data
+          // even when status stays the same — the query uses the latest entry).
+          await txn.insert('term_status_log', {
+            'term_id': record.termId,
+            'status': newStatus,
+            'changed_at': nowIso,
+          });
         }
       }
     });

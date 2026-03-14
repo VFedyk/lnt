@@ -30,6 +30,28 @@ class VocabularyGrowthChartData {
   });
 }
 
+/// One data point for the status-history line chart.
+/// Holds counts for each TermStatus on a given date.
+class StatusHistoryDataPoint {
+  final DateTime date;
+  final int unknown;
+  final int learning;
+  final int known;
+  final int wellKnown;
+  final int ignored;
+
+  const StatusHistoryDataPoint({
+    required this.date,
+    required this.unknown,
+    required this.learning,
+    required this.known,
+    required this.wellKnown,
+    required this.ignored,
+  });
+
+  int get total => unknown + learning + known + wellKnown + ignored;
+}
+
 /// Data model for status distribution donut chart.
 /// Holds count and display color for a term status category.
 class StatusDistributionData {

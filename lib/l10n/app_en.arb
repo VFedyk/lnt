@@ -770,5 +770,13 @@
   "multipleChoiceSourceToTargetDescription": "Choose the correct translation for each word",
   "multipleChoiceTargetToSourceDescription": "Choose the correct word for each translation",
   "writingPractice": "Writing Practice",
-  "writingPracticeDescription": "Practice writing characters from memory"
+  "writingPracticeDescription": "Practice writing characters from memory",
+  "statusHistoryChart": "Vocabulary Progress",
+  "noActivityInRange": "No data for this period",
+  "rangeWeek": "7d",
+  "rangeMonth": "1m",
+  "range3Months": "3m",
+  "range6Months": "6m",
+  "rangeYear": "1y",
+  "rangeCustom": "Custom"
 }

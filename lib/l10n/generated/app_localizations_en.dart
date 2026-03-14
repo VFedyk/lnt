@@ -1392,4 +1392,28 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get writingPracticeDescription =>
       'Practice writing characters from memory';
+
+  @override
+  String get statusHistoryChart => 'Vocabulary Progress';
+
+  @override
+  String get noActivityInRange => 'No data for this period';
+
+  @override
+  String get rangeWeek => '7d';
+
+  @override
+  String get rangeMonth => '1m';
+
+  @override
+  String get range3Months => '3m';
+
+  @override
+  String get range6Months => '6m';
+
+  @override
+  String get rangeYear => '1y';
+
+  @override
+  String get rangeCustom => 'Custom';
 }

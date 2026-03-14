@@ -11,6 +11,7 @@ import '../repositories/translation_repository.dart';
 import '../repositories/text_foreign_word_repository.dart';
 import '../repositories/review_card_repository.dart';
 import '../repositories/review_log_repository.dart';
+import '../repositories/term_status_log_repository.dart';
 
 class DatabaseService {
   Database? _database;
@@ -26,6 +27,7 @@ class DatabaseService {
   late final TextForeignWordRepository textForeignWords;
   late final ReviewCardRepository reviewCards;
   late final ReviewLogRepository reviewLogs;
+  late final TermStatusLogRepository termStatusLog;
 
   DatabaseService() {
     final changes = dataChanges;
@@ -44,6 +46,7 @@ class DatabaseService {
       onChange: changes.reviewCards,
     );
     reviewLogs = ReviewLogRepository(() => database);
+    termStatusLog = TermStatusLogRepository(() => database);
   }
 
   Future<Database> get database async {

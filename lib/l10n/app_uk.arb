@@ -474,5 +474,13 @@
   "multipleChoiceSourceToTargetDescription": "Оберіть правильний переклад для кожного слова",
   "multipleChoiceTargetToSourceDescription": "Оберіть правильне слово для кожного перекладу",
   "writingPractice": "Практика написання",
-  "writingPracticeDescription": "Практикуйте написання ієрогліфів по пам'яті"
+  "writingPracticeDescription": "Практикуйте написання ієрогліфів по пам'яті",
+  "statusHistoryChart": "Прогрес словника",
+  "noActivityInRange": "Немає даних за цей період",
+  "rangeWeek": "7д",
+  "rangeMonth": "1м",
+  "range3Months": "3м",
+  "range6Months": "6м",
+  "rangeYear": "1р",
+  "rangeCustom": "Довільно"
 }

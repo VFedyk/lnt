@@ -2593,6 +2593,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Practice writing characters from memory'**
   String get writingPracticeDescription;
+
+  /// No description provided for @statusHistoryChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocabulary Progress'**
+  String get statusHistoryChart;
+
+  /// No description provided for @noActivityInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No data for this period'**
+  String get noActivityInRange;
+
+  /// No description provided for @rangeWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'7d'**
+  String get rangeWeek;
+
+  /// No description provided for @rangeMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'1m'**
+  String get rangeMonth;
+
+  /// No description provided for @range3Months.
+  ///
+  /// In en, this message translates to:
+  /// **'3m'**
+  String get range3Months;
+
+  /// No description provided for @range6Months.
+  ///
+  /// In en, this message translates to:
+  /// **'6m'**
+  String get range6Months;
+
+  /// No description provided for @rangeYear.
+  ///
+  /// In en, this message translates to:
+  /// **'1y'**
+  String get rangeYear;
+
+  /// No description provided for @rangeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get rangeCustom;
 }
 
 class _AppLocalizationsDelegate

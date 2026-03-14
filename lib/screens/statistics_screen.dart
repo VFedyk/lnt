@@ -1,12 +1,14 @@
 // FILE: lib/screens/statistics_screen.dart
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../models/chart_data.dart';
 import '../models/language.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
 import '../services/logger_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import '../widgets/statistics/status_history_chart.dart';
 
 abstract class _StatisticsConstants {
   static const double progressBarHeight = 10.0;
@@ -32,6 +34,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   int _totalTexts = 0;
   bool _isLoading = true;
   String? _error;
+
+  // History chart state
+  StatusHistoryRange _historyRange = StatusHistoryRange.month;
+  DateTimeRange? _customRange;
+  List<StatusHistoryDataPoint> _historyData = [];
+  bool _historyLoading = false;
 
   @override
   void initState() {
@@ -60,29 +68,114 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       _error = null;
     });
     try {
-      final counts = await db.terms.getCountsByStatus(
-        widget.language.id!,
+      final counts = await db.terms.getCountsByStatus(widget.language.id!);
+      final termCount = await db.terms.getTotalCount(widget.language.id!);
+      final textCount = await db.texts.getCountByLanguage(widget.language.id!);
+
+      if (mounted) {
+        setState(() {
+          _statusCounts = counts;
+          _totalTerms = termCount;
+          _totalTexts = textCount;
+          _isLoading = false;
+        });
+      }
+      await _loadHistoryData();
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Statistics load failed',
+        error: e,
+        stackTrace: stackTrace,
       );
-      final termCount = await db.terms.getTotalCount(
-        widget.language.id!,
-      );
-      final textCount = await db.texts.getCountByLanguage(
-        widget.language.id!,
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
+      }
+    }
+  }
+
+  Future<void> _loadHistoryData() async {
+    if (!mounted) return;
+    setState(() => _historyLoading = true);
+
+    try {
+      final now = DateTime.now();
+      final (from, to) = _rangeForSelection(_historyRange, now);
+
+      final snapshots = await db.termStatusLog.getDailySnapshots(
+        languageId: widget.language.id!,
+        from: from,
+        to: to,
       );
 
-      setState(() {
-        _statusCounts = counts;
-        _totalTerms = termCount;
-        _totalTexts = textCount;
-        _isLoading = false;
-      });
+      final points = snapshots.map((s) {
+        final unknown = s.counts[TermStatus.unknown] ?? 0;
+        final learning = (s.counts[TermStatus.learning2] ?? 0) +
+            (s.counts[TermStatus.learning3] ?? 0) +
+            (s.counts[TermStatus.learning4] ?? 0);
+        final known = s.counts[TermStatus.known] ?? 0;
+        final wellKnown = s.counts[TermStatus.wellKnown] ?? 0;
+        final ignored = s.counts[TermStatus.ignored] ?? 0;
+        return StatusHistoryDataPoint(
+          date: s.date,
+          unknown: unknown,
+          learning: learning,
+          known: known,
+          wellKnown: wellKnown,
+          ignored: ignored,
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _historyData = points;
+          _historyLoading = false;
+        });
+      }
     } catch (e, stackTrace) {
-      AppLogger.error('Statistics load failed', error: e, stackTrace: stackTrace);
-      setState(() {
-        _isLoading = false;
-        _error = e.toString();
-      });
+      AppLogger.error(
+        'History data load failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      if (mounted) setState(() => _historyLoading = false);
     }
+  }
+
+  (DateTime, DateTime) _rangeForSelection(
+    StatusHistoryRange range,
+    DateTime now,
+  ) {
+    return switch (range) {
+      StatusHistoryRange.week =>
+        (now.subtract(const Duration(days: 6)), now),
+      StatusHistoryRange.month =>
+        (now.subtract(const Duration(days: 29)), now),
+      StatusHistoryRange.threeMonths =>
+        (now.subtract(const Duration(days: 89)), now),
+      StatusHistoryRange.sixMonths =>
+        (now.subtract(const Duration(days: 179)), now),
+      StatusHistoryRange.year =>
+        (now.subtract(const Duration(days: 364)), now),
+      StatusHistoryRange.custom => _customRange != null
+          ? (_customRange!.start, _customRange!.end)
+          : (now.subtract(const Duration(days: 29)), now),
+    };
+  }
+
+  void _onRangeSelected(StatusHistoryRange range) {
+    setState(() => _historyRange = range);
+    _loadHistoryData();
+  }
+
+  void _onCustomRangeSelected(DateTimeRange range) {
+    setState(() {
+      _customRange = range;
+      _historyRange = StatusHistoryRange.custom;
+    });
+    _loadHistoryData();
   }
 
   @override
@@ -102,9 +195,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: AppConstants.errorIconSize, color: Theme.of(context).colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: AppConstants.errorIconSize,
+                color: Theme.of(context).colorScheme.error,
+              ),
               const SizedBox(height: AppConstants.spacingM),
-              Text(l10n.failedToLoadData, style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                l10n.failedToLoadData,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: AppConstants.spacingM),
               ElevatedButton.icon(
                 onPressed: _loadStatistics,
@@ -117,7 +217,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       );
     }
 
-    final knownCount = (_statusCounts[5] ?? 0) + (_statusCounts[99] ?? 0);
+    final knownCount =
+        (_statusCounts[5] ?? 0) + (_statusCounts[99] ?? 0);
     final learningCount =
         (_statusCounts[1] ?? 0) +
         (_statusCounts[2] ?? 0) +
@@ -132,152 +233,182 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         child: ListView(
           padding: const EdgeInsets.all(AppConstants.spacingL),
           children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppConstants.spacingL),
-              child: Column(
-                children: [
-                  Text(
-                    widget.language.name,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: AppConstants.spacingXL),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildStatColumn(
-                        l10n.totalTerms,
-                        _totalTerms.toString(),
-                        Icons.book,
-                        _StatisticsConstants.totalTermsColor,
-                      ),
-                      _buildStatColumn(
-                        l10n.known,
-                        knownCount.toString(),
-                        Icons.check_circle,
-                        context.appColors.success,
-                      ),
-                      _buildStatColumn(
-                        l10n.texts,
-                        _totalTexts.toString(),
-                        Icons.article,
-                        _StatisticsConstants.textsColor,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingL),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppConstants.spacingL),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.termsByStatus,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppConstants.spacingL),
-                  _buildStatusBar(
-                    TermStatus.ignored,
-                    l10n.statusIgnored,
-                    ignoredCount,
-                    TermStatus.colorFor(TermStatus.ignored),
-                  ),
-                  _buildStatusBar(
-                    TermStatus.unknown,
-                    l10n.statusUnknown,
-                    _statusCounts[TermStatus.unknown] ?? 0,
-                    TermStatus.colorFor(TermStatus.unknown),
-                  ),
-                  _buildStatusBar(
-                    TermStatus.learning2,
-                    l10n.statusLearning2,
-                    _statusCounts[TermStatus.learning2] ?? 0,
-                    TermStatus.colorFor(TermStatus.learning2),
-                  ),
-                  _buildStatusBar(
-                    TermStatus.learning3,
-                    l10n.statusLearning3,
-                    _statusCounts[TermStatus.learning3] ?? 0,
-                    TermStatus.colorFor(TermStatus.learning3),
-                  ),
-                  _buildStatusBar(
-                    TermStatus.learning4,
-                    l10n.statusLearning4,
-                    _statusCounts[TermStatus.learning4] ?? 0,
-                    TermStatus.colorFor(TermStatus.learning4),
-                  ),
-                  _buildStatusBar(
-                    TermStatus.known,
-                    l10n.statusKnown,
-                    _statusCounts[TermStatus.known] ?? 0,
-                    TermStatus.colorFor(TermStatus.known),
-                  ),
-                  _buildStatusBar(
-                    TermStatus.wellKnown,
-                    l10n.statusWellKnown,
-                    _statusCounts[TermStatus.wellKnown] ?? 0,
-                    TermStatus.colorFor(TermStatus.wellKnown),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingL),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppConstants.spacingL),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.progressOverview,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppConstants.spacingL),
-                  LinearProgressIndicator(
-                    value: _totalTerms > 0 ? knownCount / _totalTerms : 0,
-                    minHeight: _StatisticsConstants.progressBarHeight,
-                    backgroundColor: Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation(context.appColors.success),
-                  ),
-                  const SizedBox(height: AppConstants.spacingS),
-                  Text(
-                    _totalTerms > 0
-                        ? l10n.percentKnown((knownCount / _totalTerms * 100).toStringAsFixed(1))
-                        : l10n.noTermsYet,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: AppConstants.spacingL),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildProgressCard(
-                          l10n.learning,
-                          learningCount,
-                          context.appColors.warning,
+            // Summary card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.spacingL),
+                child: Column(
+                  children: [
+                    Text(
+                      widget.language.name,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: AppConstants.spacingXL),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatColumn(
+                          l10n.totalTerms,
+                          _totalTerms.toString(),
+                          Icons.book,
+                          _StatisticsConstants.totalTermsColor,
                         ),
-                      ),
-                      const SizedBox(width: AppConstants.spacingS),
-                      Expanded(
-                        child: _buildProgressCard(
+                        _buildStatColumn(
                           l10n.known,
-                          knownCount,
+                          knownCount.toString(),
+                          Icons.check_circle,
                           context.appColors.success,
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        _buildStatColumn(
+                          l10n.texts,
+                          _totalTexts.toString(),
+                          Icons.article,
+                          _StatisticsConstants.textsColor,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(height: AppConstants.spacingL),
+
+            // Status history chart
+            if (_historyLoading)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(AppConstants.spacingXL),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              )
+            else
+              StatusHistoryChart(
+                data: _historyData,
+                selectedRange: _historyRange,
+                customRange: _customRange,
+                onRangeSelected: _onRangeSelected,
+                onCustomRangeSelected: _onCustomRangeSelected,
+              ),
+            const SizedBox(height: AppConstants.spacingL),
+
+            // Terms by status bars
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.spacingL),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.termsByStatus,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppConstants.spacingL),
+                    _buildStatusBar(
+                      TermStatus.ignored,
+                      l10n.statusIgnored,
+                      ignoredCount,
+                      TermStatus.colorFor(TermStatus.ignored),
+                    ),
+                    _buildStatusBar(
+                      TermStatus.unknown,
+                      l10n.statusUnknown,
+                      _statusCounts[TermStatus.unknown] ?? 0,
+                      TermStatus.colorFor(TermStatus.unknown),
+                    ),
+                    _buildStatusBar(
+                      TermStatus.learning2,
+                      l10n.statusLearning2,
+                      _statusCounts[TermStatus.learning2] ?? 0,
+                      TermStatus.colorFor(TermStatus.learning2),
+                    ),
+                    _buildStatusBar(
+                      TermStatus.learning3,
+                      l10n.statusLearning3,
+                      _statusCounts[TermStatus.learning3] ?? 0,
+                      TermStatus.colorFor(TermStatus.learning3),
+                    ),
+                    _buildStatusBar(
+                      TermStatus.learning4,
+                      l10n.statusLearning4,
+                      _statusCounts[TermStatus.learning4] ?? 0,
+                      TermStatus.colorFor(TermStatus.learning4),
+                    ),
+                    _buildStatusBar(
+                      TermStatus.known,
+                      l10n.statusKnown,
+                      _statusCounts[TermStatus.known] ?? 0,
+                      TermStatus.colorFor(TermStatus.known),
+                    ),
+                    _buildStatusBar(
+                      TermStatus.wellKnown,
+                      l10n.statusWellKnown,
+                      _statusCounts[TermStatus.wellKnown] ?? 0,
+                      TermStatus.colorFor(TermStatus.wellKnown),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacingL),
+
+            // Progress overview
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.spacingL),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.progressOverview,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppConstants.spacingL),
+                    LinearProgressIndicator(
+                      value: _totalTerms > 0
+                          ? knownCount / _totalTerms
+                          : 0,
+                      minHeight: _StatisticsConstants.progressBarHeight,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      valueColor: AlwaysStoppedAnimation(
+                        context.appColors.success,
+                      ),
+                    ),
+                    const SizedBox(height: AppConstants.spacingS),
+                    Text(
+                      _totalTerms > 0
+                          ? l10n.percentKnown(
+                              (knownCount / _totalTerms * 100)
+                                  .toStringAsFixed(1),
+                            )
+                          : l10n.noTermsYet,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: AppConstants.spacingL),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildProgressCard(
+                            l10n.learning,
+                            learningCount,
+                            context.appColors.warning,
+                          ),
+                        ),
+                        const SizedBox(width: AppConstants.spacingS),
+                        Expanded(
+                          child: _buildProgressCard(
+                            l10n.known,
+                            knownCount,
+                            context.appColors.success,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -325,7 +456,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             child: LinearProgressIndicator(
               value: percentage,
               minHeight: _StatisticsConstants.statusBarHeight,
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation(color),
             ),
           ),
@@ -338,9 +469,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.spacingL),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: _StatisticsConstants.progressCardBackgroundOpacity),
+        color: color.withValues(
+          alpha: _StatisticsConstants.progressCardBackgroundOpacity,
+        ),
         borderRadius: BorderRadius.circular(AppConstants.borderRadiusM),
-        border: Border.all(color: color.withValues(alpha: _StatisticsConstants.progressCardBorderOpacity)),
+        border: Border.all(
+          color: color.withValues(
+            alpha: _StatisticsConstants.progressCardBorderOpacity,
+          ),
+        ),
       ),
       child: Column(
         children: [

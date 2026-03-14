@@ -1399,4 +1399,28 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get writingPracticeDescription =>
       'Практикуйте написання ієрогліфів по пам\'яті';
+
+  @override
+  String get statusHistoryChart => 'Прогрес словника';
+
+  @override
+  String get noActivityInRange => 'Немає даних за цей період';
+
+  @override
+  String get rangeWeek => '7д';
+
+  @override
+  String get rangeMonth => '1м';
+
+  @override
+  String get range3Months => '3м';
+
+  @override
+  String get range6Months => '6м';
+
+  @override
+  String get rangeYear => '1р';
+
+  @override
+  String get rangeCustom => 'Довільно';
 }
