@@ -1423,4 +1423,56 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get rangeCustom => 'Довільно';
+
+  @override
+  String get radicalPractice => 'Практика радикалів';
+
+  @override
+  String get radicalPracticeDescription =>
+      'Напишіть усі 214 базових ключів з перевіркою рисок';
+
+  @override
+  String get radicalPracticeTitle => '214 базових радикалів';
+
+  @override
+  String get allStrokes => 'Всі';
+
+  @override
+  String strokesN(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n рисок',
+      many: '$n рисок',
+      few: '$n риски',
+      one: '$n риска',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String practicedNTimes(int n) {
+    return 'Практик: $n×';
+  }
+
+  @override
+  String radicalWritingTitle(String char) {
+    return 'Написання: $char';
+  }
+
+  @override
+  String strokeProgress(int done, int total) {
+    return '$done/$total';
+  }
+
+  @override
+  String mistakesCount(int n) {
+    return 'Помилки: $n';
+  }
+
+  @override
+  String get practiceComplete => 'Завершено!';
+
+  @override
+  String get practiceAgain => 'Ще раз';
 }

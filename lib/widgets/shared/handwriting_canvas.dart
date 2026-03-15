@@ -36,7 +36,7 @@ class HandwritingCanvasState extends State<HandwritingCanvas> {
   void _onPanUpdate(DragUpdateDetails details) {
     if (_currentStroke == null) return;
     setState(() {
-      _currentStroke!.add(details.localPosition);
+      _currentStroke = [..._currentStroke!, details.localPosition];
     });
   }
 

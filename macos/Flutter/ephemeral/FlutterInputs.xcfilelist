@@ -2192,9 +2192,11 @@
 /Users/v/Projects/lnt/lib/repositories/collection_repository.dart
 /Users/v/Projects/lnt/lib/repositories/dictionary_repository.dart
 /Users/v/Projects/lnt/lib/repositories/language_repository.dart
+/Users/v/Projects/lnt/lib/repositories/radical_progress_repository.dart
 /Users/v/Projects/lnt/lib/repositories/review_card_repository.dart
 /Users/v/Projects/lnt/lib/repositories/review_log_repository.dart
 /Users/v/Projects/lnt/lib/repositories/term_repository.dart
+/Users/v/Projects/lnt/lib/repositories/term_status_log_repository.dart
 /Users/v/Projects/lnt/lib/repositories/text_foreign_word_repository.dart
 /Users/v/Projects/lnt/lib/repositories/text_repository.dart
 /Users/v/Projects/lnt/lib/repositories/translation_repository.dart
@@ -2206,6 +2208,8 @@
 /Users/v/Projects/lnt/lib/screens/languages_screen.dart
 /Users/v/Projects/lnt/lib/screens/library_screen.dart
 /Users/v/Projects/lnt/lib/screens/multiple_choice_review_screen.dart
+/Users/v/Projects/lnt/lib/screens/radical_practice_screen.dart
+/Users/v/Projects/lnt/lib/screens/radical_writing_screen.dart
 /Users/v/Projects/lnt/lib/screens/reader_screen.dart
 /Users/v/Projects/lnt/lib/screens/review_screen.dart
 /Users/v/Projects/lnt/lib/screens/settings_screen.dart
@@ -2240,6 +2244,7 @@
 /Users/v/Projects/lnt/lib/utils/dialog_helpers.dart
 /Users/v/Projects/lnt/lib/utils/helpers.dart
 /Users/v/Projects/lnt/lib/utils/language_utils.dart
+/Users/v/Projects/lnt/lib/utils/radicals.dart
 /Users/v/Projects/lnt/lib/utils/snackbar_helpers.dart
 /Users/v/Projects/lnt/lib/widgets/dashboard/activity_heatmap.dart
 /Users/v/Projects/lnt/lib/widgets/dashboard/custom_chart_tooltip.dart
@@ -2284,10 +2289,12 @@
 /Users/v/Projects/lnt/lib/widgets/shared/app_empty_state.dart
 /Users/v/Projects/lnt/lib/widgets/shared/base_term_search_dialog.dart
 /Users/v/Projects/lnt/lib/widgets/shared/handwriting_canvas.dart
+/Users/v/Projects/lnt/lib/widgets/shared/hanzi_writer_widget.dart
 /Users/v/Projects/lnt/lib/widgets/shared/review_progress_indicator.dart
 /Users/v/Projects/lnt/lib/widgets/shared/review_progress_ring.dart
 /Users/v/Projects/lnt/lib/widgets/shared/term_dialog.dart
 /Users/v/Projects/lnt/lib/widgets/shared/translation_mixin.dart
+/Users/v/Projects/lnt/lib/widgets/statistics/status_history_chart.dart
 /Users/v/Projects/lnt/pubspec.yaml
 /opt/homebrew/share/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf
 /opt/homebrew/share/flutter/bin/cache/dart-sdk/version

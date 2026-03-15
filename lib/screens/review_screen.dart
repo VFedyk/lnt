@@ -10,6 +10,7 @@ import '../widgets/shared/review_progress_ring.dart';
 import 'flashcard_review_screen.dart';
 import 'multiple_choice_review_screen.dart';
 import 'statistics_screen.dart';
+import 'radical_practice_screen.dart';
 import 'stroke_review_screen.dart';
 import 'typing_review_screen.dart';
 
@@ -296,7 +297,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ),
           const SizedBox(height: AppConstants.spacingS),
 
-          // Writing Practice (CJK languages only)
+          // Writing Practice + Radical Practice (CJK languages only)
           if (widget.language.splitByCharacter) ...[
             const SizedBox(height: AppConstants.spacingS),
             Card(
@@ -322,6 +323,23 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     MaterialPageRoute(
                       builder: (_) =>
                           StrokeReviewScreen(language: widget.language),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacingS),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.brush_outlined),
+                title: Text(l10n.radicalPractice),
+                subtitle: Text(l10n.radicalPracticeDescription),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const RadicalPracticeScreen(),
                     ),
                   );
                 },

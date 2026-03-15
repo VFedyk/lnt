@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 15;
+const int databaseVersion = 16;
 
 /// Handle database upgrades from older versions
 Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -206,6 +206,15 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
       WHERE status != 1
     ''');
   }
+  if (oldVersion < 16) {
+    await db.execute('''
+      CREATE TABLE radical_progress (
+        radical_char TEXT PRIMARY KEY,
+        practiced_count INTEGER NOT NULL DEFAULT 0,
+        last_practiced TEXT
+      )
+    ''');
+  }
 }
 
 /// Create fresh database with all tables
@@ -393,4 +402,11 @@ Future<void> onCreate(Database db, int version) async {
   await db.execute(
     'CREATE INDEX idx_term_status_log_date ON term_status_log(changed_at)',
   );
+  await db.execute('''
+    CREATE TABLE radical_progress (
+      radical_char TEXT PRIMARY KEY,
+      practiced_count INTEGER NOT NULL DEFAULT 0,
+      last_practiced TEXT
+    )
+  ''');
 }

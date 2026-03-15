@@ -2641,6 +2641,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Custom'**
   String get rangeCustom;
+
+  /// No description provided for @radicalPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Radical Practice'**
+  String get radicalPractice;
+
+  /// No description provided for @radicalPracticeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Write all 214 Kangxi radicals with stroke validation'**
+  String get radicalPracticeDescription;
+
+  /// No description provided for @radicalPracticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'214 Basic Radicals'**
+  String get radicalPracticeTitle;
+
+  /// No description provided for @allStrokes.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get allStrokes;
+
+  /// No description provided for @strokesN.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 stroke} other{{n} strokes}}'**
+  String strokesN(int n);
+
+  /// No description provided for @practicedNTimes.
+  ///
+  /// In en, this message translates to:
+  /// **'Practiced {n}×'**
+  String practicedNTimes(int n);
+
+  /// No description provided for @radicalWritingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing: {char}'**
+  String radicalWritingTitle(String char);
+
+  /// No description provided for @strokeProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done}/{total}'**
+  String strokeProgress(int done, int total);
+
+  /// No description provided for @mistakesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Mistakes: {n}'**
+  String mistakesCount(int n);
+
+  /// No description provided for @practiceComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete!'**
+  String get practiceComplete;
+
+  /// No description provided for @practiceAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice Again'**
+  String get practiceAgain;
 }
 
 class _AppLocalizationsDelegate

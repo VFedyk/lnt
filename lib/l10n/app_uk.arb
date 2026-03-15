@@ -482,5 +482,42 @@
   "range3Months": "3м",
   "range6Months": "6м",
   "rangeYear": "1р",
-  "rangeCustom": "Довільно"
+  "rangeCustom": "Довільно",
+  "radicalPractice": "Практика радикалів",
+  "radicalPracticeDescription": "Напишіть усі 214 базових ключів з перевіркою рисок",
+  "radicalPracticeTitle": "214 базових радикалів",
+  "allStrokes": "Всі",
+  "strokesN": "{n, plural, one{{n} риска} few{{n} риски} many{{n} рисок} other{{n} рисок}}",
+  "@strokesN": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "practicedNTimes": "Практик: {n}×",
+  "@practicedNTimes": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "radicalWritingTitle": "Написання: {char}",
+  "@radicalWritingTitle": {
+    "placeholders": {
+      "char": { "type": "String" }
+    }
+  },
+  "strokeProgress": "{done}/{total}",
+  "@strokeProgress": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "mistakesCount": "Помилки: {n}",
+  "@mistakesCount": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "practiceComplete": "Завершено!",
+  "practiceAgain": "Ще раз"
 }

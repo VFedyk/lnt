@@ -778,5 +778,42 @@
   "range3Months": "3m",
   "range6Months": "6m",
   "rangeYear": "1y",
-  "rangeCustom": "Custom"
+  "rangeCustom": "Custom",
+  "radicalPractice": "Radical Practice",
+  "radicalPracticeDescription": "Write all 214 Kangxi radicals with stroke validation",
+  "radicalPracticeTitle": "214 Basic Radicals",
+  "allStrokes": "All",
+  "strokesN": "{n, plural, =1{1 stroke} other{{n} strokes}}",
+  "@strokesN": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "practicedNTimes": "Practiced {n}×",
+  "@practicedNTimes": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "radicalWritingTitle": "Writing: {char}",
+  "@radicalWritingTitle": {
+    "placeholders": {
+      "char": { "type": "String" }
+    }
+  },
+  "strokeProgress": "{done}/{total}",
+  "@strokeProgress": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "mistakesCount": "Mistakes: {n}",
+  "@mistakesCount": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "practiceComplete": "Complete!",
+  "practiceAgain": "Practice Again"
 }

@@ -1416,4 +1416,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rangeCustom => 'Custom';
+
+  @override
+  String get radicalPractice => 'Radical Practice';
+
+  @override
+  String get radicalPracticeDescription =>
+      'Write all 214 Kangxi radicals with stroke validation';
+
+  @override
+  String get radicalPracticeTitle => '214 Basic Radicals';
+
+  @override
+  String get allStrokes => 'All';
+
+  @override
+  String strokesN(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n strokes',
+      one: '1 stroke',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String practicedNTimes(int n) {
+    return 'Practiced $n×';
+  }
+
+  @override
+  String radicalWritingTitle(String char) {
+    return 'Writing: $char';
+  }
+
+  @override
+  String strokeProgress(int done, int total) {
+    return '$done/$total';
+  }
+
+  @override
+  String mistakesCount(int n) {
+    return 'Mistakes: $n';
+  }
+
+  @override
+  String get practiceComplete => 'Complete!';
+
+  @override
+  String get practiceAgain => 'Practice Again';
 }
