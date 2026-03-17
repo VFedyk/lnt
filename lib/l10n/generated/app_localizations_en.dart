@@ -1466,4 +1466,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get practiceAgain => 'Practice Again';
+
+  @override
+  String get clozeReview => 'Cloze Review';
+
+  @override
+  String get clozeEasyMode => 'Easy';
+
+  @override
+  String get clozeAdvancedMode => 'Advanced';
+
+  @override
+  String get clozeEasyDescription => 'Select the missing word from options';
+
+  @override
+  String get clozeAdvancedDescription => 'Type the missing word from memory';
+
+  @override
+  String get noSentencesToReview => 'No cards with sentences to review';
+
+  @override
+  String get noSentencesToReviewHint =>
+      'Right-click a word in the reader and choose \"Mine sentence\" to add context sentences for cloze training.';
+
+  @override
+  String get mineSentence => 'Mine sentence';
+
+  @override
+  String get sentenceMined => 'Sentence saved for cloze training';
+
+  @override
+  String get noSentenceFound => 'No sentence found at this position';
 }

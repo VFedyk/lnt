@@ -2707,6 +2707,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Practice Again'**
   String get practiceAgain;
+
+  /// No description provided for @clozeReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloze Review'**
+  String get clozeReview;
+
+  /// No description provided for @clozeEasyMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get clozeEasyMode;
+
+  /// No description provided for @clozeAdvancedMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get clozeAdvancedMode;
+
+  /// No description provided for @clozeEasyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the missing word from options'**
+  String get clozeEasyDescription;
+
+  /// No description provided for @clozeAdvancedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the missing word from memory'**
+  String get clozeAdvancedDescription;
+
+  /// No description provided for @noSentencesToReview.
+  ///
+  /// In en, this message translates to:
+  /// **'No cards with sentences to review'**
+  String get noSentencesToReview;
+
+  /// No description provided for @noSentencesToReviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Right-click a word in the reader and choose \"Mine sentence\" to add context sentences for cloze training.'**
+  String get noSentencesToReviewHint;
+
+  /// No description provided for @mineSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'Mine sentence'**
+  String get mineSentence;
+
+  /// No description provided for @sentenceMined.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence saved for cloze training'**
+  String get sentenceMined;
+
+  /// No description provided for @noSentenceFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No sentence found at this position'**
+  String get noSentenceFound;
 }
 
 class _AppLocalizationsDelegate

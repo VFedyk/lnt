@@ -12,6 +12,7 @@ import '../repositories/text_foreign_word_repository.dart';
 import '../repositories/review_card_repository.dart';
 import '../repositories/radical_progress_repository.dart';
 import '../repositories/review_log_repository.dart';
+import '../repositories/term_sentence_repository.dart';
 import '../repositories/term_status_log_repository.dart';
 
 class DatabaseService {
@@ -30,6 +31,7 @@ class DatabaseService {
   late final ReviewLogRepository reviewLogs;
   late final TermStatusLogRepository termStatusLog;
   late final RadicalProgressRepository radicalProgress;
+  late final TermSentenceRepository termSentences;
 
   DatabaseService() {
     final changes = dataChanges;
@@ -50,6 +52,7 @@ class DatabaseService {
     reviewLogs = ReviewLogRepository(() => database);
     termStatusLog = TermStatusLogRepository(() => database);
     radicalProgress = RadicalProgressRepository(() => database);
+    termSentences = TermSentenceRepository(() => database);
   }
 
   Future<Database> get database async {

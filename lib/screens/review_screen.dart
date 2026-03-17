@@ -7,6 +7,7 @@ import '../utils/constants.dart';
 import '../widgets/shared/animated_counter.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/shared/review_progress_ring.dart';
+import 'cloze_review_screen.dart';
 import 'flashcard_review_screen.dart';
 import 'multiple_choice_review_screen.dart';
 import 'statistics_screen.dart';
@@ -25,6 +26,7 @@ class ReviewScreen extends StatefulWidget {
 
 class _ReviewScreenState extends State<ReviewScreen> {
   int _dueCount = 0;
+  int _clozeDueCount = 0;
   int _reviewedToday = 0;
   bool _isLoading = true;
   String? _error;
@@ -56,6 +58,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
     });
     try {
       final dueCount = await db.reviewCards.getDueCount(widget.language.id!);
+      final clozeDueCount = await db.reviewCards.getClozeDueCount(
+        widget.language.id!,
+      );
       final reviewedToday = await db.reviewLogs.getReviewCountToday(
         widget.language.id!,
       );
@@ -63,6 +68,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       if (mounted) {
         setState(() {
           _dueCount = dueCount;
+          _clozeDueCount = clozeDueCount;
           _reviewedToday = reviewedToday;
           _isLoading = false;
         });
@@ -289,6 +295,76 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     builder: (_) => MultipleChoiceReviewScreen(
                       language: widget.language,
                       direction: MultipleChoiceDirection.targetToSource,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingS),
+
+          // Cloze Review: Easy (multiple choice)
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.text_fields),
+              title: Text(l10n.clozeReview),
+              subtitle: Text(
+                '${l10n.clozeEasyMode} — ${l10n.clozeEasyDescription}',
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_clozeDueCount > 0)
+                    Badge(
+                      label: Text(_clozeDueCount.toString()),
+                      child: const SizedBox.shrink(),
+                    ),
+                  const SizedBox(width: AppConstants.spacingS),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ClozeReviewScreen(
+                      language: widget.language,
+                      mode: ClozeMode.easy,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingS),
+
+          // Cloze Review: Advanced (typing)
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.text_fields),
+              title: Text(l10n.clozeReview),
+              subtitle: Text(
+                '${l10n.clozeAdvancedMode} — ${l10n.clozeAdvancedDescription}',
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_clozeDueCount > 0)
+                    Badge(
+                      label: Text(_clozeDueCount.toString()),
+                      child: const SizedBox.shrink(),
+                    ),
+                  const SizedBox(width: AppConstants.spacingS),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ClozeReviewScreen(
+                      language: widget.language,
+                      mode: ClozeMode.advanced,
                     ),
                   ),
                 );

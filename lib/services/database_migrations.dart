@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 16;
+const int databaseVersion = 17;
 
 /// Handle database upgrades from older versions
 Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -215,6 +215,21 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
       )
     ''');
   }
+  if (oldVersion < 17) {
+    await db.execute('''
+      CREATE TABLE term_sentences (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        term_id INTEGER NOT NULL,
+        sentence TEXT NOT NULL,
+        source_text_id INTEGER,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (term_id) REFERENCES terms(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_term_sentences_term ON term_sentences(term_id)',
+    );
+  }
 }
 
 /// Create fresh database with all tables
@@ -409,4 +424,17 @@ Future<void> onCreate(Database db, int version) async {
       last_practiced TEXT
     )
   ''');
+  await db.execute('''
+    CREATE TABLE term_sentences (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      term_id INTEGER NOT NULL,
+      sentence TEXT NOT NULL,
+      source_text_id INTEGER,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (term_id) REFERENCES terms(id) ON DELETE CASCADE
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX idx_term_sentences_term ON term_sentences(term_id)',
+  );
 }

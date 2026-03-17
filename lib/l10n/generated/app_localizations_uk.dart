@@ -1475,4 +1475,35 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get practiceAgain => 'Ще раз';
+
+  @override
+  String get clozeReview => 'Клоуз-тест';
+
+  @override
+  String get clozeEasyMode => 'Легкий';
+
+  @override
+  String get clozeAdvancedMode => 'Складний';
+
+  @override
+  String get clozeEasyDescription => 'Оберіть пропущене слово з варіантів';
+
+  @override
+  String get clozeAdvancedDescription => 'Введіть пропущене слово з пам\'яті';
+
+  @override
+  String get noSentencesToReview => 'Немає карток із реченнями для повторення';
+
+  @override
+  String get noSentencesToReviewHint =>
+      'Натисніть правою кнопкою на слово в читачі та оберіть «Зберегти речення», щоб додати контекстні речення для клоуз-тренування.';
+
+  @override
+  String get mineSentence => 'Зберегти речення';
+
+  @override
+  String get sentenceMined => 'Речення збережено для клоуз-тренування';
+
+  @override
+  String get noSentenceFound => 'Речення в цій позиції не знайдено';
 }

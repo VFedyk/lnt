@@ -815,5 +815,15 @@
     }
   },
   "practiceComplete": "Complete!",
-  "practiceAgain": "Practice Again"
+  "practiceAgain": "Practice Again",
+  "clozeReview": "Cloze Review",
+  "clozeEasyMode": "Easy",
+  "clozeAdvancedMode": "Advanced",
+  "clozeEasyDescription": "Select the missing word from options",
+  "clozeAdvancedDescription": "Type the missing word from memory",
+  "noSentencesToReview": "No cards with sentences to review",
+  "noSentencesToReviewHint": "Right-click a word in the reader and choose \"Mine sentence\" to add context sentences for cloze training.",
+  "mineSentence": "Mine sentence",
+  "sentenceMined": "Sentence saved for cloze training",
+  "noSentenceFound": "No sentence found at this position"
 }

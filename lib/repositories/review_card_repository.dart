@@ -89,6 +89,29 @@ class ReviewCardRepository extends BaseRepository {
     return result.first['cnt'] as int;
   }
 
+  /// Count due cards that are eligible for cloze review (have at least one
+  /// sentence — either in terms.sentence or in the term_sentences table).
+  Future<int> getClozeDueCount(int languageId, {DateTime? now}) async {
+    final db = await getDatabase();
+    now ??= DateTime.now().toUtc();
+    final result = await db.rawQuery(
+      '''
+      SELECT COUNT(*) as cnt FROM review_cards rc
+      INNER JOIN terms t ON t.id = rc.term_id
+      WHERE t.language_id = ?
+        AND t.status != 0
+        AND t.status != 99
+        AND rc.next_due <= ?
+        AND (
+          (t.sentence IS NOT NULL AND t.sentence != '')
+          OR EXISTS (SELECT 1 FROM term_sentences ts WHERE ts.term_id = t.id)
+        )
+      ''',
+      [languageId, now.toIso8601String()],
+    );
+    return result.first['cnt'] as int;
+  }
+
   /// Get the next due date across all cards for a language.
   Future<DateTime?> getNextDueDate(int languageId) async {
     final db = await getDatabase();

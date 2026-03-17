@@ -32,6 +32,7 @@ import '../utils/snackbar_helpers.dart';
 
 enum _ContextMenuAction {
   saveAsTerm,
+  mineSentence,
   assignForeignLanguage,
   lookupInDictionary,
   aiMeaning,
@@ -306,6 +307,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final overlay =
         Overlay.of(context).context.findRenderObject()! as RenderBox;
 
+    final lowerWord = ctrl.normalizeWord(word);
+    final existingTerm = ctrl.termsMap[lowerWord];
+
     final action = await showMenu<_ContextMenuAction>(
       context: context,
       position: RelativeRect.fromRect(
@@ -321,6 +325,15 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
             Expanded(child: Text(l10n.saveAsTerm)),
           ]),
         ),
+        if (existingTerm != null)
+          PopupMenuItem(
+            value: _ContextMenuAction.mineSentence,
+            child: Row(children: [
+              const Icon(Icons.push_pin_outlined),
+              const SizedBox(width: AppConstants.spacingS),
+              Expanded(child: Text(l10n.mineSentence)),
+            ]),
+          ),
         PopupMenuItem(
           value: _ContextMenuAction.assignForeignLanguage,
           child: Row(children: [
@@ -361,15 +374,16 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     final hasSelection =
         ctrl.isSelectionMode && ctrl.selectedWordIndices.isNotEmpty;
-    final lowerWord = ctrl.normalizeWord(word);
 
     switch (action) {
       case _ContextMenuAction.saveAsTerm:
         if (hasSelection) {
           await _saveSelectionAsTerm();
         } else {
-          await _openTermDialog(ctrl, word, position, ctrl.termsMap[lowerWord]);
+          await _openTermDialog(ctrl, word, position, existingTerm);
         }
+      case _ContextMenuAction.mineSentence:
+        await _mineSentenceForWord(ctrl, existingTerm!, position);
       case _ContextMenuAction.assignForeignLanguage:
         if (hasSelection) {
           await _assignForeignLanguage();
@@ -397,6 +411,30 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         }
       case null:
         break;
+    }
+  }
+
+  Future<void> _mineSentenceForWord(
+    ReaderController ctrl,
+    Term term,
+    int position,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final sentence = ctrl.getSentenceForPosition(position);
+
+    if (sentence.isEmpty) {
+      SnackbarHelpers.showInfo(context, l10n.noSentenceFound);
+      return;
+    }
+
+    await db.termSentences.create(
+      term.id!,
+      sentence,
+      sourceTextId: ctrl.text.id,
+    );
+
+    if (mounted) {
+      SnackbarHelpers.showSuccess(context, l10n.sentenceMined);
     }
   }
 

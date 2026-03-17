@@ -519,5 +519,15 @@
     }
   },
   "practiceComplete": "Завершено!",
-  "practiceAgain": "Ще раз"
+  "practiceAgain": "Ще раз",
+  "clozeReview": "Клоуз-тест",
+  "clozeEasyMode": "Легкий",
+  "clozeAdvancedMode": "Складний",
+  "clozeEasyDescription": "Оберіть пропущене слово з варіантів",
+  "clozeAdvancedDescription": "Введіть пропущене слово з пам'яті",
+  "noSentencesToReview": "Немає карток із реченнями для повторення",
+  "noSentencesToReviewHint": "Натисніть правою кнопкою на слово в читачі та оберіть «Зберегти речення», щоб додати контекстні речення для клоуз-тренування.",
+  "mineSentence": "Зберегти речення",
+  "sentenceMined": "Речення збережено для клоуз-тренування",
+  "noSentenceFound": "Речення в цій позиції не знайдено"
 }
