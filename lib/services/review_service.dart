@@ -124,4 +124,22 @@ class ReviewService {
   double getRetrievability(fsrs.Card card) {
     return _scheduler.getCardRetrievability(card);
   }
+
+  /// Ensure review cards exist for all eligible terms in a language.
+  /// Eligible = not ignored and not well-known.
+  Future<void> seedCardsForLanguage(int languageId) async {
+    final allTerms = await db.terms.getAll(languageId: languageId);
+    final eligibleIds = allTerms
+        .where(
+          (t) =>
+              t.id != null &&
+              t.status != TermStatus.ignored &&
+              t.status != TermStatus.wellKnown,
+        )
+        .map((t) => t.id!)
+        .toList();
+    if (eligibleIds.isNotEmpty) {
+      await db.reviewCards.ensureCardsExist(eligibleIds);
+    }
+  }
 }

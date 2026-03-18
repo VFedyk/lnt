@@ -6,11 +6,11 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
-import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/shared/handwriting_canvas.dart';
 import '../widgets/shared/review_progress_indicator.dart';
+import '../widgets/shared/review_rating_buttons.dart';
 import '../widgets/shared/term_dialog.dart';
 import '../services/dictionary_service.dart';
 
@@ -18,8 +18,6 @@ abstract class _K {
   static const double characterFontSize = 72.0;
   static const double romanizationFontSize = 16.0;
   static const double translationFontSize = 18.0;
-  static const double intervalFontSize = 11.0;
-  static const double buttonSpacing = 8.0;
   static const double completionIconSize = 80.0;
 }
 
@@ -97,12 +95,6 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
       }
       await controller.reloadCurrentItem();
     }
-  }
-
-  String _formatDuration(Duration duration) {
-    if (duration.inDays > 0) return '${duration.inDays}d';
-    if (duration.inHours > 0) return '${duration.inHours}h';
-    return '${duration.inMinutes}m';
   }
 
   @override
@@ -224,7 +216,10 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
           if (!_isRevealed)
             _buildRevealButton(l10n)
           else
-            _buildRatingButtons(l10n, controller),
+            ReviewRatingButtons(
+              nextIntervals: controller.nextIntervals,
+              onRate: (rating) => _rateCard(controller, rating),
+            ),
         ],
       ),
     );
@@ -306,80 +301,4 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
     );
   }
 
-  Widget _buildRatingButtons(
-    AppLocalizations l10n,
-    FlashcardReviewController controller,
-  ) {
-    final intervals = controller.nextIntervals;
-
-    return Row(
-      children: [
-        _buildRatingButton(
-          controller: controller,
-          label: l10n.rateAgain,
-          rating: fsrs.Rating.again,
-          color: Theme.of(context).colorScheme.error,
-          interval: intervals?[fsrs.Rating.again],
-        ),
-        const SizedBox(width: _K.buttonSpacing),
-        _buildRatingButton(
-          controller: controller,
-          label: l10n.rateHard,
-          rating: fsrs.Rating.hard,
-          color: context.appColors.warning,
-          interval: intervals?[fsrs.Rating.hard],
-        ),
-        const SizedBox(width: _K.buttonSpacing),
-        _buildRatingButton(
-          controller: controller,
-          label: l10n.rateGood,
-          rating: fsrs.Rating.good,
-          color: context.appColors.success,
-          interval: intervals?[fsrs.Rating.good],
-        ),
-        const SizedBox(width: _K.buttonSpacing),
-        _buildRatingButton(
-          controller: controller,
-          label: l10n.rateEasy,
-          rating: fsrs.Rating.easy,
-          color: Theme.of(context).colorScheme.primary,
-          interval: intervals?[fsrs.Rating.easy],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRatingButton({
-    required FlashcardReviewController controller,
-    required String label,
-    required fsrs.Rating rating,
-    required Color color,
-    Duration? interval,
-  }) {
-    return Expanded(
-      child: OutlinedButton(
-        onPressed: () => _rateCard(controller, rating),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: color,
-          side: BorderSide(color: color),
-          padding:
-              const EdgeInsets.symmetric(vertical: AppConstants.spacingM),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-            if (interval != null)
-              Text(
-                _formatDuration(interval),
-                style: TextStyle(
-                  fontSize: _K.intervalFontSize,
-                  color: color.withValues(alpha: 0.7),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -11,6 +11,7 @@ import '../service_locator.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
+import '../widgets/shared/review_options_grid.dart';
 import '../widgets/shared/review_progress_indicator.dart';
 
 enum ClozeMode { easy, advanced }
@@ -20,11 +21,9 @@ abstract class _Constants {
   static const double cardBorderRadius = 16.0;
   static const double sentenceFontSize = 22.0;
   static const double hintFontSize = 16.0;
-  static const double optionFontSize = 16.0;
   static const double resultFontSize = 18.0;
   static const double statusDotSize = 12.0;
   static const double completionIconSize = 80.0;
-  static const double optionIconSize = 20.0;
 }
 
 class ClozeReviewScreen extends StatefulWidget {
@@ -196,22 +195,7 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
 
   Future<void> _ensureCardsSeeded() async {
     setState(() => _isSeeding = true);
-
-    final allTerms = await db.terms.getAll(languageId: widget.language.id!);
-    final eligibleIds = allTerms
-        .where(
-          (t) =>
-              t.id != null &&
-              t.status != TermStatus.ignored &&
-              t.status != TermStatus.wellKnown,
-        )
-        .map((t) => t.id!)
-        .toList();
-
-    if (eligibleIds.isNotEmpty) {
-      await db.reviewCards.ensureCardsExist(eligibleIds);
-    }
-
+    await reviewService.seedCardsForLanguage(widget.language.id!);
     if (mounted) setState(() => _isSeeding = false);
   }
 
@@ -381,7 +365,12 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
                       ),
                     const SizedBox(height: AppConstants.spacingXL),
                     if (widget.mode == ClozeMode.easy)
-                      _buildOptionsGrid(answered)
+                      ReviewOptionsGrid(
+                        options: _options,
+                        correctIndex: _correctOptionIndex,
+                        selectedIndex: _selectedOptionIndex,
+                        onSelect: _selectOption,
+                      )
                     else
                       _buildAdvancedInput(l10n, item, answered),
                     const SizedBox(height: AppConstants.spacingL),
@@ -443,105 +432,6 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
     return RichText(
       text: TextSpan(children: spans),
       textAlign: TextAlign.center,
-    );
-  }
-
-  Widget _buildOptionsGrid(bool answered) {
-    return Column(
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: _buildOption(0, answered)),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: _buildOption(1, answered)),
-          ],
-        ),
-        const SizedBox(height: AppConstants.spacingS),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: _buildOption(2, answered)),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: _buildOption(3, answered)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  static const _keyLabels = ['1', '2', '3', '4'];
-
-  Widget _buildOption(int index, bool answered) {
-    if (index >= _options.length) return const SizedBox.shrink();
-
-    final isCorrect = index == _correctOptionIndex;
-    final isSelected = _selectedOptionIndex == index;
-
-    Color? bgColor;
-    Color borderColor = Theme.of(context).colorScheme.outline;
-    Color? textColor;
-    IconData? statusIcon;
-
-    if (answered) {
-      if (isCorrect) {
-        bgColor = context.appColors.success.withValues(alpha: 0.15);
-        borderColor = context.appColors.success;
-        textColor = context.appColors.success;
-        statusIcon = Icons.check_circle;
-      } else if (isSelected) {
-        bgColor =
-            Theme.of(context).colorScheme.error.withValues(alpha: 0.15);
-        borderColor = Theme.of(context).colorScheme.error;
-        textColor = Theme.of(context).colorScheme.error;
-        statusIcon = Icons.cancel;
-      }
-    }
-
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: answered ? () {} : () => _selectOption(index),
-        style: OutlinedButton.styleFrom(
-          backgroundColor: bgColor,
-          foregroundColor:
-              textColor ?? Theme.of(context).colorScheme.onSurface,
-          side: BorderSide(color: borderColor),
-          padding: const EdgeInsets.symmetric(
-            vertical: AppConstants.spacingM,
-            horizontal: AppConstants.spacingS,
-          ),
-          alignment: Alignment.centerLeft,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              _keyLabels[index],
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: (textColor ?? Theme.of(context).colorScheme.onSurface)
-                    .withValues(alpha: 0.45),
-              ),
-            ),
-            const SizedBox(width: AppConstants.spacingS),
-            if (statusIcon != null) ...[
-              Icon(statusIcon, color: textColor, size: _Constants.optionIconSize),
-              const SizedBox(width: 4),
-            ],
-            Expanded(
-              child: Text(
-                _options[index],
-                style: TextStyle(
-                  fontSize: _Constants.optionFontSize,
-                  color: textColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

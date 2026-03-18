@@ -104,22 +104,7 @@ class FlashcardReviewController extends BaseController {
   Future<void> _ensureCardsSeeded() async {
     _isSeeding = true;
     safeNotify();
-
-    final allTerms = await db.terms.getAll(languageId: language.id!);
-    final eligibleIds = allTerms
-        .where(
-          (t) =>
-              t.id != null &&
-              t.status != TermStatus.ignored &&
-              t.status != TermStatus.wellKnown,
-        )
-        .map((t) => t.id!)
-        .toList();
-
-    if (eligibleIds.isNotEmpty) {
-      await db.reviewCards.ensureCardsExist(eligibleIds);
-    }
-
+    await reviewService.seedCardsForLanguage(language.id!);
     _isSeeding = false;
     safeNotify();
   }

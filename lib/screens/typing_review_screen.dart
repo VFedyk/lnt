@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
+import '../controllers/flashcard_review_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
-import '../models/review_card.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
 import '../utils/app_theme.dart';
@@ -39,7 +39,7 @@ class TypingReviewScreen extends StatefulWidget {
 }
 
 class _TypingReviewScreenState extends State<TypingReviewScreen> {
-  List<_ReviewItem> _dueItems = [];
+  List<ReviewItem> _dueItems = [];
   int _currentIndex = 0;
   int _reviewedCount = 0;
   bool _isLoading = true;
@@ -96,7 +96,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
     final termsMap = await db.terms.getByIds(termIds);
     final translationsMap = await db.translations.getByTermIds(termIds);
 
-    final items = <_ReviewItem>[];
+    final items = <ReviewItem>[];
     for (final rc in dueCards) {
       final term = termsMap[rc.termId];
       if (term == null) continue;
@@ -110,7 +110,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
 
       // Only include items that have translations
       if (translations.isNotEmpty) {
-        items.add(_ReviewItem(
+        items.add(ReviewItem(
           reviewCard: rc,
           term: term,
           translations: translations,
@@ -129,23 +129,8 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
 
   Future<void> _ensureCardsSeeded() async {
     setState(() => _isSeeding = true);
-
-    final allTerms = await db.terms.getAll(languageId: widget.language.id!);
-    final eligibleIds = allTerms
-        .where((t) =>
-            t.id != null &&
-            t.status != TermStatus.ignored &&
-            t.status != TermStatus.wellKnown)
-        .map((t) => t.id!)
-        .toList();
-
-    if (eligibleIds.isNotEmpty) {
-      await db.reviewCards.ensureCardsExist(eligibleIds);
-    }
-
-    if (mounted) {
-      setState(() => _isSeeding = false);
-    }
+    await reviewService.seedCardsForLanguage(widget.language.id!);
+    if (mounted) setState(() => _isSeeding = false);
   }
 
   void _submitAnswer() {
@@ -182,14 +167,14 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
     _answerFocusNode.requestFocus();
   }
 
-  String _getPromptText(_ReviewItem item) {
+  String _getPromptText(ReviewItem item) {
     if (widget.direction == TypingDirection.sourceToTarget) {
       return item.term.text;
     }
     return item.translations.first.meaning;
   }
 
-  String _getCorrectAnswer(_ReviewItem item) {
+  String _getCorrectAnswer(ReviewItem item) {
     if (widget.direction == TypingDirection.sourceToTarget) {
       return item.translations.map((t) => t.meaning).join(', ');
     }
@@ -385,7 +370,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
     );
   }
 
-  Widget _buildResult(AppLocalizations l10n, _ReviewItem item) {
+  Widget _buildResult(AppLocalizations l10n, ReviewItem item) {
     final correct = _isCorrect!;
     final correctAnswer = _getCorrectAnswer(item);
 
@@ -444,14 +429,3 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
   }
 }
 
-class _ReviewItem {
-  final ReviewCardRecord reviewCard;
-  final Term term;
-  final List<Translation> translations;
-
-  const _ReviewItem({
-    required this.reviewCard,
-    required this.term,
-    required this.translations,
-  });
-}

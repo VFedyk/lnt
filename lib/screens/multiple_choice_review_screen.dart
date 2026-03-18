@@ -3,14 +3,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
+import '../controllers/flashcard_review_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
-import '../models/review_card.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
-import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
+import '../widgets/shared/review_options_grid.dart';
 import '../widgets/shared/review_progress_indicator.dart';
 
 enum MultipleChoiceDirection { sourceToTarget, targetToSource }
@@ -19,11 +19,9 @@ abstract class _Constants {
   static const double cardElevation = 4.0;
   static const double cardBorderRadius = 16.0;
   static const double promptFontSize = 28.0;
-  static const double optionFontSize = 16.0;
   static const double romanizationFontSize = 16.0;
   static const double statusDotSize = 12.0;
   static const double completionIconSize = 80.0;
-  static const double optionIconSize = 20.0;
 }
 
 class MultipleChoiceReviewScreen extends StatefulWidget {
@@ -43,7 +41,7 @@ class MultipleChoiceReviewScreen extends StatefulWidget {
 
 class _MultipleChoiceReviewScreenState
     extends State<MultipleChoiceReviewScreen> {
-  List<_ReviewItem> _dueItems = [];
+  List<ReviewItem> _dueItems = [];
   List<_TermEntry> _distractorPool = [];
   int _currentIndex = 0;
   int _reviewedCount = 0;
@@ -130,7 +128,7 @@ class _MultipleChoiceReviewScreenState
     final allTranslationsMap =
         await db.translations.getByTermIds(allTermIds);
 
-    final dueItems = <_ReviewItem>[];
+    final dueItems = <ReviewItem>[];
     for (final rc in dueCards) {
       final term = termsMap[rc.termId];
       if (term == null) continue;
@@ -144,7 +142,7 @@ class _MultipleChoiceReviewScreenState
 
       if (translations.isNotEmpty) {
         dueItems.add(
-          _ReviewItem(reviewCard: rc, term: term, translations: translations),
+          ReviewItem(reviewCard: rc, term: term, translations: translations),
         );
       }
     }
@@ -177,22 +175,7 @@ class _MultipleChoiceReviewScreenState
 
   Future<void> _ensureCardsSeeded() async {
     setState(() => _isSeeding = true);
-
-    final allTerms = await db.terms.getAll(languageId: widget.language.id!);
-    final eligibleIds = allTerms
-        .where(
-          (t) =>
-              t.id != null &&
-              t.status != TermStatus.ignored &&
-              t.status != TermStatus.wellKnown,
-        )
-        .map((t) => t.id!)
-        .toList();
-
-    if (eligibleIds.isNotEmpty) {
-      await db.reviewCards.ensureCardsExist(eligibleIds);
-    }
-
+    await reviewService.seedCardsForLanguage(widget.language.id!);
     if (mounted) setState(() => _isSeeding = false);
   }
 
@@ -231,14 +214,14 @@ class _MultipleChoiceReviewScreenState
     });
   }
 
-  String _getPromptText(_ReviewItem item) {
+  String _getPromptText(ReviewItem item) {
     if (widget.direction == MultipleChoiceDirection.sourceToTarget) {
       return item.term.text;
     }
     return item.translations.first.meaning;
   }
 
-  String _getCorrectAnswer(_ReviewItem item) {
+  String _getCorrectAnswer(ReviewItem item) {
     if (widget.direction == MultipleChoiceDirection.sourceToTarget) {
       return item.translations.first.meaning;
     }
@@ -390,7 +373,12 @@ class _MultipleChoiceReviewScreenState
                       ),
                     ],
                     const SizedBox(height: AppConstants.spacingXL),
-                    _buildOptionsGrid(answered),
+                    ReviewOptionsGrid(
+                      options: _options,
+                      correctIndex: _correctOptionIndex,
+                      selectedIndex: _selectedOptionIndex,
+                      onSelect: _selectOption,
+                    ),
                     const SizedBox(height: AppConstants.spacingL),
                   ],
                 ),
@@ -412,115 +400,6 @@ class _MultipleChoiceReviewScreenState
     );
   }
 
-  static const _keyLabels = ['1', '2', '3', '4'];
-
-  Widget _buildOptionsGrid(bool answered) {
-    return Column(
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: _buildOption(0, answered)),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: _buildOption(1, answered)),
-          ],
-        ),
-        const SizedBox(height: AppConstants.spacingS),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: _buildOption(2, answered)),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: _buildOption(3, answered)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOption(int index, bool answered) {
-    if (index >= _options.length) return const SizedBox.shrink();
-
-    final isCorrect = index == _correctOptionIndex;
-    final isSelected = _selectedOptionIndex == index;
-
-    Color? bgColor;
-    Color borderColor = Theme.of(context).colorScheme.outline;
-    Color? textColor;
-    IconData? statusIcon;
-
-    if (answered) {
-      if (isCorrect) {
-        bgColor = context.appColors.success.withValues(alpha: 0.15);
-        borderColor = context.appColors.success;
-        textColor = context.appColors.success;
-        statusIcon = Icons.check_circle;
-      } else if (isSelected) {
-        bgColor = Theme.of(context).colorScheme.error.withValues(alpha: 0.15);
-        borderColor = Theme.of(context).colorScheme.error;
-        textColor = Theme.of(context).colorScheme.error;
-        statusIcon = Icons.cancel;
-      }
-    }
-
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: answered ? () {} : () => _selectOption(index),
-        style: OutlinedButton.styleFrom(
-          backgroundColor: bgColor,
-          foregroundColor:
-              textColor ?? Theme.of(context).colorScheme.onSurface,
-          side: BorderSide(color: borderColor),
-          padding: const EdgeInsets.symmetric(
-            vertical: AppConstants.spacingM,
-            horizontal: AppConstants.spacingS,
-          ),
-          alignment: Alignment.centerLeft,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              _keyLabels[index],
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: (textColor ?? Theme.of(context).colorScheme.onSurface)
-                    .withValues(alpha: 0.45),
-              ),
-            ),
-            const SizedBox(width: AppConstants.spacingS),
-            if (statusIcon != null) ...[
-              Icon(statusIcon, color: textColor, size: _Constants.optionIconSize),
-              const SizedBox(width: 4),
-            ],
-            Expanded(
-              child: Text(
-                _options[index],
-                style: TextStyle(
-                  fontSize: _Constants.optionFontSize,
-                  color: textColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ReviewItem {
-  final ReviewCardRecord reviewCard;
-  final Term term;
-  final List<Translation> translations;
-
-  const _ReviewItem({
-    required this.reviewCard,
-    required this.term,
-    required this.translations,
-  });
 }
 
 class _TermEntry {

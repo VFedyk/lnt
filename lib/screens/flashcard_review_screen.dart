@@ -10,10 +10,10 @@ import '../models/language.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
 import '../services/dictionary_service.dart';
-import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/shared/review_progress_indicator.dart';
+import '../widgets/shared/review_rating_buttons.dart';
 import '../widgets/shared/term_dialog.dart';
 
 abstract class _FlashcardReviewConstants {
@@ -25,8 +25,6 @@ abstract class _FlashcardReviewConstants {
   static const double translationFontSize = 18.0;
   static const double statusDotSize = 12.0;
   static const double completionIconSize = 80.0;
-  static const double buttonSpacing = 8.0;
-  static const double intervalFontSize = 11.0;
   static const double minCardHeight = 300.0;
   static const double contentSpacing = 20.0;
   static const Duration flipDuration = Duration(milliseconds: 400);
@@ -173,16 +171,6 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
       }
       // Reload the current item's data to reflect changes
       await controller.reloadCurrentItem();
-    }
-  }
-
-  String _formatDuration(Duration duration) {
-    if (duration.inDays > 0) {
-      return '${duration.inDays}d';
-    } else if (duration.inHours > 0) {
-      return '${duration.inHours}h';
-    } else {
-      return '${duration.inMinutes}m';
     }
   }
 
@@ -346,7 +334,10 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
           // Rating buttons
           if (controller.isAnswerRevealed) ...[
             const SizedBox(height: AppConstants.spacingM),
-            _buildRatingButtons(l10n, controller),
+            ReviewRatingButtons(
+              nextIntervals: controller.nextIntervals,
+              onRate: (rating) => _rateCard(controller, rating),
+            ),
           ],
         ],
       ),
@@ -559,79 +550,4 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
     );
   }
 
-  Widget _buildRatingButtons(
-    AppLocalizations l10n,
-    FlashcardReviewController controller,
-  ) {
-    final intervals = controller.nextIntervals;
-
-    return Row(
-      children: [
-        _buildRatingButton(
-          controller: controller,
-          label: l10n.rateAgain,
-          rating: fsrs.Rating.again,
-          color: Theme.of(context).colorScheme.error,
-          interval: intervals?[fsrs.Rating.again],
-        ),
-        const SizedBox(width: _FlashcardReviewConstants.buttonSpacing),
-        _buildRatingButton(
-          controller: controller,
-          label: l10n.rateHard,
-          rating: fsrs.Rating.hard,
-          color: context.appColors.warning,
-          interval: intervals?[fsrs.Rating.hard],
-        ),
-        const SizedBox(width: _FlashcardReviewConstants.buttonSpacing),
-        _buildRatingButton(
-          controller: controller,
-          label: l10n.rateGood,
-          rating: fsrs.Rating.good,
-          color: context.appColors.success,
-          interval: intervals?[fsrs.Rating.good],
-        ),
-        const SizedBox(width: _FlashcardReviewConstants.buttonSpacing),
-        _buildRatingButton(
-          controller: controller,
-          label: l10n.rateEasy,
-          rating: fsrs.Rating.easy,
-          color: Theme.of(context).colorScheme.primary,
-          interval: intervals?[fsrs.Rating.easy],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRatingButton({
-    required FlashcardReviewController controller,
-    required String label,
-    required fsrs.Rating rating,
-    required Color color,
-    Duration? interval,
-  }) {
-    return Expanded(
-      child: OutlinedButton(
-        onPressed: () => _rateCard(controller, rating),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: color,
-          side: BorderSide(color: color),
-          padding: const EdgeInsets.symmetric(vertical: AppConstants.spacingM),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-            if (interval != null)
-              Text(
-                _formatDuration(interval),
-                style: TextStyle(
-                  fontSize: _FlashcardReviewConstants.intervalFontSize,
-                  color: color.withValues(alpha: 0.7),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }
