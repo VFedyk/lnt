@@ -425,15 +425,13 @@ class _DashboardTabState extends State<DashboardTab> {
           _buildQuickActions(),
           const SizedBox(height: AppConstants.spacingL),
           if (useDesktopStyleLayout)
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(child: _buildRecentlyReadTexts()),
-                  const SizedBox(width: AppConstants.spacingL),
-                  Expanded(child: _buildRecentlyAddedTexts()),
-                ],
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _buildRecentlyReadTexts()),
+                const SizedBox(width: AppConstants.spacingL),
+                Expanded(child: _buildRecentlyAddedTexts()),
+              ],
             )
           else ...[
             _buildRecentlyReadTexts(),
@@ -646,7 +644,11 @@ class _DashboardTabState extends State<DashboardTab> {
                     : null;
                 return ListTile(
                   leading: _buildTextThumbnail(text, Icons.history),
-                  title: Text(text.title),
+                  title: Text(
+                    text.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   subtitle: Text(
                     '${collectionName != null ? '$collectionName • ' : ''}${widget.language.splitByCharacter ? l10n.charactersCount(text.characterCount) : l10n.wordsCount(text.wordCount)} • ${l10n.unknownCount(_unknownCounts[text.id] ?? 0)}',
                   ),
@@ -693,7 +695,11 @@ class _DashboardTabState extends State<DashboardTab> {
                     : null;
                 return ListTile(
                   leading: _buildTextThumbnail(text, Icons.article),
-                  title: Text(text.title),
+                  title: Text(
+                    text.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   subtitle: Text(
                     '${collectionName != null ? '$collectionName • ' : ''}${widget.language.splitByCharacter ? l10n.charactersCount(text.characterCount) : l10n.wordsCount(text.wordCount)} • ${l10n.unknownCount(_unknownCounts[text.id] ?? 0)}',
                   ),
