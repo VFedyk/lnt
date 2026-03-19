@@ -2,11 +2,13 @@ import '../models/dictionary.dart';
 import 'base_repository.dart';
 
 class DictionaryRepository extends BaseRepository {
-  DictionaryRepository(super.getDatabase);
+  DictionaryRepository(super.getDatabase, {super.onChange});
 
   Future<int> create(Dictionary dictionary) async {
     final db = await getDatabase();
-    return await db.insert('dictionaries', dictionary.toMap());
+    final id = await db.insert('dictionaries', dictionary.toMap());
+    notifyChange();
+    return id;
   }
 
   Future<List<Dictionary>> getAll({
@@ -50,26 +52,32 @@ class DictionaryRepository extends BaseRepository {
 
   Future<int> update(Dictionary dictionary) async {
     final db = await getDatabase();
-    return await db.update(
+    final count = await db.update(
       'dictionaries',
       dictionary.toMap(),
       where: 'id = ?',
       whereArgs: [dictionary.id],
     );
+    notifyChange();
+    return count;
   }
 
   Future<int> delete(int id) async {
     final db = await getDatabase();
-    return await db.delete('dictionaries', where: 'id = ?', whereArgs: [id]);
+    final count = await db.delete('dictionaries', where: 'id = ?', whereArgs: [id]);
+    notifyChange();
+    return count;
   }
 
   Future<int> deleteByLanguage(int languageId) async {
     final db = await getDatabase();
-    return await db.delete(
+    final count = await db.delete(
       'dictionaries',
       where: 'language_id = ?',
       whereArgs: [languageId],
     );
+    notifyChange();
+    return count;
   }
 
   Future<void> reorder(List<Dictionary> dictionaries) async {
@@ -86,5 +94,6 @@ class DictionaryRepository extends BaseRepository {
     }
 
     await batch.commit(noResult: true);
+    notifyChange();
   }
 }

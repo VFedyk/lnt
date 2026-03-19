@@ -15,6 +15,9 @@ class DataChangeNotifier {
   final texts = DomainNotifier();
   final collections = DomainNotifier();
   final reviewCards = DomainNotifier();
+  final dictionaries = DomainNotifier();
+  final termSentences = DomainNotifier();
+  final radicalProgress = DomainNotifier();
 
   /// Notify all domains at once (e.g. after backup restore).
   void notifyAll() {
@@ -23,5 +26,8 @@ class DataChangeNotifier {
     texts.notify();
     collections.notify();
     reviewCards.notify();
+    dictionaries.notify();
+    termSentences.notify();
+    radicalProgress.notify();
   }
 }

@@ -2,7 +2,7 @@ import '../models/term_sentence.dart';
 import 'base_repository.dart';
 
 class TermSentenceRepository extends BaseRepository {
-  TermSentenceRepository(super.getDatabase);
+  TermSentenceRepository(super.getDatabase, {super.onChange});
 
   Future<TermSentence> create(
     int termId,
@@ -18,6 +18,7 @@ class TermSentenceRepository extends BaseRepository {
       createdAt: now,
     );
     final id = await db.insert('term_sentences', row.toMap());
+    notifyChange();
     return TermSentence(
       id: id,
       termId: termId,
@@ -61,5 +62,6 @@ class TermSentenceRepository extends BaseRepository {
   Future<void> delete(int id) async {
     final db = await getDatabase();
     await db.delete('term_sentences', where: 'id = ?', whereArgs: [id]);
+    notifyChange();
   }
 }

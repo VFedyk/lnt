@@ -42,7 +42,7 @@ class DatabaseService {
       () => database,
       onChange: changes.collections,
     );
-    dictionaries = DictionaryRepository(() => database);
+    dictionaries = DictionaryRepository(() => database, onChange: changes.dictionaries);
     translations = TranslationRepository(() => database);
     textForeignWords = TextForeignWordRepository(() => database);
     reviewCards = ReviewCardRepository(
@@ -51,8 +51,8 @@ class DatabaseService {
     );
     reviewLogs = ReviewLogRepository(() => database);
     termStatusLog = TermStatusLogRepository(() => database);
-    radicalProgress = RadicalProgressRepository(() => database);
-    termSentences = TermSentenceRepository(() => database);
+    radicalProgress = RadicalProgressRepository(() => database, onChange: changes.radicalProgress);
+    termSentences = TermSentenceRepository(() => database, onChange: changes.termSentences);
   }
 
   Future<Database> get database async {

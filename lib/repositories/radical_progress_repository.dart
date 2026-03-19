@@ -13,7 +13,7 @@ class RadicalProgress {
 }
 
 class RadicalProgressRepository extends BaseRepository {
-  RadicalProgressRepository(super.getDatabase);
+  RadicalProgressRepository(super.getDatabase, {super.onChange});
 
   Future<Map<String, RadicalProgress>> getAll() async {
     final db = await getDatabase();
@@ -41,5 +41,6 @@ class RadicalProgressRepository extends BaseRepository {
         practiced_count = practiced_count + 1,
         last_practiced = excluded.last_practiced
     ''', [radicalChar, now]);
+    notifyChange();
   }
 }
