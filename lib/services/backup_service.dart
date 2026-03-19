@@ -72,35 +72,115 @@ class BackupService {
     final dbPath = await _getDbPath();
     final coversDir = await _getCoversDir();
 
-    // Extract database
+    // Validate before touching any production files.
     final dbEntry = archive.findFile(_dbEntryName);
     if (dbEntry == null) throw Exception('Backup archive has no database');
 
-    await db.closeDatabase();
-    final dbDir = Directory(dbPath).parent;
-    if (!await dbDir.exists()) {
-      await dbDir.create(recursive: true);
-    }
-    await File(dbPath).writeAsBytes(dbEntry.content as List<int>);
+    // ── Stage phase ──────────────────────────────────────────────────────────
+    // Extract everything into a temp directory. If anything fails here,
+    // production files are completely untouched.
+    final tempDir = await getTemporaryDirectory();
+    final stagingDir = Directory('${tempDir.path}/lnt_restore');
+    if (await stagingDir.exists()) await stagingDir.delete(recursive: true);
+    await stagingDir.create(recursive: true);
 
-    // Extract cover images
-    final coversDirObj = Directory(coversDir);
-    if (!await coversDirObj.exists()) {
-      await coversDirObj.create(recursive: true);
-    }
-    for (final file in archive) {
-      if (file.isFile && file.name.startsWith('$_coversDirName/')) {
-        final name = file.name.substring('$_coversDirName/'.length);
+    final stagedDb = File('${stagingDir.path}/$_dbEntryName');
+    await stagedDb.writeAsBytes(dbEntry.content as List<int>);
+
+    final stagedCovers = Directory('${stagingDir.path}/$_coversDirName');
+    await stagedCovers.create(recursive: true);
+    for (final entry in archive) {
+      if (entry.isFile && entry.name.startsWith('$_coversDirName/')) {
+        final name = entry.name.substring('$_coversDirName/'.length);
         if (name.isNotEmpty) {
-          await File(
-            '$coversDir/$name',
-          ).writeAsBytes(file.content as List<int>);
+          await File('${stagedCovers.path}/$name')
+              .writeAsBytes(entry.content as List<int>);
         }
       }
     }
 
-    // Reopen the database so the app can continue without restart
-    await db.database;
+    // ── Commit phase ─────────────────────────────────────────────────────────
+    // Back up current state, then move staged files into place.
+    // On any error, roll back from the .bak copies.
+    final dbBak = File('$dbPath.bak');
+    final coversBak = Directory('$coversDir.bak');
+    bool dbMoved = false;
+    bool coversMoved = false;
+
+    try {
+      await db.closeDatabase();
+
+      // Rename current files to .bak (atomic on same filesystem).
+      if (await File(dbPath).exists()) await File(dbPath).rename(dbBak.path);
+      if (await Directory(coversDir).exists()) {
+        await Directory(coversDir).rename(coversBak.path);
+      }
+
+      // Move staged files to production paths.
+      final dbDir = Directory(dbPath).parent;
+      if (!await dbDir.exists()) await dbDir.create(recursive: true);
+      await _moveFile(stagedDb, dbPath);
+      dbMoved = true;
+      await _moveDirectory(stagedCovers, coversDir);
+      coversMoved = true;
+
+      // Both moves succeeded — discard backups.
+      if (await dbBak.exists()) await dbBak.delete();
+      if (await coversBak.exists()) await coversBak.delete(recursive: true);
+    } catch (e) {
+      // Roll back: restore .bak files if we already moved them away.
+      try {
+        if (dbMoved) {
+          final f = File(dbPath);
+          if (await f.exists()) await f.delete();
+        }
+        if (await dbBak.exists()) await dbBak.rename(dbPath);
+
+        if (coversMoved) {
+          final d = Directory(coversDir);
+          if (await d.exists()) await d.delete(recursive: true);
+        }
+        if (await coversBak.exists()) await coversBak.rename(coversDir);
+      } catch (_) {
+        // Best-effort — don't mask the original error.
+      }
+      rethrow;
+    } finally {
+      // Always reopen the DB and clean up staging, regardless of outcome.
+      await db.database;
+      if (await stagingDir.exists()) await stagingDir.delete(recursive: true);
+    }
+  }
+
+  /// Moves [src] to [destPath], falling back to copy+delete if rename fails
+  /// (e.g. cross-device move on some platforms).
+  Future<void> _moveFile(File src, String destPath) async {
+    try {
+      await src.rename(destPath);
+    } on FileSystemException {
+      await src.copy(destPath);
+      await src.delete();
+    }
+  }
+
+  /// Moves [src] directory to [destPath], falling back to recursive copy+delete
+  /// if rename fails (e.g. cross-device move on some platforms).
+  Future<void> _moveDirectory(Directory src, String destPath) async {
+    try {
+      await src.rename(destPath);
+    } on FileSystemException {
+      final dest = Directory(destPath);
+      if (!await dest.exists()) await dest.create(recursive: true);
+      await for (final entity in src.list(recursive: true)) {
+        if (entity is File) {
+          final relative = entity.path.substring(src.path.length + 1);
+          final destFile = File('$destPath/$relative');
+          await destFile.parent.create(recursive: true);
+          await entity.copy(destFile.path);
+        }
+      }
+      await src.delete(recursive: true);
+    }
   }
 
   // ── Google Drive ──
