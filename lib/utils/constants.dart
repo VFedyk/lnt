@@ -46,11 +46,13 @@ class AppConstants {
   static const double spacingXL = 24.0;
 
   // UI: Font sizes
+  static const double fontSizeBadge = 9.0;
   static const double fontSizeXS = 10.0;
   static const double fontSizeCaption = 12.0;
   static const double fontSizeBody = 14.0;
   static const double fontSizeSubtitle = 18.0;
   static const double fontSizeTitle = 24.0;
+  static const double fontSizeDisplay = 36.0;
 
   // UI: Border radii
   static const double borderRadiusS = 4.0;
@@ -67,6 +69,12 @@ class AppConstants {
   static const double iconSizeM = 32.0;
   static const double errorIconSize = 48.0;
   static const double emptyStateIconSize = 64.0;
+
+  // UI: Animation durations
+  static const Duration animationFast = Duration(milliseconds: 150);
+
+  // UI: Review
+  static const int dueCardLimit = 200;
 
   // UI: Colors (neutral)
   static final Color subtitleColor = Colors.grey.shade600;

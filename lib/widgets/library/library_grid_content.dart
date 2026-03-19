@@ -15,6 +15,7 @@ abstract class _LibraryGridContentConstants {
   static const double parentZoneHeight = 40.0;
   static const double parentZoneBorderWidth = 2.0;
   static const double hoverScale = 1.04;
+  static const Duration animationDuration = AppConstants.animationFast;
 }
 
 class LibraryGridContent extends StatelessWidget {
@@ -102,7 +103,7 @@ class LibraryGridContent extends StatelessWidget {
                   builder: (context, candidateItems, _) {
                     final isHovering = candidateItems.isNotEmpty;
                     return AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                      duration: _LibraryGridContentConstants.animationDuration,
                       decoration: isHovering
                           ? BoxDecoration(
                               border: Border.all(
@@ -190,7 +191,7 @@ class _ParentDropZone extends StatelessWidget {
       builder: (context, candidateItems, _) {
         final isHovering = candidateItems.isNotEmpty;
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: _LibraryGridContentConstants.animationDuration,
           height: _LibraryGridContentConstants.parentZoneHeight,
           margin: const EdgeInsets.fromLTRB(
             AppConstants.spacingL,
@@ -261,7 +262,7 @@ class _HoverableBookCoverState extends State<_HoverableBookCover> {
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedScale(
         scale: _isHovered ? _LibraryGridContentConstants.hoverScale : 1.0,
-        duration: const Duration(milliseconds: 150),
+        duration: _LibraryGridContentConstants.animationDuration,
         curve: Curves.easeOut,
         child: widget.child,
       ),

@@ -16,6 +16,7 @@ abstract class _LibraryListContentConstants {
   static const double parentZoneHeight = 40.0;
   static const double parentZoneBorderWidth = 2.0;
   static const double hoverElevation = 3.0;
+  static const Duration animationDuration = AppConstants.animationFast;
 }
 
 class LibraryListContent extends StatelessWidget {
@@ -111,7 +112,7 @@ class _ParentDropZone extends StatelessWidget {
       builder: (context, candidateItems, _) {
         final isHovering = candidateItems.isNotEmpty;
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: _LibraryListContentConstants.animationDuration,
           height: _LibraryListContentConstants.parentZoneHeight,
           margin: const EdgeInsets.symmetric(
             horizontal: AppConstants.spacingL,
@@ -273,7 +274,7 @@ class _FolderListItemState extends State<_FolderListItem> {
         builder: (context, candidateItems, _) {
           final isDragHovering = candidateItems.isNotEmpty;
           return AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
+            duration: _LibraryListContentConstants.animationDuration,
             decoration: isDragHovering
                 ? BoxDecoration(
                     border: Border.all(

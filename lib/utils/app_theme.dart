@@ -14,6 +14,11 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color warning;
   final Color onWarning;
   final Color streak;
+  // Reader word-selection highlight
+  final Color readerSelection;
+  final Color readerSelectionBorder;
+  // Reader: words belonging to another tracked language
+  final Color readerOtherLanguage;
 
   const AppColors({
     required this.success,
@@ -21,6 +26,9 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.warning,
     required this.onWarning,
     required this.streak,
+    required this.readerSelection,
+    required this.readerSelectionBorder,
+    required this.readerOtherLanguage,
   });
 
   static const light = AppColors(
@@ -29,6 +37,9 @@ class AppColors extends ThemeExtension<AppColors> {
     warning: Color(0xFFF57C00),
     onWarning: Colors.white,
     streak: Color(0xFFEF6C00),
+    readerSelection: Color(0xFF90CAF9),     // blue-200
+    readerSelectionBorder: Color(0xFF1E88E5), // blue-600
+    readerOtherLanguage: Color(0xFFCE93D8), // purple-200
   );
 
   static const dark = AppColors(
@@ -37,6 +48,9 @@ class AppColors extends ThemeExtension<AppColors> {
     warning: Color(0xFFFFB74D),
     onWarning: Color(0xFF4E2600),
     streak: Color(0xFFFFB300),
+    readerSelection: Color(0xFF1565C0),     // blue-800
+    readerSelectionBorder: Color(0xFF90CAF9), // blue-200
+    readerOtherLanguage: Color(0xFF9C27B0), // purple-600
   );
 
   @override
@@ -46,6 +60,9 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? warning,
     Color? onWarning,
     Color? streak,
+    Color? readerSelection,
+    Color? readerSelectionBorder,
+    Color? readerOtherLanguage,
   }) {
     return AppColors(
       success: success ?? this.success,
@@ -53,6 +70,9 @@ class AppColors extends ThemeExtension<AppColors> {
       warning: warning ?? this.warning,
       onWarning: onWarning ?? this.onWarning,
       streak: streak ?? this.streak,
+      readerSelection: readerSelection ?? this.readerSelection,
+      readerSelectionBorder: readerSelectionBorder ?? this.readerSelectionBorder,
+      readerOtherLanguage: readerOtherLanguage ?? this.readerOtherLanguage,
     );
   }
 
@@ -65,6 +85,9 @@ class AppColors extends ThemeExtension<AppColors> {
       warning: Color.lerp(warning, other.warning, t)!,
       onWarning: Color.lerp(onWarning, other.onWarning, t)!,
       streak: Color.lerp(streak, other.streak, t)!,
+      readerSelection: Color.lerp(readerSelection, other.readerSelection, t)!,
+      readerSelectionBorder: Color.lerp(readerSelectionBorder, other.readerSelectionBorder, t)!,
+      readerOtherLanguage: Color.lerp(readerOtherLanguage, other.readerOtherLanguage, t)!,
     );
   }
 }

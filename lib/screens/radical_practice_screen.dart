@@ -151,7 +151,7 @@ class _RadicalCard extends StatelessWidget {
                 children: [
                   Text(
                     radical.char,
-                    style: const TextStyle(fontSize: 36),
+                    style: const TextStyle(fontSize: AppConstants.fontSizeDisplay),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -182,7 +182,7 @@ class _RadicalCard extends StatelessWidget {
                     '$practicedCount×',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: colorScheme.onPrimaryContainer,
-                          fontSize: 9,
+                          fontSize: AppConstants.fontSizeBadge,
                         ),
                   ),
                 ),

@@ -4,6 +4,7 @@ import '../../controllers/reader_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../models/term.dart';
 import '../../models/word_token.dart';
+import '../../utils/app_theme.dart';
 
 class ParagraphRichText extends StatelessWidget {
   final List<WordToken> tokens;
@@ -30,10 +31,7 @@ class ParagraphRichText extends StatelessWidget {
   static const double _borderAlpha = 0.5;
   static const Duration _tooltipWait = Duration(milliseconds: 300);
 
-  static const Color _selectionBg = Color(0xFF90CAF9);
-  static const Color _selectionBorder = Color(0xFF1E88E5);
   static const Color _selectedText = Colors.black87;
-  static const Color _otherLanguageColor = Color(0xFFCE93D8);
   static const Color _transparent = Colors.transparent;
 
   static final _leadingPunctuation = RegExp(r'^[\p{P}\p{S}]+', unicode: true);
@@ -57,6 +55,10 @@ class ParagraphRichText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final appColors = context.appColors;
+    final selectionBg = appColors.readerSelection;
+    final selectionBorder = appColors.readerSelectionBorder;
+    final otherLanguageColor = appColors.readerOtherLanguage;
     final spans = <InlineSpan>[];
     final textStyle = TextStyle(fontSize: fontSize, height: _lineHeight);
 
@@ -100,7 +102,7 @@ class ParagraphRichText extends StatelessWidget {
 
       Color backgroundColor;
       if (isSelected) {
-        backgroundColor = _selectionBg;
+        backgroundColor = selectionBg;
       } else if (isIgnored || isWellKnown || isOtherLanguage) {
         backgroundColor = _transparent;
       } else if (term != null) {
@@ -112,7 +114,7 @@ class ParagraphRichText extends StatelessWidget {
 
       Color borderColor;
       if (isSelected) {
-        borderColor = _selectionBorder;
+        borderColor = selectionBorder;
       } else if (isIgnored || isWellKnown || isOtherLanguage) {
         borderColor = _transparent;
       } else if (term != null) {
@@ -126,7 +128,7 @@ class ParagraphRichText extends StatelessWidget {
       if (isSelected) {
         textColor = _selectedText;
       } else if (isOtherLanguage) {
-        textColor = _otherLanguageColor;
+        textColor = otherLanguageColor;
       }
 
       String? tooltipMessage;

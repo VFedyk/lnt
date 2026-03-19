@@ -1,5 +1,6 @@
 import 'package:fsrs/fsrs.dart' as fsrs;
 import '../models/review_card.dart';
+import '../utils/constants.dart';
 import 'base_repository.dart';
 
 class ReviewCardRepository extends BaseRepository {
@@ -52,7 +53,7 @@ class ReviewCardRepository extends BaseRepository {
   /// Excludes ignored (status=0) and wellKnown (status=99) terms.
   /// Limited to [limit] cards to prevent unbounded memory usage.
   Future<List<ReviewCardRecord>> getDueCards(int languageId,
-      {DateTime? now, int limit = 200}) async {
+      {DateTime? now, int limit = AppConstants.dueCardLimit}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
     final maps = await db.rawQuery(

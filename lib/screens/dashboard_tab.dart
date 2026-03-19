@@ -346,7 +346,7 @@ class _DashboardTabState extends State<DashboardTab> {
                                 if (widget.language.flagEmoji.isNotEmpty) ...[
                                   Text(
                                     widget.language.flagEmoji,
-                                    style: const TextStyle(fontSize: 24),
+                                    style: const TextStyle(fontSize: AppConstants.fontSizeTitle),
                                   ),
                                   const SizedBox(width: AppConstants.spacingS),
                                 ] else ...[
