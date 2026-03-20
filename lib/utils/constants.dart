@@ -72,6 +72,9 @@ class AppConstants {
 
   // UI: Animation durations
   static const Duration animationFast = Duration(milliseconds: 150);
+  static const Duration animationNormal = Duration(milliseconds: 300);
+  static const Duration animationSlow = Duration(milliseconds: 400);
+  static const Duration animationVerySlow = Duration(milliseconds: 800);
 
   // UI: Review
   static const int dueCardLimit = 200;

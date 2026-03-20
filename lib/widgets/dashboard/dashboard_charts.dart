@@ -12,7 +12,7 @@ import 'custom_chart_tooltip.dart';
 abstract class _BarChartConstants {
   static const double mobileHeight = 250.0;
   static const double barWidth = 8.0;
-  static const Duration animationDuration = Duration(milliseconds: 800);
+  static const Duration animationDuration = AppConstants.animationVerySlow;
   static const Curve animationCurve = Curves.easeOutCubic;
 }
 
@@ -22,7 +22,7 @@ abstract class _LineChartConstants {
   static const double lineWidth = 3.0;
   static const double dotSize = 4.0;
   static const double gradientOpacity = 0.1;
-  static const Duration animationDuration = Duration(milliseconds: 800);
+  static const Duration animationDuration = AppConstants.animationVerySlow;
   static const Curve animationCurve = Curves.easeOutCubic;
 }
 

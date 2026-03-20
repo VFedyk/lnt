@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../../utils/constants.dart';
 
 class AiThinkingDialog extends StatefulWidget {
   const AiThinkingDialog({super.key});
@@ -19,8 +20,8 @@ class _AiThinkingDialogState extends State<AiThinkingDialog> {
   @override
   void initState() {
     super.initState();
-    // Emoji changes every 800ms
-    _emojiTimer = Timer.periodic(const Duration(milliseconds: 800), (timer) {
+    // Emoji changes every animationVerySlow interval
+    _emojiTimer = Timer.periodic(AppConstants.animationVerySlow, (timer) {
       if (mounted) {
         setState(() {
           _emojiIndex = (_emojiIndex + 1) % _emojis.length;
@@ -68,9 +69,9 @@ class _AiThinkingDialogState extends State<AiThinkingDialog> {
                 children: [
                   Text(
                     _emojis[_emojiIndex],
-                    style: const TextStyle(fontSize: 24),
+                    style: const TextStyle(fontSize: AppConstants.fontSizeTitle),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppConstants.spacingS),
                   Text(
                     textStages[_textIndex],
                     style: Theme.of(context).textTheme.bodyMedium,

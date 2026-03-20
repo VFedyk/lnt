@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../utils/constants.dart';
 
 abstract class _AnimatedCounterConstants {
-  static const Duration defaultDuration = Duration(milliseconds: 800);
+  static const Duration defaultDuration = AppConstants.animationVerySlow;
   static const Curve defaultCurve = Curves.easeOutCubic;
 }
 

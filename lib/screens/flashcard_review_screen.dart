@@ -85,7 +85,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
     final controller = context.read<FlashcardReviewController>();
 
     // When answer is not yet revealed, any rating key reveals it first
-    if (!controller.isAnswerRevealed) {
+    if (controller.phase == ReviewPhase.question) {
       if (key == LogicalKeyboardKey.space ||
           key == LogicalKeyboardKey.enter ||
           key == LogicalKeyboardKey.digit1 ||
@@ -99,6 +99,10 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
         _revealAnswer(controller);
         return KeyEventResult.handled;
       }
+      return KeyEventResult.ignored;
+    }
+
+    if (controller.phase != ReviewPhase.revealed) {
       return KeyEventResult.ignored;
     }
 
@@ -237,11 +241,12 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
     return Consumer<FlashcardReviewController>(
       builder: (context, controller, _) {
         Widget body;
-        if (controller.isLoading || controller.isSeeding) {
+        if (controller.phase == ReviewPhase.loading ||
+            controller.phase == ReviewPhase.seeding) {
           body = const Center(child: CircularProgressIndicator());
-        } else if (controller.dueItems.isEmpty) {
+        } else if (controller.phase == ReviewPhase.empty) {
           body = _buildEmptyState(l10n);
-        } else if (controller.currentIndex >= controller.dueItems.length) {
+        } else if (controller.phase == ReviewPhase.done) {
           body = _buildCompletionState(l10n, controller);
         } else {
           body = _buildReviewCard(l10n, controller);
@@ -332,7 +337,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
           ),
 
           // Rating buttons
-          if (controller.isAnswerRevealed) ...[
+          if (controller.phase == ReviewPhase.revealed) ...[
             const SizedBox(height: AppConstants.spacingM),
             ReviewRatingButtons(
               nextIntervals: controller.nextIntervals,

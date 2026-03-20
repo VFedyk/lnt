@@ -104,11 +104,12 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
     return Consumer<FlashcardReviewController>(
       builder: (context, controller, _) {
         Widget body;
-        if (controller.isLoading || controller.isSeeding) {
+        if (controller.phase == ReviewPhase.loading ||
+            controller.phase == ReviewPhase.seeding) {
           body = const Center(child: CircularProgressIndicator());
-        } else if (controller.dueItems.isEmpty) {
+        } else if (controller.phase == ReviewPhase.empty) {
           body = _buildEmptyState(l10n);
-        } else if (controller.currentIndex >= controller.dueItems.length) {
+        } else if (controller.phase == ReviewPhase.done) {
           body = _buildCompletionState(l10n, controller);
         } else {
           body = _buildPracticeCard(l10n, controller);

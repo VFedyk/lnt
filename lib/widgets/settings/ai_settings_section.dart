@@ -76,7 +76,7 @@ class _AiSettingsSectionState extends State<AiSettingsSection> {
   void _scheduleFetch({bool immediate = false}) {
     _fetchTimer?.cancel();
     _fetchTimer = Timer(
-      immediate ? Duration.zero : const Duration(milliseconds: 800),
+      immediate ? Duration.zero : AppConstants.animationVerySlow,
       _fetchModels,
     );
   }

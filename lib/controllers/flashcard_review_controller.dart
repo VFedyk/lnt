@@ -18,26 +18,51 @@ class ReviewItem {
   });
 }
 
+/// Explicit states of the flashcard review flow.
+///
+/// Replaces the previous set of independent booleans (`_isLoading`,
+/// `_isSeeding`, `_isAnswerRevealed`, `_isRating`) with a single enum that
+/// makes invalid combinations impossible.
+enum ReviewPhase {
+  /// Loading due cards from the database.
+  loading,
+
+  /// Seeding review cards for eligible terms (sub-step of initial load;
+  /// shows the same loading indicator but is kept distinct for observability).
+  seeding,
+
+  /// No cards are due for this language.
+  empty,
+
+  /// A card is being shown with its answer hidden.
+  question,
+
+  /// A card is shown with answer revealed; rating buttons are visible.
+  revealed,
+
+  /// A rating is being persisted asynchronously. No UI notification is emitted
+  /// for this phase — it serves only as a re-entry guard.
+  rating,
+
+  /// All due cards have been reviewed.
+  done,
+}
+
 class FlashcardReviewController extends BaseController {
   final Language language;
 
   List<ReviewItem> _dueItems = [];
   int _currentIndex = 0;
   int _reviewedCount = 0;
-  bool _isLoading = true;
-  bool _isAnswerRevealed = false;
-  bool _isSeeding = false;
+  ReviewPhase _phase = ReviewPhase.loading;
   bool _hasReviewed = false;
-  bool _isRating = false;
   int _reloadVersion = 0;
   Map<fsrs.Rating, Duration>? _nextIntervals;
 
   List<ReviewItem> get dueItems => _dueItems;
   int get currentIndex => _currentIndex;
   int get reviewedCount => _reviewedCount;
-  bool get isLoading => _isLoading;
-  bool get isAnswerRevealed => _isAnswerRevealed;
-  bool get isSeeding => _isSeeding;
+  ReviewPhase get phase => _phase;
   bool get hasReviewed => _hasReviewed;
   int get reloadVersion => _reloadVersion;
   Map<fsrs.Rating, Duration>? get nextIntervals => _nextIntervals;
@@ -61,15 +86,19 @@ class FlashcardReviewController extends BaseController {
   }
 
   Future<void> loadDueCards() async {
-    _isLoading = true;
+    _phase = ReviewPhase.loading;
     _currentIndex = 0;
     _reviewedCount = 0;
-    _isAnswerRevealed = false;
     _nextIntervals = null;
     safeNotify();
 
-    // Ensure all eligible terms have review cards (lazy seeding)
-    await _ensureCardsSeeded();
+    // Ensure all eligible terms have review cards (lazy seeding).
+    _phase = ReviewPhase.seeding;
+    safeNotify();
+    await reviewService.seedCardsForLanguage(language.id!);
+
+    _phase = ReviewPhase.loading;
+    safeNotify();
 
     final dueCards = await db.reviewCards.getDueCards(language.id!);
 
@@ -97,42 +126,37 @@ class FlashcardReviewController extends BaseController {
     }
 
     _dueItems = items;
-    _isLoading = false;
-    safeNotify();
-  }
-
-  Future<void> _ensureCardsSeeded() async {
-    _isSeeding = true;
-    safeNotify();
-    await reviewService.seedCardsForLanguage(language.id!);
-    _isSeeding = false;
+    _phase = _dueItems.isEmpty ? ReviewPhase.empty : ReviewPhase.question;
     safeNotify();
   }
 
   Future<void> rateCard(fsrs.Rating rating) async {
-    if (_isRating || _currentIndex >= _dueItems.length) return;
+    // Guard against re-entry and post-completion calls.
+    if (_phase == ReviewPhase.rating || _phase == ReviewPhase.done) return;
 
-    _isRating = true;
+    // Transition to rating phase without notifying — the UI stays in its
+    // current revealed state while the async write completes.
+    _phase = ReviewPhase.rating;
+
     final item = _dueItems[_currentIndex];
     await reviewService.reviewTerm(item.reviewCard, rating, notify: false);
 
     _hasReviewed = true;
     _reviewedCount++;
     _currentIndex++;
-    _isAnswerRevealed = false;
     _nextIntervals = null;
-    _isRating = false;
+    _phase = _currentIndex >= _dueItems.length
+        ? ReviewPhase.done
+        : ReviewPhase.question;
     safeNotify();
   }
 
   void revealAnswer() {
-    if (_currentIndex >= _dueItems.length) return;
+    if (_phase != ReviewPhase.question) return;
 
     final item = _dueItems[_currentIndex];
-    final intervals = reviewService.getNextIntervals(item.reviewCard.card);
-
-    _isAnswerRevealed = true;
-    _nextIntervals = intervals;
+    _nextIntervals = reviewService.getNextIntervals(item.reviewCard.card);
+    _phase = ReviewPhase.revealed;
     safeNotify();
   }
 

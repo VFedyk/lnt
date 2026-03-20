@@ -1,13 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../utils/constants.dart';
 import 'animated_counter.dart';
 
 abstract class _ReviewProgressRingConstants {
   static const double defaultSize = 44.0;
   static const double strokeWidth = 4.0;
   static const double backgroundOpacity = 0.2;
-  static const Duration animationDuration = Duration(milliseconds: 800);
+  static const Duration animationDuration = AppConstants.animationVerySlow;
   static const Curve animationCurve = Curves.easeOutCubic;
 }
 
