@@ -31,22 +31,26 @@ class ReviewOptionsGrid extends StatelessWidget {
     final answered = selectedIndex != null;
     return Column(
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: _buildOption(context, 0, answered)),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: _buildOption(context, 1, answered)),
-          ],
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _buildOption(context, 0, answered)),
+              const SizedBox(width: AppConstants.spacingS),
+              Expanded(child: _buildOption(context, 1, answered)),
+            ],
+          ),
         ),
         const SizedBox(height: AppConstants.spacingS),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: _buildOption(context, 2, answered)),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: _buildOption(context, 3, answered)),
-          ],
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _buildOption(context, 2, answered)),
+              const SizedBox(width: AppConstants.spacingS),
+              Expanded(child: _buildOption(context, 3, answered)),
+            ],
+          ),
         ),
       ],
     );
@@ -85,9 +89,15 @@ class ReviewOptionsGrid extends StatelessWidget {
           backgroundColor: bgColor,
           foregroundColor: textColor ?? Theme.of(context).colorScheme.onSurface,
           side: BorderSide(color: borderColor),
-          padding: const EdgeInsets.symmetric(
-            vertical: AppConstants.spacingM,
-            horizontal: AppConstants.spacingS,
+          minimumSize: const Size(0, 64),
+          // Left padding matches the button's effective border radius (half of
+          // minimumSize height = 64/2 = 32px) so text starts at the straight
+          // edge of the pill shape rather than inside the rounded cap.
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.spacingXXL,
+            AppConstants.spacingL,
+            AppConstants.spacingM,
+            AppConstants.spacingL,
           ),
           alignment: Alignment.centerLeft,
         ),
@@ -106,7 +116,7 @@ class ReviewOptionsGrid extends StatelessWidget {
             const SizedBox(width: AppConstants.spacingS),
             if (statusIcon != null) ...[
               Icon(statusIcon, color: textColor, size: _optionIconSize),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppConstants.spacingXS),
             ],
             Expanded(
               child: Text(

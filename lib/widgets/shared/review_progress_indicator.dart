@@ -23,22 +23,38 @@ class ReviewProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final statusColor = TermStatus.colorFor(termStatus);
+    final progress = totalCount > 0 ? (currentIndex + 1) / totalCount : 0.0;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppConstants.spacingM),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.reviewProgress(currentIndex + 1, totalCount),
-            style: TextStyle(color: AppConstants.subtitleColor),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l10n.reviewProgress(currentIndex + 1, totalCount),
+                style: TextStyle(color: AppConstants.subtitleColor),
+              ),
+              Container(
+                width: statusDotSize,
+                height: statusDotSize,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
           ),
-          Container(
-            width: statusDotSize,
-            height: statusDotSize,
-            decoration: BoxDecoration(
-              color: TermStatus.colorFor(termStatus),
-              shape: BoxShape.circle,
+          const SizedBox(height: AppConstants.spacingXS),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
+            child: LinearProgressIndicator(
+              value: progress,
+              color: statusColor,
+              minHeight: AppConstants.spacingXS,
             ),
           ),
         ],

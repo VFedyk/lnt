@@ -44,6 +44,7 @@ class AppConstants {
   static const double spacingM = 12.0;
   static const double spacingL = 16.0;
   static const double spacingXL = 24.0;
+  static const double spacingXXL = 32.0;
 
   // UI: Font sizes
   static const double fontSizeBadge = 9.0;

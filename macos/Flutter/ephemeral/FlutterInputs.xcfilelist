@@ -2185,6 +2185,7 @@
 /Users/v/Projects/lnt/lib/models/language.dart
 /Users/v/Projects/lnt/lib/models/review_card.dart
 /Users/v/Projects/lnt/lib/models/term.dart
+/Users/v/Projects/lnt/lib/models/term_sentence.dart
 /Users/v/Projects/lnt/lib/models/text_document.dart
 /Users/v/Projects/lnt/lib/models/translation_result.dart
 /Users/v/Projects/lnt/lib/models/word_token.dart
@@ -2196,10 +2197,12 @@
 /Users/v/Projects/lnt/lib/repositories/review_card_repository.dart
 /Users/v/Projects/lnt/lib/repositories/review_log_repository.dart
 /Users/v/Projects/lnt/lib/repositories/term_repository.dart
+/Users/v/Projects/lnt/lib/repositories/term_sentence_repository.dart
 /Users/v/Projects/lnt/lib/repositories/term_status_log_repository.dart
 /Users/v/Projects/lnt/lib/repositories/text_foreign_word_repository.dart
 /Users/v/Projects/lnt/lib/repositories/text_repository.dart
 /Users/v/Projects/lnt/lib/repositories/translation_repository.dart
+/Users/v/Projects/lnt/lib/screens/cloze_review_screen.dart
 /Users/v/Projects/lnt/lib/screens/dashboard_tab.dart
 /Users/v/Projects/lnt/lib/screens/dictionaries_screen.dart
 /Users/v/Projects/lnt/lib/screens/dictionary_webview_screen.dart
@@ -2290,8 +2293,10 @@
 /Users/v/Projects/lnt/lib/widgets/shared/base_term_search_dialog.dart
 /Users/v/Projects/lnt/lib/widgets/shared/handwriting_canvas.dart
 /Users/v/Projects/lnt/lib/widgets/shared/hanzi_writer_widget.dart
+/Users/v/Projects/lnt/lib/widgets/shared/review_options_grid.dart
 /Users/v/Projects/lnt/lib/widgets/shared/review_progress_indicator.dart
 /Users/v/Projects/lnt/lib/widgets/shared/review_progress_ring.dart
+/Users/v/Projects/lnt/lib/widgets/shared/review_rating_buttons.dart
 /Users/v/Projects/lnt/lib/widgets/shared/term_dialog.dart
 /Users/v/Projects/lnt/lib/widgets/shared/translation_mixin.dart
 /Users/v/Projects/lnt/lib/widgets/statistics/status_history_chart.dart

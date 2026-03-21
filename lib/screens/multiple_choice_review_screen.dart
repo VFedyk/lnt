@@ -16,8 +16,6 @@ import '../widgets/shared/review_progress_indicator.dart';
 enum MultipleChoiceDirection { sourceToTarget, targetToSource }
 
 abstract class _Constants {
-  static const double cardElevation = 4.0;
-  static const double cardBorderRadius = 16.0;
   static const double promptFontSize = 28.0;
   static const double romanizationFontSize = 16.0;
   static const double statusDotSize = 12.0;
@@ -316,86 +314,95 @@ class _MultipleChoiceReviewScreenState
     final prompt = _getPromptText(item);
     final answered = _selectedOptionIndex != null;
 
-    return Padding(
-      padding: const EdgeInsets.all(AppConstants.spacingM),
-      child: Column(
-        children: [
-          ReviewProgressIndicator(
-            currentIndex: _currentIndex,
-            totalCount: _dueItems.length,
-            termStatus: item.term.status,
-            statusDotSize: _Constants.statusDotSize,
-          ),
-          Expanded(
-            child: Card(
-              elevation: _Constants.cardElevation,
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(_Constants.cardBorderRadius),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppConstants.spacingXL),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: AppConstants.spacingL),
-                    Text(
-                      prompt,
-                      style: const TextStyle(
-                        fontSize: _Constants.promptFontSize,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (widget.direction ==
-                            MultipleChoiceDirection.sourceToTarget &&
-                        widget.language.languageCode.isNotEmpty)
-                      IconButton(
-                        icon: const Icon(Icons.volume_up),
-                        tooltip: l10n.pronounce,
-                        onPressed: () => ttsService.speak(
-                          item.term.lowerText,
-                          widget.language.languageCode,
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.spacingM),
+        child: Column(
+          children: [
+            ReviewProgressIndicator(
+              currentIndex: _currentIndex,
+              totalCount: _dueItems.length,
+              termStatus: item.term.status,
+              statusDotSize: _Constants.statusDotSize,
+            ),
+
+            // Center the entire question+answers unit as a group so the term
+            // and options stay visually connected on large screens.
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppConstants.spacingL,
                         ),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    if (widget.direction ==
-                            MultipleChoiceDirection.sourceToTarget &&
-                        item.term.romanization.isNotEmpty) ...[
-                      const SizedBox(height: AppConstants.spacingS),
-                      Text(
-                        item.term.romanization,
-                        style: TextStyle(
-                          fontSize: _Constants.romanizationFontSize,
-                          color: AppConstants.subtitleColor,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              prompt,
+                              style: const TextStyle(
+                                fontSize: _Constants.promptFontSize,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (widget.direction ==
+                                    MultipleChoiceDirection.sourceToTarget &&
+                                widget.language.languageCode.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(Icons.volume_up),
+                                tooltip: l10n.pronounce,
+                                onPressed: () => ttsService.speak(
+                                  item.term.lowerText,
+                                  widget.language.languageCode,
+                                ),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            if (widget.direction ==
+                                    MultipleChoiceDirection.sourceToTarget &&
+                                item.term.romanization.isNotEmpty) ...[
+                              const SizedBox(height: AppConstants.spacingS),
+                              Text(
+                                item.term.romanization,
+                                style: TextStyle(
+                                  fontSize: _Constants.romanizationFontSize,
+                                  color: AppConstants.subtitleColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ],
                         ),
-                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppConstants.spacingXL),
+                      ReviewOptionsGrid(
+                        options: _options,
+                        correctIndex: _correctOptionIndex,
+                        selectedIndex: _selectedOptionIndex,
+                        onSelect: _selectOption,
+                      ),
+                      const SizedBox(height: AppConstants.spacingM),
+                      // Always occupies space to prevent layout shift.
+                      Opacity(
+                        opacity: answered ? 1.0 : 0.0,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: answered ? _nextCard : null,
+                            child: Text(l10n.done),
+                          ),
+                        ),
                       ),
                     ],
-                    const SizedBox(height: AppConstants.spacingXL),
-                    ReviewOptionsGrid(
-                      options: _options,
-                      correctIndex: _correctOptionIndex,
-                      selectedIndex: _selectedOptionIndex,
-                      onSelect: _selectOption,
-                    ),
-                    const SizedBox(height: AppConstants.spacingL),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-          if (answered) ...[
-            const SizedBox(height: AppConstants.spacingM),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _nextCard,
-                child: Text(l10n.done),
-              ),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
