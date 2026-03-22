@@ -631,6 +631,7 @@
   "addTranslation": "Add translation",
   "translations": "Translations",
   "review": "Review",
+  "keyboardHintContinue": "Space or Enter to continue",
   "showAnswer": "Show Answer",
   "rateAgain": "Again",
   "rateHard": "Hard",

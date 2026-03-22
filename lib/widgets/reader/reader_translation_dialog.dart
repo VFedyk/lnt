@@ -13,7 +13,6 @@ class ReaderTranslationDialog extends StatelessWidget {
   final AppLocalizations l10n;
   final VoidCallback onEdit;
   final VoidCallback onPronounce;
-  final double editIconSize;
 
   const ReaderTranslationDialog({
     super.key,
@@ -25,15 +24,15 @@ class ReaderTranslationDialog extends StatelessWidget {
     required this.l10n,
     required this.onEdit,
     required this.onPronounce,
-    required this.editIconSize,
   });
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: AppConstants.dialogWidth),
-        child: Padding(
+      child: IntrinsicWidth(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 280, maxWidth: 480),
+          child: Padding(
           padding: const EdgeInsets.all(AppConstants.spacingL),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -56,6 +55,12 @@ class ReaderTranslationDialog extends StatelessWidget {
                       onPressed: onPronounce,
                       visualDensity: VisualDensity.compact,
                     ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: l10n.edit,
+                    onPressed: onEdit,
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ],
               ),
               if (term.romanization.isNotEmpty) ...[
@@ -119,17 +124,9 @@ class ReaderTranslationDialog extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: AppConstants.spacingL),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: onEdit,
-                  icon: Icon(Icons.edit, size: editIconSize),
-                  label: Text(l10n.edit),
-                ),
-              ),
             ],
           ),
+        ),
         ),
       ),
     );

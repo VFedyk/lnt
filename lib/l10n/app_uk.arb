@@ -356,6 +356,7 @@
   "addTranslation": "Додати переклад",
   "translations": "Переклади",
   "review": "Повторення",
+  "keyboardHintContinue": "Пробіл або Enter для продовження",
   "showAnswer": "Показати відповідь",
   "rateAgain": "Знову",
   "rateHard": "Складно",

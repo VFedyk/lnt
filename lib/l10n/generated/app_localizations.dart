@@ -2234,6 +2234,12 @@ abstract class AppLocalizations {
   /// **'Review'**
   String get review;
 
+  /// No description provided for @keyboardHintContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Space or Enter to continue'**
+  String get keyboardHintContinue;
+
   /// No description provided for @showAnswer.
   ///
   /// In en, this message translates to:

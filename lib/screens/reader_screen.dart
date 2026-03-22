@@ -186,7 +186,6 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         onPronounce: () =>
             ttsService.speak(term.lowerText, ctrl.language.languageCode),
         onEdit: () => Navigator.pop(context, true),
-        editIconSize: _ReaderScreenConstants.editIconSize,
       ),
     );
   }

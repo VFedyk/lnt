@@ -1183,6 +1183,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get review => 'Повторення';
 
   @override
+  String get keyboardHintContinue => 'Пробіл або Enter для продовження';
+
+  @override
   String get showAnswer => 'Показати відповідь';
 
   @override

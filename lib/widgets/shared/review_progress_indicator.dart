@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../models/term.dart';
+import '../../utils/app_theme.dart';
 import '../../utils/constants.dart';
 
 /// A reusable progress indicator for review screens
@@ -24,6 +25,7 @@ class ReviewProgressIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final statusColor = TermStatus.colorFor(termStatus);
+    final progressColor = context.appColors.success;
     final progress = totalCount > 0 ? (currentIndex + 1) / totalCount : 0.0;
 
     return Padding(
@@ -53,7 +55,7 @@ class ReviewProgressIndicator extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
             child: LinearProgressIndicator(
               value: progress,
-              color: statusColor,
+              color: progressColor,
               minHeight: AppConstants.spacingXS,
             ),
           ),

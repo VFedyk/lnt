@@ -9,6 +9,7 @@ import '../models/language.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
+import '../utils/helpers.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/shared/review_options_grid.dart';
 import '../widgets/shared/review_progress_indicator.dart';
@@ -191,7 +192,9 @@ class _MultipleChoiceReviewScreenState
               widget.direction == MultipleChoiceDirection.sourceToTarget
                   ? e.translations.first.meaning
                   : e.term.text;
-          return answer.trim().toLowerCase() != correct.trim().toLowerCase();
+          final trimmed = answer.trim();
+          return trimmed.isNotEmpty &&
+              trimmed.toLowerCase() != correct.trim().toLowerCase();
         })
         .toList()
       ..shuffle(_random);
@@ -384,16 +387,30 @@ class _MultipleChoiceReviewScreenState
                         selectedIndex: _selectedOptionIndex,
                         onSelect: _selectOption,
                       ),
-                      const SizedBox(height: AppConstants.spacingM),
+                      const SizedBox(height: AppConstants.spacingXXL),
                       // Always occupies space to prevent layout shift.
                       Opacity(
                         opacity: answered ? 1.0 : 0.0,
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: answered ? _nextCard : null,
-                            child: Text(l10n.done),
-                          ),
+                        child: Column(
+                          children: [
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: PlatformHelper.isDesktop ? 240 : double.infinity,
+                              ),
+                              child: ElevatedButton(
+                                onPressed: answered ? _nextCard : null,
+                                child: Text(l10n.done),
+                              ),
+                            ),
+                            const SizedBox(height: AppConstants.spacingXS),
+                            Text(
+                              l10n.keyboardHintContinue,
+                              style: TextStyle(
+                                fontSize: AppConstants.fontSizeCaption,
+                                color: AppConstants.subtitleColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

@@ -1178,6 +1178,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get review => 'Review';
 
   @override
+  String get keyboardHintContinue => 'Space or Enter to continue';
+
+  @override
   String get showAnswer => 'Show Answer';
 
   @override
