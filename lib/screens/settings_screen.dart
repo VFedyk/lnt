@@ -183,18 +183,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildBackupSection(SettingsController ctrl) {
     final l10n = AppLocalizations.of(context);
     final busy = ctrl.isBackingUp || ctrl.isRestoring;
-    final backupLabel = ctrl.icloudLastBackup != null
-        ? l10n.lastBackup(DateHelper.formatDateTime(ctrl.icloudLastBackup!))
+    final deviceLabel = ctrl.icloudLocalDate != null
+        ? l10n.lastBackupFromDevice(DateHelper.formatDateTime(ctrl.icloudLocalDate!))
+        : l10n.neverBackedUpFromDevice;
+    final remoteLabel = ctrl.icloudRemoteDate != null
+        ? l10n.latestInICloud(DateHelper.formatDateTime(ctrl.icloudRemoteDate!))
         : l10n.noBackupYet;
+    final restoreLabel = ctrl.lastRestoreDate != null
+        ? l10n.lastRestore(DateHelper.formatDateTime(ctrl.lastRestoreDate!))
+        : l10n.noRestoreYet;
 
     return BackupSection(
       l10n: l10n,
       isApplePlatform: PlatformHelper.isApple,
       busy: busy,
+      isCheckingBackup: ctrl.isCheckingBackup,
       restoreProgress: ctrl.restoreProgress,
-      iCloudBackupLabel: backupLabel,
+      iCloudDeviceBackupLabel: deviceLabel,
+      iCloudRemoteBackupLabel: remoteLabel,
+      lastRestoreLabel: restoreLabel,
       onBackupToICloud: () => _backupToICloud(ctrl),
       onRestoreFromICloud: () => _restoreFromICloud(ctrl),
+      onRecheckICloudBackup: () => ctrl.recheckICloudBackup(),
     );
   }
 

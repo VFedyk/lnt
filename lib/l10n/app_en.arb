@@ -680,7 +680,33 @@
       }
     }
   },
-  "noBackupYet": "No backup yet",
+  "noBackupYet": "No backup found in iCloud",
+  "lastBackupFromDevice": "From this device: {date}",
+  "@lastBackupFromDevice": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "neverBackedUpFromDevice": "Never backed up from this device",
+  "latestInICloud": "In iCloud: {date}",
+  "@latestInICloud": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "lastRestore": "Last restored: {date}",
+  "@lastRestore": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noRestoreYet": "Never restored on this device",
   "backupSuccess": "Backup completed successfully",
   "restoreSuccess": "Restore completed successfully.",
   "restoreConfirmTitle": "Restore Backup?",

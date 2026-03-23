@@ -11,10 +11,15 @@ class SettingsController extends BaseController {
   DeepLUsage? usage;
   bool isLoadingUsage = false;
   String? dbPath;
-  DateTime? icloudLastBackup;
+  /// Date of the backup file currently in iCloud (remote metadata).
+  DateTime? icloudRemoteDate;
+  /// Date this device last created a backup (stored locally).
+  DateTime? icloudLocalDate;
+  bool isCheckingBackup = false;
   bool isBackingUp = false;
   bool isRestoring = false;
   double? restoreProgress;
+  DateTime? lastRestoreDate;
 
   // Initial values for seeding TextEditingControllers in the screen.
   String initialApiKey = '';
@@ -42,7 +47,9 @@ class SettingsController extends BaseController {
       path = db.currentDbPath;
     }
 
-    final icloudBackup = await backupService.getICloudBackupDate();
+    final icloudRemote = await backupService.getICloudBackupDate();
+    final icloudLocal = await settings.getICloudLastBackup();
+    final lastRestore = await settings.getLastRestore();
 
     initialApiKey = apiKey ?? '';
     initialLtUrl = ltUrl ?? '';
@@ -54,7 +61,9 @@ class SettingsController extends BaseController {
     isApiFree = isFree;
     targetLang = tgtLang;
     dbPath = path;
-    icloudLastBackup = icloudBackup;
+    icloudRemoteDate = icloudRemote;
+    icloudLocalDate = icloudLocal;
+    lastRestoreDate = lastRestore;
     isLoading = false;
     safeNotify();
 
@@ -98,7 +107,10 @@ class SettingsController extends BaseController {
     safeNotify();
     try {
       await backupService.backupToICloud();
-      icloudLastBackup = DateTime.now();
+      final now = DateTime.now();
+      icloudRemoteDate = now;
+      icloudLocalDate = now;
+      await settings.setICloudLastBackup(now);
       isBackingUp = false;
       safeNotify();
       return true;
@@ -121,6 +133,9 @@ class SettingsController extends BaseController {
           safeNotify();
         },
       );
+      final now = DateTime.now();
+      lastRestoreDate = now;
+      await settings.setLastRestore(now);
       isRestoring = false;
       restoreProgress = null;
       safeNotify();
@@ -130,6 +145,17 @@ class SettingsController extends BaseController {
       restoreProgress = null;
       safeNotify();
       rethrow;
+    }
+  }
+
+  Future<void> recheckICloudBackup() async {
+    isCheckingBackup = true;
+    safeNotify();
+    try {
+      icloudRemoteDate = await backupService.getICloudBackupDate();
+    } finally {
+      isCheckingBackup = false;
+      safeNotify();
     }
   }
 

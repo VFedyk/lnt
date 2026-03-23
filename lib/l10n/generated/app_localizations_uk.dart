@@ -1266,7 +1266,28 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get noBackupYet => 'Резервної копії ще немає';
+  String get noBackupYet => 'У iCloud резервну копію не знайдено';
+
+  @override
+  String lastBackupFromDevice(String date) {
+    return 'З цього пристрою: $date';
+  }
+
+  @override
+  String get neverBackedUpFromDevice => 'З цього пристрою ще не створювалось';
+
+  @override
+  String latestInICloud(String date) {
+    return 'У iCloud: $date';
+  }
+
+  @override
+  String lastRestore(String date) {
+    return 'Відновлено: $date';
+  }
+
+  @override
+  String get noRestoreYet => 'Ще не відновлювалось на цьому пристрої';
 
   @override
   String get backupSuccess => 'Резервне копіювання завершено';

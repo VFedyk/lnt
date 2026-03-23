@@ -43,6 +43,7 @@ class SettingsService {
   // Backup timestamps
   static const String _googleDriveLastBackupKey = 'google_drive_last_backup';
   static const String _icloudLastBackupKey = 'icloud_last_backup';
+  static const String _lastRestoreKey = 'last_restore';
 
   Future<String?> getDeepLApiKey() async {
     final prefs = await SharedPreferences.getInstance();
@@ -242,6 +243,17 @@ class SettingsService {
   Future<void> setICloudLastBackup(DateTime date) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_icloudLastBackupKey, date.millisecondsSinceEpoch);
+  }
+
+  Future<DateTime?> getLastRestore() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ms = prefs.getInt(_lastRestoreKey);
+    return ms != null ? DateTime.fromMillisecondsSinceEpoch(ms) : null;
+  }
+
+  Future<void> setLastRestore(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_lastRestoreKey, date.millisecondsSinceEpoch);
   }
 
   Future<void> saveWindowState({

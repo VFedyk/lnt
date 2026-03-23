@@ -2387,8 +2387,38 @@ abstract class AppLocalizations {
   /// No description provided for @noBackupYet.
   ///
   /// In en, this message translates to:
-  /// **'No backup yet'**
+  /// **'No backup found in iCloud'**
   String get noBackupYet;
+
+  /// No description provided for @lastBackupFromDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'From this device: {date}'**
+  String lastBackupFromDevice(String date);
+
+  /// No description provided for @neverBackedUpFromDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Never backed up from this device'**
+  String get neverBackedUpFromDevice;
+
+  /// No description provided for @latestInICloud.
+  ///
+  /// In en, this message translates to:
+  /// **'In iCloud: {date}'**
+  String latestInICloud(String date);
+
+  /// No description provided for @lastRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Last restored: {date}'**
+  String lastRestore(String date);
+
+  /// No description provided for @noRestoreYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Never restored on this device'**
+  String get noRestoreYet;
 
   /// No description provided for @backupSuccess.
   ///

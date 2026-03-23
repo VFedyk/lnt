@@ -1261,7 +1261,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get noBackupYet => 'No backup yet';
+  String get noBackupYet => 'No backup found in iCloud';
+
+  @override
+  String lastBackupFromDevice(String date) {
+    return 'From this device: $date';
+  }
+
+  @override
+  String get neverBackedUpFromDevice => 'Never backed up from this device';
+
+  @override
+  String latestInICloud(String date) {
+    return 'In iCloud: $date';
+  }
+
+  @override
+  String lastRestore(String date) {
+    return 'Last restored: $date';
+  }
+
+  @override
+  String get noRestoreYet => 'Never restored on this device';
 
   @override
   String get backupSuccess => 'Backup completed successfully';

@@ -7,24 +7,37 @@ class BackupSection extends StatelessWidget {
   final AppLocalizations l10n;
   final bool isApplePlatform;
   final bool busy;
+  final bool isCheckingBackup;
   final double? restoreProgress;
-  final String iCloudBackupLabel;
+  final String iCloudDeviceBackupLabel;
+  final String iCloudRemoteBackupLabel;
+  final String lastRestoreLabel;
   final VoidCallback onBackupToICloud;
   final VoidCallback onRestoreFromICloud;
+  final VoidCallback onRecheckICloudBackup;
 
   const BackupSection({
     super.key,
     required this.l10n,
     required this.isApplePlatform,
     required this.busy,
-    required this.iCloudBackupLabel,
+    required this.isCheckingBackup,
+    required this.iCloudDeviceBackupLabel,
+    required this.iCloudRemoteBackupLabel,
+    required this.lastRestoreLabel,
     required this.onBackupToICloud,
     required this.onRestoreFromICloud,
+    required this.onRecheckICloudBackup,
     this.restoreProgress,
   });
 
   @override
   Widget build(BuildContext context) {
+    final captionStyle = TextStyle(
+      fontSize: AppConstants.fontSizeCaption,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.spacingL),
@@ -59,13 +72,35 @@ class BackupSection extends StatelessWidget {
               const SizedBox(height: AppConstants.spacingL),
               Text('iCloud', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: AppConstants.spacingXS),
-              Text(
-                iCloudBackupLabel,
-                style: TextStyle(
-                  fontSize: AppConstants.fontSizeCaption,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              Text(iCloudDeviceBackupLabel, style: captionStyle),
+              const SizedBox(height: AppConstants.spacingXS),
+              // Remote backup row with recheck button
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(iCloudRemoteBackupLabel, style: captionStyle),
+                  ),
+                  const SizedBox(width: AppConstants.spacingS),
+                  SizedBox(
+                    width: AppConstants.progressIndicatorSizeS,
+                    height: AppConstants.progressIndicatorSizeS,
+                    child: isCheckingBackup
+                        ? const CircularProgressIndicator(
+                            strokeWidth: AppConstants.progressStrokeWidth,
+                          )
+                        : IconButton.outlined(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            iconSize: AppConstants.fontSizeBody,
+                            onPressed: busy ? null : onRecheckICloudBackup,
+                            icon: const Icon(Icons.refresh),
+                            tooltip: l10n.refresh,
+                          ),
+                  ),
+                ],
               ),
+              const SizedBox(height: AppConstants.spacingXS),
+              Text(lastRestoreLabel, style: captionStyle),
               const SizedBox(height: AppConstants.spacingS),
               Wrap(
                 spacing: AppConstants.spacingS,
