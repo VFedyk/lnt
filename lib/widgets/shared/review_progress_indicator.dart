@@ -12,6 +12,7 @@ class ReviewProgressIndicator extends StatelessWidget {
   final int totalCount;
   final int termStatus;
   final double statusDotSize;
+  final bool showStatusDot;
 
   const ReviewProgressIndicator({
     super.key,
@@ -19,6 +20,7 @@ class ReviewProgressIndicator extends StatelessWidget {
     required this.totalCount,
     required this.termStatus,
     this.statusDotSize = 12.0,
+    this.showStatusDot = true,
   });
 
   @override
@@ -40,14 +42,17 @@ class ReviewProgressIndicator extends StatelessWidget {
                 l10n.reviewProgress(currentIndex + 1, totalCount),
                 style: TextStyle(color: AppConstants.subtitleColor),
               ),
-              Container(
-                width: statusDotSize,
-                height: statusDotSize,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
+              if (showStatusDot)
+                Container(
+                  width: statusDotSize,
+                  height: statusDotSize,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    shape: BoxShape.circle,
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
             ],
           ),
           const SizedBox(height: AppConstants.spacingXS),

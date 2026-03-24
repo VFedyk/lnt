@@ -316,6 +316,9 @@ class _MultipleChoiceReviewScreenState
     final item = _dueItems[_currentIndex];
     final prompt = _getPromptText(item);
     final answered = _selectedOptionIndex != null;
+    final statusColor = TermStatus.colorFor(item.term.status);
+    final hasAudio = widget.direction == MultipleChoiceDirection.sourceToTarget &&
+        widget.language.languageCode.isNotEmpty;
 
     return SafeArea(
       child: Padding(
@@ -327,24 +330,35 @@ class _MultipleChoiceReviewScreenState
               totalCount: _dueItems.length,
               termStatus: item.term.status,
               statusDotSize: _Constants.statusDotSize,
+              showStatusDot: false,
             ),
 
-            // Center the entire question+answers unit as a group so the term
-            // and options stay visually connected on large screens.
+            // Word centered in the space between progress bar and options.
             Expanded(
               child: Center(
-                child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.spacingL,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppConstants.spacingL,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
+                      // Status dot + word + audio on one line.
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: _Constants.statusDotSize,
+                            height: _Constants.statusDotSize,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: AppConstants.spacingS),
+                          Flexible(
+                            child: Text(
                               prompt,
                               style: const TextStyle(
                                 fontSize: _Constants.promptFontSize,
@@ -352,65 +366,75 @@ class _MultipleChoiceReviewScreenState
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            if (widget.direction ==
-                                    MultipleChoiceDirection.sourceToTarget &&
-                                widget.language.languageCode.isNotEmpty)
-                              IconButton(
-                                icon: const Icon(Icons.volume_up),
-                                tooltip: l10n.pronounce,
-                                onPressed: () => ttsService.speak(
-                                  item.term.lowerText,
-                                  widget.language.languageCode,
-                                ),
-                                visualDensity: VisualDensity.compact,
+                          ),
+                          if (hasAudio) ...[
+                            const SizedBox(width: AppConstants.spacingXS),
+                            IconButton(
+                              icon: const Icon(Icons.volume_up),
+                              tooltip: l10n.pronounce,
+                              onPressed: () => ttsService.speak(
+                                item.term.lowerText,
+                                widget.language.languageCode,
                               ),
-                            if (widget.direction ==
-                                    MultipleChoiceDirection.sourceToTarget &&
-                                item.term.romanization.isNotEmpty) ...[
-                              const SizedBox(height: AppConstants.spacingS),
-                              Text(
-                                item.term.romanization,
-                                style: TextStyle(
-                                  fontSize: _Constants.romanizationFontSize,
-                                  color: AppConstants.subtitleColor,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                              visualDensity: VisualDensity.compact,
+                            ),
                           ],
+                        ],
+                      ),
+                      if (widget.direction ==
+                              MultipleChoiceDirection.sourceToTarget &&
+                          item.term.romanization.isNotEmpty) ...[
+                        const SizedBox(height: AppConstants.spacingS),
+                        Text(
+                          item.term.romanization,
+                          style: TextStyle(
+                            fontSize: _Constants.romanizationFontSize,
+                            color: AppConstants.subtitleColor,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Options at the vertical midpoint.
+            ReviewOptionsGrid(
+              options: _options,
+              correctIndex: _correctOptionIndex,
+              selectedIndex: _selectedOptionIndex,
+              onSelect: _selectOption,
+            ),
+
+            // Done button centered in the space between options and bottom edge.
+            Expanded(
+              child: Center(
+                child: Opacity(
+                  opacity: answered ? 1.0 : 0.0,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minWidth: 200,
+                          maxWidth: PlatformHelper.isDesktop ? 320 : double.infinity,
+                        ),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(0, 52),
+                          ),
+                          onPressed: answered ? _nextCard : null,
+                          child: Text(l10n.done),
                         ),
                       ),
-                      const SizedBox(height: AppConstants.spacingXL),
-                      ReviewOptionsGrid(
-                        options: _options,
-                        correctIndex: _correctOptionIndex,
-                        selectedIndex: _selectedOptionIndex,
-                        onSelect: _selectOption,
-                      ),
-                      const SizedBox(height: AppConstants.spacingXXL),
-                      // Always occupies space to prevent layout shift.
-                      Opacity(
-                        opacity: answered ? 1.0 : 0.0,
-                        child: Column(
-                          children: [
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: PlatformHelper.isDesktop ? 240 : double.infinity,
-                              ),
-                              child: ElevatedButton(
-                                onPressed: answered ? _nextCard : null,
-                                child: Text(l10n.done),
-                              ),
-                            ),
-                            const SizedBox(height: AppConstants.spacingXS),
-                            Text(
-                              l10n.keyboardHintContinue,
-                              style: TextStyle(
-                                fontSize: AppConstants.fontSizeCaption,
-                                color: AppConstants.subtitleColor,
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: AppConstants.spacingXS),
+                      Text(
+                        l10n.keyboardHintContinue,
+                        style: TextStyle(
+                          fontSize: AppConstants.fontSizeCaption,
+                          color: AppConstants.subtitleColor,
                         ),
                       ),
                     ],
