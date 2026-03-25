@@ -31,7 +31,6 @@ class ParagraphRichText extends StatelessWidget {
   static const double _borderAlpha = 0.5;
   static const Duration _tooltipWait = Duration(milliseconds: 300);
 
-  static const Color _selectedText = Colors.black87;
   static const Color _transparent = Colors.transparent;
 
   static final _leadingPunctuation = RegExp(r'^[\p{P}\p{S}]+', unicode: true);
@@ -58,6 +57,9 @@ class ParagraphRichText extends StatelessWidget {
     final appColors = context.appColors;
     final selectionBg = appColors.readerSelection;
     final selectionBorder = appColors.readerSelectionBorder;
+    final selectionText = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : Colors.black87;
     final otherLanguageColor = appColors.readerOtherLanguage;
     final spans = <InlineSpan>[];
     final textStyle = TextStyle(fontSize: fontSize, height: _lineHeight);
@@ -126,7 +128,7 @@ class ParagraphRichText extends StatelessWidget {
 
       Color? textColor;
       if (isSelected) {
-        textColor = _selectedText;
+        textColor = selectionText;
       } else if (isOtherLanguage) {
         textColor = otherLanguageColor;
       }

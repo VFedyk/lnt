@@ -144,8 +144,11 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
                     vertical: AppConstants.spacingS,
                   ),
                   child: ListTile(
-                    leading: CircleAvatar(
-                      child: Text(lang.name[0].toUpperCase()),
+                    leading: Text(
+                      lang.flagEmoji.isNotEmpty
+                          ? lang.flagEmoji
+                          : lang.name[0].toUpperCase(),
+                      style: const TextStyle(fontSize: 28),
                     ),
                     title: Text(lang.name),
                     subtitle: FutureBuilder<int>(
