@@ -52,7 +52,7 @@ flutter build macos          # Build macOS
 - **Service locator**: `setupServiceLocator()` in `main.dart` registers all services. Access via top-level getters: `db`, `settings`, `backupService`, `reviewService`, `deepLService`, `libreTranslateService`, `dataChanges`
 - **Repository pattern**: `db.terms.getAll()` etc.
 - Repositories use lazy `() => database` callback — DB can be closed and reopened
-- **Reactive data layer**: `DataChangeNotifier` (singleton via get_it) holds per-domain `DomainNotifier` instances (`dataChanges.terms`, `.texts`, `.languages`, `.collections`, `.reviewCards`). Repositories call `notifyChange()` after mutations; screens/controllers `addListener` on relevant domains and auto-reload. Use `dataChanges.notifyAll()` for bulk invalidation (e.g. backup restore).
+- **Reactive data layer**: `DataChangeNotifier` (singleton via get_it) holds per-domain `DomainNotifier` instances (`dataChanges.terms`, `.texts`, `.languages`, `.collections`, `.reviewCards`, `.dictionaries`, `.termSentences`, `.radicalProgress`). Repositories call `notifyChange()` after mutations; screens/controllers `addListener` on relevant domains and auto-reload. Use `dataChanges.notifyAll()` for bulk invalidation (e.g. backup restore).
 - **Localization**: Always add strings to both `app_en.arb` and `app_uk.arb`, then run `flutter gen-l10n`
 - **Language utilities** (`lib/utils/language_utils.dart`): `localizedLangName(l10n, isoCode)` returns a locale-aware display name; `langSortKey(s, locale)` returns a sort key that correctly orders Ukrainian special letters (Є, І, Ї, Ґ)
 - **Translation provider lookups**: Use `DeepLService.deeplCode(isoCode)` and `LibreTranslateService.libreCode(isoCode)` (ISO 639-1, case-insensitive) — **not** name-based. `TranslationMixin` requires `String get languageCode` in addition to `languageName`
@@ -89,10 +89,11 @@ flutter build macos          # Build macOS
 - Database migrations in `database_migrations.dart` with version numbering
 - EPUB parsing via `epub_pro` package (camelCase API)
 - **Screen controllers**: `SettingsController`, `LibraryController`, `ReaderController` — each extends `ChangeNotifier`, provided via `ChangeNotifierProvider` at screen level. Controllers own state and business logic; screens are thin UI layers that orchestrate dialogs/navigation. Controllers use `_isDisposed` + `_safeNotify()` for async safety (no `BuildContext` dependency).
+- **SettingsController backup state**: tracks `icloudRemoteDate` (date of file in iCloud), `icloudLocalDate` (last backup from this device), `lastRestoreDate`, `isCheckingBackup`. Call `recheckICloudBackup()` to refresh the remote date.
 
 ## Testing
 
-- **Command**: `flutter test` — runs all 90 tests in ~2-3 seconds
+- **Command**: `flutter test` — runs all 107 tests in ~2-3 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
 - **Verification**: Use exit code pattern to avoid parsing verbose output:
   ```bash
