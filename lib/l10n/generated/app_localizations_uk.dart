@@ -704,6 +704,54 @@ class AppLocalizationsUk extends AppLocalizations {
   String get langVietnamese => 'В\'єтнамська';
 
   @override
+  String get langCantonese => 'Китайська (кантонська)';
+
+  @override
+  String get langLatin => 'Латинська';
+
+  @override
+  String get langAncientGreek => 'Давньогрецька';
+
+  @override
+  String get langSanskrit => 'Санскрит';
+
+  @override
+  String get langOldEnglish => 'Давньоанглійська';
+
+  @override
+  String get langOldNorse => 'Давньоскандинавська';
+
+  @override
+  String get langLiteraryChinese => 'Класична китайська';
+
+  @override
+  String get langEsperanto => 'Есперанто';
+
+  @override
+  String get langKlingon => 'Клінґонська';
+
+  @override
+  String get langGothic => 'Готська';
+
+  @override
+  String get langSumerian => 'Шумерська';
+
+  @override
+  String get langOldChurchSlavonic => 'Церковнослов\'янська';
+
+  @override
+  String get langQuenya => 'Квенья';
+
+  @override
+  String get langInterlingua => 'Інтерлінгва';
+
+  @override
+  String get langLojban => 'Ложбан';
+
+  @override
+  String get langSindarin => 'Синдарин';
+
+  @override
   String get languageNameLabel => 'Назва мови';
 
   @override

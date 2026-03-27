@@ -702,6 +702,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get langVietnamese => 'Vietnamese';
 
   @override
+  String get langCantonese => 'Chinese (Cantonese)';
+
+  @override
+  String get langLatin => 'Latin';
+
+  @override
+  String get langAncientGreek => 'Ancient Greek';
+
+  @override
+  String get langSanskrit => 'Sanskrit';
+
+  @override
+  String get langOldEnglish => 'Old English';
+
+  @override
+  String get langOldNorse => 'Old Norse';
+
+  @override
+  String get langLiteraryChinese => 'Literary Chinese';
+
+  @override
+  String get langEsperanto => 'Esperanto';
+
+  @override
+  String get langKlingon => 'Klingon';
+
+  @override
+  String get langGothic => 'Gothic';
+
+  @override
+  String get langSumerian => 'Sumerian';
+
+  @override
+  String get langOldChurchSlavonic => 'Old Church Slavonic';
+
+  @override
+  String get langQuenya => 'Quenya';
+
+  @override
+  String get langInterlingua => 'Interlingua';
+
+  @override
+  String get langLojban => 'Lojban';
+
+  @override
+  String get langSindarin => 'Sindarin';
+
+  @override
   String get languageNameLabel => 'Language Name';
 
   @override

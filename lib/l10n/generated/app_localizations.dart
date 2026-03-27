@@ -1364,6 +1364,102 @@ abstract class AppLocalizations {
   /// **'Vietnamese'**
   String get langVietnamese;
 
+  /// No description provided for @langCantonese.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese (Cantonese)'**
+  String get langCantonese;
+
+  /// No description provided for @langLatin.
+  ///
+  /// In en, this message translates to:
+  /// **'Latin'**
+  String get langLatin;
+
+  /// No description provided for @langAncientGreek.
+  ///
+  /// In en, this message translates to:
+  /// **'Ancient Greek'**
+  String get langAncientGreek;
+
+  /// No description provided for @langSanskrit.
+  ///
+  /// In en, this message translates to:
+  /// **'Sanskrit'**
+  String get langSanskrit;
+
+  /// No description provided for @langOldEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'Old English'**
+  String get langOldEnglish;
+
+  /// No description provided for @langOldNorse.
+  ///
+  /// In en, this message translates to:
+  /// **'Old Norse'**
+  String get langOldNorse;
+
+  /// No description provided for @langLiteraryChinese.
+  ///
+  /// In en, this message translates to:
+  /// **'Literary Chinese'**
+  String get langLiteraryChinese;
+
+  /// No description provided for @langEsperanto.
+  ///
+  /// In en, this message translates to:
+  /// **'Esperanto'**
+  String get langEsperanto;
+
+  /// No description provided for @langKlingon.
+  ///
+  /// In en, this message translates to:
+  /// **'Klingon'**
+  String get langKlingon;
+
+  /// No description provided for @langGothic.
+  ///
+  /// In en, this message translates to:
+  /// **'Gothic'**
+  String get langGothic;
+
+  /// No description provided for @langSumerian.
+  ///
+  /// In en, this message translates to:
+  /// **'Sumerian'**
+  String get langSumerian;
+
+  /// No description provided for @langOldChurchSlavonic.
+  ///
+  /// In en, this message translates to:
+  /// **'Old Church Slavonic'**
+  String get langOldChurchSlavonic;
+
+  /// No description provided for @langQuenya.
+  ///
+  /// In en, this message translates to:
+  /// **'Quenya'**
+  String get langQuenya;
+
+  /// No description provided for @langInterlingua.
+  ///
+  /// In en, this message translates to:
+  /// **'Interlingua'**
+  String get langInterlingua;
+
+  /// No description provided for @langLojban.
+  ///
+  /// In en, this message translates to:
+  /// **'Lojban'**
+  String get langLojban;
+
+  /// No description provided for @langSindarin.
+  ///
+  /// In en, this message translates to:
+  /// **'Sindarin'**
+  String get langSindarin;
+
   /// No description provided for @languageNameLabel.
   ///
   /// In en, this message translates to:

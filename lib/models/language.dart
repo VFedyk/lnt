@@ -99,6 +99,15 @@ class Language {
       'uk': 'UA',
       'vi': 'VN',
       'zh': 'CN',
+      'yue': 'HK',
+      'la': 'IT',
+      'grc': 'GR',
+      'sa': 'IN',
+      'ang': 'GB',
+      'non': 'IS',
+      'got': 'SE',
+      'sux': 'IQ',
+      'cu': 'BG',
     };
     final country = langToCountry[languageCode.toLowerCase()];
     if (country == null || country.length != 2) return '';

@@ -28,6 +28,9 @@ class _LangPreset {
       'lv': 'LV', 'nb': 'NO', 'nl': 'NL', 'pl': 'PL', 'pt': 'PT',
       'ro': 'RO', 'ru': 'RU', 'sk': 'SK', 'sl': 'SI', 'sv': 'SE',
       'th': 'TH', 'tr': 'TR', 'uk': 'UA', 'vi': 'VN', 'zh': 'CN',
+      'yue': 'HK',
+      'la': 'IT', 'grc': 'GR', 'sa': 'IN', 'ang': 'GB', 'non': 'IS',
+      'got': 'SE', 'sux': 'IQ', 'cu': 'BG',
     };
     final country = langToCountry[code];
     if (country == null) return '';
@@ -41,6 +44,7 @@ const _kPresets = <_LangPreset>[
   _LangPreset('Arabic', 'ar', rightToLeft: true),
   _LangPreset('Bulgarian', 'bg'),
   _LangPreset('Chinese (Mandarin)', 'zh', splitByCharacter: true, useWordSegmentation: true),
+  _LangPreset('Chinese (Cantonese)', 'yue', splitByCharacter: true),
   _LangPreset('Czech', 'cs'),
   _LangPreset('Danish', 'da'),
   _LangPreset('Dutch', 'nl'),
@@ -73,6 +77,23 @@ const _kPresets = <_LangPreset>[
   _LangPreset('Turkish', 'tr'),
   _LangPreset('Ukrainian', 'uk'),
   _LangPreset('Vietnamese', 'vi'),
+  // Classical / ancient languages
+  _LangPreset('Latin', 'la'),
+  _LangPreset('Ancient Greek', 'grc'),
+  _LangPreset('Sanskrit', 'sa'),
+  _LangPreset('Old English', 'ang'),
+  _LangPreset('Old Norse', 'non'),
+  _LangPreset('Literary Chinese', 'lzh', splitByCharacter: true),
+  _LangPreset('Gothic', 'got'),
+  _LangPreset('Sumerian', 'sux'),
+  _LangPreset('Old Church Slavonic', 'cu'),
+  // Constructed / fictional
+  _LangPreset('Esperanto', 'eo'),
+  _LangPreset('Interlingua', 'ia'),
+  _LangPreset('Lojban', 'jbo'),
+  _LangPreset('Klingon', 'tlh'),
+  _LangPreset('Quenya', 'qya'),
+  _LangPreset('Sindarin', 'sjn'),
 ];
 
 class LanguageDialog extends StatefulWidget {
