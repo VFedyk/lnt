@@ -22,7 +22,7 @@ class LibraryGridContent extends StatelessWidget {
   final AppLocalizations l10n;
   final List<Collection> collections;
   final List<TextDocument> texts;
-  final Map<int, int> unknownCounts;
+  final Map<String, int> unknownCounts;
   final bool isInsideCollection;
   final ValueChanged<Collection> onOpenCollection;
   final ValueChanged<Collection> onShowCollectionOptions;

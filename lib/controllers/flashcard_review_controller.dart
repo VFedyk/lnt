@@ -116,7 +116,7 @@ class FlashcardReviewController extends BaseController {
       // Fallback to legacy translation field
       if (translations.isEmpty && term.translation.isNotEmpty) {
         translations = [
-          Translation(termId: term.id ?? 0, meaning: term.translation),
+          Translation(termId: term.id ?? '', meaning: term.translation),
         ];
       }
 

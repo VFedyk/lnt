@@ -3,7 +3,7 @@ import 'base_repository.dart';
 class ReviewLogRepository extends BaseRepository {
   ReviewLogRepository(super.getDatabase);
 
-  Future<int> create(int termId, String logDataJson, DateTime reviewedAt) async {
+  Future<int> create(String termId, String logDataJson, DateTime reviewedAt) async {
     final db = await getDatabase();
     return await db.insert('review_logs', {
       'term_id': termId,
@@ -12,7 +12,7 @@ class ReviewLogRepository extends BaseRepository {
     });
   }
 
-  Future<int> getReviewCountToday(int languageId) async {
+  Future<int> getReviewCountToday(String languageId) async {
     final db = await getDatabase();
     final todayStart = DateTime.now().toUtc();
     final todayStartStr = DateTime.utc(
@@ -32,7 +32,7 @@ class ReviewLogRepository extends BaseRepository {
     return result.first['cnt'] as int;
   }
 
-  Future<Map<String, int>> getReviewCountsByDay(int languageId, String sinceIso) async {
+  Future<Map<String, int>> getReviewCountsByDay(String languageId, String sinceIso) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
       '''

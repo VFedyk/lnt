@@ -282,9 +282,10 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
   }
 
   double _calculateMaxY() {
-    if (widget.data.isEmpty) return 10;
+    if (widget.data.isEmpty) return 4;
     final maxTotal = widget.data.map((d) => d.total).reduce((a, b) => a > b ? a : b);
-    return (maxTotal * 1.2).ceilToDouble();
+    final maxY = (maxTotal * 1.2).ceilToDouble();
+    return maxY > 0 ? maxY : 4; // ensure interval (maxY/4) is never zero
   }
 
   List<BarChartGroupData> _buildBarGroups(
@@ -523,6 +524,7 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
                         gridData: FlGridData(
                           show: true,
                           drawVerticalLine: false,
+                          horizontalInterval: _calculateHorizontalInterval(),
                           getDrawingHorizontalLine: (value) {
                             return FlLine(
                               color: AppConstants.borderColor.withValues(
@@ -596,7 +598,15 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
     final maxWords = widget.data
         .map((d) => d.totalKnownWords)
         .reduce((a, b) => a > b ? a : b);
-    return (maxWords * 1.1).ceilToDouble();
+    final maxY = (maxWords * 1.1).ceilToDouble();
+    // Ensure maxY > minY so fl_chart never computes a zero interval.
+    return maxY > _calculateMinY() ? maxY : _calculateMinY() + 4;
+  }
+
+  double _calculateHorizontalInterval() {
+    final range = _calculateMaxY() - _calculateMinY();
+    final interval = range / 4;
+    return interval > 0 ? interval : 1;
   }
 }
 

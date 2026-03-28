@@ -48,7 +48,6 @@ abstract class _ReaderScreenConstants {
 
   // Icon sizes
   static const double editIconSize = 18.0;
-
 }
 
 class ReaderScreen extends StatelessWidget {
@@ -170,7 +169,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     }
     if (translations.isEmpty && term.translation.isNotEmpty) {
       translations = [
-        Translation(termId: term.id ?? 0, meaning: term.translation),
+        Translation(termId: term.id ?? '', meaning: term.translation),
       ];
     }
 
@@ -318,53 +317,65 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       items: [
         PopupMenuItem(
           value: _ContextMenuAction.saveAsTerm,
-          child: Row(children: [
-            const Icon(Icons.add),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: Text(l10n.saveAsTerm)),
-          ]),
+          child: Row(
+            children: [
+              const Icon(Icons.add),
+              const SizedBox(width: AppConstants.spacingS),
+              Expanded(child: Text(l10n.saveAsTerm)),
+            ],
+          ),
         ),
         if (existingTerm != null)
           PopupMenuItem(
             value: _ContextMenuAction.mineSentence,
-            child: Row(children: [
-              const Icon(Icons.push_pin_outlined),
-              const SizedBox(width: AppConstants.spacingS),
-              Expanded(child: Text(l10n.mineSentence)),
-            ]),
+            child: Row(
+              children: [
+                const Icon(Icons.push_pin_outlined),
+                const SizedBox(width: AppConstants.spacingS),
+                Expanded(child: Text(l10n.mineSentence)),
+              ],
+            ),
           ),
         PopupMenuItem(
           value: _ContextMenuAction.assignForeignLanguage,
-          child: Row(children: [
-            const Icon(Icons.language),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: Text(l10n.assignForeignLanguage)),
-          ]),
+          child: Row(
+            children: [
+              const Icon(Icons.language),
+              const SizedBox(width: AppConstants.spacingS),
+              Expanded(child: Text(l10n.assignForeignLanguage)),
+            ],
+          ),
         ),
         PopupMenuItem(
           value: _ContextMenuAction.lookupInDictionary,
-          child: Row(children: [
-            const Icon(Icons.search),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: Text(l10n.lookupInDictionary)),
-          ]),
+          child: Row(
+            children: [
+              const Icon(Icons.search),
+              const SizedBox(width: AppConstants.spacingS),
+              Expanded(child: Text(l10n.lookupInDictionary)),
+            ],
+          ),
         ),
         const PopupMenuDivider(),
         PopupMenuItem(
           value: _ContextMenuAction.aiMeaning,
-          child: Row(children: [
-            const Icon(Icons.lightbulb_outline),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: Text(l10n.explainMeaningInContext)),
-          ]),
+          child: Row(
+            children: [
+              const Icon(Icons.lightbulb_outline),
+              const SizedBox(width: AppConstants.spacingS),
+              Expanded(child: Text(l10n.explainMeaningInContext)),
+            ],
+          ),
         ),
         PopupMenuItem(
           value: _ContextMenuAction.aiGrammar,
-          child: Row(children: [
-            const Icon(Icons.rule),
-            const SizedBox(width: AppConstants.spacingS),
-            Expanded(child: Text(l10n.explainGrammarInContext)),
-          ]),
+          child: Row(
+            children: [
+              const Icon(Icons.rule),
+              const SizedBox(width: AppConstants.spacingS),
+              Expanded(child: Text(l10n.explainGrammarInContext)),
+            ],
+          ),
         ),
       ],
     );
@@ -399,14 +410,21 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         if (hasSelection) {
           await _explainSelectionInContext(AiExplanationType.meaning);
         } else {
-          await _explainWordInContext(word, position, AiExplanationType.meaning);
+          await _explainWordInContext(
+            word,
+            position,
+            AiExplanationType.meaning,
+          );
         }
       case _ContextMenuAction.aiGrammar:
         if (hasSelection) {
           await _explainSelectionInContext(AiExplanationType.grammar);
         } else {
           await _explainWordInContext(
-              word, position, AiExplanationType.grammar);
+            word,
+            position,
+            AiExplanationType.grammar,
+          );
         }
       case null:
         break;
@@ -461,7 +479,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     if (selectedLanguage == null || !mounted) return;
 
-    final targetTermsMap = await db.terms.getMapByLanguage(selectedLanguage.id!);
+    final targetTermsMap = await db.terms.getMapByLanguage(
+      selectedLanguage.id!,
+    );
     await ctrl.assignForeignWords(selectedLanguage.id!, {
       lowerWord: targetTermsMap[lowerWord]?.id,
     });
@@ -592,7 +612,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final targetTermsMap = await db.terms.getMapByLanguage(
       selectedLanguage.id!,
     );
-    final wordsWithTermIds = <String, int?>{};
+    final wordsWithTermIds = <String, String?>{};
     for (final word in lowerWords) {
       final term = targetTermsMap[word];
       wordsWithTermIds[word] = term?.id;
@@ -885,72 +905,72 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         return KeyEventResult.ignored;
       },
       child: Scaffold(
-      key: _scaffoldKey,
-      endDrawer: ctrl.isLoading
-          ? null
-          : WordListDrawer(
-              wordTokens: ctrl.wordTokens,
-              onWordTap: _handleWordTap,
-            ),
-      appBar: ReaderAppBar(
-        title: ctrl.text.title,
-        isSelectionMode: ctrl.isSelectionMode,
-        showLegend: ctrl.showLegend,
-        isFinished: ctrl.text.status == TextStatus.finished,
-        finishedColor: context.appColors.success,
-        l10n: l10n,
-        onCancelSelection: ctrl.cancelSelection,
-        onSaveSelectionAsTerm: _saveSelectionAsTerm,
-        onAssignForeignLanguage: _assignForeignLanguage,
-        onLookupSelectedWords: _lookupSelectedWords,
-        onSelectionAiSelected: (action) {
-          switch (action) {
-            case ReaderSelectionAiAction.meaning:
-              _explainSelectionInContext(AiExplanationType.meaning);
-            case ReaderSelectionAiAction.grammar:
-              _explainSelectionInContext(AiExplanationType.grammar);
-          }
-        },
-        onToggleLegend: ctrl.toggleLegend,
-        onToggleFinished: _markAsFinished,
-        onMoreSelected: (action) {
-          switch (action) {
-            case ReaderMoreAction.edit:
-              _editText();
-            case ReaderMoreAction.fontSize:
-              _showFontSizeDialog();
-            case ReaderMoreAction.markAllKnown:
-              _markAllWordsKnown();
-            case ReaderMoreAction.openDrawer:
-              _scaffoldKey.currentState?.openEndDrawer();
-          }
-        },
-      ),
-      body: ctrl.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerUp: (_) => _stopDragSelect(),
-              onPointerCancel: (_) => _stopDragSelect(),
-              child: ReaderContent(
-                showLegend: ctrl.showLegend,
-                termCounts: ctrl.termCounts,
-                rightToLeft: ctrl.language.rightToLeft,
-                scrollController: _scrollController,
-                paragraphs: ctrl.paragraphs,
-                fontSize: ctrl.fontSize,
-                selectedWordIndices: ctrl.selectedWordIndices,
-                otherLanguageTerms: ctrl.otherLanguageTerms,
-                translationsMap: ctrl.translationsMap,
-                translationsById: ctrl.translationsById,
-                termsById: ctrl.termsById,
+        key: _scaffoldKey,
+        endDrawer: ctrl.isLoading
+            ? null
+            : WordListDrawer(
+                wordTokens: ctrl.wordTokens,
                 onWordTap: _handleWordTap,
-                onWordLongPress: _handleWordLongPress,
-                onWordRightClick: _handleWordRightClick,
-                onWordDragStart: _onWordDragStart,
-                onWordDragEnter: _onWordDragEnter,
               ),
-            ),
+        appBar: ReaderAppBar(
+          title: ctrl.text.title,
+          isSelectionMode: ctrl.isSelectionMode,
+          showLegend: ctrl.showLegend,
+          isFinished: ctrl.text.status == TextStatus.finished,
+          finishedColor: context.appColors.success,
+          l10n: l10n,
+          onCancelSelection: ctrl.cancelSelection,
+          onSaveSelectionAsTerm: _saveSelectionAsTerm,
+          onAssignForeignLanguage: _assignForeignLanguage,
+          onLookupSelectedWords: _lookupSelectedWords,
+          onSelectionAiSelected: (action) {
+            switch (action) {
+              case ReaderSelectionAiAction.meaning:
+                _explainSelectionInContext(AiExplanationType.meaning);
+              case ReaderSelectionAiAction.grammar:
+                _explainSelectionInContext(AiExplanationType.grammar);
+            }
+          },
+          onToggleLegend: ctrl.toggleLegend,
+          onToggleFinished: _markAsFinished,
+          onMoreSelected: (action) {
+            switch (action) {
+              case ReaderMoreAction.edit:
+                _editText();
+              case ReaderMoreAction.fontSize:
+                _showFontSizeDialog();
+              case ReaderMoreAction.markAllKnown:
+                _markAllWordsKnown();
+              case ReaderMoreAction.openDrawer:
+                _scaffoldKey.currentState?.openEndDrawer();
+            }
+          },
+        ),
+        body: ctrl.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerUp: (_) => _stopDragSelect(),
+                onPointerCancel: (_) => _stopDragSelect(),
+                child: ReaderContent(
+                  showLegend: ctrl.showLegend,
+                  termCounts: ctrl.termCounts,
+                  rightToLeft: ctrl.language.rightToLeft,
+                  scrollController: _scrollController,
+                  paragraphs: ctrl.paragraphs,
+                  fontSize: ctrl.fontSize,
+                  selectedWordIndices: ctrl.selectedWordIndices,
+                  otherLanguageTerms: ctrl.otherLanguageTerms,
+                  translationsMap: ctrl.translationsMap,
+                  translationsById: ctrl.translationsById,
+                  termsById: ctrl.termsById,
+                  onWordTap: _handleWordTap,
+                  onWordLongPress: _handleWordLongPress,
+                  onWordRightClick: _handleWordRightClick,
+                  onWordDragStart: _onWordDragStart,
+                  onWordDragEnter: _onWordDragEnter,
+                ),
+              ),
       ),
     );
   }

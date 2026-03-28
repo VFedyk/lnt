@@ -1,5 +1,5 @@
 class Language {
-  final int? id;
+  final String? id;
   final String name;
   final String languageCode; // ISO 639-1 code (e.g., 'en', 'de', 'uk')
   final bool rightToLeft;
@@ -45,7 +45,7 @@ class Language {
 
   factory Language.fromMap(Map<String, dynamic> map) {
     return Language(
-      id: map['id'],
+      id: map['id'] as String?,
       name: map['name'],
       languageCode: map['language_code'] ?? '',
       rightToLeft: map['right_to_left'] == 1,
@@ -117,7 +117,7 @@ class Language {
   }
 
   Language copyWith({
-    int? id,
+    String? id,
     String? name,
     String? languageCode,
     bool? rightToLeft,

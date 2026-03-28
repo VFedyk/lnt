@@ -37,7 +37,7 @@ class VocabularyScreen extends StatefulWidget {
 class _VocabularyScreenState extends State<VocabularyScreen> {
   List<Term> _terms = [];
   List<Term> _filteredTerms = [];
-  Map<int, List<Translation>> _translationsMap = {};
+  Map<String, List<Translation>> _translationsMap = {};
   bool _isLoading = true;
   bool _loadInProgress = false;
   bool _pendingReload = false;
@@ -698,7 +698,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
     );
   }
 
-  bool _translationsContainQuery(int? termId, String query) {
+  bool _translationsContainQuery(String? termId, String query) {
     if (termId == null) return false;
     final translations = _translationsMap[termId];
     if (translations == null) return false;

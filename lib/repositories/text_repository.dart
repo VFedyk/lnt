@@ -1,17 +1,21 @@
+import 'package:uuid/uuid.dart';
 import '../models/text_document.dart';
 import 'base_repository.dart';
+
+const _uuid = Uuid();
 
 class TextRepository extends BaseRepository {
   TextRepository(super.getDatabase, {super.onChange});
 
-  Future<int> create(TextDocument text) async {
+  Future<String> create(TextDocument text) async {
     final db = await getDatabase();
-    final id = await db.insert('texts', text.toMap());
+    final id = text.id ?? _uuid.v4();
+    await db.insert('texts', text.copyWith(id: id).toMap());
     notifyChange();
     return id;
   }
 
-  Future<List<TextDocument>> getAll({int? languageId}) async {
+  Future<List<TextDocument>> getAll({String? languageId}) async {
     final db = await getDatabase();
     final maps = languageId != null
         ? await db.query(
@@ -24,7 +28,7 @@ class TextRepository extends BaseRepository {
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
-  Future<TextDocument?> getById(int id) async {
+  Future<TextDocument?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query('texts', where: 'id = ?', whereArgs: [id]);
     if (maps.isEmpty) return null;
@@ -43,14 +47,14 @@ class TextRepository extends BaseRepository {
     return result;
   }
 
-  Future<int> delete(int id) async {
+  Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('texts', where: 'id = ?', whereArgs: [id]);
     notifyChange();
     return result;
   }
 
-  Future<List<TextDocument>> search(int languageId, String query) async {
+  Future<List<TextDocument>> search(String languageId, String query) async {
     final db = await getDatabase();
     final escaped = '%${BaseRepository.escapeLike(query)}%';
     final maps = await db.rawQuery(
@@ -60,7 +64,7 @@ class TextRepository extends BaseRepository {
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
-  Future<int> getCountByLanguage(int languageId) async {
+  Future<int> getCountByLanguage(String languageId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
       'SELECT COUNT(*) as count FROM texts WHERE language_id = ?',
@@ -69,7 +73,7 @@ class TextRepository extends BaseRepository {
     return result.first['count'] as int;
   }
 
-  Future<int> getFinishedCount(int languageId) async {
+  Future<int> getFinishedCount(String languageId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
       'SELECT COUNT(*) as count FROM texts WHERE language_id = ? AND status = ?',
@@ -78,7 +82,7 @@ class TextRepository extends BaseRepository {
     return result.first['count'] as int;
   }
 
-  Future<int> getCountInCollection(int collectionId) async {
+  Future<int> getCountInCollection(String collectionId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
       'SELECT COUNT(*) as count FROM texts WHERE collection_id = ?',
@@ -87,7 +91,7 @@ class TextRepository extends BaseRepository {
     return result.first['count'] as int;
   }
 
-  Future<void> moveToCollection(int textId, int? collectionId) async {
+  Future<void> moveToCollection(String textId, String? collectionId) async {
     final db = await getDatabase();
     await db.update(
       'texts',
@@ -102,13 +106,14 @@ class TextRepository extends BaseRepository {
     final db = await getDatabase();
     final batch = db.batch();
     for (final text in texts) {
-      batch.insert('texts', text.toMap());
+      final id = text.id ?? _uuid.v4();
+      batch.insert('texts', text.copyWith(id: id).toMap());
     }
     await batch.commit(noResult: true);
     notifyChange();
   }
 
-  Future<List<TextDocument>> getByCollection(int collectionId) async {
+  Future<List<TextDocument>> getByCollection(String collectionId) async {
     final db = await getDatabase();
     final maps = await db.query(
       'texts',
@@ -119,7 +124,7 @@ class TextRepository extends BaseRepository {
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
-  Future<Map<String, int>> getCompletedCountsByDay(int languageId, String sinceIso) async {
+  Future<Map<String, int>> getCompletedCountsByDay(String languageId, String sinceIso) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
       '''
@@ -133,7 +138,7 @@ class TextRepository extends BaseRepository {
     return {for (var row in result) row['date'] as String: row['cnt'] as int};
   }
 
-  Future<List<TextDocument>> getRecentlyAdded(int languageId, {int limit = 5}) async {
+  Future<List<TextDocument>> getRecentlyAdded(String languageId, {int limit = 5}) async {
     final db = await getDatabase();
     final maps = await db.query(
       'texts',
@@ -145,9 +150,8 @@ class TextRepository extends BaseRepository {
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
-  Future<List<TextDocument>> getRecentlyRead(int languageId, {int limit = 5}) async {
+  Future<List<TextDocument>> getRecentlyRead(String languageId, {int limit = 5}) async {
     final db = await getDatabase();
-    // Only return texts that are in progress (1) or finished (2)
     final maps = await db.query(
       'texts',
       where: 'language_id = ? AND status IN (1, 2)',

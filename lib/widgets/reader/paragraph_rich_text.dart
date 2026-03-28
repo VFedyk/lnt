@@ -11,9 +11,9 @@ class ParagraphRichText extends StatelessWidget {
   final double fontSize;
   final Set<int> selectedWordIndices;
   final Map<String, ForeignTermInfo> otherLanguageTerms;
-  final Map<int, List<Translation>> translationsMap;
-  final Map<int, Translation> translationsById;
-  final Map<int, Term> termsById;
+  final Map<String, List<Translation>> translationsMap;
+  final Map<String, Translation> translationsById;
+  final Map<String, Term> termsById;
   final void Function(String word, int position, int globalIndex) onWordTap;
   final void Function(int globalIndex) onWordLongPress;
   final void Function(String word, int position, int globalIndex, Offset globalPosition)? onWordRightClick;

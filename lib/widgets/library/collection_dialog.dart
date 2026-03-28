@@ -17,8 +17,8 @@ abstract class _CollectionDialogConstants {
 }
 
 class CollectionDialog extends StatefulWidget {
-  final int languageId;
-  final int? parentId;
+  final String languageId;
+  final String? parentId;
   final Collection? existingCollection;
 
   const CollectionDialog({

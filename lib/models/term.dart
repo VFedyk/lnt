@@ -150,11 +150,11 @@ class PartOfSpeech {
 
 /// A single translation/meaning for a term
 class Translation {
-  final int? id;
-  final int termId;
+  final String? id;
+  final String termId;
   final String meaning;
   final String? partOfSpeech;
-  final int? baseTranslationId;
+  final String? baseTranslationId;
   final int sortOrder;
 
   Translation({
@@ -182,21 +182,21 @@ class Translation {
 
   factory Translation.fromMap(Map<String, dynamic> map) {
     return Translation(
-      id: map['id'],
-      termId: map['term_id'],
+      id: map['id'] as String?,
+      termId: map['term_id'] as String,
       meaning: map['meaning'] ?? '',
-      partOfSpeech: map['part_of_speech'],
-      baseTranslationId: map['base_translation_id'] as int?,
+      partOfSpeech: map['part_of_speech'] as String?,
+      baseTranslationId: map['base_translation_id'] as String?,
       sortOrder: map['sort_order'] ?? 0,
     );
   }
 
   Translation copyWith({
-    int? id,
-    int? termId,
+    String? id,
+    String? termId,
     String? meaning,
     String? partOfSpeech,
-    int? baseTranslationId,
+    String? baseTranslationId,
     int? sortOrder,
     bool clearPartOfSpeech = false,
     bool clearBaseTranslationId = false,
@@ -214,8 +214,8 @@ class Translation {
 }
 
 class Term {
-  final int? id;
-  final int languageId;
+  final String? id;
+  final String languageId;
   final String text;
   final String lowerText;
   final int status;
@@ -224,7 +224,7 @@ class Term {
   final String sentence;
   final DateTime createdAt;
   final DateTime lastAccessed;
-  final int?
+  final String?
   baseTermId; // Reference to base form term (e.g., "hablar" for "hablo")
 
   Term({
@@ -267,23 +267,23 @@ class Term {
 
   factory Term.fromMap(Map<String, dynamic> map) {
     return Term(
-      id: map['id'],
-      languageId: map['language_id'],
-      text: map['text'],
-      lowerText: map['lower_text'],
-      status: map['status'],
+      id: map['id'] as String?,
+      languageId: map['language_id'] as String,
+      text: map['text'] as String,
+      lowerText: map['lower_text'] as String,
+      status: map['status'] as int,
       translation: map['translation'] ?? '',
       romanization: map['romanization'] ?? '',
       sentence: map['sentence'] ?? '',
-      createdAt: DateTime.parse(map['created_at']),
-      lastAccessed: DateTime.parse(map['last_accessed']),
-      baseTermId: map['base_term_id'] as int?,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      lastAccessed: DateTime.parse(map['last_accessed'] as String),
+      baseTermId: map['base_term_id'] as String?,
     );
   }
 
   Term copyWith({
-    int? id,
-    int? languageId,
+    String? id,
+    String? languageId,
     String? text,
     String? lowerText,
     int? status,
@@ -292,7 +292,7 @@ class Term {
     String? sentence,
     DateTime? createdAt,
     DateTime? lastAccessed,
-    int? baseTermId,
+    String? baseTermId,
     bool clearBaseTermId = false,
   }) {
     return Term(

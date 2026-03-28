@@ -7,8 +7,8 @@ import '../../utils/constants.dart';
 class ReaderTranslationDialog extends StatelessWidget {
   final Term term;
   final List<Translation> translations;
-  final Map<int, Translation> translationsById;
-  final Map<int, Term> termsById;
+  final Map<String, Translation> translationsById;
+  final Map<String, Term> termsById;
   final String languageCode;
   final AppLocalizations l10n;
   final VoidCallback onEdit;

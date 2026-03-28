@@ -127,7 +127,7 @@ class ReviewService {
 
   /// Ensure review cards exist for all eligible terms in a language.
   /// Eligible = not ignored and not well-known.
-  Future<void> seedCardsForLanguage(int languageId) async {
+  Future<void> seedCardsForLanguage(String languageId) async {
     final allTerms = await db.terms.getAll(languageId: languageId);
     final eligibleIds = allTerms
         .where(

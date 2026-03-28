@@ -17,8 +17,8 @@ abstract class _UrlImportDialogConstants {
 }
 
 class UrlImportDialog extends StatefulWidget {
-  final int languageId;
-  final int? collectionId;
+  final String languageId;
+  final String? collectionId;
 
   const UrlImportDialog({
     super.key,

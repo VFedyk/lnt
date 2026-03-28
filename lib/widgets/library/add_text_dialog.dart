@@ -8,8 +8,8 @@ abstract class _AddTextDialogConstants {
 }
 
 class AddTextDialog extends StatefulWidget {
-  final int languageId;
-  final int? collectionId;
+  final String languageId;
+  final String? collectionId;
 
   const AddTextDialog({
     super.key,

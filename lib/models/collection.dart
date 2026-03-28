@@ -1,9 +1,9 @@
 class Collection {
-  final int? id;
-  final int languageId;
+  final String? id;
+  final String languageId;
   final String name;
   final String description;
-  final int? parentId; // For nested folders
+  final String? parentId; // For nested folders
   final DateTime createdAt;
   final int sortOrder;
   final String? coverImage; // Path to cover image
@@ -34,23 +34,23 @@ class Collection {
 
   factory Collection.fromMap(Map<String, dynamic> map) {
     return Collection(
-      id: map['id'],
-      languageId: map['language_id'],
-      name: map['name'],
+      id: map['id'] as String?,
+      languageId: map['language_id'] as String,
+      name: map['name'] as String,
       description: map['description'] ?? '',
-      parentId: map['parent_id'],
-      createdAt: DateTime.parse(map['created_at']),
+      parentId: map['parent_id'] as String?,
+      createdAt: DateTime.parse(map['created_at'] as String),
       sortOrder: map['sort_order'] ?? 0,
-      coverImage: map['cover_image'],
+      coverImage: map['cover_image'] as String?,
     );
   }
 
   Collection copyWith({
-    int? id,
-    int? languageId,
+    String? id,
+    String? languageId,
     String? name,
     String? description,
-    int? parentId,
+    String? parentId,
     DateTime? createdAt,
     int? sortOrder,
     String? coverImage,

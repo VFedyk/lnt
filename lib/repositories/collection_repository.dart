@@ -1,17 +1,21 @@
+import 'package:uuid/uuid.dart';
 import '../models/collection.dart';
 import 'base_repository.dart';
+
+const _uuid = Uuid();
 
 class CollectionRepository extends BaseRepository {
   CollectionRepository(super.getDatabase, {super.onChange});
 
-  Future<int> create(Collection collection) async {
+  Future<String> create(Collection collection) async {
     final db = await getDatabase();
-    final id = await db.insert('collections', collection.toMap());
+    final id = collection.id ?? _uuid.v4();
+    await db.insert('collections', collection.copyWith(id: id).toMap());
     notifyChange();
     return id;
   }
 
-  Future<List<Collection>> getAll({int? languageId, int? parentId}) async {
+  Future<List<Collection>> getAll({String? languageId, String? parentId}) async {
     final db = await getDatabase();
     String? where;
     List<dynamic>? whereArgs;
@@ -37,7 +41,7 @@ class CollectionRepository extends BaseRepository {
     return maps.map((map) => Collection.fromMap(map)).toList();
   }
 
-  Future<Collection?> getById(int id) async {
+  Future<Collection?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query(
       'collections',
@@ -60,7 +64,7 @@ class CollectionRepository extends BaseRepository {
     return result;
   }
 
-  Future<void> move(int collectionId, int? parentId) async {
+  Future<void> move(String collectionId, String? parentId) async {
     final db = await getDatabase();
     await db.update(
       'collections',
@@ -71,7 +75,7 @@ class CollectionRepository extends BaseRepository {
     notifyChange();
   }
 
-  Future<int> delete(int id) async {
+  Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('collections', where: 'id = ?', whereArgs: [id]);
     notifyChange();

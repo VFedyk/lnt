@@ -29,7 +29,7 @@ class TermDialog extends StatefulWidget {
   final String sentence;
   final List<Dictionary> dictionaries;
   final Function(BuildContext, Dictionary) onLookup;
-  final int languageId;
+  final String languageId;
   final String languageName;
   final String languageCode;
 
@@ -60,7 +60,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
   // collisions when items are deleted (TextFormField initialValue stays correct).
   final List<Object> _translationKeys = [];
   // baseTranslationId -> (translation, its parent term)
-  final Map<int, ({Translation translation, Term term})> _baseTranslations = {};
+  final Map<String, ({Translation translation, Term term})> _baseTranslations = {};
   late TextEditingController _translationController;
 
   // AI translation
@@ -69,7 +69,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
 
   // Language selection
   List<Language> _languages = [];
-  late int _selectedLanguageId;
+  late String _selectedLanguageId;
   late String _selectedLanguageName;
 
   @override
@@ -128,7 +128,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
           for (final entry in meanings) {
             _translations.add(
               Translation(
-                termId: widget.term.id ?? 0,
+                termId: widget.term.id ?? '',
                 meaning: entry.meaning,
                 partOfSpeech: entry.partOfSpeech,
                 sortOrder: _translations.length,
@@ -175,7 +175,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
       // New term with pre-filled translation
       setState(() {
         _translations = [
-          Translation(termId: 0, meaning: widget.term.translation),
+          Translation(termId: '', meaning: widget.term.translation),
         ];
         _translationKeys
           ..clear()
@@ -375,7 +375,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     setState(() {
       _translations.add(
         Translation(
-          termId: widget.term.id ?? 0,
+          termId: widget.term.id ?? '',
           meaning: '',
           sortOrder: _translations.length,
         ),
@@ -748,7 +748,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
       setState(() {
         _translations.add(
           Translation(
-            termId: widget.term.id ?? 0,
+            termId: widget.term.id ?? '',
             meaning: _translationController.text,
             sortOrder: 0,
           ),

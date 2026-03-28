@@ -47,8 +47,8 @@ class _DashboardTabState extends State<DashboardTab> {
   List<TextDocument> _recentlyReadTexts = [];
   List<TextDocument> _recentlyAddedTexts = [];
   Map<int, int> _termCounts = {};
-  Map<int, int> _unknownCounts = {};
-  Map<int, String> _collectionNames = {};
+  Map<String, int> _unknownCounts = {};
+  Map<String, String> _collectionNames = {};
   Map<String, DayActivity> _activityData = {};
   int _totalTextsCount = 0;
   int _finishedTextsCount = 0;
@@ -122,13 +122,13 @@ class _DashboardTabState extends State<DashboardTab> {
 
       final termsMap = await db.terms.getMapByLanguage(widget.language.id!);
 
-      final unknownCounts = <int, int>{};
+      final unknownCounts = <String, int>{};
       final allTexts = {...recentlyRead, ...recentlyAdded};
       for (final text in allTexts) {
         unknownCounts[text.id!] = _calculateUnknownCount(text, termsMap);
       }
 
-      final collectionNames = <int, String>{};
+      final collectionNames = <String, String>{};
       final collectionIds = allTexts
           .where((t) => t.collectionId != null)
           .map((t) => t.collectionId!)

@@ -1,7 +1,7 @@
 // FILE: lib/models/dictionary.dart
 class Dictionary {
-  final int? id;
-  final int languageId;
+  final String? id;
+  final String languageId;
   final String name;
   final String url;
   final int sortOrder;
@@ -32,8 +32,8 @@ class Dictionary {
 
   factory Dictionary.fromMap(Map<String, dynamic> map) {
     return Dictionary(
-      id: map['id'],
-      languageId: map['language_id'],
+      id: map['id'] as String?,
+      languageId: map['language_id'] as String,
       name: map['name'],
       url: map['url'],
       sortOrder: map['sort_order'] ?? 0,
@@ -43,8 +43,8 @@ class Dictionary {
   }
 
   Dictionary copyWith({
-    int? id,
-    int? languageId,
+    String? id,
+    String? languageId,
     String? name,
     String? url,
     int? sortOrder,

@@ -1,20 +1,25 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 import '../models/term.dart';
 import 'base_repository.dart';
+
+const _uuid = Uuid();
 
 class TranslationRepository extends BaseRepository {
   TranslationRepository(super.getDatabase);
 
-  Future<int> create(Translation translation) async {
+  Future<String> create(Translation translation) async {
     final db = await getDatabase();
-    return await db.insert(
+    final id = translation.id ?? _uuid.v4();
+    await db.insert(
       'translations',
-      translation.toMap(),
+      translation.copyWith(id: id).toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    return id;
   }
 
-  Future<List<Translation>> getByTermId(int termId) async {
+  Future<List<Translation>> getByTermId(String termId) async {
     final db = await getDatabase();
     final maps = await db.query(
       'translations',
@@ -25,7 +30,7 @@ class TranslationRepository extends BaseRepository {
     return maps.map((map) => Translation.fromMap(map)).toList();
   }
 
-  Future<Translation?> getById(int id) async {
+  Future<Translation?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query(
       'translations',
@@ -46,12 +51,12 @@ class TranslationRepository extends BaseRepository {
     );
   }
 
-  Future<int> delete(int id) async {
+  Future<int> delete(String id) async {
     final db = await getDatabase();
     return await db.delete('translations', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<int> deleteByTermId(int termId) async {
+  Future<int> deleteByTermId(String termId) async {
     final db = await getDatabase();
     return await db.delete(
       'translations',
@@ -61,11 +66,11 @@ class TranslationRepository extends BaseRepository {
   }
 
   /// Get all translations for multiple terms at once (for batch loading)
-  Future<Map<int, List<Translation>>> getByTermIds(List<int> termIds) async {
+  Future<Map<String, List<Translation>>> getByTermIds(List<String> termIds) async {
     if (termIds.isEmpty) return {};
 
     final db = await getDatabase();
-    final result = <int, List<Translation>>{};
+    final result = <String, List<Translation>>{};
     const batchSize = 500;
 
     for (var i = 0; i < termIds.length; i += batchSize) {
@@ -76,7 +81,7 @@ class TranslationRepository extends BaseRepository {
         batch,
       );
       for (final map in maps) {
-        final termId = map['term_id'] as int;
+        final termId = map['term_id'] as String;
         result.putIfAbsent(termId, () => []).add(Translation.fromMap(map));
       }
     }
@@ -85,7 +90,7 @@ class TranslationRepository extends BaseRepository {
 
   /// Update translations for a term, preserving IDs where possible
   /// to maintain baseTranslationId references from other translations
-  Future<void> replaceForTerm(int termId, List<Translation> translations) async {
+  Future<void> replaceForTerm(String termId, List<Translation> translations) async {
     final db = await getDatabase();
     await db.transaction((txn) async {
       // Get existing translation IDs for this term
@@ -95,10 +100,10 @@ class TranslationRepository extends BaseRepository {
         where: 'term_id = ?',
         whereArgs: [termId],
       );
-      final existingIds = existingMaps.map((m) => m['id'] as int).toSet();
+      final existingIds = existingMaps.map((m) => m['id'] as String).toSet();
 
       // Track which existing IDs we're keeping
-      final keptIds = <int>{};
+      final keptIds = <String>{};
 
       for (var i = 0; i < translations.length; i++) {
         final t = translations[i].copyWith(termId: termId, sortOrder: i);
@@ -109,8 +114,9 @@ class TranslationRepository extends BaseRepository {
           await txn.update('translations', map, where: 'id = ?', whereArgs: [t.id]);
           keptIds.add(t.id!);
         } else {
-          // Insert new translation
-          map.remove('id');
+          // Insert new translation with a new UUID
+          final newId = _uuid.v4();
+          map['id'] = newId;
           await txn.insert('translations', map);
         }
       }

@@ -34,7 +34,7 @@ class ImportExportService {
   // Import terms from CSV
   Future<List<Term>> importTermsFromCSV(
     String csvContent,
-    int languageId,
+    String languageId,
   ) async {
     final terms = <Term>[];
 

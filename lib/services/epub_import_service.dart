@@ -10,7 +10,7 @@ import '../service_locator.dart';
 
 /// Result of an EPUB import operation
 class EpubImportResult {
-  final int collectionId;
+  final String collectionId;
   final String bookTitle;
   final String? author;
   final String? coverImagePath;
@@ -55,8 +55,8 @@ class EpubImportService {
   /// Import an EPUB file and create a collection with chapter documents
   Future<EpubImportResult> importEpub({
     required Uint8List epubBytes,
-    required int languageId,
-    int? parentCollectionId,
+    required String languageId,
+    String? parentCollectionId,
   }) async {
     // Parse the EPUB file
     final EpubBook epubBook;
@@ -157,7 +157,7 @@ class EpubImportService {
   }
 
   /// Extract and save cover image from EPUB
-  Future<String?> _extractCoverImage(EpubBook epubBook, int collectionId) async {
+  Future<String?> _extractCoverImage(EpubBook epubBook, String collectionId) async {
     try {
       // Try to find cover image in EPUB content
       final content = epubBook.content;
@@ -220,8 +220,8 @@ class EpubImportService {
 
   Future<void> _processChaptersRecursively({
     required List<EpubChapter> chapters,
-    required int languageId,
-    required int collectionId,
+    required String languageId,
+    required String collectionId,
     required String sourceUri,
     String? coverImagePath,
     required List<TextDocument> textsToCreate,

@@ -153,14 +153,14 @@ class AppState extends ChangeNotifier {
   static const String _currentTextKey = 'current_text_id';
   static const String _appLocaleKey = 'app_locale';
 
-  int? _selectedLanguageId;
-  int? _currentTextId;
+  String? _selectedLanguageId;
+  String? _currentTextId;
   Locale _locale = const Locale('en');
   SharedPreferences? _prefs;
   bool _isLoaded = false;
 
-  int? get selectedLanguageId => _selectedLanguageId;
-  int? get currentTextId => _currentTextId;
+  String? get selectedLanguageId => _selectedLanguageId;
+  String? get currentTextId => _currentTextId;
   Locale get locale => _locale;
   bool get isLoaded => _isLoaded;
 
@@ -168,10 +168,22 @@ class AppState extends ChangeNotifier {
     _loadPreferences();
   }
 
+  /// Returns the string value for [key], or null if missing or stored as a
+  /// non-string type (e.g. int from before the UUID migration).
+  String? _safeGetString(SharedPreferences? prefs, String key) {
+    try {
+      return prefs?.getString(key);
+    } catch (_) {
+      prefs?.remove(key);
+      return null;
+    }
+  }
+
   Future<void> _loadPreferences() async {
     _prefs = await SharedPreferences.getInstance();
-    _selectedLanguageId = _prefs?.getInt(_selectedLanguageKey);
-    _currentTextId = _prefs?.getInt(_currentTextKey);
+    // Guard against stale int values stored before the UUID migration.
+    _selectedLanguageId = _safeGetString(_prefs, _selectedLanguageKey);
+    _currentTextId = _safeGetString(_prefs, _currentTextKey);
 
     // Load saved locale
     final localeCode = _prefs?.getString(_appLocaleKey);
@@ -190,20 +202,20 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setSelectedLanguage(int? id) async {
+  Future<void> setSelectedLanguage(String? id) async {
     _selectedLanguageId = id;
     if (id != null) {
-      await _prefs?.setInt(_selectedLanguageKey, id);
+      await _prefs?.setString(_selectedLanguageKey, id);
     } else {
       await _prefs?.remove(_selectedLanguageKey);
     }
     notifyListeners();
   }
 
-  Future<void> setCurrentText(int? id) async {
+  Future<void> setCurrentText(String? id) async {
     _currentTextId = id;
     if (id != null) {
-      await _prefs?.setInt(_currentTextKey, id);
+      await _prefs?.setString(_currentTextKey, id);
     } else {
       await _prefs?.remove(_currentTextKey);
     }

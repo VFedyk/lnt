@@ -93,7 +93,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
     _loadLanguages();
   }
 
-  Future<int> _getDictionaryCount(int languageId) async {
+  Future<int> _getDictionaryCount(String languageId) async {
     final dicts = await db.dictionaries.getAll(
       languageId: languageId,
     );

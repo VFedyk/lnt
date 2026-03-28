@@ -1,7 +1,7 @@
 import 'base_repository.dart';
 
 /// Record representing a stored foreign word assignment
-typedef ForeignWordRecord = ({String lowerText, int languageId, int? termId});
+typedef ForeignWordRecord = ({String lowerText, String languageId, String? termId});
 
 class TextForeignWordRepository extends BaseRepository {
   TextForeignWordRepository(super.getDatabase);
@@ -9,9 +9,9 @@ class TextForeignWordRepository extends BaseRepository {
   /// Save words as foreign for a given text + language.
   /// Uses INSERT OR REPLACE so re-assigning a word updates its language/term.
   Future<void> saveWords(
-    int textId,
-    int languageId,
-    Map<String, int?> wordsWithTermIds,
+    String textId,
+    String languageId,
+    Map<String, String?> wordsWithTermIds,
   ) async {
     if (wordsWithTermIds.isEmpty) return;
     final db = await getDatabase();
@@ -30,7 +30,7 @@ class TextForeignWordRepository extends BaseRepository {
   }
 
   /// Load all foreign word assignments for a text.
-  Future<List<ForeignWordRecord>> getByTextId(int textId) async {
+  Future<List<ForeignWordRecord>> getByTextId(String textId) async {
     final db = await getDatabase();
     final maps = await db.query(
       'text_foreign_words',
@@ -40,14 +40,14 @@ class TextForeignWordRepository extends BaseRepository {
     return maps
         .map((m) => (
               lowerText: m['lower_text'] as String,
-              languageId: m['language_id'] as int,
-              termId: m['term_id'] as int?,
+              languageId: m['language_id'] as String,
+              termId: m['term_id'] as String?,
             ))
         .toList();
   }
 
   /// Delete a single foreign word assignment.
-  Future<int> deleteWord(int textId, String lowerText) async {
+  Future<int> deleteWord(String textId, String lowerText) async {
     final db = await getDatabase();
     return db.delete(
       'text_foreign_words',
@@ -57,7 +57,7 @@ class TextForeignWordRepository extends BaseRepository {
   }
 
   /// Delete multiple foreign word assignments.
-  Future<int> deleteWords(int textId, List<String> lowerTexts) async {
+  Future<int> deleteWords(String textId, List<String> lowerTexts) async {
     if (lowerTexts.isEmpty) return 0;
     final db = await getDatabase();
     final placeholders = List.filled(lowerTexts.length, '?').join(',');

@@ -196,7 +196,7 @@ void main() {
     test('fromMap with missing column defaults to false (migration safety)', () {
       // Simulate a map from an older DB that has no use_word_segmentation key.
       final map = {
-        'id': 1,
+        'id': 'lang-zh',
         'name': 'Chinese',
         'language_code': 'zh',
         'right_to_left': 0,

@@ -135,7 +135,7 @@ class _MultipleChoiceReviewScreenState
       var translations = translationsMap[term.id] ?? [];
       if (translations.isEmpty && term.translation.isNotEmpty) {
         translations = [
-          Translation(termId: term.id ?? 0, meaning: term.translation),
+          Translation(termId: term.id ?? '', meaning: term.translation),
         ];
       }
 

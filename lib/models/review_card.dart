@@ -3,8 +3,8 @@ import 'package:fsrs/fsrs.dart' as fsrs;
 
 /// Wrapper holding the DB row alongside the deserialized FSRS Card.
 class ReviewCardRecord {
-  final int? id;
-  final int termId;
+  final String? id;
+  final String termId;
   final fsrs.Card card;
   final DateTime nextDue;
   final DateTime createdAt;
@@ -36,8 +36,8 @@ class ReviewCardRecord {
         jsonDecode(map['card_data'] as String) as Map<String, dynamic>;
     final card = fsrs.Card.fromMap(cardMap);
     return ReviewCardRecord(
-      id: map['id'] as int?,
-      termId: map['term_id'] as int,
+      id: map['id'] as String?,
+      termId: map['term_id'] as String,
       card: card,
       nextDue: DateTime.parse(map['next_due'] as String),
       createdAt: DateTime.parse(map['created_at'] as String),
@@ -46,8 +46,8 @@ class ReviewCardRecord {
   }
 
   ReviewCardRecord copyWith({
-    int? id,
-    int? termId,
+    String? id,
+    String? termId,
     fsrs.Card? card,
     DateTime? nextDue,
     DateTime? createdAt,

@@ -13,7 +13,7 @@ class ForeignTermInfo {
   final Term? term;
   final List<Translation> translations;
   final String languageName;
-  final int languageId;
+  final String languageId;
 
   const ForeignTermInfo({
     this.term,
@@ -31,9 +31,9 @@ class ReaderController extends BaseController {
 
   TextDocument text;
   Map<String, Term> termsMap = {};
-  Map<int, Term> termsById = {};
-  Map<int, List<Translation>> translationsMap = {};
-  Map<int, Translation> translationsById = {};
+  Map<String, Term> termsById = {};
+  Map<String, List<Translation>> translationsMap = {};
+  Map<String, Translation> translationsById = {};
   Map<String, ForeignTermInfo> otherLanguageTerms = {};
   List<WordToken> wordTokens = [];
   List<List<WordToken>> paragraphs = [];
@@ -176,15 +176,15 @@ class ReaderController extends BaseController {
 
     final foreignTranslations = termIds.isNotEmpty
         ? await db.translations.getByTermIds(termIds)
-        : <int, List<Translation>>{};
+        : <String, List<Translation>>{};
 
-    final foreignTerms = <int, Term>{};
+    final foreignTerms = <String, Term>{};
     for (final id in termIds) {
       final term = await db.terms.getById(id);
       if (term != null) foreignTerms[id] = term;
     }
 
-    final languageNames = <int, String>{};
+    final languageNames = <String, String>{};
     for (final langId in languageIds) {
       final lang = await db.languages.getById(langId);
       languageNames[langId] = lang?.name ?? '';
@@ -568,8 +568,8 @@ class ReaderController extends BaseController {
   }
 
   Future<void> assignForeignWords(
-    int targetLanguageId,
-    Map<String, int?> wordsWithTermIds,
+    String targetLanguageId,
+    Map<String, String?> wordsWithTermIds,
   ) async {
     await db.textForeignWords.saveWords(
       text.id!,

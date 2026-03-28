@@ -1,8 +1,8 @@
 class TermSentence {
-  final int? id;
-  final int termId;
+  final String? id;
+  final String termId;
   final String sentence;
-  final int? sourceTextId;
+  final String? sourceTextId;
   final DateTime createdAt;
 
   const TermSentence({
@@ -22,10 +22,10 @@ class TermSentence {
       };
 
   static TermSentence fromMap(Map<String, dynamic> map) => TermSentence(
-        id: map['id'] as int?,
-        termId: map['term_id'] as int,
+        id: map['id'] as String?,
+        termId: map['term_id'] as String,
         sentence: map['sentence'] as String,
-        sourceTextId: map['source_text_id'] as int?,
+        sourceTextId: map['source_text_id'] as String?,
         createdAt: DateTime.parse(map['created_at'] as String),
       );
 }

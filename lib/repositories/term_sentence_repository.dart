@@ -1,34 +1,33 @@
+import 'package:uuid/uuid.dart';
 import '../models/term_sentence.dart';
 import 'base_repository.dart';
+
+const _uuid = Uuid();
 
 class TermSentenceRepository extends BaseRepository {
   TermSentenceRepository(super.getDatabase, {super.onChange});
 
   Future<TermSentence> create(
-    int termId,
+    String termId,
     String sentence, {
-    int? sourceTextId,
+    String? sourceTextId,
   }) async {
     final db = await getDatabase();
     final now = DateTime.now();
+    final id = _uuid.v4();
     final row = TermSentence(
-      termId: termId,
-      sentence: sentence,
-      sourceTextId: sourceTextId,
-      createdAt: now,
-    );
-    final id = await db.insert('term_sentences', row.toMap());
-    notifyChange();
-    return TermSentence(
       id: id,
       termId: termId,
       sentence: sentence,
       sourceTextId: sourceTextId,
       createdAt: now,
     );
+    await db.insert('term_sentences', row.toMap());
+    notifyChange();
+    return row;
   }
 
-  Future<List<TermSentence>> getByTermId(int termId) async {
+  Future<List<TermSentence>> getByTermId(String termId) async {
     final db = await getDatabase();
     final rows = await db.query(
       'term_sentences',
@@ -40,7 +39,7 @@ class TermSentenceRepository extends BaseRepository {
   }
 
   /// Returns a map of termId → list of sentence strings for batch loading.
-  Future<Map<int, List<String>>> getByTermIds(List<int> termIds) async {
+  Future<Map<String, List<String>>> getByTermIds(List<String> termIds) async {
     if (termIds.isEmpty) return {};
 
     final db = await getDatabase();
@@ -50,16 +49,16 @@ class TermSentenceRepository extends BaseRepository {
       termIds,
     );
 
-    final result = <int, List<String>>{};
+    final result = <String, List<String>>{};
     for (final row in rows) {
-      final termId = row['term_id'] as int;
+      final termId = row['term_id'] as String;
       final sentence = row['sentence'] as String;
       (result[termId] ??= []).add(sentence);
     }
     return result;
   }
 
-  Future<void> delete(int id) async {
+  Future<void> delete(String id) async {
     final db = await getDatabase();
     await db.delete('term_sentences', where: 'id = ?', whereArgs: [id]);
     notifyChange();

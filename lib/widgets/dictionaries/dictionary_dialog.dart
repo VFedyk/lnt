@@ -19,7 +19,7 @@ abstract class _DictionaryDialogConstants {
 }
 
 class DictionaryDialog extends StatefulWidget {
-  final int languageId;
+  final String languageId;
   final String languageCode;
   final Dictionary? dictionary;
 

@@ -56,9 +56,9 @@ class LibraryController extends BaseController {
 
   // Static cache for unknown counts — persists across controller recreations.
   // Key: languageId -> (textId -> unknownCount)
-  static final Map<int, Map<int, int>> unknownCountsCache = {};
+  static final Map<String, Map<String, int>> unknownCountsCache = {};
 
-  Map<int, int> get unknownCounts => unknownCountsCache[language.id!] ??= {};
+  Map<String, int> get unknownCounts => unknownCountsCache[language.id!] ??= {};
 
   LibraryController({required this.language}) {
     dataChanges.texts.addListener(_onDataChanged);
@@ -374,7 +374,7 @@ class LibraryController extends BaseController {
     await db.texts.update(text);
   }
 
-  Future<void> deleteText(int textId) async {
+  Future<void> deleteText(String textId) async {
     await db.texts.delete(textId);
   }
 
@@ -386,24 +386,24 @@ class LibraryController extends BaseController {
     await db.collections.update(collection);
   }
 
-  Future<void> deleteCollection(int collectionId) async {
+  Future<void> deleteCollection(String collectionId) async {
     await db.collections.delete(collectionId);
   }
 
-  Future<int> getTextCountInCollection(int collectionId) async {
+  Future<int> getTextCountInCollection(String collectionId) async {
     return db.texts.getCountInCollection(collectionId);
   }
 
   // ── Drag-and-drop moves ──
 
-  Future<void> moveText(TextDocument text, int? targetCollectionId) async {
+  Future<void> moveText(TextDocument text, String? targetCollectionId) async {
     if (text.collectionId == targetCollectionId) return;
     await db.texts.moveToCollection(text.id!, targetCollectionId);
   }
 
   Future<void> moveCollection(
     Collection collection,
-    int? targetParentId,
+    String? targetParentId,
   ) async {
     if (collection.id == targetParentId) return;
     if (targetParentId != null &&
@@ -413,7 +413,7 @@ class LibraryController extends BaseController {
     await db.collections.move(collection.id!, targetParentId);
   }
 
-  Future<bool> _isDescendant(int candidateId, int ancestorId) async {
+  Future<bool> _isDescendant(String candidateId, String ancestorId) async {
     Collection? current = await db.collections.getById(candidateId);
     while (current?.parentId != null) {
       if (current!.parentId == ancestorId) {

@@ -15,9 +15,9 @@ enum TextStatus {
 }
 
 class TextDocument {
-  final int? id;
-  final int languageId;
-  final int? collectionId; // Optional folder/collection
+  final String? id;
+  final String languageId;
+  final String? collectionId; // Optional folder/collection
   final String title;
   final String content;
   final String sourceUri;
@@ -63,9 +63,9 @@ class TextDocument {
 
   factory TextDocument.fromMap(Map<String, dynamic> map) {
     return TextDocument(
-      id: map['id'],
-      languageId: map['language_id'],
-      collectionId: map['collection_id'],
+      id: map['id'] as String?,
+      languageId: map['language_id'] as String,
+      collectionId: map['collection_id'] as String?,
       title: map['title'],
       content: map['content'],
       sourceUri: map['source_uri'] ?? '',
@@ -79,9 +79,9 @@ class TextDocument {
   }
 
   TextDocument copyWith({
-    int? id,
-    int? languageId,
-    int? collectionId,
+    String? id,
+    String? languageId,
+    String? collectionId,
     String? title,
     String? content,
     String? sourceUri,

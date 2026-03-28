@@ -1,22 +1,26 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 import '../models/term.dart';
 import 'base_repository.dart';
+
+const _uuid = Uuid();
 
 class TermRepository extends BaseRepository {
   TermRepository(super.getDatabase, {super.onChange});
 
-  Future<int> create(Term term) async {
+  Future<String> create(Term term) async {
     final db = await getDatabase();
-    final id = await db.insert(
+    final id = term.id ?? _uuid.v4();
+    await db.insert(
       'terms',
-      term.toMap(),
+      term.copyWith(id: id).toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     notifyChange();
     return id;
   }
 
-  Future<List<Term>> getAll({int? languageId, int? status}) async {
+  Future<List<Term>> getAll({String? languageId, int? status}) async {
     final db = await getDatabase();
     String? where;
     List<dynamic>? whereArgs;
@@ -41,7 +45,7 @@ class TermRepository extends BaseRepository {
     return maps.map((map) => Term.fromMap(map)).toList();
   }
 
-  Future<Term?> getByText(int languageId, String text) async {
+  Future<Term?> getByText(String languageId, String text) async {
     final db = await getDatabase();
     final maps = await db.query(
       'terms',
@@ -52,7 +56,7 @@ class TermRepository extends BaseRepository {
     return Term.fromMap(maps.first);
   }
 
-  Future<Term?> getById(int id) async {
+  Future<Term?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query(
       'terms',
@@ -63,7 +67,7 @@ class TermRepository extends BaseRepository {
     return Term.fromMap(maps.first);
   }
 
-  Future<List<Term>> getLinkedTerms(int baseTermId) async {
+  Future<List<Term>> getLinkedTerms(String baseTermId) async {
     final db = await getDatabase();
     final maps = await db.query(
       'terms',
@@ -74,7 +78,7 @@ class TermRepository extends BaseRepository {
     return maps.map((map) => Term.fromMap(map)).toList();
   }
 
-  Future<Map<String, Term>> getMapByLanguage(int languageId) async {
+  Future<Map<String, Term>> getMapByLanguage(String languageId) async {
     final db = await getDatabase();
     final maps = await db.query(
       'terms',
@@ -86,11 +90,11 @@ class TermRepository extends BaseRepository {
     };
   }
 
-  Future<Map<int, Term>> getByIds(List<int> ids) async {
+  Future<Map<String, Term>> getByIds(List<String> ids) async {
     if (ids.isEmpty) return {};
 
     final db = await getDatabase();
-    final result = <int, Term>{};
+    final result = <String, Term>{};
     const batchSize = 500;
 
     for (var i = 0; i < ids.length; i += batchSize) {
@@ -120,14 +124,14 @@ class TermRepository extends BaseRepository {
     return result;
   }
 
-  Future<int> delete(int id) async {
+  Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('terms', where: 'id = ?', whereArgs: [id]);
     notifyChange();
     return result;
   }
 
-  Future<int> deleteByLanguage(int languageId) async {
+  Future<int> deleteByLanguage(String languageId) async {
     final db = await getDatabase();
     final result = await db.delete(
       'terms',
@@ -138,7 +142,7 @@ class TermRepository extends BaseRepository {
     return result;
   }
 
-  Future<Map<int, int>> getCountsByStatus(int languageId) async {
+  Future<Map<int, int>> getCountsByStatus(String languageId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
       '''
@@ -152,7 +156,7 @@ class TermRepository extends BaseRepository {
     return {for (var row in result) row['status'] as int: row['count'] as int};
   }
 
-  Future<int> getTotalCount(int languageId) async {
+  Future<int> getTotalCount(String languageId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
       'SELECT COUNT(*) as count FROM terms WHERE language_id = ?',
@@ -166,14 +170,15 @@ class TermRepository extends BaseRepository {
     final db = await getDatabase();
     final batch = db.batch();
     for (final term in terms) {
-      batch.insert('terms', term.toMap(),
+      final id = term.id ?? _uuid.v4();
+      batch.insert('terms', term.copyWith(id: id).toMap(),
           conflictAlgorithm: ConflictAlgorithm.replace);
     }
     await batch.commit(noResult: true);
     notifyChange();
   }
 
-  Future<void> bulkUpdateStatus(List<int> termIds, int newStatus) async {
+  Future<void> bulkUpdateStatus(List<String> termIds, int newStatus) async {
     final db = await getDatabase();
     final batch = db.batch();
     for (final id in termIds) {
@@ -191,7 +196,7 @@ class TermRepository extends BaseRepository {
     notifyChange();
   }
 
-  Future<Map<String, int>> getCreatedCountsByDay(int languageId, String sinceIso) async {
+  Future<Map<String, int>> getCreatedCountsByDay(String languageId, String sinceIso) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
       '''
@@ -205,7 +210,7 @@ class TermRepository extends BaseRepository {
     return {for (var row in result) row['date'] as String: row['cnt'] as int};
   }
 
-  Future<List<Term>> search(int languageId, String query) async {
+  Future<List<Term>> search(String languageId, String query) async {
     final db = await getDatabase();
     final escaped = '%${BaseRepository.escapeLike(query)}%';
     final maps = await db.rawQuery(
@@ -220,5 +225,4 @@ class TermRepository extends BaseRepository {
     );
     return maps.map((map) => Term.fromMap(map)).toList();
   }
-
 }

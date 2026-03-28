@@ -11,7 +11,7 @@ void main() {
 
   List<Term> sampleTerms() => [
         Term(
-          languageId: 1,
+          languageId: 'lang-1',
           text: 'hola',
           lowerText: 'hola',
           status: 1,
@@ -20,7 +20,7 @@ void main() {
           sentence: 'Hola, mundo!',
         ),
         Term(
-          languageId: 1,
+          languageId: 'lang-1',
           text: 'mundo',
           lowerText: 'mundo',
           status: 3,
@@ -55,7 +55,7 @@ void main() {
           'hola,1,hello,,Hola mundo\r\n'
           'mundo,3,world,,\r\n';
 
-      final terms = await service.importTermsFromCSV(csv, 1);
+      final terms = await service.importTermsFromCSV(csv, 'lang-1');
       expect(terms, hasLength(2));
       expect(terms[0].text, 'hola');
       expect(terms[0].status, 1);
@@ -66,13 +66,13 @@ void main() {
 
     test('skips empty rows', () async {
       const csv = 'Term,Status\r\nhola,1\r\n\r\n\r\nmundo,2\r\n';
-      final terms = await service.importTermsFromCSV(csv, 1);
+      final terms = await service.importTermsFromCSV(csv, 'lang-1');
       expect(terms, hasLength(2));
     });
 
     test('handles missing columns with defaults', () async {
       const csv = 'Term\r\nhola\r\n';
-      final terms = await service.importTermsFromCSV(csv, 1);
+      final terms = await service.importTermsFromCSV(csv, 'lang-1');
       expect(terms, hasLength(1));
       expect(terms[0].status, 1); // default
       expect(terms[0].translation, '');
@@ -80,9 +80,9 @@ void main() {
 
     test('sets languageId on all terms', () async {
       const csv = 'Term,Status\r\nhola,1\r\nmundo,2\r\n';
-      final terms = await service.importTermsFromCSV(csv, 42);
+      final terms = await service.importTermsFromCSV(csv, '42');
       for (final term in terms) {
-        expect(term.languageId, 42);
+        expect(term.languageId, '42');
       }
     });
   });
@@ -91,7 +91,7 @@ void main() {
     test('export then import preserves data', () async {
       final original = sampleTerms();
       final csv = await service.exportTermsToCSV(original);
-      final imported = await service.importTermsFromCSV(csv, 1);
+      final imported = await service.importTermsFromCSV(csv, 'lang-1');
 
       expect(imported, hasLength(original.length));
       for (var i = 0; i < original.length; i++) {
@@ -117,7 +117,7 @@ void main() {
     test('includes romanization in brackets', () async {
       final terms = [
         Term(
-          languageId: 1,
+          languageId: 'lang-1',
           text: '你好',
           lowerText: '你好',
           translation: 'hello',

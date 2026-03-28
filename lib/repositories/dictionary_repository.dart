@@ -1,18 +1,22 @@
+import 'package:uuid/uuid.dart';
 import '../models/dictionary.dart';
 import 'base_repository.dart';
+
+const _uuid = Uuid();
 
 class DictionaryRepository extends BaseRepository {
   DictionaryRepository(super.getDatabase, {super.onChange});
 
-  Future<int> create(Dictionary dictionary) async {
+  Future<String> create(Dictionary dictionary) async {
     final db = await getDatabase();
-    final id = await db.insert('dictionaries', dictionary.toMap());
+    final id = dictionary.id ?? _uuid.v4();
+    await db.insert('dictionaries', dictionary.copyWith(id: id).toMap());
     notifyChange();
     return id;
   }
 
   Future<List<Dictionary>> getAll({
-    int? languageId,
+    String? languageId,
     bool activeOnly = false,
   }) async {
     final db = await getDatabase();
@@ -39,7 +43,7 @@ class DictionaryRepository extends BaseRepository {
     return maps.map((map) => Dictionary.fromMap(map)).toList();
   }
 
-  Future<Dictionary?> getById(int id) async {
+  Future<Dictionary?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query(
       'dictionaries',
@@ -62,14 +66,14 @@ class DictionaryRepository extends BaseRepository {
     return count;
   }
 
-  Future<int> delete(int id) async {
+  Future<int> delete(String id) async {
     final db = await getDatabase();
     final count = await db.delete('dictionaries', where: 'id = ?', whereArgs: [id]);
     notifyChange();
     return count;
   }
 
-  Future<int> deleteByLanguage(int languageId) async {
+  Future<int> deleteByLanguage(String languageId) async {
     final db = await getDatabase();
     final count = await db.delete(
       'dictionaries',

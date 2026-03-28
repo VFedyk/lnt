@@ -38,7 +38,7 @@ void main() {
   late MockTermRepository mockTerms;
 
   Language testLanguage() => Language(
-        id: 1,
+        id: 'lang-1',
         name: 'English',
         languageCode: 'en',
       );
@@ -88,7 +88,7 @@ void main() {
       changes.texts.notify();
       await pumpMicrotasks();
 
-      verify(() => mockTexts.getAll(languageId: 1)).called(1);
+      verify(() => mockTexts.getAll(languageId: 'lang-1')).called(1);
     });
 
     test('dispose removes listeners', () async {
@@ -112,10 +112,10 @@ void main() {
       await pumpMicrotasks();
 
       verify(() => mockCollections.getAll(
-            languageId: 1,
+            languageId: 'lang-1',
             parentId: null,
           )).called(1);
-      verify(() => mockTexts.getAll(languageId: 1)).called(1);
+      verify(() => mockTexts.getAll(languageId: 'lang-1')).called(1);
     });
 
     test('collection domain notification triggers loadData', () async {
@@ -126,10 +126,10 @@ void main() {
       await pumpMicrotasks();
 
       verify(() => mockCollections.getAll(
-            languageId: 1,
+            languageId: 'lang-1',
             parentId: null,
           )).called(1);
-      verify(() => mockTexts.getAll(languageId: 1)).called(1);
+      verify(() => mockTexts.getAll(languageId: 'lang-1')).called(1);
     });
 
     test('unrelated domain notification does not trigger loadData', () async {
@@ -148,13 +148,13 @@ void main() {
 
   group('CRUD methods delegate to repositories', () {
     test('createText delegates to repository', () async {
-      when(() => mockTexts.create(any())).thenAnswer((_) async => 1);
+      when(() => mockTexts.create(any())).thenAnswer((_) async => 'text-uuid-1');
 
       final controller = LibraryController(language: testLanguage());
       addTearDown(controller.dispose);
 
       final doc = TextDocument(
-        languageId: 1,
+        languageId: 'lang-1',
         title: 'Test',
         content: 'Hello',
       );
@@ -169,9 +169,9 @@ void main() {
       final controller = LibraryController(language: testLanguage());
       addTearDown(controller.dispose);
 
-      await controller.deleteText(42);
+      await controller.deleteText('text-id-42');
 
-      verify(() => mockTexts.delete(42)).called(1);
+      verify(() => mockTexts.delete('text-id-42')).called(1);
     });
   });
 }

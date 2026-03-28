@@ -12,8 +12,8 @@ abstract class _BaseTermSearchConstants {
 }
 
 class BaseTermSearchDialog extends StatefulWidget {
-  final int languageId;
-  final int? excludeTermId;
+  final String languageId;
+  final String? excludeTermId;
   final String languageName;
   final String languageCode;
   final String? initialWord;
@@ -36,7 +36,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
   final _searchController = TextEditingController();
   final _translationController = TextEditingController();
   List<Term> _searchResults = [];
-  Map<int, List<Translation>> _translationsMap = {};
+  Map<String, List<Translation>> _translationsMap = {};
   bool _isSearching = false;
 
   static final _snowballStemmer = SnowballStemmer();
@@ -112,7 +112,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
           .toList();
       final translations = termIds.isNotEmpty
           ? await db.translations.getByTermIds(termIds)
-          : <int, List<Translation>>{};
+          : <String, List<Translation>>{};
 
       if (!mounted) return;
       setState(() {
@@ -461,7 +461,7 @@ class _AddTranslationDialogState extends State<_AddTranslationDialog>
             Navigator.pop(
               context,
               Translation(
-                termId: widget.term.id ?? 0,
+                termId: widget.term.id ?? '',
                 meaning: meaning,
                 partOfSpeech: _partOfSpeech,
               ),

@@ -1,21 +1,23 @@
 import 'package:fsrs/fsrs.dart' as fsrs;
+import 'package:uuid/uuid.dart';
 import '../models/review_card.dart';
 import '../utils/constants.dart';
 import 'base_repository.dart';
 
+const _uuid = Uuid();
+
 class ReviewCardRepository extends BaseRepository {
   ReviewCardRepository(super.getDatabase, {super.onChange});
 
-  Future<int> create(ReviewCardRecord record) async {
+  Future<String> create(ReviewCardRecord record) async {
     final db = await getDatabase();
-    final map = record.toMap();
-    map.remove('id');
-    final id = await db.insert('review_cards', map);
+    final id = record.id ?? _uuid.v4();
+    await db.insert('review_cards', record.copyWith(id: id).toMap());
     notifyChange();
     return id;
   }
 
-  Future<ReviewCardRecord?> getByTermId(int termId) async {
+  Future<ReviewCardRecord?> getByTermId(String termId) async {
     final db = await getDatabase();
     final maps = await db.query(
       'review_cards',
@@ -38,7 +40,7 @@ class ReviewCardRepository extends BaseRepository {
     return result;
   }
 
-  Future<int> deleteByTermId(int termId) async {
+  Future<int> deleteByTermId(String termId) async {
     final db = await getDatabase();
     final result = await db.delete(
       'review_cards',
@@ -52,7 +54,7 @@ class ReviewCardRepository extends BaseRepository {
   /// Get due cards for a language, joined with terms.
   /// Excludes ignored (status=0) and wellKnown (status=99) terms.
   /// Limited to [limit] cards to prevent unbounded memory usage.
-  Future<List<ReviewCardRecord>> getDueCards(int languageId,
+  Future<List<ReviewCardRecord>> getDueCards(String languageId,
       {DateTime? now, int limit = AppConstants.dueCardLimit}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
@@ -73,7 +75,7 @@ class ReviewCardRepository extends BaseRepository {
   }
 
   /// Count due cards for a language (for badge display).
-  Future<int> getDueCount(int languageId, {DateTime? now}) async {
+  Future<int> getDueCount(String languageId, {DateTime? now}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
     final result = await db.rawQuery(
@@ -92,7 +94,7 @@ class ReviewCardRepository extends BaseRepository {
 
   /// Count due cards that are eligible for cloze review (have at least one
   /// sentence — either in terms.sentence or in the term_sentences table).
-  Future<int> getClozeDueCount(int languageId, {DateTime? now}) async {
+  Future<int> getClozeDueCount(String languageId, {DateTime? now}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
     final result = await db.rawQuery(
@@ -114,7 +116,7 @@ class ReviewCardRepository extends BaseRepository {
   }
 
   /// Get the next due date across all cards for a language.
-  Future<DateTime?> getNextDueDate(int languageId) async {
+  Future<DateTime?> getNextDueDate(String languageId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
       '''
@@ -132,7 +134,7 @@ class ReviewCardRepository extends BaseRepository {
   }
 
   /// Ensure a review card exists for a term; create one if missing.
-  Future<ReviewCardRecord> getOrCreate(int termId) async {
+  Future<ReviewCardRecord> getOrCreate(String termId) async {
     final existing = await getByTermId(termId);
     if (existing != null) return existing;
 
@@ -153,13 +155,13 @@ class ReviewCardRepository extends BaseRepository {
   }
 
   /// Batch create review cards for terms that don't have one yet.
-  Future<void> ensureCardsExist(List<int> termIds) async {
+  Future<void> ensureCardsExist(List<String> termIds) async {
     if (termIds.isEmpty) return;
 
     final db = await getDatabase();
     // Find which term IDs already have cards
     const batchSize = 500;
-    final existingIds = <int>{};
+    final existingIds = <String>{};
 
     for (var i = 0; i < termIds.length; i += batchSize) {
       final batch = termIds.skip(i).take(batchSize).toList();
@@ -168,7 +170,7 @@ class ReviewCardRepository extends BaseRepository {
         'SELECT term_id FROM review_cards WHERE term_id IN ($placeholders)',
         batch,
       );
-      existingIds.addAll(maps.map((m) => m['term_id'] as int));
+      existingIds.addAll(maps.map((m) => m['term_id'] as String));
     }
 
     final missingIds = termIds.where((id) => !existingIds.contains(id)).toList();
@@ -176,21 +178,21 @@ class ReviewCardRepository extends BaseRepository {
 
     final now = DateTime.now().toUtc();
     final dbBatch = db.batch();
-    for (final termId in missingIds) {
+    for (var i = 0; i < missingIds.length; i++) {
+      final termId = missingIds[i];
       final card = fsrs.Card(
-        cardId: now.millisecondsSinceEpoch + termId,
+        cardId: now.millisecondsSinceEpoch + i,
         due: now,
       );
       final record = ReviewCardRecord(
+        id: _uuid.v4(),
         termId: termId,
         card: card,
         nextDue: now,
         createdAt: now,
         updatedAt: now,
       );
-      final map = record.toMap();
-      map.remove('id');
-      dbBatch.insert('review_cards', map);
+      dbBatch.insert('review_cards', record.toMap());
     }
     await dbBatch.commit(noResult: true);
     notifyChange();
