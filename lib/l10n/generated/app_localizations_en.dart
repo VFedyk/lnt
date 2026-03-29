@@ -33,6 +33,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stats => 'Stats';
 
   @override
+  String get detailedStats => 'Detailed stats';
+
+  @override
   String get languages => 'Languages';
 
   @override

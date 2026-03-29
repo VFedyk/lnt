@@ -146,6 +146,12 @@ abstract class AppLocalizations {
   /// **'Stats'**
   String get stats;
 
+  /// No description provided for @detailedStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed stats'**
+  String get detailedStats;
+
   /// No description provided for @languages.
   ///
   /// In en, this message translates to:

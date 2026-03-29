@@ -33,6 +33,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get stats => 'Статистика';
 
   @override
+  String get detailedStats => 'Детальна статистика';
+
+  @override
   String get languages => 'Мови';
 
   @override

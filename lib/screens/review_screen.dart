@@ -4,9 +4,9 @@ import '../models/language.dart';
 import '../service_locator.dart';
 import '../services/logger_service.dart';
 import '../utils/constants.dart';
-import '../widgets/shared/animated_counter.dart';
 import '../widgets/shared/app_empty_state.dart';
-import '../widgets/shared/review_progress_ring.dart';
+import '../widgets/review/exercise_card.dart';
+import '../widgets/review/review_stats_section.dart';
 import 'cloze_review_screen.dart';
 import 'flashcard_review_screen.dart';
 import 'multiple_choice_review_screen.dart';
@@ -104,361 +104,173 @@ class _ReviewScreenState extends State<ReviewScreen> {
       );
     }
 
+    final exerciseCards = <Widget>[
+      ExerciseCard(
+        icon: Icons.style,
+        title: l10n.flashcardReview,
+        subtitle: l10n.flashcardReviewDescription,
+        dueCount: _dueCount,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FlashcardReviewScreen(language: widget.language),
+          ),
+        ),
+      ),
+      ExerciseCard(
+        icon: Icons.keyboard,
+        title: l10n.typingSourceToTarget,
+        subtitle: l10n.typingSourceToTargetDescription,
+        dueCount: _dueCount,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TypingReviewScreen(
+              language: widget.language,
+              direction: TypingDirection.sourceToTarget,
+            ),
+          ),
+        ),
+      ),
+      ExerciseCard(
+        icon: Icons.keyboard,
+        title: l10n.typingTargetToSource,
+        subtitle: l10n.typingTargetToSourceDescription,
+        dueCount: _dueCount,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TypingReviewScreen(
+              language: widget.language,
+              direction: TypingDirection.targetToSource,
+            ),
+          ),
+        ),
+      ),
+      ExerciseCard(
+        icon: Icons.quiz,
+        title: l10n.multipleChoiceSourceToTarget,
+        subtitle: l10n.multipleChoiceSourceToTargetDescription,
+        dueCount: _dueCount,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MultipleChoiceReviewScreen(
+              language: widget.language,
+              direction: MultipleChoiceDirection.sourceToTarget,
+            ),
+          ),
+        ),
+      ),
+      ExerciseCard(
+        icon: Icons.quiz,
+        title: l10n.multipleChoiceTargetToSource,
+        subtitle: l10n.multipleChoiceTargetToSourceDescription,
+        dueCount: _dueCount,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MultipleChoiceReviewScreen(
+              language: widget.language,
+              direction: MultipleChoiceDirection.targetToSource,
+            ),
+          ),
+        ),
+      ),
+      ExerciseCard(
+        icon: Icons.text_fields,
+        title: '${l10n.clozeReview} — ${l10n.clozeEasyMode}',
+        subtitle: l10n.clozeEasyDescription,
+        dueCount: _clozeDueCount,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ClozeReviewScreen(
+              language: widget.language,
+              mode: ClozeMode.easy,
+            ),
+          ),
+        ),
+      ),
+      ExerciseCard(
+        icon: Icons.text_fields,
+        title: '${l10n.clozeReview} — ${l10n.clozeAdvancedMode}',
+        subtitle: l10n.clozeAdvancedDescription,
+        dueCount: _clozeDueCount,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ClozeReviewScreen(
+              language: widget.language,
+              mode: ClozeMode.advanced,
+            ),
+          ),
+        ),
+      ),
+      if (widget.language.splitByCharacter) ...[
+        ExerciseCard(
+          icon: Icons.draw_outlined,
+          title: l10n.writingPractice,
+          subtitle: l10n.writingPracticeDescription,
+          dueCount: _dueCount,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => StrokeReviewScreen(language: widget.language),
+            ),
+          ),
+        ),
+        ExerciseCard(
+          icon: Icons.brush_outlined,
+          title: l10n.radicalPractice,
+          subtitle: l10n.radicalPracticeDescription,
+          dueCount: 0,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const RadicalPracticeScreen()),
+          ),
+        ),
+      ],
+    ];
+
     return RefreshIndicator(
       onRefresh: _loadStats,
       child: ListView(
         padding: const EdgeInsets.all(AppConstants.spacingL),
         children: [
-          // Stats summary card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppConstants.spacingL),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildAnimatedStatItem(
-                    l10n.cardsDue,
-                    _dueCount,
-                    Icons.schedule,
-                  ),
-                  Column(
-                    children: [
-                      ReviewProgressRing(
-                        reviewedToday: _reviewedToday,
-                        dueCount: _dueCount,
-                      ),
-                      const SizedBox(height: AppConstants.spacingXS),
-                      Text(
-                        l10n.reviewedToday,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ],
+          ReviewStatsSection(
+            dueCount: _dueCount,
+            reviewedToday: _reviewedToday,
+            onStatsTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StatisticsScreen(language: widget.language),
               ),
             ),
           ),
           const SizedBox(height: AppConstants.spacingL),
 
-          // Flashcard Review tile
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.style),
-              title: Text(l10n.flashcardReview),
-              subtitle: Text(l10n.flashcardReviewDescription),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_dueCount > 0)
-                    Badge(
-                      label: Text(_dueCount.toString()),
-                      child: const SizedBox.shrink(),
-                    ),
-                  const SizedBox(width: AppConstants.spacingS),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        FlashcardReviewScreen(language: widget.language),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingS),
-
-          // Typing Review: Source → Target
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.keyboard),
-              title: Text(l10n.typingSourceToTarget),
-              subtitle: Text(l10n.typingSourceToTargetDescription),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_dueCount > 0)
-                    Badge(
-                      label: Text(_dueCount.toString()),
-                      child: const SizedBox.shrink(),
-                    ),
-                  const SizedBox(width: AppConstants.spacingS),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => TypingReviewScreen(
-                      language: widget.language,
-                      direction: TypingDirection.sourceToTarget,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingS),
-
-          // Typing Review: Target → Source
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.keyboard),
-              title: Text(l10n.typingTargetToSource),
-              subtitle: Text(l10n.typingTargetToSourceDescription),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_dueCount > 0)
-                    Badge(
-                      label: Text(_dueCount.toString()),
-                      child: const SizedBox.shrink(),
-                    ),
-                  const SizedBox(width: AppConstants.spacingS),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => TypingReviewScreen(
-                      language: widget.language,
-                      direction: TypingDirection.targetToSource,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingS),
-
-          // Multiple Choice: Source → Target
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.quiz),
-              title: Text(l10n.multipleChoiceSourceToTarget),
-              subtitle: Text(l10n.multipleChoiceSourceToTargetDescription),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_dueCount > 0)
-                    Badge(
-                      label: Text(_dueCount.toString()),
-                      child: const SizedBox.shrink(),
-                    ),
-                  const SizedBox(width: AppConstants.spacingS),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MultipleChoiceReviewScreen(
-                      language: widget.language,
-                      direction: MultipleChoiceDirection.sourceToTarget,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingS),
-
-          // Multiple Choice: Target → Source
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.quiz),
-              title: Text(l10n.multipleChoiceTargetToSource),
-              subtitle: Text(l10n.multipleChoiceTargetToSourceDescription),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_dueCount > 0)
-                    Badge(
-                      label: Text(_dueCount.toString()),
-                      child: const SizedBox.shrink(),
-                    ),
-                  const SizedBox(width: AppConstants.spacingS),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MultipleChoiceReviewScreen(
-                      language: widget.language,
-                      direction: MultipleChoiceDirection.targetToSource,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingS),
-
-          // Cloze Review: Easy (multiple choice)
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.text_fields),
-              title: Text(l10n.clozeReview),
-              subtitle: Text(
-                '${l10n.clozeEasyMode} — ${l10n.clozeEasyDescription}',
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_clozeDueCount > 0)
-                    Badge(
-                      label: Text(_clozeDueCount.toString()),
-                      child: const SizedBox.shrink(),
-                    ),
-                  const SizedBox(width: AppConstants.spacingS),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ClozeReviewScreen(
-                      language: widget.language,
-                      mode: ClozeMode.easy,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingS),
-
-          // Cloze Review: Advanced (typing)
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.text_fields),
-              title: Text(l10n.clozeReview),
-              subtitle: Text(
-                '${l10n.clozeAdvancedMode} — ${l10n.clozeAdvancedDescription}',
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_clozeDueCount > 0)
-                    Badge(
-                      label: Text(_clozeDueCount.toString()),
-                      child: const SizedBox.shrink(),
-                    ),
-                  const SizedBox(width: AppConstants.spacingS),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ClozeReviewScreen(
-                      language: widget.language,
-                      mode: ClozeMode.advanced,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingS),
-
-          // Writing Practice + Radical Practice (CJK languages only)
-          if (widget.language.splitByCharacter) ...[
-            const SizedBox(height: AppConstants.spacingS),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.draw_outlined),
-                title: Text(l10n.writingPractice),
-                subtitle: Text(l10n.writingPracticeDescription),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_dueCount > 0)
-                      Badge(
-                        label: Text(_dueCount.toString()),
-                        child: const SizedBox.shrink(),
-                      ),
-                    const SizedBox(width: AppConstants.spacingS),
-                    const Icon(Icons.chevron_right),
-                  ],
+          // Exercise grid
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount =
+                  (constraints.maxWidth / 200).clamp(2, 4).round();
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: AppConstants.spacingS,
+                  mainAxisSpacing: AppConstants.spacingS,
+                  mainAxisExtent: 120,
                 ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          StrokeReviewScreen(language: widget.language),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: AppConstants.spacingS),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.brush_outlined),
-                title: Text(l10n.radicalPractice),
-                subtitle: Text(l10n.radicalPracticeDescription),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const RadicalPracticeScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-          const SizedBox(height: AppConstants.spacingS),
-
-          // Statistics tile
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.bar_chart),
-              title: Text(l10n.stats),
-              subtitle: Text(l10n.statisticsDescription),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => StatisticsScreen(language: widget.language),
-                  ),
-                );
-              },
-            ),
+                itemCount: exerciseCards.length,
+                itemBuilder: (_, i) => exerciseCards[i],
+              );
+            },
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildAnimatedStatItem(String label, int value, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: Theme.of(context).colorScheme.secondary),
-        const SizedBox(height: AppConstants.spacingXS),
-        AnimatedCounter(
-          value: value,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
     );
   }
 }
