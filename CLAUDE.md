@@ -32,6 +32,7 @@ lib/
 │   ├── languages/         # languages_screen.dart only
 │   ├── library/           # library_screen.dart only (dialogs + grid/list/search/status widgets + book_cover)
 │   ├── reader/            # reader_screen.dart only (dialogs, reader_content, paragraph_rich_text, status_legend, word_list_drawer)
+│   ├── review/            # review_screen.dart only (exercise_card, review_stats_section)
 │   └── settings/          # settings_screen.dart only (section widgets incl. target_language_section)
 ├── utils/                 # Helpers, constants, CoverImageHelper, language_utils
 └── l10n/                  # Localization (ARB files + generated)
