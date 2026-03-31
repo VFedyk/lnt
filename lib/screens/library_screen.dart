@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../controllers/library_controller.dart';
@@ -29,7 +30,7 @@ abstract class _LibraryScreenConstants {
   static const double fabMenuVerticalOffset = 200.0;
 }
 
-enum _LibraryAddAction { addText, importUrl, importTxt, importEpub }
+enum _LibraryAddAction { addCollection, addText, importUrl, importTxt, importEpub }
 
 class LibraryScreen extends StatefulWidget {
   final Language language;
@@ -296,32 +297,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
       items: [
         PopupMenuItem(
-          value: _LibraryAddAction.addText,
-          child: Row(
-            children: [
-              const Icon(Icons.edit),
-              const SizedBox(width: AppConstants.spacingS),
-              Text(l10n.addText),
-            ],
-          ),
-        ),
-        PopupMenuItem(
           value: _LibraryAddAction.importUrl,
           child: Row(
             children: [
               const Icon(Icons.link),
               const SizedBox(width: AppConstants.spacingS),
               Text(l10n.importFromUrl),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: _LibraryAddAction.importTxt,
-          child: Row(
-            children: [
-              const Icon(Icons.text_snippet),
-              const SizedBox(width: AppConstants.spacingS),
-              Text(l10n.importTxt),
             ],
           ),
         ),
@@ -335,10 +316,44 @@ class _LibraryScreenState extends State<LibraryScreen> {
             ],
           ),
         ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: _LibraryAddAction.addText,
+          child: Row(
+            children: [
+              const Icon(Icons.edit),
+              const SizedBox(width: AppConstants.spacingS),
+              Text(l10n.addText),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _LibraryAddAction.importTxt,
+          child: Row(
+            children: [
+              const Icon(Icons.text_snippet),
+              const SizedBox(width: AppConstants.spacingS),
+              Text(l10n.importTxt),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: _LibraryAddAction.addCollection,
+          child: Row(
+            children: [
+              const Icon(Icons.create_new_folder),
+              const SizedBox(width: AppConstants.spacingS),
+              Text(l10n.newCollection),
+            ],
+          ),
+        ),
       ],
     ).then((value) {
       if (value == null) return;
       switch (value) {
+        case _LibraryAddAction.addCollection:
+          _addCollection(ctrl);
         case _LibraryAddAction.addText:
           _addText(ctrl);
         case _LibraryAddAction.importTxt:
@@ -450,9 +465,27 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
   }
 
+  void _showAddMenuAtCenter(BuildContext context, LibraryController ctrl) {
+    final size = MediaQuery.of(context).size;
+    _showAddMenu(
+      context,
+      Offset(size.width / 2, size.height / 2),
+      ctrl,
+    );
+  }
+
   Widget _buildScaffold(BuildContext context, LibraryController ctrl) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyN, meta: true): () =>
+            _showAddMenuAtCenter(context, ctrl),
+        const SingleActivator(LogicalKeyboardKey.keyN, control: true): () =>
+            _showAddMenuAtCenter(context, ctrl),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -605,7 +638,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
           child: const Icon(Icons.add),
         ),
       ),
-    );
+      ),
+    ),
+  );
   }
 
   Widget _buildSortFilterBar(LibraryController ctrl) {
