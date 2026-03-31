@@ -18,7 +18,7 @@ abstract class ChartHelpers {
     final result = <DailyActivityChartData>[];
 
     for (int i = days - 1; i >= 0; i--) {
-      final date = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+      final date = DateTime(now.year, now.month, now.day - i);
       final dateKey = DateFormat('yyyy-MM-dd').format(date);
 
       result.add(DailyActivityChartData(
@@ -48,7 +48,7 @@ abstract class ChartHelpers {
 
     // Work backwards from today to calculate historical values
     for (int i = 0; i < days; i++) {
-      final date = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+      final date = DateTime(now.year, now.month, now.day - i);
       final dateKey = DateFormat('yyyy-MM-dd').format(date);
 
       // Insert at beginning to maintain chronological order

@@ -6,6 +6,12 @@ import '../../utils/app_theme.dart';
 import '../../utils/constants.dart';
 import 'custom_chart_tooltip.dart';
 
+/// DST-safe calendar day addition.
+/// Using [DateTime] constructor normalisation avoids UTC-offset errors that
+/// occur when crossing DST boundaries with [Duration]-based arithmetic.
+DateTime _addDays(DateTime date, int days) =>
+    DateTime(date.year, date.month, date.day + days);
+
 abstract class _HeatmapConstants {
   static const double cellSize = 11.0;
   static const double cellSpacing = 3.0;
@@ -109,7 +115,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
       return;
     }
 
-    final date = startDate.add(Duration(days: col * 7 + row));
+    final date = _addDays(startDate, col * 7 + row);
     if (date.isAfter(DateTime.now())) {
       return;
     }
@@ -160,7 +166,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
       return;
     }
 
-    final date = startDate.add(Duration(days: col * 7 + row));
+    final date = _addDays(startDate, col * 7 + row);
     if (date.isAfter(DateTime.now())) {
       if (_currentHoveredDateKey != null) {
         _removeTooltip();
@@ -507,7 +513,7 @@ class _HeatmapPainter extends CustomPainter {
     );
     int lastMonth = -1;
     for (int week = 0; week < weeksToShow; week++) {
-      final weekStart = startDate.add(Duration(days: week * 7));
+      final weekStart = _addDays(startDate, week * 7);
       if (weekStart.month != lastMonth) {
         lastMonth = weekStart.month;
         final monthName = DateFormat('MMM', locale).format(weekStart);
@@ -526,7 +532,7 @@ class _HeatmapPainter extends CustomPainter {
     final dayLabels = DateFormat('E', locale);
     for (int row = 0; row < _HeatmapConstants.daysInWeek; row++) {
       if (row == 0 || row == 2 || row == 4) {
-        final sampleDate = startDate.add(Duration(days: row));
+        final sampleDate = _addDays(startDate, row);
         final label = dayLabels.format(sampleDate);
         final tp = TextPainter(
           text: TextSpan(text: label, style: monthLabelStyle),
@@ -549,7 +555,7 @@ class _HeatmapPainter extends CustomPainter {
     final paint = Paint();
     for (int week = 0; week < weeksToShow; week++) {
       for (int day = 0; day < _HeatmapConstants.daysInWeek; day++) {
-        final date = startDate.add(Duration(days: week * 7 + day));
+        final date = _addDays(startDate, week * 7 + day);
 
         if (date.isAfter(now)) continue;
 
