@@ -14,7 +14,7 @@ import '../widgets/shared/app_empty_state.dart';
 import '../widgets/shared/review_options_grid.dart';
 import '../widgets/shared/review_progress_indicator.dart';
 
-enum MultipleChoiceDirection { sourceToTarget, targetToSource }
+enum MultipleChoiceDirection { sourceToTarget, targetToSource, romanization }
 
 abstract class _Constants {
   static const double promptFontSize = 28.0;
@@ -160,13 +160,26 @@ class _MultipleChoiceReviewScreenState
       }
     }
 
+    final filteredDueItems =
+        widget.direction == MultipleChoiceDirection.romanization
+            ? dueItems
+                .where((item) => item.term.romanization.trim().isNotEmpty)
+                .toList()
+            : dueItems;
+    final filteredPool =
+        widget.direction == MultipleChoiceDirection.romanization
+            ? pool
+                .where((e) => e.term.romanization.trim().isNotEmpty)
+                .toList()
+            : pool;
+
     if (mounted) {
       setState(() {
-        _dueItems = dueItems;
-        _distractorPool = pool;
+        _dueItems = filteredDueItems;
+        _distractorPool = filteredPool;
         _isLoading = false;
       });
-      if (dueItems.isNotEmpty) {
+      if (filteredDueItems.isNotEmpty) {
         _generateOptions();
       }
     }
@@ -191,7 +204,9 @@ class _MultipleChoiceReviewScreenState
           final answer =
               widget.direction == MultipleChoiceDirection.sourceToTarget
                   ? e.translations.first.meaning
-                  : e.term.text;
+                  : widget.direction == MultipleChoiceDirection.targetToSource
+                      ? e.term.text
+                      : e.term.romanization;
           final trimmed = answer.trim();
           return trimmed.isNotEmpty &&
               trimmed.toLowerCase() != correct.trim().toLowerCase();
@@ -202,7 +217,9 @@ class _MultipleChoiceReviewScreenState
     final distractors = candidates.take(3).map((e) {
       return widget.direction == MultipleChoiceDirection.sourceToTarget
           ? e.translations.first.meaning
-          : e.term.text;
+          : widget.direction == MultipleChoiceDirection.targetToSource
+              ? e.term.text
+              : e.term.romanization;
     }).toList();
 
     final options = [correct, ...distractors]..shuffle(_random);
@@ -216,15 +233,18 @@ class _MultipleChoiceReviewScreenState
   }
 
   String _getPromptText(ReviewItem item) {
-    if (widget.direction == MultipleChoiceDirection.sourceToTarget) {
-      return item.term.text;
+    if (widget.direction == MultipleChoiceDirection.targetToSource) {
+      return item.translations.first.meaning;
     }
-    return item.translations.first.meaning;
+    return item.term.text; // sourceToTarget and romanization both show characters
   }
 
   String _getCorrectAnswer(ReviewItem item) {
     if (widget.direction == MultipleChoiceDirection.sourceToTarget) {
       return item.translations.first.meaning;
+    }
+    if (widget.direction == MultipleChoiceDirection.romanization) {
+      return item.term.romanization;
     }
     return item.term.text;
   }
@@ -259,10 +279,11 @@ class _MultipleChoiceReviewScreenState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    final dirLabel =
-        widget.direction == MultipleChoiceDirection.sourceToTarget
-            ? l10n.typingSourceToTarget
-            : l10n.typingTargetToSource;
+    final dirLabel = switch (widget.direction) {
+      MultipleChoiceDirection.sourceToTarget => l10n.typingSourceToTarget,
+      MultipleChoiceDirection.targetToSource => l10n.typingTargetToSource,
+      MultipleChoiceDirection.romanization => l10n.multipleChoiceRomanization,
+    };
 
     Widget body;
     if (_isLoading || _isSeeding) {
@@ -317,8 +338,9 @@ class _MultipleChoiceReviewScreenState
     final prompt = _getPromptText(item);
     final answered = _selectedOptionIndex != null;
     final statusColor = TermStatus.colorFor(item.term.status);
-    final hasAudio = widget.direction == MultipleChoiceDirection.sourceToTarget &&
-        widget.language.languageCode.isNotEmpty;
+    final hasAudio =
+        widget.direction != MultipleChoiceDirection.targetToSource &&
+            widget.language.languageCode.isNotEmpty;
 
     return SafeArea(
       child: Padding(
@@ -387,6 +409,18 @@ class _MultipleChoiceReviewScreenState
                         const SizedBox(height: AppConstants.spacingS),
                         Text(
                           item.term.romanization,
+                          style: TextStyle(
+                            fontSize: _Constants.romanizationFontSize,
+                            color: AppConstants.subtitleColor,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                      if (widget.direction ==
+                          MultipleChoiceDirection.romanization) ...[
+                        const SizedBox(height: AppConstants.spacingS),
+                        Text(
+                          item.translations.first.meaning,
                           style: TextStyle(
                             fontSize: _Constants.romanizationFontSize,
                             color: AppConstants.subtitleColor,

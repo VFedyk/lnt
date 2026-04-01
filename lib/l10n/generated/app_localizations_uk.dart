@@ -1469,6 +1469,13 @@ class AppLocalizationsUk extends AppLocalizations {
       'Оберіть правильне слово для кожного перекладу';
 
   @override
+  String get multipleChoiceRomanization => 'Вибір з варіантів: Романізація';
+
+  @override
+  String get multipleChoiceRomanizationDescription =>
+      'Виберіть правильну романізацію для кожного слова';
+
+  @override
   String get writingPractice => 'Практика написання';
 
   @override

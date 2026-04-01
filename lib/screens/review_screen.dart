@@ -177,6 +177,22 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ),
         ),
       ),
+      if (widget.language.showRomanization)
+        ExerciseCard(
+          icon: Icons.record_voice_over,
+          title: l10n.multipleChoiceRomanization,
+          subtitle: l10n.multipleChoiceRomanizationDescription,
+          dueCount: _dueCount,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MultipleChoiceReviewScreen(
+                language: widget.language,
+                direction: MultipleChoiceDirection.romanization,
+              ),
+            ),
+          ),
+        ),
       ExerciseCard(
         icon: Icons.text_fields,
         title: '${l10n.clozeReview} — ${l10n.clozeEasyMode}',

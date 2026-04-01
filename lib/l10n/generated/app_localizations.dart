@@ -2720,6 +2720,18 @@ abstract class AppLocalizations {
   /// **'Choose the correct word for each translation'**
   String get multipleChoiceTargetToSourceDescription;
 
+  /// No description provided for @multipleChoiceRomanization.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple Choice: Romanization'**
+  String get multipleChoiceRomanization;
+
+  /// No description provided for @multipleChoiceRomanizationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the correct romanization for each word'**
+  String get multipleChoiceRomanizationDescription;
+
   /// No description provided for @writingPractice.
   ///
   /// In en, this message translates to:

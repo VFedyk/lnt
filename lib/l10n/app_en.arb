@@ -813,6 +813,8 @@
   "multipleChoiceTargetToSource": "Multiple Choice: Target → Source",
   "multipleChoiceSourceToTargetDescription": "Choose the correct translation for each word",
   "multipleChoiceTargetToSourceDescription": "Choose the correct word for each translation",
+  "multipleChoiceRomanization": "Multiple Choice: Romanization",
+  "multipleChoiceRomanizationDescription": "Choose the correct romanization for each word",
   "writingPractice": "Writing Practice",
   "writingPracticeDescription": "Practice writing characters from memory",
   "statusHistoryChart": "Vocabulary Progress",

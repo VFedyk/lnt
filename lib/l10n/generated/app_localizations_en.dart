@@ -1462,6 +1462,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose the correct word for each translation';
 
   @override
+  String get multipleChoiceRomanization => 'Multiple Choice: Romanization';
+
+  @override
+  String get multipleChoiceRomanizationDescription =>
+      'Choose the correct romanization for each word';
+
+  @override
   String get writingPractice => 'Writing Practice';
 
   @override
