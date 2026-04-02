@@ -19,8 +19,6 @@ import '../widgets/shared/review_progress_ring.dart';
 import '../models/chart_data.dart';
 import '../utils/chart_helpers.dart';
 import 'reader_screen.dart';
-import 'library_screen.dart';
-import 'vocabulary_screen.dart';
 
 abstract class _DashboardConstants {
   static const int recentTextsLimit = 5;
@@ -422,8 +420,6 @@ class _DashboardTabState extends State<DashboardTab> {
           const SizedBox(height: AppConstants.spacingL),
           _buildChartsSection(useDesktopStyleLayout),
           const SizedBox(height: AppConstants.spacingL),
-          _buildQuickActions(),
-          const SizedBox(height: AppConstants.spacingL),
           if (useDesktopStyleLayout)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -567,56 +563,6 @@ class _DashboardTabState extends State<DashboardTab> {
         ],
       );
     }
-  }
-
-  Widget _buildQuickActions() {
-    final l10n = AppLocalizations.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacingL),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.quickActions,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppConstants.spacingM),
-            Wrap(
-              spacing: AppConstants.spacingS,
-              runSpacing: AppConstants.spacingS,
-              children: [
-                ActionChip(
-                  avatar: const Icon(Icons.add),
-                  label: Text(l10n.addText),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            LibraryScreen(language: widget.language),
-                      ),
-                    );
-                  },
-                ),
-                ActionChip(
-                  avatar: const Icon(Icons.import_export),
-                  label: Text(l10n.importVocabulary),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => VocabularyScreen(language: widget.language),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildRecentlyReadTexts() {
