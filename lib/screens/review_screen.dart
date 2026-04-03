@@ -269,8 +269,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
           // Exercise grid
           LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount =
-                  (constraints.maxWidth / 200).clamp(2, 4).round();
+              final crossAxisCount = constraints.maxWidth < 600
+                  ? 1
+                  : (constraints.maxWidth / 200).clamp(2, 4).round();
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
