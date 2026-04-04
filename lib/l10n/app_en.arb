@@ -202,6 +202,8 @@
   "setCover": "Set Cover",
   "addCover": "Add Cover",
   "removeCover": "Remove Cover",
+  "pasteFromClipboard": "Paste from Clipboard",
+  "noImageInClipboard": "No image found in clipboard",
   "noTermsFound": "No terms found",
   "hideIgnored": "Hide ignored",
   "addedAt": "Added",

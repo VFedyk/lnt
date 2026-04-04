@@ -1,14 +1,18 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:super_clipboard/super_clipboard.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../models/text_document.dart';
 import '../../services/url_import_service.dart';
 import '../../utils/constants.dart';
 import '../../utils/cover_image_helper.dart';
+import '../../utils/snackbar_helpers.dart';
 
 abstract class _UrlImportDialogConstants {
   static const double urlCoverWidth = 80.0;
@@ -114,6 +118,69 @@ class _UrlImportDialogState extends State<UrlImportDialog> {
     }
   }
 
+  Future<void> _pasteFromClipboard() async {
+    final clipboard = SystemClipboard.instance;
+    if (clipboard == null) return;
+
+    final clipboardReader = await clipboard.read();
+    if (clipboardReader.items.isEmpty) {
+      if (mounted) {
+        SnackbarHelpers.showError(
+          context,
+          AppLocalizations.of(context).noImageInClipboard,
+        );
+      }
+      return;
+    }
+
+    final item = clipboardReader.items.first;
+    FileFormat? format;
+    String extension = 'png';
+    if (item.canProvide(Formats.png)) {
+      format = Formats.png;
+      extension = 'png';
+    } else if (item.canProvide(Formats.jpeg)) {
+      format = Formats.jpeg;
+      extension = 'jpg';
+    }
+
+    if (format == null) {
+      if (mounted) {
+        SnackbarHelpers.showError(
+          context,
+          AppLocalizations.of(context).noImageInClipboard,
+        );
+      }
+      return;
+    }
+
+    final completer = Completer<Uint8List?>();
+    item.getFile(format, (file) async {
+      completer.complete(await file.readAll());
+    }, onError: (_) => completer.complete(null));
+    final imageBytes = await completer.future;
+
+    if (imageBytes == null) {
+      if (mounted) {
+        SnackbarHelpers.showError(
+          context,
+          AppLocalizations.of(context).noImageInClipboard,
+        );
+      }
+      return;
+    }
+
+    final appDir = await getApplicationDocumentsDirectory();
+    final coversDir = Directory(p.join(appDir.path, 'covers'));
+    if (!await coversDir.exists()) await coversDir.create(recursive: true);
+
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$extension';
+    final newPath = p.join(coversDir.path, fileName);
+    await File(newPath).writeAsBytes(imageBytes);
+
+    if (mounted) setState(() => _coverImagePath = newPath);
+  }
+
   void _import() {
     final l10n = AppLocalizations.of(context);
     if (_titleController.text.isEmpty) {
@@ -185,6 +252,8 @@ class _UrlImportDialogState extends State<UrlImportDialog> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Column(
+                      children: [
                     GestureDetector(
                       onTap: _pickCoverImage,
                       child: ClipRRect(
@@ -233,6 +302,13 @@ class _UrlImportDialogState extends State<UrlImportDialog> {
                                 ),
                               ),
                       ),
+                    ),
+                    if (_coverImagePath == null)
+                      TextButton(
+                        onPressed: _pasteFromClipboard,
+                        child: Text(l10n.pasteFromClipboard),
+                      ),
+                      ],
                     ),
                     const SizedBox(width: AppConstants.spacingM),
                     Expanded(

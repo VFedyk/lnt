@@ -123,6 +123,8 @@
   "setCover": "Встановити обкладинку",
   "addCover": "Додати обкладинку",
   "removeCover": "Видалити обкладинку",
+  "pasteFromClipboard": "Вставити з буфера обміну",
+  "noImageInClipboard": "В буфері обміну немає зображення",
   "noTermsFound": "Термінів не знайдено",
   "hideIgnored": "Сховати ігноровані",
   "addedAt": "Додано",

@@ -836,6 +836,18 @@ abstract class AppLocalizations {
   /// **'Remove Cover'**
   String get removeCover;
 
+  /// No description provided for @pasteFromClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste from Clipboard'**
+  String get pasteFromClipboard;
+
+  /// No description provided for @noImageInClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'No image found in clipboard'**
+  String get noImageInClipboard;
+
   /// No description provided for @noTermsFound.
   ///
   /// In en, this message translates to:

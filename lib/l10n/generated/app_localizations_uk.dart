@@ -402,6 +402,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get removeCover => 'Видалити обкладинку';
 
   @override
+  String get pasteFromClipboard => 'Вставити з буфера обміну';
+
+  @override
+  String get noImageInClipboard => 'В буфері обміну немає зображення';
+
+  @override
   String get noTermsFound => 'Термінів не знайдено';
 
   @override

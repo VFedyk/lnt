@@ -402,6 +402,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeCover => 'Remove Cover';
 
   @override
+  String get pasteFromClipboard => 'Paste from Clipboard';
+
+  @override
+  String get noImageInClipboard => 'No image found in clipboard';
+
+  @override
   String get noTermsFound => 'No terms found';
 
   @override
