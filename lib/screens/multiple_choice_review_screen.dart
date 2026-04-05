@@ -203,7 +203,7 @@ class _MultipleChoiceReviewScreenState
         .where((e) {
           final answer =
               widget.direction == MultipleChoiceDirection.sourceToTarget
-                  ? e.translations.first.meaning
+                  ? e.translations.map((t) => t.meaning).join(', ')
                   : widget.direction == MultipleChoiceDirection.targetToSource
                       ? e.term.text
                       : e.term.romanization;
@@ -216,7 +216,7 @@ class _MultipleChoiceReviewScreenState
 
     final distractors = candidates.take(3).map((e) {
       return widget.direction == MultipleChoiceDirection.sourceToTarget
-          ? e.translations.first.meaning
+          ? e.translations.map((t) => t.meaning).join(', ')
           : widget.direction == MultipleChoiceDirection.targetToSource
               ? e.term.text
               : e.term.romanization;
@@ -234,14 +234,14 @@ class _MultipleChoiceReviewScreenState
 
   String _getPromptText(ReviewItem item) {
     if (widget.direction == MultipleChoiceDirection.targetToSource) {
-      return item.translations.first.meaning;
+      return item.translations.map((t) => t.meaning).join(', ');
     }
     return item.term.text; // sourceToTarget and romanization both show characters
   }
 
   String _getCorrectAnswer(ReviewItem item) {
     if (widget.direction == MultipleChoiceDirection.sourceToTarget) {
-      return item.translations.first.meaning;
+      return item.translations.map((t) => t.meaning).join(', ');
     }
     if (widget.direction == MultipleChoiceDirection.romanization) {
       return item.term.romanization;
@@ -420,7 +420,7 @@ class _MultipleChoiceReviewScreenState
                           MultipleChoiceDirection.romanization) ...[
                         const SizedBox(height: AppConstants.spacingS),
                         Text(
-                          item.translations.first.meaning,
+                          item.translations.map((t) => t.meaning).join(', '),
                           style: TextStyle(
                             fontSize: _Constants.romanizationFontSize,
                             color: AppConstants.subtitleColor,

@@ -122,6 +122,8 @@ class ReviewOptionsGrid extends StatelessWidget {
               child: Text(
                 options[index],
                 style: TextStyle(fontSize: _optionFontSize, color: textColor),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
               ),
             ),
           ],
