@@ -106,17 +106,17 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
           icon: Icons.school_outlined,
           label: l10n.wordsReviewed,
           value: item.reviews.toString(),
-          iconColor: colorScheme.primary,
+          iconColor: appColors.warning,
           labelColor: Theme.of(context).textTheme.bodyMedium?.color,
-          valueColor: colorScheme.primary,
+          valueColor: appColors.warning,
         ),
         TooltipRow(
           icon: Icons.add_circle_outline,
           label: l10n.wordsAdded,
           value: item.wordsAdded.toString(),
-          iconColor: appColors.warning,
+          iconColor: colorScheme.primary,
           labelColor: Theme.of(context).textTheme.bodyMedium?.color,
-          valueColor: appColors.warning,
+          valueColor: colorScheme.primary,
         ),
         TooltipRow(
           icon: Icons.menu_book,
@@ -306,8 +306,8 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
           BarChartRodData(
             toY: textsEnd,
             rodStackItems: [
-              BarChartRodStackItem(0, reviewsEnd, colorScheme.primary),
-              BarChartRodStackItem(reviewsEnd, wordsEnd, appColors.warning),
+              BarChartRodStackItem(0, reviewsEnd, appColors.warning),
+              BarChartRodStackItem(reviewsEnd, wordsEnd, colorScheme.primary),
               BarChartRodStackItem(wordsEnd, textsEnd, appColors.success),
             ],
             borderRadius: BorderRadius.zero,
