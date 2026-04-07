@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -44,6 +44,21 @@ class _UrlImportDialogState extends State<UrlImportDialog> {
   String? _error;
   String _content = '';
   String? _coverImagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkClipboardForUrl();
+  }
+
+  Future<void> _checkClipboardForUrl() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim() ?? '';
+    if (text.startsWith('http://') || text.startsWith('https://')) {
+      _urlController.text = text;
+      _fetchUrl();
+    }
+  }
 
   @override
   void dispose() {
