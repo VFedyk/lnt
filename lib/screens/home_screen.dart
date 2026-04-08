@@ -223,7 +223,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.appTitle),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (_languages.isNotEmpty && _selectedLanguage != null)
             PopupMenuButton<Language>(

@@ -100,22 +100,56 @@ abstract class AppTheme {
   static const _primarySeed = Colors.blue;
 
   static ThemeData light() {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: _primarySeed,
+      brightness: Brightness.light,
+    );
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _primarySeed,
-        brightness: Brightness.light,
+      colorScheme: colorScheme,
+      appBarTheme: AppBarTheme(backgroundColor: colorScheme.surfaceContainerLow),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.onSurface.withValues(alpha: 0.10),
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? colorScheme.onSurface
+              : colorScheme.onSurface.withValues(alpha: 0.55),
+        )),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+          fontSize: 12,
+          color: states.contains(WidgetState.selected)
+              ? colorScheme.onSurface
+              : colorScheme.onSurface.withValues(alpha: 0.55),
+        )),
       ),
       extensions: const [AppColors.light],
     );
   }
 
   static ThemeData dark() {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: _primarySeed,
+      brightness: Brightness.dark,
+    );
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _primarySeed,
-        brightness: Brightness.dark,
+      colorScheme: colorScheme,
+      appBarTheme: AppBarTheme(backgroundColor: colorScheme.surfaceContainerLow),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: colorScheme.surfaceContainer,
+        indicatorColor: colorScheme.onSurface.withValues(alpha: 0.12),
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? colorScheme.onSurface
+              : colorScheme.onSurface.withValues(alpha: 0.55),
+        )),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+          fontSize: 12,
+          color: states.contains(WidgetState.selected)
+              ? colorScheme.onSurface
+              : colorScheme.onSurface.withValues(alpha: 0.55),
+        )),
       ),
       extensions: const [AppColors.dark],
     );

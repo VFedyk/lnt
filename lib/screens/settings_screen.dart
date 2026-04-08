@@ -220,7 +220,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return Scaffold(
             appBar: AppBar(
               title: Text(AppLocalizations.of(context).settings),
-              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
             ),
             body: ctrl.isLoading
                 ? const Center(child: CircularProgressIndicator())
