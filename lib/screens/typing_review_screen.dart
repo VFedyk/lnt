@@ -204,9 +204,17 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
       focusNode: _keyboardFocusNode,
       autofocus: true,
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.enter &&
-            _isCorrect != null) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final key = event.logicalKey;
+        // When review is complete, Space/Enter dismisses the screen
+        if (_currentIndex >= _dueItems.length && _dueItems.isNotEmpty) {
+          if (key == LogicalKeyboardKey.space || key == LogicalKeyboardKey.enter) {
+            Navigator.pop(context);
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        }
+        if (key == LogicalKeyboardKey.enter && _isCorrect != null) {
           _nextCard();
           return KeyEventResult.handled;
         }

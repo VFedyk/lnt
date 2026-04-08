@@ -89,6 +89,15 @@ class _MultipleChoiceReviewScreenState
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
 
+    // When review is complete, Space/Enter dismisses the screen
+    if (_currentIndex >= _dueItems.length && _dueItems.isNotEmpty) {
+      if (key == LogicalKeyboardKey.space || key == LogicalKeyboardKey.enter) {
+        Navigator.pop(context);
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
+
     if (_selectedOptionIndex != null) {
       if (key == LogicalKeyboardKey.space || key == LogicalKeyboardKey.enter) {
         _nextCard();
