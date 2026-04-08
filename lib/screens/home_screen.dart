@@ -1,5 +1,8 @@
 // FILE: lib/screens/home_screen.dart
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../main.dart';
@@ -53,11 +56,16 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _pendingReload = false;
   int _dueCount = 0;
 
+  static const _navigationChannel = MethodChannel('lnt/navigation');
+
   @override
   void initState() {
     super.initState();
     dataChanges.languages.addListener(_loadLanguages);
     dataChanges.reviewCards.addListener(_refreshDueCount);
+    if (Platform.isMacOS) {
+      _navigationChannel.setMethodCallHandler(_handleNativeNavigation);
+    }
     // Delay to ensure context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadLanguages();
@@ -68,7 +76,19 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     dataChanges.languages.removeListener(_loadLanguages);
     dataChanges.reviewCards.removeListener(_refreshDueCount);
+    if (Platform.isMacOS) {
+      _navigationChannel.setMethodCallHandler(null);
+    }
     super.dispose();
+  }
+
+  Future<dynamic> _handleNativeNavigation(MethodCall call) async {
+    if (call.method == 'openSettings' && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SettingsScreen()),
+      );
+    }
   }
 
   Future<void> _loadLanguages() async {
