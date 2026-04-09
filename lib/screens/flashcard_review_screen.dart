@@ -84,9 +84,10 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
 
     final controller = context.read<FlashcardReviewController>();
 
-    // When review is complete, Space/Enter dismisses the screen
-    if (controller.phase == ReviewPhase.done) {
-      if (key == LogicalKeyboardKey.space || key == LogicalKeyboardKey.enter) {
+    // When review is complete or empty, Space/Enter/Esc dismisses the screen
+    if (controller.phase == ReviewPhase.done ||
+        controller.phase == ReviewPhase.empty) {
+      if (key == LogicalKeyboardKey.space || key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.escape) {
         Navigator.pop(context);
         return KeyEventResult.handled;
       }
