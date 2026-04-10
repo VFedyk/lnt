@@ -26,17 +26,31 @@ lib/
 ├── controllers/           # Screen-level ChangeNotifier controllers
 ├── screens/               # Full-page UI screens (thin UI layer)
 ├── widgets/               # UI components organized by screen
-│   ├── shared/            # Used by 2+ screens (app_empty_state, term_dialog, review_progress_*, animated_counter, translation_mixin, base_term_search_dialog)
+│   ├── shared/            # Used by 2+ screens (app_empty_state, term_dialog, review_progress_*, animated_counter, translation_mixin, base_term_search_dialog, handwriting_canvas, hanzi_writer_widget, review_options_grid)
 │   ├── dashboard/         # dashboard_tab.dart only (activity_heatmap, dashboard_charts, custom_chart_tooltip)
+│   ├── statistics/        # statistics_screen.dart only (status_history_chart)
 │   ├── dictionaries/      # dictionaries_screen.dart only
 │   ├── languages/         # languages_screen.dart only
 │   ├── library/           # library_screen.dart only (dialogs + grid/list/search/status widgets + book_cover)
-│   ├── reader/            # reader_screen.dart only (dialogs, reader_content, paragraph_rich_text, status_legend, word_list_drawer)
+│   ├── reader/            # reader_screen.dart only (dialogs, reader_content, paragraph_rich_text, status_legend, word_list_drawer, ai_explanation_dialog)
 │   ├── review/            # review_screen.dart only (exercise_card, review_stats_section)
-│   └── settings/          # settings_screen.dart only (section widgets incl. target_language_section)
-├── utils/                 # Helpers, constants, CoverImageHelper, language_utils
+│   └── settings/          # settings_screen.dart only (section widgets incl. target_language_section, ai_settings_section)
+├── utils/                 # Helpers, constants, CoverImageHelper, language_utils, radicals
 └── l10n/                  # Localization (ARB files + generated)
 ```
+
+### Key screens
+
+- **home_screen.dart** — shell with 5 tabs via `HomeTab` enum: dashboard, texts (library), terms (vocabulary), review, languages
+- **vocabulary_screen.dart** — browse and manage all terms
+- **statistics_screen.dart** — learning analytics with status history charts
+- **review_screen.dart** — entry point for review; links to exercise-specific screens:
+  - **flashcard_review_screen.dart** — flip-card review
+  - **multiple_choice_review_screen.dart** — multiple choice
+  - **cloze_review_screen.dart** — fill-in-the-blank (`ClozeMode`: easy / advanced)
+  - **typing_review_screen.dart** — typed answer (`TypingDirection`: sourceToTarget / targetToSource)
+  - **stroke_review_screen.dart** — handwriting practice with canvas
+- **radical_practice_screen.dart** / **radical_writing_screen.dart** — Kangxi radical learning (214 radicals)
 
 ## Common commands
 
@@ -50,7 +64,7 @@ flutter build macos          # Build macOS
 
 ## Key conventions
 
-- **Service locator**: `setupServiceLocator()` in `main.dart` registers all services. Access via top-level getters: `db`, `settings`, `backupService`, `reviewService`, `deepLService`, `libreTranslateService`, `dataChanges`
+- **Service locator**: `setupServiceLocator()` in `main.dart` registers all services. Access via top-level getters: `db`, `settings`, `backupService`, `reviewService`, `deepLService`, `libreTranslateService`, `ttsService`, `chineseSegService`, `dataChanges`
 - **Repository pattern**: `db.terms.getAll()` etc.
 - Repositories use lazy `() => database` callback — DB can be closed and reopened
 - **Reactive data layer**: `DataChangeNotifier` (singleton via get_it) holds per-domain `DomainNotifier` instances (`dataChanges.terms`, `.texts`, `.languages`, `.collections`, `.reviewCards`, `.dictionaries`, `.termSentences`, `.radicalProgress`). Repositories call `notifyChange()` after mutations; screens/controllers `addListener` on relevant domains and auto-reload. Use `dataChanges.notifyAll()` for bulk invalidation (e.g. backup restore).
@@ -89,8 +103,12 @@ flutter build macos          # Build macOS
 - `PlatformHelper.isApple` / `PlatformHelper.isDesktop` guards platform-specific features
 - Database migrations in `database_migrations.dart` with version numbering
 - EPUB parsing via `epub_pro` package (camelCase API)
-- **Screen controllers**: `SettingsController`, `LibraryController`, `ReaderController` — each extends `ChangeNotifier`, provided via `ChangeNotifierProvider` at screen level. Controllers own state and business logic; screens are thin UI layers that orchestrate dialogs/navigation. Controllers use `_isDisposed` + `_safeNotify()` for async safety (no `BuildContext` dependency).
+- **Screen controllers**: `SettingsController`, `LibraryController`, `ReaderController`, `FlashcardReviewController` — each extends `ChangeNotifier`, provided via `ChangeNotifierProvider` at screen level. Controllers own state and business logic; screens are thin UI layers that orchestrate dialogs/navigation. Controllers use `_isDisposed` + `_safeNotify()` for async safety (no `BuildContext` dependency).
 - **SettingsController backup state**: tracks `icloudRemoteDate` (date of file in iCloud), `icloudLocalDate` (last backup from this device), `lastRestoreDate`, `isCheckingBackup`. Call `recheckICloudBackup()` to refresh the remote date.
+- **TtsService** (`ttsService`): text-to-speech via `flutter_tts`; access via `ttsService` getter.
+- **ChineseSegmentationService** (`chineseSegService`): word tokenization via `jieba_flutter` for Chinese texts.
+- **AiExplanationService**: AI-powered word/phrase explanations; supports OpenAI, Anthropic, and Ollama backends. Not registered as a singleton — instantiated where needed. Settings managed via `ai_settings_section.dart`.
+- **Radicals** (`lib/utils/radicals.dart`): `Radical` class + `kRadicals` constant with all 214 Kangxi radicals. Progress tracked via `radical_progress_repository.dart` and `dataChanges.radicalProgress`.
 
 ## Testing
 
@@ -101,7 +119,7 @@ flutter build macos          # Build macOS
   flutter test > /dev/null 2>&1 && echo "✅ All tests passed!" || echo "❌ Some tests failed"
   ```
 - **Test coverage**:
-  - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier)
+  - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier, Chinese segmentation)
   - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping)
   - `test/controllers/` — Screen controllers (LibraryController listener lifecycle and CRUD delegation)
   - Widget tests are not yet comprehensive (default `widget_test.dart` is a leftover)
