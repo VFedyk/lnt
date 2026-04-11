@@ -549,57 +549,65 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (isTranslating || _isAiTranslating)
-                  const SizedBox(
-                    width: AppConstants.progressIndicatorSizeS,
-                    height: AppConstants.progressIndicatorSizeS,
-                    child: CircularProgressIndicator(
-                      strokeWidth: AppConstants.progressStrokeWidth,
-                    ),
-                  )
-                else ...[
-                  if (hasAnyTranslationProvider)
-                    if (hasMultipleTranslationProviders)
-                      PopupMenuButton<TranslationProvider>(
-                        icon: const Icon(
-                          Icons.translate,
-                          size: AppConstants.iconSizeS,
-                        ),
-                        tooltip: l10n.translate,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onSelected: _translateAndAddFirstWithProvider,
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: TranslationProvider.deepL,
-                            child: Text(l10n.translateWithDeepL),
-                          ),
-                          PopupMenuItem(
-                            value: TranslationProvider.libreTranslate,
-                            child: Text(l10n.translateWithLibreTranslate),
-                          ),
-                        ],
-                      )
-                    else
-                      IconButton(
-                        icon: const Icon(
-                          Icons.translate,
-                          size: AppConstants.iconSizeS,
-                        ),
-                        tooltip: hasDeepL
-                            ? l10n.translateWithDeepL
-                            : l10n.translateWithLibreTranslate,
-                        onPressed: () => _translateAndAddFirstWithProvider(
-                          hasDeepL
-                              ? TranslationProvider.deepL
-                              : TranslationProvider.libreTranslate,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                if (hasAnyTranslationProvider)
+                  if (isTranslating)
+                    const SizedBox(
+                      width: AppConstants.progressIndicatorSizeS,
+                      height: AppConstants.progressIndicatorSizeS,
+                      child: CircularProgressIndicator(
+                        strokeWidth: AppConstants.progressStrokeWidth,
                       ),
-                  if (hasAnyTranslationProvider && _hasAi)
-                    const SizedBox(width: AppConstants.spacingS),
-                  if (_hasAi)
+                    )
+                  else if (hasMultipleTranslationProviders)
+                    PopupMenuButton<TranslationProvider>(
+                      icon: const Icon(
+                        Icons.translate,
+                        size: AppConstants.iconSizeS,
+                      ),
+                      tooltip: l10n.translate,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onSelected: _translateAndAddFirstWithProvider,
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: TranslationProvider.deepL,
+                          child: Text(l10n.translateWithDeepL),
+                        ),
+                        PopupMenuItem(
+                          value: TranslationProvider.libreTranslate,
+                          child: Text(l10n.translateWithLibreTranslate),
+                        ),
+                      ],
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(
+                        Icons.translate,
+                        size: AppConstants.iconSizeS,
+                      ),
+                      tooltip: hasDeepL
+                          ? l10n.translateWithDeepL
+                          : l10n.translateWithLibreTranslate,
+                      onPressed: () => _translateAndAddFirstWithProvider(
+                        hasDeepL
+                            ? TranslationProvider.deepL
+                            : TranslationProvider.libreTranslate,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                if (hasAnyTranslationProvider && _hasAi)
+                  const SizedBox(width: AppConstants.spacingS),
+                if (_hasAi)
+                  if (_isAiTranslating)
+                    const SizedBox(
+                      width: AppConstants.progressIndicatorSizeS,
+                      height: AppConstants.progressIndicatorSizeS,
+                      child: CircularProgressIndicator(
+                        strokeWidth: AppConstants.progressStrokeWidth,
+                      ),
+                    )
+                  else
                     IconButton(
                       icon: const Icon(
                         Icons.auto_awesome,
@@ -610,7 +618,6 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
-                ],
                 const SizedBox(width: AppConstants.spacingS),
                 IconButton(
                   icon: const Icon(Icons.add, size: AppConstants.iconSizeS),
