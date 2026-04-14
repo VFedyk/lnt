@@ -222,25 +222,29 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     TermDialogResult? dialogResult;
     if (existingTerm != null) {
-      dialogResult = await showDialog<TermDialogResult?>(
-        context: context,
-        builder: (context) => TermDialog(
-          term: existingTerm,
-          sentence: sentence,
-          dictionaries: dictionaries,
-          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict),
-          languageId: ctrl.language.id!,
-          languageName: ctrl.language.name,
-          languageCode: ctrl.language.languageCode,
-        ),
+      dialogResult = await TermDialog.show(
+        context,
+        term: existingTerm,
+        sentence: sentence,
+        dictionaries: dictionaries,
+        onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict),
+        languageId: ctrl.language.id!,
+        languageName: ctrl.language.name,
+        languageCode: ctrl.language.languageCode,
       );
 
+      if (!mounted) return;
       if (dialogResult != null) {
-        await ctrl.handleTermSaved(
-          dialogResult.term,
-          dialogResult.translations,
-          isNew: false,
-        );
+        if (dialogResult.deleted) {
+          await db.terms.delete(existingTerm.id!);
+          await ctrl.loadTermsAndParse();
+        } else {
+          await ctrl.handleTermSaved(
+            dialogResult.term,
+            dialogResult.translations,
+            isNew: false,
+          );
+        }
       }
     } else {
       final newTerm = Term(
@@ -251,20 +255,19 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         sentence: sentence,
       );
 
-      dialogResult = await showDialog<TermDialogResult?>(
-        context: context,
-        builder: (context) => TermDialog(
-          term: newTerm,
-          sentence: sentence,
-          dictionaries: dictionaries,
-          onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict),
-          languageId: ctrl.language.id!,
-          languageName: ctrl.language.name,
-          languageCode: ctrl.language.languageCode,
-        ),
+      dialogResult = await TermDialog.show(
+        context,
+        term: newTerm,
+        sentence: sentence,
+        dictionaries: dictionaries,
+        onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict),
+        languageId: ctrl.language.id!,
+        languageName: ctrl.language.name,
+        languageCode: ctrl.language.languageCode,
       );
 
-      if (dialogResult != null) {
+      if (!mounted) return;
+      if (dialogResult != null && !dialogResult.deleted) {
         await ctrl.handleTermSaved(
           dialogResult.term,
           dialogResult.translations,
@@ -681,18 +684,16 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     TermDialogResult? dialogResult;
     if (existingTerm != null) {
-      dialogResult = await showDialog<TermDialogResult?>(
-        context: context,
-        builder: (context) => TermDialog(
-          term: existingTerm,
-          sentence: sentence,
-          dictionaries: dictionaries,
-          onLookup: (ctx, dict) =>
-              _dictService.lookupWord(ctx, selectedWords, dict),
-          languageId: ctrl.language.id!,
-          languageName: ctrl.language.name,
-          languageCode: ctrl.language.languageCode,
-        ),
+      dialogResult = await TermDialog.show(
+        context,
+        term: existingTerm,
+        sentence: sentence,
+        dictionaries: dictionaries,
+        onLookup: (ctx, dict) =>
+            _dictService.lookupWord(ctx, selectedWords, dict),
+        languageId: ctrl.language.id!,
+        languageName: ctrl.language.name,
+        languageCode: ctrl.language.languageCode,
       );
     } else {
       final newTerm = Term(
@@ -703,22 +704,25 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         sentence: sentence,
       );
 
-      dialogResult = await showDialog<TermDialogResult?>(
-        context: context,
-        builder: (context) => TermDialog(
-          term: newTerm,
-          sentence: sentence,
-          dictionaries: dictionaries,
-          onLookup: (ctx, dict) =>
-              _dictService.lookupWord(ctx, selectedWords, dict),
-          languageId: ctrl.language.id!,
-          languageName: ctrl.language.name,
-          languageCode: ctrl.language.languageCode,
-        ),
+      dialogResult = await TermDialog.show(
+        context,
+        term: newTerm,
+        sentence: sentence,
+        dictionaries: dictionaries,
+        onLookup: (ctx, dict) =>
+            _dictService.lookupWord(ctx, selectedWords, dict),
+        languageId: ctrl.language.id!,
+        languageName: ctrl.language.name,
+        languageCode: ctrl.language.languageCode,
       );
     }
 
-    if (dialogResult != null) {
+    if (!mounted) return;
+    if (dialogResult != null && dialogResult.deleted && existingTerm != null) {
+      await db.terms.delete(existingTerm.id!);
+      await ctrl.loadTermsAndParse();
+      ctrl.cancelSelection();
+    } else if (dialogResult != null && !dialogResult.deleted) {
       await ctrl.handleSelectionTermSaved(
         dialogResult.term,
         dialogResult.translations,

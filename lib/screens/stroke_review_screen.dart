@@ -71,21 +71,23 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
     );
     if (!mounted) return;
 
-    final result = await showDialog<TermDialogResult>(
-      context: context,
-      builder: (context) => TermDialog(
-        term: term,
-        sentence: term.sentence,
-        dictionaries: dictionaries,
-        onLookup: (ctx, dict) =>
-            _dictService.lookupWord(ctx, term.text, dict),
-        languageId: controller.language.id!,
-        languageName: controller.language.name,
-        languageCode: controller.language.languageCode,
-      ),
+    final result = await TermDialog.show(
+      context,
+      term: term,
+      sentence: term.sentence,
+      dictionaries: dictionaries,
+      onLookup: (ctx, dict) =>
+          _dictService.lookupWord(ctx, term.text, dict),
+      languageId: controller.language.id!,
+      languageName: controller.language.name,
+      languageCode: controller.language.languageCode,
     );
 
-    if (result != null) {
+    if (!mounted) return;
+    if (result == null) return;
+    if (result.deleted) {
+      await db.terms.delete(term.id!);
+    } else {
       await db.terms.update(result.term);
       if (result.term.id != null) {
         await db.translations.replaceForTerm(
@@ -93,8 +95,8 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
           result.translations,
         );
       }
-      await controller.reloadCurrentItem();
     }
+    await controller.reloadCurrentItem();
   }
 
   @override

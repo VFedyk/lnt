@@ -160,22 +160,23 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
 
     if (!mounted) return;
 
-    final result = await showDialog<TermDialogResult>(
-      context: context,
-      builder: (context) => TermDialog(
-        term: term,
-        sentence: term.sentence,
-        dictionaries: dictionaries,
-        onLookup: (ctx, dict) =>
-            _dictService.lookupWord(ctx, term.text, dict),
-        languageId: controller.language.id!,
-        languageName: controller.language.name,
-        languageCode: controller.language.languageCode,
-      ),
+    final result = await TermDialog.show(
+      context,
+      term: term,
+      sentence: term.sentence,
+      dictionaries: dictionaries,
+      onLookup: (ctx, dict) =>
+          _dictService.lookupWord(ctx, term.text, dict),
+      languageId: controller.language.id!,
+      languageName: controller.language.name,
+      languageCode: controller.language.languageCode,
     );
 
-    if (result != null) {
-      // Save the updated term and translations to database
+    if (!mounted) return;
+    if (result == null) return;
+    if (result.deleted) {
+      await db.terms.delete(term.id!);
+    } else {
       await db.terms.update(result.term);
       if (result.term.id != null) {
         await db.translations.replaceForTerm(
@@ -183,9 +184,9 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
           result.translations,
         );
       }
-      // Reload the current item's data to reflect changes
-      await controller.reloadCurrentItem();
     }
+    // Reload the current item's data to reflect changes
+    await controller.reloadCurrentItem();
   }
 
   Widget _buildHighlightedSentence(

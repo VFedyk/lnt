@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../models/term.dart';
@@ -8,6 +10,7 @@ import '../../services/ai_explanation_service.dart';
 import '../../services/deepl_service.dart';
 import '../../services/libretranslate_service.dart';
 import '../../utils/constants.dart';
+import '../../utils/helpers.dart';
 import 'base_term_search_dialog.dart';
 import 'translation_mixin.dart';
 
@@ -15,13 +18,19 @@ import 'translation_mixin.dart';
 class TermDialogResult {
   final Term term;
   final List<Translation> translations;
+  final bool deleted;
 
-  TermDialogResult({required this.term, required this.translations});
+  TermDialogResult({
+    required this.term,
+    required this.translations,
+    this.deleted = false,
+  });
 }
 
 abstract class _TermDialogConstants {
   static const double closeIconSize = 18.0;
   static const int sentenceMaxLines = 3;
+  static const double minIconHitTarget = 32.0;
 }
 
 class TermDialog extends StatefulWidget {
@@ -32,6 +41,7 @@ class TermDialog extends StatefulWidget {
   final String languageId;
   final String languageName;
   final String languageCode;
+  final bool isSheet;
 
   const TermDialog({
     super.key,
@@ -42,7 +52,50 @@ class TermDialog extends StatefulWidget {
     required this.languageId,
     required this.languageName,
     required this.languageCode,
+    this.isSheet = false,
   });
+
+  static Future<TermDialogResult?> show(
+    BuildContext context, {
+    required Term term,
+    required String sentence,
+    required List<Dictionary> dictionaries,
+    required Function(BuildContext, Dictionary) onLookup,
+    required String languageId,
+    required String languageName,
+    required String languageCode,
+  }) {
+    final isSheet = !PlatformHelper.isDesktop;
+    if (!isSheet) {
+      return showDialog<TermDialogResult>(
+        context: context,
+        builder: (_) => TermDialog(
+          term: term,
+          sentence: sentence,
+          dictionaries: dictionaries,
+          onLookup: onLookup,
+          languageId: languageId,
+          languageName: languageName,
+          languageCode: languageCode,
+          isSheet: false,
+        ),
+      );
+    }
+    return showModalBottomSheet<TermDialogResult>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => TermDialog(
+        term: term,
+        sentence: sentence,
+        dictionaries: dictionaries,
+        onLookup: onLookup,
+        languageId: languageId,
+        languageName: languageName,
+        languageCode: languageCode,
+        isSheet: true,
+      ),
+    );
+  }
 
   @override
   State<TermDialog> createState() => _TermDialogState();
@@ -60,7 +113,8 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
   // collisions when items are deleted (TextFormField initialValue stays correct).
   final List<Object> _translationKeys = [];
   // baseTranslationId -> (translation, its parent term)
-  final Map<String, ({Translation translation, Term term})> _baseTranslations = {};
+  final Map<String, ({Translation translation, Term term})> _baseTranslations =
+      {};
   late TextEditingController _translationController;
 
   // AI translation
@@ -338,15 +392,18 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
               ],
             ),
           ),
-          IconButton(
-            icon: Icon(
-              Icons.close,
-              size: _TermDialogConstants.closeIconSize,
-              color: AppConstants.subtitleColor,
+          SizedBox(
+            width: _TermDialogConstants.minIconHitTarget,
+            height: _TermDialogConstants.minIconHitTarget,
+            child: IconButton(
+              icon: Icon(
+                Icons.close,
+                size: _TermDialogConstants.closeIconSize,
+                color: AppConstants.subtitleColor,
+              ),
+              padding: EdgeInsets.zero,
+              onPressed: () => _removeBaseTranslationFromTranslation(index),
             ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () => _removeBaseTranslationFromTranslation(index),
           ),
         ],
       );
@@ -580,21 +637,24 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                       ],
                     )
                   else
-                    IconButton(
-                      icon: const Icon(
-                        Icons.translate,
-                        size: AppConstants.iconSizeS,
+                    SizedBox(
+                      width: _TermDialogConstants.minIconHitTarget,
+                      height: _TermDialogConstants.minIconHitTarget,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.translate,
+                          size: AppConstants.iconSizeS,
+                        ),
+                        tooltip: hasDeepL
+                            ? l10n.translateWithDeepL
+                            : l10n.translateWithLibreTranslate,
+                        onPressed: () => _translateAndAddFirstWithProvider(
+                          hasDeepL
+                              ? TranslationProvider.deepL
+                              : TranslationProvider.libreTranslate,
+                        ),
+                        padding: EdgeInsets.zero,
                       ),
-                      tooltip: hasDeepL
-                          ? l10n.translateWithDeepL
-                          : l10n.translateWithLibreTranslate,
-                      onPressed: () => _translateAndAddFirstWithProvider(
-                        hasDeepL
-                            ? TranslationProvider.deepL
-                            : TranslationProvider.libreTranslate,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
                     ),
                 if (hasAnyTranslationProvider && _hasAi)
                   const SizedBox(width: AppConstants.spacingS),
@@ -608,23 +668,28 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                       ),
                     )
                   else
-                    IconButton(
-                      icon: const Icon(
-                        Icons.auto_awesome,
-                        size: AppConstants.iconSizeS,
+                    SizedBox(
+                      width: _TermDialogConstants.minIconHitTarget,
+                      height: _TermDialogConstants.minIconHitTarget,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.auto_awesome,
+                          size: AppConstants.iconSizeS,
+                        ),
+                        tooltip: l10n.translateWithAi,
+                        onPressed: _aiTranslateWord,
+                        padding: EdgeInsets.zero,
                       ),
-                      tooltip: l10n.translateWithAi,
-                      onPressed: _aiTranslateWord,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
                     ),
-                const SizedBox(width: AppConstants.spacingS),
-                IconButton(
-                  icon: const Icon(Icons.add, size: AppConstants.iconSizeS),
-                  tooltip: l10n.addTranslation,
-                  onPressed: _addTranslation,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                SizedBox(
+                  width: _TermDialogConstants.minIconHitTarget,
+                  height: _TermDialogConstants.minIconHitTarget,
+                  child: IconButton(
+                    icon: const Icon(Icons.add, size: AppConstants.iconSizeS),
+                    tooltip: l10n.addTranslation,
+                    onPressed: _addTranslation,
+                    padding: EdgeInsets.zero,
+                  ),
                 ),
               ],
             ),
@@ -685,15 +750,18 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                   },
                 ),
               ),
-              IconButton(
-                icon: Icon(
-                  Icons.close,
-                  size: _TermDialogConstants.closeIconSize,
-                  color: AppConstants.subtitleColor,
+              SizedBox(
+                width: _TermDialogConstants.minIconHitTarget,
+                height: _TermDialogConstants.minIconHitTarget,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    size: _TermDialogConstants.closeIconSize,
+                    color: AppConstants.subtitleColor,
+                  ),
+                  padding: EdgeInsets.zero,
+                  onPressed: () => _removeTranslation(index),
                 ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () => _removeTranslation(index),
               ),
             ],
           ),
@@ -765,6 +833,37 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     }
   }
 
+  TermDialogResult _buildSaveResult() {
+    final editedTerm = _termController.text.trim().toLowerCase();
+    final romanization = _romanizationController.text.trim().isNotEmpty
+        ? _romanizationController.text.trim()
+        : (_isSelectedLanguageChinese()
+              ? chineseSegService.getPinyin(editedTerm).trim()
+              : '');
+    final legacyTranslation = _translations.isNotEmpty
+        ? _translations.first.meaning
+        : '';
+    final updatedTerm = widget.term.copyWith(
+      languageId: _selectedLanguageId,
+      text: editedTerm,
+      lowerText: editedTerm,
+      status: _status,
+      translation: legacyTranslation,
+      romanization: romanization,
+      sentence: _sentenceController.text,
+      lastAccessed: DateTime.now(),
+    );
+    return TermDialogResult(term: updatedTerm, translations: _translations);
+  }
+
+  TermDialogResult _buildDeleteResult() {
+    return TermDialogResult(
+      term: widget.term,
+      translations: const [],
+      deleted: true,
+    );
+  }
+
   @override
   void dispose() {
     _termController.dispose();
@@ -774,196 +873,296 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.term.lowerText,
-                  style: const TextStyle(fontSize: AppConstants.fontSizeTitle),
-                ),
-                if (widget.term.text != widget.term.lowerText)
-                  Text(
-                    l10n.original(widget.term.text),
-                    style: TextStyle(
-                      fontSize: AppConstants.fontSizeCaption,
-                      color: AppConstants.subtitleColor,
-                    ),
-                  ),
-                _buildLanguageLabel(l10n),
-              ],
+  // ---------------------------------------------------------------------------
+  // Shared form body (used in both dialog and sheet layouts)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildTermField(AppLocalizations l10n) {
+    return TextField(
+      controller: _termController,
+      decoration: InputDecoration(
+        labelText: l10n.term,
+        border: const OutlineInputBorder(),
+        suffixIcon: widget.term.text != widget.term.lowerText
+            ? IconButton(
+                icon: const Icon(Icons.history),
+                tooltip: l10n.useOriginal(widget.term.text),
+                onPressed: () {
+                  _termController.text = widget.term.text;
+                },
+              )
+            : null,
+      ),
+      onChanged: (_) => _maybeAutoFillRomanization(),
+    );
+  }
+
+  Widget _buildStatusRow(AppLocalizations l10n) {
+    return Row(
+      children: [
+        Text(
+          l10n.status,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(width: AppConstants.spacingS),
+        Chip(
+          avatar: CircleAvatar(
+            backgroundColor: TermStatus.colorFor(_status),
+            radius: AppConstants.spacingS,
+          ),
+          label: Text(
+            TermStatus.localizedNameFor(_status, l10n),
+            style: const TextStyle(
+              fontSize: AppConstants.fontSizeCaption,
             ),
           ),
-          if (widget.languageCode.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.volume_up),
-              tooltip: l10n.pronounce,
+        ),
+        const Spacer(),
+        if (_status == TermStatus.ignored)
+          TextButton(
+            onPressed: () =>
+                setState(() => _status = TermStatus.unknown),
+            child: Text(l10n.unignore),
+          )
+        else ...[
+          if (_status != TermStatus.wellKnown)
+            TextButton(
               onPressed: () =>
-                  ttsService.speak(widget.term.lowerText, widget.languageCode),
+                  setState(() => _status = TermStatus.wellKnown),
+              child: Text(l10n.markWellKnown),
             ),
-          if (widget.dictionaries.isNotEmpty)
-            PopupMenuButton<Dictionary>(
-              icon: const Icon(Icons.search),
-              tooltip: l10n.lookupInDictionary,
-              onSelected: (dict) {
-                widget.onLookup(context, dict);
-              },
-              itemBuilder: (context) => widget.dictionaries
-                  .map(
-                    (dict) =>
-                        PopupMenuItem(value: dict, child: Text(dict.name)),
-                  )
-                  .toList(),
+          TextButton(
+            onPressed: () =>
+                setState(() => _status = TermStatus.ignored),
+            child: Text(l10n.ignore),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Secondary fields (romanization + example sentence) shown in an expansion tile.
+  Widget _buildSecondaryFields(AppLocalizations l10n) {
+    final hasContent = _romanizationController.text.isNotEmpty ||
+        _sentenceController.text.isNotEmpty;
+    return Theme(
+      // Remove the extra top/bottom dividers that ExpansionTile adds
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        initiallyExpanded: hasContent || _isSelectedLanguageChinese(),
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: EdgeInsets.zero,
+        title: Text(
+          l10n.more,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: AppConstants.fontSizeBody,
+          ),
+        ),
+        children: [
+          const SizedBox(height: AppConstants.spacingXS),
+          TextField(
+            controller: _romanizationController,
+            decoration: InputDecoration(
+              labelText: l10n.romanizationPronunciation,
+              border: const OutlineInputBorder(),
             ),
+          ),
+          const SizedBox(height: AppConstants.spacingM),
+          TextField(
+            controller: _sentenceController,
+            decoration: InputDecoration(
+              labelText: l10n.exampleSentence,
+              border: const OutlineInputBorder(),
+              alignLabelWithHint: true,
+            ),
+            maxLines: _TermDialogConstants.sentenceMaxLines,
+          ),
+          const SizedBox(height: AppConstants.spacingS),
         ],
       ),
-      content: SizedBox(
-        width: AppConstants.dialogWidth,
-        child: SingleChildScrollView(
+    );
+  }
+
+  Widget _buildFormBody(AppLocalizations l10n) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildTermField(l10n),
+        const SizedBox(height: AppConstants.spacingM),
+        _buildStatusRow(l10n),
+        const SizedBox(height: AppConstants.spacingL),
+        _buildTranslationsSection(l10n),
+        const SizedBox(height: AppConstants.spacingM),
+        _buildSecondaryFields(l10n),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shared title row (term word + language + TTS + dictionary icons)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildTitleRow(AppLocalizations l10n) {
+    return Row(
+      children: [
+        Expanded(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Term field (editable)
-              TextField(
-                controller: _termController,
-                decoration: InputDecoration(
-                  labelText: l10n.term,
-                  border: const OutlineInputBorder(),
-                  suffixIcon: widget.term.text != widget.term.lowerText
-                      ? IconButton(
-                          icon: const Icon(Icons.history),
-                          tooltip: l10n.useOriginal(widget.term.text),
-                          onPressed: () {
-                            _termController.text = widget.term.text;
-                          },
-                        )
-                      : null,
-                ),
-                onChanged: (_) => _maybeAutoFillRomanization(),
+              Text(
+                widget.term.lowerText,
+                style: const TextStyle(fontSize: AppConstants.fontSizeTitle),
               ),
-              const SizedBox(height: AppConstants.spacingM),
-
-              // Status display (read-only) with ignore/well-known actions
-              Row(
-                children: [
-                  Text(
-                    l10n.status,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+              if (widget.term.text != widget.term.lowerText)
+                Text(
+                  l10n.original(widget.term.text),
+                  style: TextStyle(
+                    fontSize: AppConstants.fontSizeCaption,
+                    color: AppConstants.subtitleColor,
                   ),
-                  const SizedBox(width: AppConstants.spacingS),
-                  Chip(
-                    avatar: CircleAvatar(
-                      backgroundColor: TermStatus.colorFor(_status),
-                      radius: AppConstants.spacingS,
-                    ),
-                    label: Text(
-                      TermStatus.localizedNameFor(_status, l10n),
-                      style: const TextStyle(
-                        fontSize: AppConstants.fontSizeCaption,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  if (_status == TermStatus.ignored)
-                    TextButton(
-                      onPressed: () =>
-                          setState(() => _status = TermStatus.unknown),
-                      child: Text(l10n.unignore),
-                    )
-                  else ...[
-                    if (_status != TermStatus.wellKnown)
-                      TextButton(
-                        onPressed: () =>
-                            setState(() => _status = TermStatus.wellKnown),
-                        child: Text(l10n.markWellKnown),
-                      ),
-                    TextButton(
-                      onPressed: () =>
-                          setState(() => _status = TermStatus.ignored),
-                      child: Text(l10n.ignore),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: AppConstants.spacingL),
-
-              // Translations section
-              _buildTranslationsSection(l10n),
-              const SizedBox(height: AppConstants.spacingM),
-
-              // Romanization field
-              TextField(
-                controller: _romanizationController,
-                decoration: InputDecoration(
-                  labelText: l10n.romanizationPronunciation,
-                  border: const OutlineInputBorder(),
                 ),
-              ),
-              const SizedBox(height: AppConstants.spacingM),
-
-              // Sentence field
-              TextField(
-                controller: _sentenceController,
-                decoration: InputDecoration(
-                  labelText: l10n.exampleSentence,
-                  border: const OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
-                maxLines: _TermDialogConstants.sentenceMaxLines,
-              ),
+              _buildLanguageLabel(l10n),
             ],
           ),
         ),
-      ),
-      actions: [
-        if (widget.term.id != null)
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(foregroundColor: Colors.grey),
-            child: Text(l10n.delete),
+        if (widget.languageCode.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.volume_up),
+            tooltip: l10n.pronounce,
+            onPressed: () =>
+                ttsService.speak(widget.term.lowerText, widget.languageCode),
           ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        TextButton(
-          onPressed: () {
-            final editedTerm = _termController.text.trim().toLowerCase();
-            final romanization = _romanizationController.text.trim().isNotEmpty
-                ? _romanizationController.text.trim()
-                : (_isSelectedLanguageChinese()
-                      ? chineseSegService.getPinyin(editedTerm).trim()
-                      : '');
-            // Use first translation meaning for legacy translation field
-            final legacyTranslation = _translations.isNotEmpty
-                ? _translations.first.meaning
-                : '';
-            final updatedTerm = widget.term.copyWith(
-              languageId: _selectedLanguageId,
-              text: editedTerm,
-              lowerText: editedTerm,
-              status: _status,
-              translation: legacyTranslation,
-              romanization: romanization,
-              sentence: _sentenceController.text,
-              lastAccessed: DateTime.now(),
-            );
-            Navigator.pop(
-              context,
-              TermDialogResult(term: updatedTerm, translations: _translations),
-            );
-          },
-          child: Text(l10n.save),
-        ),
+        if (widget.dictionaries.isNotEmpty)
+          PopupMenuButton<Dictionary>(
+            icon: const Icon(Icons.search),
+            tooltip: l10n.lookupInDictionary,
+            onSelected: (dict) {
+              widget.onLookup(context, dict);
+            },
+            itemBuilder: (context) => widget.dictionaries
+                .map(
+                  (dict) =>
+                      PopupMenuItem(value: dict, child: Text(dict.name)),
+                )
+                .toList(),
+          ),
       ],
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Desktop: AlertDialog layout
+  // ---------------------------------------------------------------------------
+
+  Widget _buildDialog(AppLocalizations l10n) {
+    return AlertDialog(
+      title: _buildTitleRow(l10n),
+      content: SizedBox(
+        width: AppConstants.dialogWidth,
+        child: SingleChildScrollView(child: _buildFormBody(l10n)),
+      ),
+      actions: _buildActionButtons(l10n),
+    );
+  }
+
+  List<Widget> _buildActionButtons(AppLocalizations l10n) {
+    return [
+      if (widget.term.id != null)
+        TextButton(
+          onPressed: () =>
+              Navigator.pop(context, _buildDeleteResult()),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.error,
+          ),
+          child: Text(l10n.delete),
+        ),
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: Text(l10n.cancel),
+      ),
+      TextButton(
+        onPressed: () => Navigator.pop(context, _buildSaveResult()),
+        child: Text(l10n.save),
+      ),
+    ];
+  }
+
+  // ---------------------------------------------------------------------------
+  // Mobile: bottom-sheet layout
+  // ---------------------------------------------------------------------------
+
+  Widget _buildSheet(AppLocalizations l10n) {
+    final viewInsets = MediaQuery.of(context).viewInsets;
+    final safePadBottom = MediaQuery.of(context).padding.bottom;
+
+    return Padding(
+      // Lifts the entire sheet above the keyboard
+      padding: EdgeInsets.only(bottom: viewInsets.bottom),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppConstants.spacingL,
+                0,
+                AppConstants.spacingS,
+                AppConstants.spacingS,
+              ),
+              child: _buildTitleRow(l10n),
+            ),
+            const Divider(height: 1),
+            // Scrollable form
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppConstants.spacingL),
+                child: _buildFormBody(l10n),
+              ),
+            ),
+            // Action buttons pinned above home indicator
+            const Divider(height: 1),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppConstants.spacingS,
+                AppConstants.spacingXS,
+                AppConstants.spacingS,
+                AppConstants.spacingXS + math.max(safePadBottom, 0),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: _buildActionButtons(l10n),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return widget.isSheet ? _buildSheet(l10n) : _buildDialog(l10n);
   }
 }
 

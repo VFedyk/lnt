@@ -206,40 +206,41 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
       text: '',
       lowerText: '',
     );
-    final dialogResult = await showDialog<TermDialogResult?>(
-      context: context,
-      builder: (dialogContext) => TermDialog(
-        term: newTerm,
-        sentence: '',
-        onLookup: (ctx, dictNum) {},
-        dictionaries: const [],
-        languageId: widget.language.id!,
-        languageName: widget.language.name,
-        languageCode: widget.language.languageCode,
-      ),
+    final dialogResult = await TermDialog.show(
+      context,
+      term: newTerm,
+      sentence: '',
+      onLookup: (ctx, dictNum) {},
+      dictionaries: const [],
+      languageId: widget.language.id!,
+      languageName: widget.language.name,
+      languageCode: widget.language.languageCode,
     );
 
-    if (dialogResult != null) {
+    if (!mounted) return;
+    if (dialogResult != null && !dialogResult.deleted) {
       final id = await db.terms.create(dialogResult.term);
       await db.translations.replaceForTerm(id, dialogResult.translations);
     }
   }
 
   Future<void> _editTerm(Term term) async {
-    final dialogResult = await showDialog<TermDialogResult?>(
-      context: context,
-      builder: (dialogContext) => TermDialog(
-        term: term,
-        sentence: term.sentence,
-        onLookup: (ctx, dict) => _dictService.lookupWord(ctx, term.text, dict),
-        dictionaries: _dictionaries,
-        languageId: widget.language.id!,
-        languageName: widget.language.name,
-        languageCode: widget.language.languageCode,
-      ),
+    final dialogResult = await TermDialog.show(
+      context,
+      term: term,
+      sentence: term.sentence,
+      onLookup: (ctx, dict) => _dictService.lookupWord(ctx, term.text, dict),
+      dictionaries: _dictionaries,
+      languageId: widget.language.id!,
+      languageName: widget.language.name,
+      languageCode: widget.language.languageCode,
     );
 
-    if (dialogResult != null) {
+    if (!mounted) return;
+    if (dialogResult == null) return;
+    if (dialogResult.deleted) {
+      await _deleteTerm(term);
+    } else {
       await db.terms.update(dialogResult.term);
       await db.translations.replaceForTerm(
         dialogResult.term.id!,
