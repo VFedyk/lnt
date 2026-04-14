@@ -552,13 +552,8 @@ class _DashboardTabState extends State<DashboardTab> {
           const SizedBox(height: AppConstants.spacingL),
           VocabularyGrowthLineChart(data: _vocabularyGrowthData, height: 250),
           const SizedBox(height: AppConstants.spacingL),
-          Center(
-            child: SizedBox(
-              width: 220,
-              child: StatusDistributionDonutChart(
-                data: _statusDistributionData,
-              ),
-            ),
+          StatusDistributionDonutChart(
+            data: _statusDistributionData,
           ),
         ],
       );
