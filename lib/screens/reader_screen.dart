@@ -37,6 +37,7 @@ enum _ContextMenuAction {
   lookupInDictionary,
   aiMeaning,
   aiGrammar,
+  aiWordForms,
 }
 
 /// Layout, sizing, and timing constants for the reader screen
@@ -380,6 +381,16 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
             ],
           ),
         ),
+        PopupMenuItem(
+          value: _ContextMenuAction.aiWordForms,
+          child: Row(
+            children: [
+              const Icon(Icons.table_chart_outlined),
+              const SizedBox(width: AppConstants.spacingS),
+              Expanded(child: Text(l10n.showWordForms)),
+            ],
+          ),
+        ),
       ],
     );
 
@@ -427,6 +438,16 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
             word,
             position,
             AiExplanationType.grammar,
+          );
+        }
+      case _ContextMenuAction.aiWordForms:
+        if (hasSelection) {
+          await _explainSelectionInContext(AiExplanationType.wordForms);
+        } else {
+          await _explainWordInContext(
+            word,
+            position,
+            AiExplanationType.wordForms,
           );
         }
       case null:
@@ -552,9 +573,11 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       if (!mounted) return;
       Navigator.pop(context);
 
-      final title = type == AiExplanationType.meaning
-          ? l10n.explainMeaningInContext
-          : l10n.explainGrammarInContext;
+      final title = switch (type) {
+        AiExplanationType.meaning   => l10n.explainMeaningInContext,
+        AiExplanationType.grammar   => l10n.explainGrammarInContext,
+        AiExplanationType.wordForms => l10n.showWordForms,
+      };
 
       await showDialog<void>(
         context: context,
@@ -569,9 +592,11 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
-      final label = type == AiExplanationType.meaning
-          ? l10n.aiMeaningExplainFailed
-          : l10n.aiGrammarExplainFailed;
+      final label = switch (type) {
+        AiExplanationType.meaning   => l10n.aiMeaningExplainFailed,
+        AiExplanationType.grammar   => l10n.aiGrammarExplainFailed,
+        AiExplanationType.wordForms => l10n.aiWordFormsFailed,
+      };
       final detail = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : e.toString();
@@ -772,9 +797,11 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       if (!mounted) return;
       Navigator.pop(context); // loading
 
-      final title = type == AiExplanationType.meaning
-          ? l10n.explainMeaningInContext
-          : l10n.explainGrammarInContext;
+      final title = switch (type) {
+        AiExplanationType.meaning   => l10n.explainMeaningInContext,
+        AiExplanationType.grammar   => l10n.explainGrammarInContext,
+        AiExplanationType.wordForms => l10n.showWordForms,
+      };
 
       await showDialog<void>(
         context: context,
@@ -789,9 +816,11 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context); // loading
-      final label = type == AiExplanationType.meaning
-          ? l10n.aiMeaningExplainFailed
-          : l10n.aiGrammarExplainFailed;
+      final label = switch (type) {
+        AiExplanationType.meaning   => l10n.aiMeaningExplainFailed,
+        AiExplanationType.grammar   => l10n.aiGrammarExplainFailed,
+        AiExplanationType.wordForms => l10n.aiWordFormsFailed,
+      };
       final detail = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : e.toString();
@@ -933,6 +962,8 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
                 _explainSelectionInContext(AiExplanationType.meaning);
               case ReaderSelectionAiAction.grammar:
                 _explainSelectionInContext(AiExplanationType.grammar);
+              case ReaderSelectionAiAction.wordForms:
+                _explainSelectionInContext(AiExplanationType.wordForms);
             }
           },
           onToggleLegend: ctrl.toggleLegend,

@@ -4,7 +4,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../utils/constants.dart';
 
 enum ReaderMoreAction { edit, fontSize, markAllKnown, openDrawer }
-enum ReaderSelectionAiAction { meaning, grammar }
+enum ReaderSelectionAiAction { meaning, grammar, wordForms }
 
 class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -114,6 +114,18 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                     const SizedBox(width: AppConstants.spacingS),
                     Expanded(
                       child: Text(l10n.explainGrammarInContext),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: ReaderSelectionAiAction.wordForms,
+                child: Row(
+                  children: [
+                    const Icon(Icons.table_chart_outlined),
+                    const SizedBox(width: AppConstants.spacingS),
+                    Expanded(
+                      child: Text(l10n.showWordForms),
                     ),
                   ],
                 ),

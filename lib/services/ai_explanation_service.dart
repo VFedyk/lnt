@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'logger_service.dart';
 import 'settings_service.dart';
 
-enum AiExplanationType { meaning, grammar }
+enum AiExplanationType { meaning, grammar, wordForms }
 
 // Maps target language codes (uppercase ISO 639-1) to human-readable names for prompts.
 const Map<String, String> _langCodeToName = {
@@ -167,14 +167,42 @@ class AiExplanationService {
     final targetLangCode = await _settings.getTargetLang();
     final responseLanguage =
         _langCodeToName[targetLangCode.toUpperCase()] ?? targetLangCode;
-    final task = switch (type) {
-      AiExplanationType.meaning =>
-        'Explain the meaning of the selected text in the given sentence context.',
-      AiExplanationType.grammar =>
-        'Explain the grammar used by the selected text in the given sentence context.'
-    };
+    final String userPrompt;
+    final String systemPrompt;
+    final int maxTokens;
 
-    final userPrompt = '''
+    if (type == AiExplanationType.wordForms) {
+      systemPrompt =
+          'You are a precise linguistic reference tool. '
+          'Answer in $responseLanguage. '
+          'Output only the requested table or list — no introductory sentence, no trailing commentary. '
+          'Use GitHub-flavored Markdown tables.';
+      userPrompt =
+          'Show all inflected forms of the $languageName word "$selectedText" '
+          'as it appears in this sentence:\n"$contextSentence"\n\n'
+          'Rules:\n'
+          '- Identify the part of speech first (one short line).\n'
+          '- If invariable, state that briefly.\n'
+          '- Verb: table with columns Form | Tense | Person | Translation | Example. '
+          'Cover present, past, future (and subjunctive/conditional where applicable). '
+          'Translation is the $responseLanguage translation of the form.\n'
+          '- Noun: if the language has cases, table Case | Singular | Plural | Translation (singular); '
+          'otherwise Number | Form | Translation.\n'
+          '- Adjective: table covering gender/number, comparative, superlative, '
+          'each with a Translation column in $responseLanguage.\n'
+          '- Logographic languages (Chinese, Japanese, Korean): readings/pronunciations '
+          'and grammatical derived forms, with a Translation column in $responseLanguage.\n'
+          'Jump straight to the table — no preamble.';
+      maxTokens = 1200;
+    } else {
+      final task = switch (type) {
+        AiExplanationType.meaning =>
+          'Explain the meaning of the selected text in the given sentence context.',
+        AiExplanationType.grammar =>
+          'Explain the grammar used by the selected text in the given sentence context.',
+        AiExplanationType.wordForms => '',
+      };
+      userPrompt = '''
 $task
 
 Language: $languageName
@@ -186,10 +214,13 @@ Return:
 2) Nuance in this context
 3) One short alternative wording or pattern
 ''';
-    final systemPrompt =
-        'You are a language tutor. Be accurate and concise. '
-        'Answer in $responseLanguage. '
-        'Use short sections and bullet points where helpful.';
+      systemPrompt =
+          'You are a language tutor. Be accurate and concise. '
+          'Answer in $responseLanguage. '
+          'Use short sections and bullet points where helpful.';
+      maxTokens = 600;
+    }
+
     final resolvedApiUrl = _resolveApiUrl(provider: provider, apiUrl: apiUrl);
     final body = _buildRequestBody(
       provider: provider,
@@ -197,6 +228,7 @@ Return:
       systemPrompt: systemPrompt,
       userPrompt: userPrompt,
       apiUrl: resolvedApiUrl,
+      maxTokens: maxTokens,
     );
     final headers = _buildHeaders(
       provider: provider,
@@ -435,6 +467,7 @@ Return:
     required String systemPrompt,
     required String userPrompt,
     required String apiUrl,
+    int maxTokens = 600,
   }) {
     switch (provider) {
       case _AiApiProvider.openAI:
@@ -455,7 +488,7 @@ Return:
       case _AiApiProvider.anthropic:
         return jsonEncode({
           'model': model,
-          'max_tokens': 600,
+          'max_tokens': maxTokens,
           'temperature': 0.3,
           'system': systemPrompt,
           'messages': [

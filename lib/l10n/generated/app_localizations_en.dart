@@ -863,6 +863,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiGrammarExplainFailed => 'Could not explain grammar in context';
 
   @override
+  String get showWordForms => 'Show word forms';
+
+  @override
+  String get aiWordFormsFailed => 'Could not show word forms';
+
+  @override
   String get translateWithAi => 'Translate with AI';
 
   @override

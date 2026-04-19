@@ -446,6 +446,8 @@
   "explainGrammarInContext": "Explain grammar in context",
   "aiMeaningExplainFailed": "Could not explain meaning in context",
   "aiGrammarExplainFailed": "Could not explain grammar in context",
+  "showWordForms": "Show word forms",
+  "aiWordFormsFailed": "Could not show word forms",
   "translateWithAi": "Translate with AI",
   "aiTranslateFailed": "Could not translate with AI",
   "pronounce": "Pronounce",

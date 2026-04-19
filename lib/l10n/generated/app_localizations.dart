@@ -1670,6 +1670,18 @@ abstract class AppLocalizations {
   /// **'Could not explain grammar in context'**
   String get aiGrammarExplainFailed;
 
+  /// No description provided for @showWordForms.
+  ///
+  /// In en, this message translates to:
+  /// **'Show word forms'**
+  String get showWordForms;
+
+  /// No description provided for @aiWordFormsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not show word forms'**
+  String get aiWordFormsFailed;
+
   /// No description provided for @translateWithAi.
   ///
   /// In en, this message translates to:

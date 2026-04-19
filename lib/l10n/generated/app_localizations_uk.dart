@@ -867,6 +867,12 @@ class AppLocalizationsUk extends AppLocalizations {
       'Не вдалося пояснити граматику в контексті';
 
   @override
+  String get showWordForms => 'Показати форми слова';
+
+  @override
+  String get aiWordFormsFailed => 'Не вдалося показати форми слова';
+
+  @override
   String get translateWithAi => 'Перекласти за допомогою AI';
 
   @override

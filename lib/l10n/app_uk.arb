@@ -262,6 +262,8 @@
   "explainGrammarInContext": "Пояснити граматику в контексті",
   "aiMeaningExplainFailed": "Не вдалося пояснити значення в контексті",
   "aiGrammarExplainFailed": "Не вдалося пояснити граматику в контексті",
+  "showWordForms": "Показати форми слова",
+  "aiWordFormsFailed": "Не вдалося показати форми слова",
   "translateWithAi": "Перекласти за допомогою AI",
   "aiTranslateFailed": "Не вдалося перекласти за допомогою AI",
   "pronounce": "Вимовити",
