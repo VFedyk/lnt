@@ -7,15 +7,14 @@ import '../models/language.dart';
 import '../models/text_document.dart';
 import '../models/term.dart';
 import '../models/dictionary.dart';
-import '../models/word_token.dart';
 import '../service_locator.dart';
 import '../services/ai_explanation_service.dart';
-import '../services/dictionary_service.dart';
-import '../widgets/reader/edit_text_dialog.dart';
 import '../widgets/reader/ai_thinking_dialog.dart';
+import '../widgets/reader/edit_text_dialog.dart';
 import '../widgets/reader/reader_ai_explanation_dialog.dart';
 import '../widgets/reader/reader_app_bar.dart';
 import '../widgets/reader/reader_content.dart';
+import '../widgets/reader/reader_context_menu.dart';
 import '../widgets/reader/reader_continue_reading_dialog.dart';
 import '../widgets/reader/reader_dictionary_picker_dialog.dart';
 import '../widgets/reader/reader_font_size_dialog.dart';
@@ -27,29 +26,7 @@ import '../widgets/shared/term_dialog.dart';
 import '../widgets/reader/word_list_drawer.dart';
 import '../utils/app_theme.dart';
 import '../utils/async_helpers.dart';
-import '../utils/constants.dart';
 import '../utils/snackbar_helpers.dart';
-
-enum _ContextMenuAction {
-  saveAsTerm,
-  mineSentence,
-  assignForeignLanguage,
-  lookupInDictionary,
-  aiMeaning,
-  aiGrammar,
-  aiWordForms,
-}
-
-/// Layout, sizing, and timing constants for the reader screen
-abstract class _ReaderScreenConstants {
-  // Font sizes
-  static const double fontSizeMin = 12.0;
-  static const double fontSizeMax = 32.0;
-  static const int fontSizeSliderDivisions = 20;
-
-  // Icon sizes
-  static const double editIconSize = 18.0;
-}
 
 class ReaderScreen extends StatelessWidget {
   final TextDocument text;
@@ -75,11 +52,8 @@ class _ReaderScreenBody extends StatefulWidget {
 
 class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
   final _scrollController = ScrollController();
-  final _dictService = DictionaryService();
-  final _aiExplanationService = AiExplanationService(settings: settings);
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _loadScheduled = false;
-  int? _dragSelectOriginIndex;
 
   @override
   void initState() {
@@ -138,7 +112,6 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     final lowerWord = ctrl.normalizeWord(word);
 
-    // Check if this is a foreign-marked word
     final foreignInfo = ctrl.otherLanguageTerms[lowerWord];
     if (foreignInfo != null) {
       final shouldRemove = await _showForeignWordPopup(lowerWord, foreignInfo);
@@ -163,7 +136,6 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
   Future<bool?> _showTranslationPopup(ReaderController ctrl, Term term) async {
     final l10n = AppLocalizations.of(context);
-    // Use preloaded translations from controller.
     List<Translation> translations = [];
     if (term.id != null) {
       translations = ctrl.translationsMap[term.id!] ?? [];
@@ -202,7 +174,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         info: info,
         l10n: l10n,
         onRemove: () => Navigator.pop(context, true),
-        removeIconSize: _ReaderScreenConstants.editIconSize,
+        removeIconSize: ReaderScreenConstants.editIconSize,
       ),
     );
   }
@@ -216,7 +188,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final lowerWord = ctrl.normalizeWord(word);
     final sentence = ctrl.getSentenceForPosition(position);
 
-    final dictionaries = await _dictService.getActiveDictionaries(
+    final dictionaries = await ctrl.dictService.getActiveDictionaries(
       ctrl.language.id!,
     );
     if (!mounted) return;
@@ -228,7 +200,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         term: existingTerm,
         sentence: sentence,
         dictionaries: dictionaries,
-        onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict),
+        onLookup: (ctx, dict) => ctrl.dictService.lookupWord(ctx, word, dict),
         languageId: ctrl.language.id!,
         languageName: ctrl.language.name,
         languageCode: ctrl.language.languageCode,
@@ -261,7 +233,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         term: newTerm,
         sentence: sentence,
         dictionaries: dictionaries,
-        onLookup: (ctx, dict) => _dictService.lookupWord(ctx, word, dict),
+        onLookup: (ctx, dict) => ctrl.dictService.lookupWord(ctx, word, dict),
         languageId: ctrl.language.id!,
         languageName: ctrl.language.name,
         languageCode: ctrl.language.languageCode,
@@ -284,19 +256,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     context.read<ReaderController>().handleWordLongPress(tokenIndex);
   }
 
-  void _onWordDragStart(int tokenIndex) {
-    _dragSelectOriginIndex = tokenIndex;
-  }
-
-  void _onWordDragEnter(int tokenIndex) {
-    final origin = _dragSelectOriginIndex;
-    if (origin == null || tokenIndex == origin) return;
-    context.read<ReaderController>().selectRange(origin, tokenIndex);
-  }
-
-  void _stopDragSelect() {
-    _dragSelectOriginIndex = null;
-  }
+  // --- Context menu ---
 
   Future<void> _handleWordRightClick(
     String word,
@@ -306,92 +266,15 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
   ) async {
     final ctrl = context.read<ReaderController>();
     final l10n = AppLocalizations.of(context);
-    final overlay =
-        Overlay.of(context).context.findRenderObject()! as RenderBox;
 
     final lowerWord = ctrl.normalizeWord(word);
     final existingTerm = ctrl.termsMap[lowerWord];
 
-    final action = await showMenu<_ContextMenuAction>(
+    final action = await showReaderContextMenu(
       context: context,
-      position: RelativeRect.fromRect(
-        globalPosition & Size.zero,
-        Offset.zero & overlay.size,
-      ),
-      items: [
-        PopupMenuItem(
-          value: _ContextMenuAction.saveAsTerm,
-          child: Row(
-            children: [
-              const Icon(Icons.add),
-              const SizedBox(width: AppConstants.spacingS),
-              Expanded(child: Text(l10n.saveAsTerm)),
-            ],
-          ),
-        ),
-        if (existingTerm != null)
-          PopupMenuItem(
-            value: _ContextMenuAction.mineSentence,
-            child: Row(
-              children: [
-                const Icon(Icons.push_pin_outlined),
-                const SizedBox(width: AppConstants.spacingS),
-                Expanded(child: Text(l10n.mineSentence)),
-              ],
-            ),
-          ),
-        PopupMenuItem(
-          value: _ContextMenuAction.assignForeignLanguage,
-          child: Row(
-            children: [
-              const Icon(Icons.language),
-              const SizedBox(width: AppConstants.spacingS),
-              Expanded(child: Text(l10n.assignForeignLanguage)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: _ContextMenuAction.lookupInDictionary,
-          child: Row(
-            children: [
-              const Icon(Icons.search),
-              const SizedBox(width: AppConstants.spacingS),
-              Expanded(child: Text(l10n.lookupInDictionary)),
-            ],
-          ),
-        ),
-        const PopupMenuDivider(),
-        PopupMenuItem(
-          value: _ContextMenuAction.aiMeaning,
-          child: Row(
-            children: [
-              const Icon(Icons.lightbulb_outline),
-              const SizedBox(width: AppConstants.spacingS),
-              Expanded(child: Text(l10n.explainMeaningInContext)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: _ContextMenuAction.aiGrammar,
-          child: Row(
-            children: [
-              const Icon(Icons.rule),
-              const SizedBox(width: AppConstants.spacingS),
-              Expanded(child: Text(l10n.explainGrammarInContext)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: _ContextMenuAction.aiWordForms,
-          child: Row(
-            children: [
-              const Icon(Icons.table_chart_outlined),
-              const SizedBox(width: AppConstants.spacingS),
-              Expanded(child: Text(l10n.showWordForms)),
-            ],
-          ),
-        ),
-      ],
+      globalPosition: globalPosition,
+      hasExistingTerm: existingTerm != null,
+      l10n: l10n,
     );
 
     if (!mounted) return;
@@ -400,56 +283,34 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         ctrl.isSelectionMode && ctrl.selectedWordIndices.isNotEmpty;
 
     switch (action) {
-      case _ContextMenuAction.saveAsTerm:
+      case ReaderContextMenuAction.saveAsTerm:
         if (hasSelection) {
           await _saveSelectionAsTerm();
         } else {
           await _openTermDialog(ctrl, word, position, existingTerm);
         }
-      case _ContextMenuAction.mineSentence:
+      case ReaderContextMenuAction.mineSentence:
         await _mineSentenceForWord(ctrl, existingTerm!, position);
-      case _ContextMenuAction.assignForeignLanguage:
-        if (hasSelection) {
-          await _assignForeignLanguage();
-        } else {
-          await _assignForeignLanguageForWord(lowerWord);
-        }
-      case _ContextMenuAction.lookupInDictionary:
-        if (hasSelection) {
-          await _lookupSelectedWords();
-        } else {
-          await _lookupWord(word);
-        }
-      case _ContextMenuAction.aiMeaning:
-        if (hasSelection) {
-          await _explainSelectionInContext(AiExplanationType.meaning);
-        } else {
-          await _explainWordInContext(
-            word,
-            position,
-            AiExplanationType.meaning,
-          );
-        }
-      case _ContextMenuAction.aiGrammar:
-        if (hasSelection) {
-          await _explainSelectionInContext(AiExplanationType.grammar);
-        } else {
-          await _explainWordInContext(
-            word,
-            position,
-            AiExplanationType.grammar,
-          );
-        }
-      case _ContextMenuAction.aiWordForms:
-        if (hasSelection) {
-          await _explainSelectionInContext(AiExplanationType.wordForms);
-        } else {
-          await _explainWordInContext(
-            word,
-            position,
-            AiExplanationType.wordForms,
-          );
-        }
+      case ReaderContextMenuAction.assignForeignLanguage:
+        final lowerWords =
+            hasSelection ? ctrl.getSelectedLowerWords() : [lowerWord];
+        await _assignForeignLanguageForWords(lowerWords);
+      case ReaderContextMenuAction.lookupInDictionary:
+        final words = hasSelection ? ctrl.getSelectedWordsText() : word;
+        await _lookupWords(words);
+      case ReaderContextMenuAction.aiMeaning ||
+            ReaderContextMenuAction.aiGrammar ||
+            ReaderContextMenuAction.aiWordForms:
+        final aiType = switch (action!) {
+          ReaderContextMenuAction.aiMeaning => AiExplanationType.meaning,
+          ReaderContextMenuAction.aiGrammar => AiExplanationType.grammar,
+          _ => AiExplanationType.wordForms,
+        };
+        final selectedText = hasSelection ? ctrl.getSelectedWordsText() : word;
+        final sentence = hasSelection
+            ? ctrl.getSelectionSentence()
+            : ctrl.getSentenceForPosition(position);
+        await _explainInContext(selectedText, sentence, aiType);
       case null:
         break;
     }
@@ -479,43 +340,48 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     }
   }
 
-  Future<void> _assignForeignLanguageForWord(String lowerWord) async {
+  Future<Language?> _pickForeignLanguage() async {
     final ctrl = context.read<ReaderController>();
     final l10n = AppLocalizations.of(context);
 
     final allLanguages = await db.languages.getAll();
-    final otherLanguages = allLanguages
-        .where((lang) => lang.id != ctrl.language.id)
-        .toList();
+    final otherLanguages =
+        allLanguages.where((lang) => lang.id != ctrl.language.id).toList();
 
-    if (!mounted) return;
+    if (!mounted) return null;
 
     if (otherLanguages.isEmpty) {
       SnackbarHelpers.showInfo(context, l10n.noOtherLanguages);
-      return;
+      return null;
     }
 
-    final selectedLanguage = await showDialog<Language>(
+    return showDialog<Language>(
       context: context,
       builder: (context) =>
           ReaderLanguagePickerDialog(l10n: l10n, languages: otherLanguages),
     );
-
-    if (selectedLanguage == null || !mounted) return;
-
-    final targetTermsMap = await db.terms.getMapByLanguage(
-      selectedLanguage.id!,
-    );
-    await ctrl.assignForeignWords(selectedLanguage.id!, {
-      lowerWord: targetTermsMap[lowerWord]?.id,
-    });
   }
 
-  Future<void> _lookupWord(String word) async {
+  Future<void> _assignForeignLanguageForWords(List<String> lowerWords) async {
+    if (lowerWords.isEmpty) return;
+
+    final selectedLanguage = await _pickForeignLanguage();
+    if (selectedLanguage == null || !mounted) return;
+
     final ctrl = context.read<ReaderController>();
-    final dictionaries = await _dictService.getActiveDictionaries(
-      ctrl.language.id!,
-    );
+    final targetTermsMap =
+        await db.terms.getMapByLanguage(selectedLanguage.id!);
+    final wordsWithTermIds = <String, String?>{
+      for (final word in lowerWords) word: targetTermsMap[word]?.id,
+    };
+
+    await ctrl.assignForeignWords(selectedLanguage.id!, wordsWithTermIds);
+  }
+
+  Future<void> _lookupWords(String words) async {
+    final ctrl = context.read<ReaderController>();
+    final dictionaries =
+        await ctrl.dictService.getActiveDictionaries(ctrl.language.id!);
     if (!mounted) return;
 
     final l10n = AppLocalizations.of(context);
@@ -528,31 +394,30 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       context: context,
       builder: (context) => ReaderDictionaryPickerDialog(
         l10n: l10n,
-        selectedWords: word,
+        selectedWords: words,
         dictionaries: dictionaries,
       ),
     );
 
     if (selectedDict != null && mounted) {
-      await _dictService.lookupWord(context, word, selectedDict);
+      await ctrl.dictService.lookupWord(context, words, selectedDict);
+      if (ctrl.isSelectionMode) ctrl.cancelSelection();
     }
   }
 
-  Future<void> _explainWordInContext(
-    String word,
-    int position,
+  Future<void> _explainInContext(
+    String selectedText,
+    String sentence,
     AiExplanationType type,
   ) async {
     final ctrl = context.read<ReaderController>();
     final l10n = AppLocalizations.of(context);
 
-    if (!await _aiExplanationService.isConfigured()) {
+    if (!await ctrl.aiExplanationService.isConfigured()) {
       if (!mounted) return;
       SnackbarHelpers.showInfo(context, l10n.aiFeatureUnavailable);
       return;
     }
-
-    final sentence = ctrl.getSentenceForPosition(position);
 
     if (!mounted) return;
 
@@ -563,9 +428,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     );
 
     try {
-      final explanation = await _aiExplanationService.explainInContext(
+      final explanation = await ctrl.aiExplanationService.explainInContext(
         type: type,
-        selectedText: word,
+        selectedText: selectedText,
         contextSentence: sentence,
         languageName: ctrl.language.name,
       );
@@ -574,8 +439,8 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       Navigator.pop(context);
 
       final title = switch (type) {
-        AiExplanationType.meaning   => l10n.explainMeaningInContext,
-        AiExplanationType.grammar   => l10n.explainGrammarInContext,
+        AiExplanationType.meaning => l10n.explainMeaningInContext,
+        AiExplanationType.grammar => l10n.explainGrammarInContext,
         AiExplanationType.wordForms => l10n.showWordForms,
       };
 
@@ -583,7 +448,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         context: context,
         builder: (context) => ReaderAiExplanationDialog(
           title: title,
-          selectedText: word,
+          selectedText: selectedText,
           contextSentence: sentence,
           explanation: explanation,
           closeLabel: l10n.close,
@@ -593,96 +458,14 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       if (!mounted) return;
       Navigator.pop(context);
       final label = switch (type) {
-        AiExplanationType.meaning   => l10n.aiMeaningExplainFailed,
-        AiExplanationType.grammar   => l10n.aiGrammarExplainFailed,
+        AiExplanationType.meaning => l10n.aiMeaningExplainFailed,
+        AiExplanationType.grammar => l10n.aiGrammarExplainFailed,
         AiExplanationType.wordForms => l10n.aiWordFormsFailed,
       };
       final detail = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : e.toString();
       SnackbarHelpers.showError(context, '$label: $detail');
-    }
-  }
-
-  Future<void> _assignForeignLanguage() async {
-    final ctrl = context.read<ReaderController>();
-    if (ctrl.selectedWordIndices.isEmpty) return;
-    final l10n = AppLocalizations.of(context);
-
-    final allLanguages = await db.languages.getAll();
-    final otherLanguages = allLanguages
-        .where((lang) => lang.id != ctrl.language.id)
-        .toList();
-
-    if (!mounted) return;
-
-    if (otherLanguages.isEmpty) {
-      SnackbarHelpers.showInfo(context, l10n.noOtherLanguages);
-      return;
-    }
-
-    final selectedLanguage = await showDialog<Language>(
-      context: context,
-      builder: (context) =>
-          ReaderLanguagePickerDialog(l10n: l10n, languages: otherLanguages),
-    );
-
-    if (selectedLanguage == null || !mounted) return;
-
-    final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
-    final lowerWords = selectedTokens
-        .map(ctrl.getWordTokenByGlobalIndex)
-        .whereType<WordToken>()
-        .map((t) => ctrl.normalizeWord(t.text))
-        .toSet()
-        .toList();
-
-    final targetTermsMap = await db.terms.getMapByLanguage(
-      selectedLanguage.id!,
-    );
-    final wordsWithTermIds = <String, String?>{};
-    for (final word in lowerWords) {
-      final term = targetTermsMap[word];
-      wordsWithTermIds[word] = term?.id;
-    }
-
-    await ctrl.assignForeignWords(selectedLanguage.id!, wordsWithTermIds);
-  }
-
-  Future<void> _lookupSelectedWords() async {
-    final ctrl = context.read<ReaderController>();
-    if (ctrl.selectedWordIndices.isEmpty) return;
-
-    final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
-    final selectedWords = selectedTokens
-        .map(ctrl.getWordTokenByGlobalIndex)
-        .whereType<WordToken>()
-        .map((t) => t.text)
-        .join(' ');
-
-    final dictionaries = await _dictService.getActiveDictionaries(
-      ctrl.language.id!,
-    );
-    if (!mounted) return;
-
-    final l10n = AppLocalizations.of(context);
-    if (dictionaries.isEmpty) {
-      SnackbarHelpers.showInfo(context, l10n.noDictionariesConfigured);
-      return;
-    }
-
-    final selectedDict = await showDialog<Dictionary?>(
-      context: context,
-      builder: (context) => ReaderDictionaryPickerDialog(
-        l10n: l10n,
-        selectedWords: selectedWords,
-        dictionaries: dictionaries,
-      ),
-    );
-
-    if (selectedDict != null && mounted) {
-      await _dictService.lookupWord(context, selectedWords, selectedDict);
-      ctrl.cancelSelection();
     }
   }
 
@@ -702,9 +485,8 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     }
     final sentence = ctrl.getSentenceForPosition(firstToken.position);
 
-    final dictionaries = await _dictService.getActiveDictionaries(
-      ctrl.language.id!,
-    );
+    final dictionaries =
+        await ctrl.dictService.getActiveDictionaries(ctrl.language.id!);
     if (!mounted) return;
 
     TermDialogResult? dialogResult;
@@ -715,7 +497,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         sentence: sentence,
         dictionaries: dictionaries,
         onLookup: (ctx, dict) =>
-            _dictService.lookupWord(ctx, selectedWords, dict),
+            ctrl.dictService.lookupWord(ctx, selectedWords, dict),
         languageId: ctrl.language.id!,
         languageName: ctrl.language.name,
         languageCode: ctrl.language.languageCode,
@@ -735,7 +517,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         sentence: sentence,
         dictionaries: dictionaries,
         onLookup: (ctx, dict) =>
-            _dictService.lookupWord(ctx, selectedWords, dict),
+            ctrl.dictService.lookupWord(ctx, selectedWords, dict),
         languageId: ctrl.language.id!,
         languageName: ctrl.language.name,
         languageCode: ctrl.language.languageCode,
@@ -755,76 +537,6 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       );
     } else {
       ctrl.cancelSelection();
-    }
-  }
-
-  Future<void> _explainSelectionInContext(AiExplanationType type) async {
-    final ctrl = context.read<ReaderController>();
-    if (ctrl.selectedWordIndices.isEmpty) return;
-    final l10n = AppLocalizations.of(context);
-
-    if (!await _aiExplanationService.isConfigured()) {
-      if (!mounted) return;
-      SnackbarHelpers.showInfo(context, l10n.aiFeatureUnavailable);
-      return;
-    }
-
-    final selectedWords = ctrl.getSelectedWordsText();
-    final selectedTokens = ctrl.selectedWordIndices.toList()..sort();
-    final firstToken = ctrl.getWordTokenByGlobalIndex(selectedTokens.first);
-    if (firstToken == null) {
-      ctrl.cancelSelection();
-      return;
-    }
-    final sentence = ctrl.getSentenceForPosition(firstToken.position);
-
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const AiThinkingDialog(),
-    );
-
-    try {
-      final explanation = await _aiExplanationService.explainInContext(
-        type: type,
-        selectedText: selectedWords,
-        contextSentence: sentence,
-        languageName: ctrl.language.name,
-      );
-
-      if (!mounted) return;
-      Navigator.pop(context); // loading
-
-      final title = switch (type) {
-        AiExplanationType.meaning   => l10n.explainMeaningInContext,
-        AiExplanationType.grammar   => l10n.explainGrammarInContext,
-        AiExplanationType.wordForms => l10n.showWordForms,
-      };
-
-      await showDialog<void>(
-        context: context,
-        builder: (context) => ReaderAiExplanationDialog(
-          title: title,
-          selectedText: selectedWords,
-          contextSentence: sentence,
-          explanation: explanation,
-          closeLabel: l10n.close,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.pop(context); // loading
-      final label = switch (type) {
-        AiExplanationType.meaning   => l10n.aiMeaningExplainFailed,
-        AiExplanationType.grammar   => l10n.aiGrammarExplainFailed,
-        AiExplanationType.wordForms => l10n.aiWordFormsFailed,
-      };
-      final detail = e is Exception
-          ? e.toString().replaceFirst('Exception: ', '')
-          : e.toString();
-      SnackbarHelpers.showError(context, '$label: $detail');
     }
   }
 
@@ -850,9 +562,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       builder: (context) => ReaderFontSizeDialog(
         l10n: l10n,
         initialValue: ctrl.fontSize,
-        min: _ReaderScreenConstants.fontSizeMin,
-        max: _ReaderScreenConstants.fontSizeMax,
-        divisions: _ReaderScreenConstants.fontSizeSliderDivisions,
+        min: ReaderScreenConstants.fontSizeMin,
+        max: ReaderScreenConstants.fontSizeMax,
+        divisions: ReaderScreenConstants.fontSizeSliderDivisions,
         onChanged: ctrl.setFontSize,
       ),
     );
@@ -999,17 +711,21 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           l10n: l10n,
           onCancelSelection: ctrl.cancelSelection,
           onSaveSelectionAsTerm: _saveSelectionAsTerm,
-          onAssignForeignLanguage: _assignForeignLanguage,
-          onLookupSelectedWords: _lookupSelectedWords,
+          onAssignForeignLanguage: () =>
+              _assignForeignLanguageForWords(ctrl.getSelectedLowerWords()),
+          onLookupSelectedWords: () =>
+              _lookupWords(ctrl.getSelectedWordsText()),
           onSelectionAiSelected: (action) {
-            switch (action) {
-              case ReaderSelectionAiAction.meaning:
-                _explainSelectionInContext(AiExplanationType.meaning);
-              case ReaderSelectionAiAction.grammar:
-                _explainSelectionInContext(AiExplanationType.grammar);
-              case ReaderSelectionAiAction.wordForms:
-                _explainSelectionInContext(AiExplanationType.wordForms);
-            }
+            final aiType = switch (action) {
+              ReaderSelectionAiAction.meaning => AiExplanationType.meaning,
+              ReaderSelectionAiAction.grammar => AiExplanationType.grammar,
+              ReaderSelectionAiAction.wordForms => AiExplanationType.wordForms,
+            };
+            _explainInContext(
+              ctrl.getSelectedWordsText(),
+              ctrl.getSelectionSentence(),
+              aiType,
+            );
           },
           onToggleLegend: ctrl.toggleLegend,
           onToggleFinished: _markAsFinished,
@@ -1042,8 +758,8 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
             ? const Center(child: CircularProgressIndicator())
             : Listener(
                 behavior: HitTestBehavior.translucent,
-                onPointerUp: (_) => _stopDragSelect(),
-                onPointerCancel: (_) => _stopDragSelect(),
+                onPointerUp: (_) => ctrl.stopDragSelect(),
+                onPointerCancel: (_) => ctrl.stopDragSelect(),
                 child: ReaderContent(
                   showLegend: ctrl.showLegend,
                   termCounts: ctrl.termCounts,
@@ -1059,8 +775,8 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
                   onWordTap: _handleWordTap,
                   onWordLongPress: _handleWordLongPress,
                   onWordRightClick: _handleWordRightClick,
-                  onWordDragStart: _onWordDragStart,
-                  onWordDragEnter: _onWordDragEnter,
+                  onWordDragStart: ctrl.startDragSelect,
+                  onWordDragEnter: ctrl.dragSelectTo,
                 ),
               ),
       ),

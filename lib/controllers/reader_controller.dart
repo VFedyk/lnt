@@ -4,6 +4,8 @@ import '../models/text_document.dart';
 import '../models/term.dart';
 import '../models/word_token.dart';
 import '../service_locator.dart';
+import '../services/ai_explanation_service.dart';
+import '../services/dictionary_service.dart';
 import '../services/text_parser_service.dart';
 import '../services/isolate_parser.dart';
 import 'base_controller.dart';
@@ -28,6 +30,8 @@ class ReaderController extends BaseController {
   final _textParser = sl.isRegistered<TextParserService>()
       ? sl<TextParserService>()
       : TextParserService();
+  final dictService = DictionaryService();
+  late final aiExplanationService = AiExplanationService(settings: settings);
 
   TextDocument text;
   Map<String, Term> termsMap = {};
@@ -45,6 +49,7 @@ class ReaderController extends BaseController {
   Map<int, int> termCounts = {};
   List<TextDocument>? _collectionTexts;
   int _collectionIndex = -1;
+  int? _dragSelectOriginIndex;
 
   ReaderController({required this.text, required this.language});
 
@@ -552,6 +557,20 @@ class ReaderController extends BaseController {
     safeNotify();
   }
 
+  void startDragSelect(int index) {
+    _dragSelectOriginIndex = index;
+  }
+
+  void dragSelectTo(int index) {
+    final origin = _dragSelectOriginIndex;
+    if (origin == null || index == origin) return;
+    selectRange(origin, index);
+  }
+
+  void stopDragSelect() {
+    _dragSelectOriginIndex = null;
+  }
+
   WordToken? getWordTokenByGlobalIndex(int globalIndex) {
     for (final token in wordTokens) {
       if (token.globalIndex == globalIndex) return token;
@@ -566,6 +585,24 @@ class ReaderController extends BaseController {
         .whereType<WordToken>()
         .map((t) => t.text)
         .join(language.splitByCharacter ? '' : ' ');
+  }
+
+  List<String> getSelectedLowerWords() {
+    final selectedTokens = selectedWordIndices.toList()..sort();
+    return selectedTokens
+        .map(getWordTokenByGlobalIndex)
+        .whereType<WordToken>()
+        .map((t) => normalizeWord(t.text))
+        .toSet()
+        .toList();
+  }
+
+  String getSelectionSentence() {
+    if (selectedWordIndices.isEmpty) return '';
+    final sorted = selectedWordIndices.toList()..sort();
+    final firstToken = getWordTokenByGlobalIndex(sorted.first);
+    if (firstToken == null) return '';
+    return getSentenceForPosition(firstToken.position);
   }
 
   // ── Foreign language ──
