@@ -919,6 +919,51 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     }
   }
 
+  void _navigateToText(TextDocument targetText) {
+    final ctrl = context.read<ReaderController>();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReaderScreen(text: targetText, language: ctrl.language),
+      ),
+    );
+  }
+
+  void _showContentsBottomSheet() {
+    final ctrl = context.read<ReaderController>();
+    final texts = ctrl.collectionTexts;
+    final currentIndex = ctrl.collectionIndex;
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetCtx) => ListView.builder(
+        itemCount: texts.length,
+        itemBuilder: (_, i) {
+          final isCurrent = i == currentIndex;
+          return ListTile(
+            title: Text(
+              texts[i].title,
+              style: isCurrent
+                  ? TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(sheetCtx).colorScheme.primary,
+                    )
+                  : null,
+            ),
+            trailing: isCurrent
+                ? Icon(Icons.play_arrow,
+                    color: Theme.of(sheetCtx).colorScheme.primary)
+                : null,
+            onTap: () {
+              Navigator.pop(sheetCtx);
+              if (!isCurrent) _navigateToText(texts[i]);
+            },
+          );
+        },
+      ),
+    );
+  }
+
   // --- Build ---
 
   @override
@@ -968,6 +1013,18 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           },
           onToggleLegend: ctrl.toggleLegend,
           onToggleFinished: _markAsFinished,
+          isEpubCollection: ctrl.isEpubCollection,
+          hasPrev: ctrl.hasPrevInCollection,
+          hasNext: ctrl.hasNextInCollection,
+          onPrevText: () {
+            final prev = ctrl.getPrevTextInCollection();
+            if (prev != null) _navigateToText(prev);
+          },
+          onNextText: () {
+            final next = ctrl.getNextTextInCollectionCached();
+            if (next != null) _navigateToText(next);
+          },
+          onShowContents: _showContentsBottomSheet,
           onMoreSelected: (action) {
             switch (action) {
               case ReaderMoreAction.edit:

@@ -881,6 +881,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toggleLegend => 'Toggle Legend';
 
   @override
+  String get previousChapter => 'Previous chapter';
+
+  @override
+  String get nextChapter => 'Next chapter';
+
+  @override
   String get wordList => 'Word List';
 
   @override

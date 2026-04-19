@@ -43,8 +43,18 @@ class ReaderController extends BaseController {
   final Set<int> selectedWordIndices = {};
   bool isSelectionMode = false;
   Map<int, int> termCounts = {};
+  List<TextDocument>? _collectionTexts;
+  int _collectionIndex = -1;
 
   ReaderController({required this.text, required this.language});
+
+  bool get isEpubCollection => text.sourceUri.startsWith('epub://');
+  bool get hasPrevInCollection => _collectionIndex > 0;
+  bool get hasNextInCollection =>
+      _collectionTexts != null &&
+      _collectionIndex < _collectionTexts!.length - 1;
+  List<TextDocument> get collectionTexts => _collectionTexts ?? [];
+  int get collectionIndex => _collectionIndex;
 
   // ── Data loading ──
 
@@ -76,6 +86,7 @@ class ReaderController extends BaseController {
 
     isLoading = false;
     safeNotify();
+    await loadCollectionTexts();
     _updateLastRead();
   }
 
@@ -602,6 +613,29 @@ class ReaderController extends BaseController {
     text = updatedText;
     safeNotify();
     return newStatus;
+  }
+
+  Future<void> loadCollectionTexts() async {
+    if (!isEpubCollection || text.collectionId == null) return;
+    if (_collectionTexts != null) return;
+    final texts = await db.texts.getByCollection(text.collectionId!);
+    _collectionTexts = texts;
+    _collectionIndex = texts.indexWhere((t) => t.id == text.id);
+    safeNotify();
+  }
+
+  TextDocument? getPrevTextInCollection() {
+    if (_collectionTexts == null || _collectionIndex <= 0) return null;
+    return _collectionTexts![_collectionIndex - 1];
+  }
+
+  TextDocument? getNextTextInCollectionCached() {
+    if (_collectionTexts == null ||
+        _collectionIndex < 0 ||
+        _collectionIndex >= _collectionTexts!.length - 1) {
+      return null;
+    }
+    return _collectionTexts![_collectionIndex + 1];
   }
 
   Future<TextDocument?> getNextTextInCollection() async {

@@ -21,6 +21,12 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onToggleLegend;
   final VoidCallback onToggleFinished;
   final ValueChanged<ReaderMoreAction> onMoreSelected;
+  final bool isEpubCollection;
+  final bool hasPrev;
+  final bool hasNext;
+  final VoidCallback? onPrevText;
+  final VoidCallback? onNextText;
+  final VoidCallback? onShowContents;
 
   const ReaderAppBar({
     super.key,
@@ -38,6 +44,12 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onToggleLegend,
     required this.onToggleFinished,
     required this.onMoreSelected,
+    required this.isEpubCollection,
+    required this.hasPrev,
+    required this.hasNext,
+    this.onPrevText,
+    this.onNextText,
+    this.onShowContents,
   });
 
   @override
@@ -131,6 +143,24 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
             ],
+          ),
+        if (!isSelectionMode && isEpubCollection)
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios),
+            tooltip: l10n.previousChapter,
+            onPressed: hasPrev ? onPrevText : null,
+          ),
+        if (!isSelectionMode && isEpubCollection)
+          IconButton(
+            icon: const Icon(Icons.arrow_forward_ios),
+            tooltip: l10n.nextChapter,
+            onPressed: hasNext ? onNextText : null,
+          ),
+        if (!isSelectionMode && isEpubCollection)
+          IconButton(
+            icon: const Icon(Icons.menu_book),
+            tooltip: l10n.chapters,
+            onPressed: onShowContents,
           ),
         if (!isSelectionMode)
           IconButton(

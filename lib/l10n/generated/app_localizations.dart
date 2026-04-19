@@ -1706,6 +1706,18 @@ abstract class AppLocalizations {
   /// **'Toggle Legend'**
   String get toggleLegend;
 
+  /// No description provided for @previousChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous chapter'**
+  String get previousChapter;
+
+  /// No description provided for @nextChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Next chapter'**
+  String get nextChapter;
+
   /// No description provided for @wordList.
   ///
   /// In en, this message translates to:

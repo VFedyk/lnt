@@ -452,6 +452,8 @@
   "aiTranslateFailed": "Could not translate with AI",
   "pronounce": "Pronounce",
   "toggleLegend": "Toggle Legend",
+  "previousChapter": "Previous chapter",
+  "nextChapter": "Next chapter",
   "wordList": "Word List",
   "fontSize": "Font Size",
   "markAllKnown": "Mark All Known",

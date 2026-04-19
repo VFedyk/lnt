@@ -885,6 +885,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get toggleLegend => 'Легенда';
 
   @override
+  String get previousChapter => 'Попередній розділ';
+
+  @override
+  String get nextChapter => 'Наступний розділ';
+
+  @override
   String get wordList => 'Список слів';
 
   @override
