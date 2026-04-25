@@ -631,13 +631,36 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     }
   }
 
-  void _navigateToText(TextDocument targetText) {
+  void _navigateToText(TextDocument targetText, {bool reverse = false}) {
     final ctrl = context.read<ReaderController>();
+    Widget buildPage(BuildContext ctx) =>
+        ReaderScreen(text: targetText, language: ctrl.language);
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => ReaderScreen(text: targetText, language: ctrl.language),
-      ),
+      reverse
+          ? PageRouteBuilder<void>(
+              pageBuilder: (ctx, _, _) => buildPage(ctx),
+              transitionDuration: const Duration(milliseconds: 300),
+              reverseTransitionDuration: const Duration(milliseconds: 300),
+              transitionsBuilder: (_, animation, secondaryAnimation, child) {
+                final enterTween = Tween(
+                  begin: const Offset(-1.0, 0.0),
+                  end: Offset.zero,
+                ).chain(CurveTween(curve: Curves.easeInOut));
+                final exitTween = Tween(
+                  begin: Offset.zero,
+                  end: const Offset(1.0, 0.0),
+                ).chain(CurveTween(curve: Curves.easeInOut));
+                return SlideTransition(
+                  position: enterTween.animate(animation),
+                  child: SlideTransition(
+                    position: exitTween.animate(secondaryAnimation),
+                    child: child,
+                  ),
+                );
+              },
+            )
+          : MaterialPageRoute(builder: buildPage),
     );
   }
 
@@ -734,7 +757,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           hasNext: ctrl.hasNextInCollection,
           onPrevText: () {
             final prev = ctrl.getPrevTextInCollection();
-            if (prev != null) _navigateToText(prev);
+            if (prev != null) _navigateToText(prev, reverse: true);
           },
           onNextText: () {
             final next = ctrl.getNextTextInCollectionCached();

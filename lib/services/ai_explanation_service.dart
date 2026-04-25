@@ -10,16 +10,45 @@ enum AiExplanationType { meaning, grammar, wordForms }
 
 // Maps target language codes (uppercase ISO 639-1) to human-readable names for prompts.
 const Map<String, String> _langCodeToName = {
-  'AR': 'Arabic', 'BG': 'Bulgarian', 'CS': 'Czech', 'DA': 'Danish',
-  'DE': 'German', 'EL': 'Greek', 'EN': 'English', 'EN-US': 'English',
-  'EN-GB': 'English', 'ES': 'Spanish', 'ET': 'Estonian', 'FI': 'Finnish',
-  'FR': 'French', 'GA': 'Irish', 'HE': 'Hebrew', 'HI': 'Hindi',
-  'HU': 'Hungarian', 'ID': 'Indonesian', 'IT': 'Italian', 'JA': 'Japanese',
-  'KO': 'Korean', 'LT': 'Lithuanian', 'LV': 'Latvian', 'NB': 'Norwegian',
-  'NL': 'Dutch', 'PL': 'Polish', 'PT': 'Portuguese', 'PT-BR': 'Portuguese',
-  'PT-PT': 'Portuguese', 'RO': 'Romanian', 'RU': 'Russian', 'SK': 'Slovak',
-  'SL': 'Slovenian', 'SV': 'Swedish', 'TH': 'Thai', 'TR': 'Turkish',
-  'UK': 'Ukrainian', 'VI': 'Vietnamese', 'ZH': 'Chinese',
+  'AR': 'Arabic',
+  'BG': 'Bulgarian',
+  'CS': 'Czech',
+  'DA': 'Danish',
+  'DE': 'German',
+  'EL': 'Greek',
+  'EN': 'English',
+  'EN-US': 'English',
+  'EN-GB': 'English',
+  'ES': 'Spanish',
+  'ET': 'Estonian',
+  'FI': 'Finnish',
+  'FR': 'French',
+  'GA': 'Irish',
+  'HE': 'Hebrew',
+  'HI': 'Hindi',
+  'HU': 'Hungarian',
+  'ID': 'Indonesian',
+  'IT': 'Italian',
+  'JA': 'Japanese',
+  'KO': 'Korean',
+  'LT': 'Lithuanian',
+  'LV': 'Latvian',
+  'NB': 'Norwegian',
+  'NL': 'Dutch',
+  'PL': 'Polish',
+  'PT': 'Portuguese',
+  'PT-BR': 'Portuguese',
+  'PT-PT': 'Portuguese',
+  'RO': 'Romanian',
+  'RU': 'Russian',
+  'SK': 'Slovak',
+  'SL': 'Slovenian',
+  'SV': 'Swedish',
+  'TH': 'Thai',
+  'TR': 'Turkish',
+  'UK': 'Ukrainian',
+  'VI': 'Vietnamese',
+  'ZH': 'Chinese',
 };
 
 enum _AiApiProvider { openAI, anthropic, ollama }
@@ -99,8 +128,18 @@ class AiExplanationService {
         : const Duration(seconds: 30);
 
     const validPosSet = {
-      'noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition',
-      'conjunction', 'interjection', 'article', 'numeral', 'particle', 'other',
+      'noun',
+      'verb',
+      'adjective',
+      'adverb',
+      'pronoun',
+      'preposition',
+      'conjunction',
+      'interjection',
+      'article',
+      'numeral',
+      'particle',
+      'other',
     };
 
     try {
@@ -141,7 +180,11 @@ class AiExplanationService {
     } on TimeoutException {
       throw Exception('AI request timed out');
     } catch (e, stackTrace) {
-      AppLogger.error('AI translation failed', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+        'AI translation failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -202,7 +245,8 @@ class AiExplanationService {
           'Explain the grammar used by the selected text in the given sentence context.',
         AiExplanationType.wordForms => '',
       };
-      userPrompt = '''
+      userPrompt =
+          '''
 $task
 
 Language: $languageName
@@ -242,11 +286,7 @@ Return:
 
     try {
       final response = await http
-          .post(
-            Uri.parse(resolvedApiUrl),
-            headers: headers,
-            body: body,
-          )
+          .post(Uri.parse(resolvedApiUrl), headers: headers, body: body)
           .timeout(timeout);
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -267,7 +307,11 @@ Return:
     } on TimeoutException {
       throw Exception('AI request timed out');
     } catch (e, stackTrace) {
-      AppLogger.error('AI explanation failed', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+        'AI explanation failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -364,10 +408,7 @@ Return:
     final response = await http
         .get(
           Uri.parse('https://api.anthropic.com/v1/models'),
-          headers: {
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-          },
+          headers: {'x-api-key': apiKey, 'anthropic-version': '2023-06-01'},
         )
         .timeout(const Duration(seconds: 15));
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -388,10 +429,7 @@ Return:
   }) async {
     final modelsUrl = _openAiModelsUrl(apiUrl);
     final response = await http
-        .get(
-          Uri.parse(modelsUrl),
-          headers: {'Authorization': 'Bearer $apiKey'},
-        )
+        .get(Uri.parse(modelsUrl), headers: {'Authorization': 'Bearer $apiKey'})
         .timeout(const Duration(seconds: 15));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to fetch models (${response.statusCode})');
@@ -432,7 +470,9 @@ Return:
     if (uri == null) return 'https://api.openai.com/v1/models';
     final path = uri.path;
     final v1Idx = path.indexOf('/v1');
-    final newPath = v1Idx >= 0 ? '${path.substring(0, v1Idx)}/v1/models' : '/v1/models';
+    final newPath = v1Idx >= 0
+        ? '${path.substring(0, v1Idx)}/v1/models'
+        : '/v1/models';
     return '${uri.scheme}://${uri.authority}$newPath';
   }
 
@@ -442,7 +482,9 @@ Return:
     if (uri == null) return apiUrl;
     final lowerPath = uri.path.toLowerCase();
     final apiIdx = lowerPath.indexOf('/api/');
-    final newPath = apiIdx >= 0 ? '${uri.path.substring(0, apiIdx)}/api/tags' : '/api/tags';
+    final newPath = apiIdx >= 0
+        ? '${uri.path.substring(0, apiIdx)}/api/tags'
+        : '/api/tags';
     return '${uri.scheme}://${uri.authority}$newPath';
   }
 
@@ -475,14 +517,8 @@ Return:
           'model': model,
           'temperature': 0.3,
           'messages': [
-            {
-              'role': 'system',
-              'content': systemPrompt,
-            },
-            {
-              'role': 'user',
-              'content': userPrompt,
-            },
+            {'role': 'system', 'content': systemPrompt},
+            {'role': 'user', 'content': userPrompt},
           ],
         });
       case _AiApiProvider.anthropic:
@@ -492,10 +528,7 @@ Return:
           'temperature': 0.3,
           'system': systemPrompt,
           'messages': [
-            {
-              'role': 'user',
-              'content': userPrompt,
-            },
+            {'role': 'user', 'content': userPrompt},
           ],
         });
       case _AiApiProvider.ollama:
@@ -510,14 +543,8 @@ Return:
           'model': model,
           'stream': false,
           'messages': [
-            {
-              'role': 'system',
-              'content': systemPrompt,
-            },
-            {
-              'role': 'user',
-              'content': userPrompt,
-            },
+            {'role': 'system', 'content': systemPrompt},
+            {'role': 'user', 'content': userPrompt},
           ],
         });
     }
