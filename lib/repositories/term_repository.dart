@@ -1,12 +1,16 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import '../models/term.dart';
+import '../models/term_event.dart';
+import '../services/data_change_notifier.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();
 
 class TermRepository extends BaseRepository {
-  TermRepository(super.getDatabase, {super.onChange});
+  final EventStream<TermEvent>? termEvents;
+
+  TermRepository(super.getDatabase, {super.onChange, this.termEvents});
 
   Future<String> create(Term term) async {
     final db = await getDatabase();
@@ -17,6 +21,7 @@ class TermRepository extends BaseRepository {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     notifyChange();
+    termEvents?.emit(TermWritten(id, term.status));
     return id;
   }
 
@@ -121,6 +126,7 @@ class TermRepository extends BaseRepository {
       whereArgs: [term.id],
     );
     notifyChange();
+    termEvents?.emit(TermWritten(term.id!, term.status));
     return result;
   }
 
@@ -169,13 +175,16 @@ class TermRepository extends BaseRepository {
     if (terms.isEmpty) return;
     final db = await getDatabase();
     final batch = db.batch();
+    final written = <({String id, int status})>[];
     for (final term in terms) {
       final id = term.id ?? _uuid.v4();
       batch.insert('terms', term.copyWith(id: id).toMap(),
           conflictAlgorithm: ConflictAlgorithm.replace);
+      written.add((id: id, status: term.status));
     }
     await batch.commit(noResult: true);
     notifyChange();
+    if (written.isNotEmpty) termEvents?.emit(TermsBulkWritten(written));
   }
 
   Future<void> bulkUpdateStatus(List<String> termIds, int newStatus) async {
@@ -194,6 +203,11 @@ class TermRepository extends BaseRepository {
     }
     await batch.commit(noResult: true);
     notifyChange();
+    if (termIds.isNotEmpty) {
+      termEvents?.emit(TermsBulkWritten(
+        termIds.map((id) => (id: id, status: newStatus)).toList(),
+      ));
+    }
   }
 
   Future<Map<String, int>> getCreatedCountsByDay(String languageId, String sinceIso) async {

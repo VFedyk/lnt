@@ -438,10 +438,6 @@ class ReaderController extends BaseController {
         await db.textForeignWords.deleteWord(text.id!, termWithId.lowerText);
         otherLanguageTerms.remove(termWithId.lowerText);
       }
-      if (term.status != TermStatus.ignored &&
-          term.status != TermStatus.wellKnown) {
-        await db.reviewCards.getOrCreate(termId);
-      }
     } else {
       await db.terms.update(term);
       await db.translations.replaceForTerm(term.id!, translations);
@@ -456,12 +452,6 @@ class ReaderController extends BaseController {
         await db.textForeignWords.deleteWord(text.id!, term.lowerText);
         otherLanguageTerms.remove(term.lowerText);
       }
-      if (term.status == TermStatus.ignored ||
-          term.status == TermStatus.wellKnown) {
-        await db.reviewCards.deleteByTermId(term.id!);
-      } else {
-        await db.reviewCards.getOrCreate(term.id!);
-      }
     }
   }
 
@@ -474,10 +464,6 @@ class ReaderController extends BaseController {
     if (isNew) {
       final termId = await db.terms.create(term);
       await db.translations.replaceForTerm(termId, translations);
-      if (term.status != TermStatus.ignored &&
-          term.status != TermStatus.wellKnown) {
-        await db.reviewCards.getOrCreate(termId);
-      }
     } else {
       await db.terms.update(term);
       await db.translations.replaceForTerm(term.id!, translations);

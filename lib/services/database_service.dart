@@ -37,7 +37,7 @@ class DatabaseService {
     final changes = dataChanges;
     languages = LanguageRepository(() => database, onChange: changes.languages);
     texts = TextRepository(() => database, onChange: changes.texts);
-    terms = TermRepository(() => database, onChange: changes.terms);
+    terms = TermRepository(() => database, onChange: changes.terms, termEvents: changes.termEvents);
     collections = CollectionRepository(
       () => database,
       onChange: changes.collections,
@@ -49,6 +49,7 @@ class DatabaseService {
       () => database,
       onChange: changes.reviewCards,
     );
+    reviewCards.subscribeToTermEvents(changes.termEvents.stream);
     reviewLogs = ReviewLogRepository(() => database);
     termStatusLog = TermStatusLogRepository(() => database);
     radicalProgress = RadicalProgressRepository(() => database, onChange: changes.radicalProgress);

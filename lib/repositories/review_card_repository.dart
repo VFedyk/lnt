@@ -1,13 +1,52 @@
+import 'dart:async';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import 'package:uuid/uuid.dart';
 import '../models/review_card.dart';
+import '../models/term.dart';
+import '../models/term_event.dart';
 import '../utils/constants.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();
 
 class ReviewCardRepository extends BaseRepository {
+  StreamSubscription<TermEvent>? _termSub;
+
   ReviewCardRepository(super.getDatabase, {super.onChange});
+
+  void subscribeToTermEvents(Stream<TermEvent> events) {
+    _termSub = events.listen(_onTermEvent);
+  }
+
+  Future<void> _onTermEvent(TermEvent event) async {
+    switch (event) {
+      case TermWritten(:final id, :final status):
+        if (status == TermStatus.ignored || status == TermStatus.wellKnown) {
+          await deleteByTermId(id);
+        } else {
+          await getOrCreate(id);
+        }
+      case TermsBulkWritten(:final terms):
+        final reviewable = terms
+            .where((t) =>
+                t.status != TermStatus.ignored &&
+                t.status != TermStatus.wellKnown)
+            .map((t) => t.id)
+            .toList();
+        final nonReviewable = terms
+            .where((t) =>
+                t.status == TermStatus.ignored ||
+                t.status == TermStatus.wellKnown)
+            .map((t) => t.id)
+            .toList();
+        await ensureCardsExist(reviewable);
+        for (final id in nonReviewable) {
+          await deleteByTermId(id);
+        }
+    }
+  }
+
+  void cancelTermSubscription() => _termSub?.cancel();
 
   Future<String> create(ReviewCardRecord record) async {
     final db = await getDatabase();
