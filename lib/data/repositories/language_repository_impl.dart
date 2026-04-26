@@ -1,12 +1,15 @@
 import 'package:uuid/uuid.dart';
-import '../domain/entities/language.dart';
+import '../../domain/entities/language.dart';
+import '../../domain/repositories/language_repository.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();
 
-class LanguageRepository extends BaseRepository {
-  LanguageRepository(super.getDatabase, {super.onChange});
+class LanguageRepositoryImpl extends BaseRepository
+    implements LanguageRepository {
+  LanguageRepositoryImpl(super.getDatabase, {super.onChange});
 
+  @override
   Future<String> create(Language language) async {
     final db = await getDatabase();
     final id = language.id ?? _uuid.v4();
@@ -15,12 +18,14 @@ class LanguageRepository extends BaseRepository {
     return id;
   }
 
+  @override
   Future<List<Language>> getAll() async {
     final db = await getDatabase();
     final maps = await db.query('languages', orderBy: 'name ASC');
     return maps.map((map) => Language.fromMap(map)).toList();
   }
 
+  @override
   Future<Language?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query('languages', where: 'id = ?', whereArgs: [id]);
@@ -28,6 +33,7 @@ class LanguageRepository extends BaseRepository {
     return Language.fromMap(maps.first);
   }
 
+  @override
   Future<int> update(Language language) async {
     final db = await getDatabase();
     final result = await db.update(
@@ -40,6 +46,7 @@ class LanguageRepository extends BaseRepository {
     return result;
   }
 
+  @override
   Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('languages', where: 'id = ?', whereArgs: [id]);

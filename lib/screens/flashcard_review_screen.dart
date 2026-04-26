@@ -178,13 +178,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
     if (result.deleted) {
       await db.terms.delete(term.id!);
     } else {
-      await db.terms.update(result.term);
-      if (result.term.id != null) {
-        await db.translations.replaceForTerm(
-          result.term.id!,
-          result.translations,
-        );
-      }
+      await saveTerm(result.term, result.translations, isNew: false);
     }
     // Reload the current item's data to reflect changes
     await controller.reloadCurrentItem();

@@ -1,9 +1,12 @@
-import '../domain/entities/radical_progress.dart';
+import '../../domain/entities/radical_progress.dart';
+import '../../domain/repositories/radical_progress_repository.dart';
 import 'base_repository.dart';
 
-class RadicalProgressRepository extends BaseRepository {
-  RadicalProgressRepository(super.getDatabase, {super.onChange});
+class RadicalProgressRepositoryImpl extends BaseRepository
+    implements RadicalProgressRepository {
+  RadicalProgressRepositoryImpl(super.getDatabase, {super.onChange});
 
+  @override
   Future<Map<String, RadicalProgress>> getAll() async {
     final db = await getDatabase();
     final rows = await db.query('radical_progress');
@@ -19,7 +22,7 @@ class RadicalProgressRepository extends BaseRepository {
     };
   }
 
-  /// Record one completed practice session for [radicalChar].
+  @override
   Future<void> recordCompletion(String radicalChar) async {
     final db = await getDatabase();
     final now = DateTime.now().toUtc().toIso8601String();

@@ -1,5 +1,5 @@
 import 'package:sqflite/sqflite.dart';
-import '../services/data_change_notifier.dart';
+import '../notifiers/data_change_notifier.dart';
 
 /// Base class for all repositories providing database access
 abstract class BaseRepository {

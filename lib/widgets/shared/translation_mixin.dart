@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../l10n/generated/app_localizations.dart';
+import '../../application/use_cases/translation/translate_term.dart';
 import '../../domain/entities/translation_result.dart';
+import '../../domain/value_objects/translation_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../service_locator.dart';
-import '../../services/deepl_service.dart';
-import '../../services/libretranslate_service.dart';
 
-enum TranslationProvider { deepL, libreTranslate }
+export '../../domain/value_objects/translation_provider.dart';
 
 mixin TranslationMixin<T extends StatefulWidget> on State<T> {
   bool _hasDeepL = false;
@@ -37,41 +37,18 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
   Future<void> translateWithProvider(TranslationProvider provider) async {
     setState(() => _isTranslating = true);
 
-    final targetLang = await settings.getTargetLang();
-    TranslationResult result;
-
-    if (provider == TranslationProvider.deepL) {
-      final sourceCode = DeepLService.deeplCode(languageCode);
-      final targetCode = DeepLService.deeplCode(targetLang);
-      if (sourceCode == null || targetCode == null) {
-        _showLanguageNotSupported('DeepL');
-        setState(() => _isTranslating = false);
-        return;
-      }
-      result = await deepLService.translate(
-        text: sourceTextController.text.trim(),
-        sourceLang: sourceCode,
-        targetLang: targetCode,
-      );
-    } else {
-      final sourceCode = LibreTranslateService.libreCode(languageCode);
-      final targetCode = LibreTranslateService.libreCode(targetLang);
-      if (sourceCode == null || targetCode == null) {
-        _showLanguageNotSupported('LibreTranslate');
-        setState(() => _isTranslating = false);
-        return;
-      }
-      result = await libreTranslateService.translate(
-        text: sourceTextController.text.trim(),
-        sourceLang: sourceCode,
-        targetLang: targetCode,
-      );
-    }
+    final result = await sl<TranslateTerm>().call(
+      text: sourceTextController.text.trim(),
+      sourceLanguageCode: languageCode,
+      provider: provider,
+    );
 
     if (mounted) {
       setState(() => _isTranslating = false);
       if (result.isSuccess) {
         translationTextController.text = result.text!;
+      } else if (result.error == TranslationError.unsupportedLanguage) {
+        _showLanguageNotSupported();
       } else {
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -87,10 +64,11 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
       TranslationError.rateLimited => l10n.translationRateLimited,
       TranslationError.networkError => l10n.translationNetworkError,
       TranslationError.serverError => l10n.translationServerError,
+      TranslationError.unsupportedLanguage => l10n.languageNotSupported(languageName),
     };
   }
 
-  void _showLanguageNotSupported(String providerName) {
+  void _showLanguageNotSupported() {
     if (mounted) {
       final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(

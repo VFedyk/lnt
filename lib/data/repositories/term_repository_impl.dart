@@ -1,17 +1,19 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
-import '../domain/entities/term.dart';
-import '../domain/events/term_event.dart';
-import '../services/data_change_notifier.dart';
+import '../../domain/entities/term.dart';
+import '../../domain/events/term_event.dart';
+import '../../domain/repositories/term_repository.dart';
+import '../notifiers/data_change_notifier.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();
 
-class TermRepository extends BaseRepository {
+class TermRepositoryImpl extends BaseRepository implements TermRepository {
   final EventStream<TermEvent>? termEvents;
 
-  TermRepository(super.getDatabase, {super.onChange, this.termEvents});
+  TermRepositoryImpl(super.getDatabase, {super.onChange, this.termEvents});
 
+  @override
   Future<String> create(Term term) async {
     final db = await getDatabase();
     final id = term.id ?? _uuid.v4();
@@ -25,6 +27,7 @@ class TermRepository extends BaseRepository {
     return id;
   }
 
+  @override
   Future<List<Term>> getAll({String? languageId, int? status}) async {
     final db = await getDatabase();
     String? where;
@@ -50,6 +53,7 @@ class TermRepository extends BaseRepository {
     return maps.map((map) => Term.fromMap(map)).toList();
   }
 
+  @override
   Future<Term?> getByText(String languageId, String text) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -61,6 +65,7 @@ class TermRepository extends BaseRepository {
     return Term.fromMap(maps.first);
   }
 
+  @override
   Future<Term?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -72,6 +77,7 @@ class TermRepository extends BaseRepository {
     return Term.fromMap(maps.first);
   }
 
+  @override
   Future<List<Term>> getLinkedTerms(String baseTermId) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -83,6 +89,7 @@ class TermRepository extends BaseRepository {
     return maps.map((map) => Term.fromMap(map)).toList();
   }
 
+  @override
   Future<Map<String, Term>> getMapByLanguage(String languageId) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -95,6 +102,7 @@ class TermRepository extends BaseRepository {
     };
   }
 
+  @override
   Future<Map<String, Term>> getByIds(List<String> ids) async {
     if (ids.isEmpty) return {};
 
@@ -117,6 +125,7 @@ class TermRepository extends BaseRepository {
     return result;
   }
 
+  @override
   Future<int> update(Term term) async {
     final db = await getDatabase();
     final result = await db.update(
@@ -130,6 +139,7 @@ class TermRepository extends BaseRepository {
     return result;
   }
 
+  @override
   Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('terms', where: 'id = ?', whereArgs: [id]);
@@ -137,6 +147,7 @@ class TermRepository extends BaseRepository {
     return result;
   }
 
+  @override
   Future<int> deleteByLanguage(String languageId) async {
     final db = await getDatabase();
     final result = await db.delete(
@@ -148,6 +159,7 @@ class TermRepository extends BaseRepository {
     return result;
   }
 
+  @override
   Future<Map<int, int>> getCountsByStatus(String languageId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
@@ -162,6 +174,7 @@ class TermRepository extends BaseRepository {
     return {for (var row in result) row['status'] as int: row['count'] as int};
   }
 
+  @override
   Future<int> getTotalCount(String languageId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
@@ -171,6 +184,7 @@ class TermRepository extends BaseRepository {
     return result.first['count'] as int;
   }
 
+  @override
   Future<void> bulkCreate(List<Term> terms) async {
     if (terms.isEmpty) return;
     final db = await getDatabase();
@@ -187,6 +201,7 @@ class TermRepository extends BaseRepository {
     if (written.isNotEmpty) termEvents?.emit(TermsBulkWritten(written));
   }
 
+  @override
   Future<void> bulkUpdateStatus(List<String> termIds, int newStatus) async {
     final db = await getDatabase();
     final batch = db.batch();
@@ -210,6 +225,7 @@ class TermRepository extends BaseRepository {
     }
   }
 
+  @override
   Future<Map<String, int>> getCreatedCountsByDay(String languageId, String sinceIso) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
@@ -224,6 +240,7 @@ class TermRepository extends BaseRepository {
     return {for (var row in result) row['date'] as String: row['cnt'] as int};
   }
 
+  @override
   Future<List<Term>> search(String languageId, String query) async {
     final db = await getDatabase();
     final escaped = '%${BaseRepository.escapeLike(query)}%';

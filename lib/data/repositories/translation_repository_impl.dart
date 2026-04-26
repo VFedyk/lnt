@@ -1,13 +1,16 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
-import '../domain/entities/term.dart';
+import '../../domain/entities/term.dart';
+import '../../domain/repositories/translation_repository.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();
 
-class TranslationRepository extends BaseRepository {
-  TranslationRepository(super.getDatabase, {super.onChange});
+class TranslationRepositoryImpl extends BaseRepository
+    implements TranslationRepository {
+  TranslationRepositoryImpl(super.getDatabase, {super.onChange});
 
+  @override
   Future<String> create(Translation translation) async {
     final db = await getDatabase();
     final id = translation.id ?? _uuid.v4();
@@ -20,6 +23,7 @@ class TranslationRepository extends BaseRepository {
     return id;
   }
 
+  @override
   Future<List<Translation>> getByTermId(String termId) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -31,6 +35,7 @@ class TranslationRepository extends BaseRepository {
     return maps.map((map) => Translation.fromMap(map)).toList();
   }
 
+  @override
   Future<Translation?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -42,6 +47,7 @@ class TranslationRepository extends BaseRepository {
     return Translation.fromMap(maps.first);
   }
 
+  @override
   Future<int> update(Translation translation) async {
     final db = await getDatabase();
     final count = await db.update(
@@ -54,6 +60,7 @@ class TranslationRepository extends BaseRepository {
     return count;
   }
 
+  @override
   Future<int> delete(String id) async {
     final db = await getDatabase();
     final count = await db.delete('translations', where: 'id = ?', whereArgs: [id]);
@@ -61,6 +68,7 @@ class TranslationRepository extends BaseRepository {
     return count;
   }
 
+  @override
   Future<int> deleteByTermId(String termId) async {
     final db = await getDatabase();
     final count = await db.delete(
@@ -72,7 +80,7 @@ class TranslationRepository extends BaseRepository {
     return count;
   }
 
-  /// Get all translations for multiple terms at once (for batch loading)
+  @override
   Future<Map<String, List<Translation>>> getByTermIds(List<String> termIds) async {
     if (termIds.isEmpty) return {};
 
@@ -95,12 +103,10 @@ class TranslationRepository extends BaseRepository {
     return result;
   }
 
-  /// Update translations for a term, preserving IDs where possible
-  /// to maintain baseTranslationId references from other translations
+  @override
   Future<void> replaceForTerm(String termId, List<Translation> translations) async {
     final db = await getDatabase();
     await db.transaction((txn) async {
-      // Get existing translation IDs for this term
       final existingMaps = await txn.query(
         'translations',
         columns: ['id'],
@@ -109,7 +115,6 @@ class TranslationRepository extends BaseRepository {
       );
       final existingIds = existingMaps.map((m) => m['id'] as String).toSet();
 
-      // Track which existing IDs we're keeping
       final keptIds = <String>{};
 
       for (var i = 0; i < translations.length; i++) {
@@ -117,18 +122,15 @@ class TranslationRepository extends BaseRepository {
         final map = t.toMap();
 
         if (t.id != null && existingIds.contains(t.id)) {
-          // Update existing translation (preserves ID for baseTranslationId refs)
           await txn.update('translations', map, where: 'id = ?', whereArgs: [t.id]);
           keptIds.add(t.id!);
         } else {
-          // Insert new translation with a new UUID
           final newId = _uuid.v4();
           map['id'] = newId;
           await txn.insert('translations', map);
         }
       }
 
-      // Delete translations that were removed
       final toDelete = existingIds.difference(keptIds);
       for (final id in toDelete) {
         await txn.delete('translations', where: 'id = ?', whereArgs: [id]);

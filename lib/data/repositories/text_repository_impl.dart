@@ -1,12 +1,14 @@
 import 'package:uuid/uuid.dart';
-import '../domain/entities/text_document.dart';
+import '../../domain/entities/text_document.dart';
+import '../../domain/repositories/text_repository.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();
 
-class TextRepository extends BaseRepository {
-  TextRepository(super.getDatabase, {super.onChange});
+class TextRepositoryImpl extends BaseRepository implements TextRepository {
+  TextRepositoryImpl(super.getDatabase, {super.onChange});
 
+  @override
   Future<String> create(TextDocument text) async {
     final db = await getDatabase();
     final id = text.id ?? _uuid.v4();
@@ -15,6 +17,7 @@ class TextRepository extends BaseRepository {
     return id;
   }
 
+  @override
   Future<List<TextDocument>> getAll({String? languageId}) async {
     final db = await getDatabase();
     final maps = languageId != null
@@ -28,6 +31,7 @@ class TextRepository extends BaseRepository {
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
+  @override
   Future<TextDocument?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query('texts', where: 'id = ?', whereArgs: [id]);
@@ -35,6 +39,7 @@ class TextRepository extends BaseRepository {
     return TextDocument.fromMap(maps.first);
   }
 
+  @override
   Future<int> update(TextDocument text) async {
     final db = await getDatabase();
     final result = await db.update(
@@ -47,6 +52,7 @@ class TextRepository extends BaseRepository {
     return result;
   }
 
+  @override
   Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('texts', where: 'id = ?', whereArgs: [id]);
@@ -54,6 +60,7 @@ class TextRepository extends BaseRepository {
     return result;
   }
 
+  @override
   Future<List<TextDocument>> search(String languageId, String query) async {
     final db = await getDatabase();
     final escaped = '%${BaseRepository.escapeLike(query)}%';
@@ -64,6 +71,7 @@ class TextRepository extends BaseRepository {
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
+  @override
   Future<int> getCountByLanguage(String languageId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
@@ -73,6 +81,7 @@ class TextRepository extends BaseRepository {
     return result.first['count'] as int;
   }
 
+  @override
   Future<int> getFinishedCount(String languageId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
@@ -82,6 +91,7 @@ class TextRepository extends BaseRepository {
     return result.first['count'] as int;
   }
 
+  @override
   Future<int> getCountInCollection(String collectionId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
@@ -91,6 +101,7 @@ class TextRepository extends BaseRepository {
     return result.first['count'] as int;
   }
 
+  @override
   Future<void> moveToCollection(String textId, String? collectionId) async {
     final db = await getDatabase();
     await db.update(
@@ -102,6 +113,7 @@ class TextRepository extends BaseRepository {
     notifyChange();
   }
 
+  @override
   Future<void> batchCreate(List<TextDocument> texts) async {
     final db = await getDatabase();
     final batch = db.batch();
@@ -113,6 +125,7 @@ class TextRepository extends BaseRepository {
     notifyChange();
   }
 
+  @override
   Future<List<TextDocument>> getByCollection(String collectionId) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -124,6 +137,7 @@ class TextRepository extends BaseRepository {
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
+  @override
   Future<Map<String, int>> getCompletedCountsByDay(String languageId, String sinceIso) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
@@ -138,6 +152,7 @@ class TextRepository extends BaseRepository {
     return {for (var row in result) row['date'] as String: row['cnt'] as int};
   }
 
+  @override
   Future<List<TextDocument>> getRecentlyAdded(String languageId, {int limit = 5}) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -150,6 +165,7 @@ class TextRepository extends BaseRepository {
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
+  @override
   Future<List<TextDocument>> getRecentlyRead(String languageId, {int limit = 5}) async {
     final db = await getDatabase();
     final maps = await db.query(

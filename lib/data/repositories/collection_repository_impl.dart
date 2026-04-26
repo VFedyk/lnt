@@ -1,12 +1,15 @@
 import 'package:uuid/uuid.dart';
-import '../domain/entities/collection.dart';
+import '../../domain/entities/collection.dart';
+import '../../domain/repositories/collection_repository.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();
 
-class CollectionRepository extends BaseRepository {
-  CollectionRepository(super.getDatabase, {super.onChange});
+class CollectionRepositoryImpl extends BaseRepository
+    implements CollectionRepository {
+  CollectionRepositoryImpl(super.getDatabase, {super.onChange});
 
+  @override
   Future<String> create(Collection collection) async {
     final db = await getDatabase();
     final id = collection.id ?? _uuid.v4();
@@ -15,6 +18,7 @@ class CollectionRepository extends BaseRepository {
     return id;
   }
 
+  @override
   Future<List<Collection>> getAll({String? languageId, String? parentId}) async {
     final db = await getDatabase();
     String? where;
@@ -41,6 +45,7 @@ class CollectionRepository extends BaseRepository {
     return maps.map((map) => Collection.fromMap(map)).toList();
   }
 
+  @override
   Future<Collection?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -52,6 +57,7 @@ class CollectionRepository extends BaseRepository {
     return Collection.fromMap(maps.first);
   }
 
+  @override
   Future<int> update(Collection collection) async {
     final db = await getDatabase();
     final result = await db.update(
@@ -64,6 +70,7 @@ class CollectionRepository extends BaseRepository {
     return result;
   }
 
+  @override
   Future<void> move(String collectionId, String? parentId) async {
     final db = await getDatabase();
     await db.update(
@@ -75,6 +82,7 @@ class CollectionRepository extends BaseRepository {
     notifyChange();
   }
 
+  @override
   Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('collections', where: 'id = ?', whereArgs: [id]);

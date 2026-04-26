@@ -1,12 +1,15 @@
 import 'package:uuid/uuid.dart';
-import '../domain/entities/dictionary.dart';
+import '../../domain/entities/dictionary.dart';
+import '../../domain/repositories/dictionary_repository.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();
 
-class DictionaryRepository extends BaseRepository {
-  DictionaryRepository(super.getDatabase, {super.onChange});
+class DictionaryRepositoryImpl extends BaseRepository
+    implements DictionaryRepository {
+  DictionaryRepositoryImpl(super.getDatabase, {super.onChange});
 
+  @override
   Future<String> create(Dictionary dictionary) async {
     final db = await getDatabase();
     final id = dictionary.id ?? _uuid.v4();
@@ -15,6 +18,7 @@ class DictionaryRepository extends BaseRepository {
     return id;
   }
 
+  @override
   Future<List<Dictionary>> getAll({
     String? languageId,
     bool activeOnly = false,
@@ -43,6 +47,7 @@ class DictionaryRepository extends BaseRepository {
     return maps.map((map) => Dictionary.fromMap(map)).toList();
   }
 
+  @override
   Future<Dictionary?> getById(String id) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -54,6 +59,7 @@ class DictionaryRepository extends BaseRepository {
     return Dictionary.fromMap(maps.first);
   }
 
+  @override
   Future<int> update(Dictionary dictionary) async {
     final db = await getDatabase();
     final count = await db.update(
@@ -66,6 +72,7 @@ class DictionaryRepository extends BaseRepository {
     return count;
   }
 
+  @override
   Future<int> delete(String id) async {
     final db = await getDatabase();
     final count = await db.delete('dictionaries', where: 'id = ?', whereArgs: [id]);
@@ -73,6 +80,7 @@ class DictionaryRepository extends BaseRepository {
     return count;
   }
 
+  @override
   Future<int> deleteByLanguage(String languageId) async {
     final db = await getDatabase();
     final count = await db.delete(
@@ -84,6 +92,7 @@ class DictionaryRepository extends BaseRepository {
     return count;
   }
 
+  @override
   Future<void> reorder(List<Dictionary> dictionaries) async {
     final db = await getDatabase();
     final batch = db.batch();

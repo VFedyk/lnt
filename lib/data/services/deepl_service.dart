@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import '../domain/entities/translation_result.dart';
-import '../service_locator.dart';
-import 'logger_service.dart';
+import '../../domain/entities/translation_result.dart';
+import '../../service_locator.dart';
+import '../../services/logger_service.dart';
 
 class DeepLUsage {
   final int characterCount;

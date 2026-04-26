@@ -186,7 +186,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
             content,
             widget.language.id!,
           );
-          await db.terms.bulkCreate(importedTerms);
+          await bulkImportTerms(importedTerms);
           importedCount = importedTerms.length;
         },
         errorMessageBuilder: (e) => l10n.importFailed(e.toString()),
@@ -221,8 +221,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
 
     if (!mounted) return;
     if (dialogResult != null && !dialogResult.deleted) {
-      final id = await db.terms.create(dialogResult.term);
-      await db.translations.replaceForTerm(id, dialogResult.translations);
+      await saveTerm(dialogResult.term, dialogResult.translations, isNew: true);
     }
   }
 
@@ -243,11 +242,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
     if (dialogResult.deleted) {
       await _deleteTerm(term);
     } else {
-      await db.terms.update(dialogResult.term);
-      await db.translations.replaceForTerm(
-        dialogResult.term.id!,
-        dialogResult.translations,
-      );
+      await saveTerm(dialogResult.term, dialogResult.translations, isNew: false);
     }
   }
 

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:language_nerd_tools/repositories/base_repository.dart';
-import 'package:language_nerd_tools/services/data_change_notifier.dart';
+import 'package:language_nerd_tools/data/repositories/base_repository.dart';
+import 'package:language_nerd_tools/data/notifiers/data_change_notifier.dart';
 
 /// Minimal concrete subclass for testing BaseRepository behavior.
 class _TestRepository extends BaseRepository {

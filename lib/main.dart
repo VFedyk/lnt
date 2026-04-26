@@ -31,7 +31,6 @@ void main() async {
   await chineseSegService.init();
   await db.database;
   await CoverImageHelper.initialize();
-  reviewService.initialize();
 
   if (PlatformHelper.isDesktop) {
     await windowManager.ensureInitialized();

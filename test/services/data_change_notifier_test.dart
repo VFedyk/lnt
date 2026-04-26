@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:language_nerd_tools/services/data_change_notifier.dart';
+import 'package:language_nerd_tools/data/notifiers/data_change_notifier.dart';
 
 void main() {
   group('DomainNotifier', () {

@@ -1,18 +1,20 @@
 import 'dart:async';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import 'package:uuid/uuid.dart';
-import '../domain/entities/review_card.dart';
-import '../domain/events/term_event.dart';
-import '../utils/constants.dart';
+import '../../domain/entities/review_card.dart';
+import '../../domain/events/term_event.dart';
+import '../../domain/repositories/review_card_repository.dart';
+import '../../utils/constants.dart';
+import '../../domain/value_objects/term_status.dart';
 import 'base_repository.dart';
-import '../domain/value_objects/term_status.dart';
 
 const _uuid = Uuid();
 
-class ReviewCardRepository extends BaseRepository {
+class ReviewCardRepositoryImpl extends BaseRepository
+    implements ReviewCardRepository {
   StreamSubscription<TermEvent>? _termSub;
 
-  ReviewCardRepository(super.getDatabase, {super.onChange});
+  ReviewCardRepositoryImpl(super.getDatabase, {super.onChange});
 
   void subscribeToTermEvents(Stream<TermEvent> events) {
     _termSub = events.listen(_onTermEvent);
@@ -48,6 +50,7 @@ class ReviewCardRepository extends BaseRepository {
 
   void cancelTermSubscription() => _termSub?.cancel();
 
+  @override
   Future<String> create(ReviewCardRecord record) async {
     final db = await getDatabase();
     final id = record.id ?? _uuid.v4();
@@ -56,6 +59,7 @@ class ReviewCardRepository extends BaseRepository {
     return id;
   }
 
+  @override
   Future<ReviewCardRecord?> getByTermId(String termId) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -67,6 +71,7 @@ class ReviewCardRepository extends BaseRepository {
     return ReviewCardRecord.fromMap(maps.first);
   }
 
+  @override
   Future<int> update(ReviewCardRecord record) async {
     final db = await getDatabase();
     final result = await db.update(
@@ -79,6 +84,7 @@ class ReviewCardRepository extends BaseRepository {
     return result;
   }
 
+  @override
   Future<int> deleteByTermId(String termId) async {
     final db = await getDatabase();
     final result = await db.delete(
@@ -90,13 +96,12 @@ class ReviewCardRepository extends BaseRepository {
     return result;
   }
 
-  /// Get due cards for a language, joined with terms.
-  /// Excludes ignored (status=0) and wellKnown (status=99) terms.
-  /// Limited to [limit] cards to prevent unbounded memory usage.
+  @override
   Future<List<ReviewCardRecord>> getDueCards(String languageId,
-      {DateTime? now, int limit = AppConstants.dueCardLimit}) async {
+      {DateTime? now, int? limit}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
+    final effectiveLimit = limit ?? AppConstants.dueCardLimit;
     final maps = await db.rawQuery(
       '''
       SELECT rc.* FROM review_cards rc
@@ -108,12 +113,12 @@ class ReviewCardRepository extends BaseRepository {
       ORDER BY rc.next_due ASC
       LIMIT ?
       ''',
-      [languageId, now.toIso8601String(), limit],
+      [languageId, now.toIso8601String(), effectiveLimit],
     );
     return maps.map((m) => ReviewCardRecord.fromMap(m)).toList();
   }
 
-  /// Count due cards for a language (for badge display).
+  @override
   Future<int> getDueCount(String languageId, {DateTime? now}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
@@ -131,8 +136,7 @@ class ReviewCardRepository extends BaseRepository {
     return result.first['cnt'] as int;
   }
 
-  /// Count due cards that are eligible for cloze review (have at least one
-  /// sentence — either in terms.sentence or in the term_sentences table).
+  @override
   Future<int> getClozeDueCount(String languageId, {DateTime? now}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
@@ -154,7 +158,7 @@ class ReviewCardRepository extends BaseRepository {
     return result.first['cnt'] as int;
   }
 
-  /// Get the next due date across all cards for a language.
+  @override
   Future<DateTime?> getNextDueDate(String languageId) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
@@ -172,7 +176,7 @@ class ReviewCardRepository extends BaseRepository {
     return DateTime.parse(value);
   }
 
-  /// Ensure a review card exists for a term; create one if missing.
+  @override
   Future<ReviewCardRecord> getOrCreate(String termId) async {
     final existing = await getByTermId(termId);
     if (existing != null) return existing;
@@ -193,12 +197,11 @@ class ReviewCardRepository extends BaseRepository {
     return record.copyWith(id: id);
   }
 
-  /// Batch create review cards for terms that don't have one yet.
+  @override
   Future<void> ensureCardsExist(List<String> termIds) async {
     if (termIds.isEmpty) return;
 
     final db = await getDatabase();
-    // Find which term IDs already have cards
     const batchSize = 500;
     final existingIds = <String>{};
 

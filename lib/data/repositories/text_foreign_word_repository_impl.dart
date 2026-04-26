@@ -1,11 +1,12 @@
-import '../domain/entities/text_foreign_word_record.dart';
+import '../../domain/entities/text_foreign_word_record.dart';
+import '../../domain/repositories/text_foreign_word_repository.dart';
 import 'base_repository.dart';
 
-class TextForeignWordRepository extends BaseRepository {
-  TextForeignWordRepository(super.getDatabase);
+class TextForeignWordRepositoryImpl extends BaseRepository
+    implements TextForeignWordRepository {
+  TextForeignWordRepositoryImpl(super.getDatabase);
 
-  /// Save words as foreign for a given text + language.
-  /// Uses INSERT OR REPLACE so re-assigning a word updates its language/term.
+  @override
   Future<void> saveWords(
     String textId,
     String languageId,
@@ -27,7 +28,7 @@ class TextForeignWordRepository extends BaseRepository {
     });
   }
 
-  /// Load all foreign word assignments for a text.
+  @override
   Future<List<ForeignWordRecord>> getByTextId(String textId) async {
     final db = await getDatabase();
     final maps = await db.query(
@@ -44,7 +45,7 @@ class TextForeignWordRepository extends BaseRepository {
         .toList();
   }
 
-  /// Delete a single foreign word assignment.
+  @override
   Future<int> deleteWord(String textId, String lowerText) async {
     final db = await getDatabase();
     return db.delete(
@@ -54,7 +55,7 @@ class TextForeignWordRepository extends BaseRepository {
     );
   }
 
-  /// Delete multiple foreign word assignments.
+  @override
   Future<int> deleteWords(String textId, List<String> lowerTexts) async {
     if (lowerTexts.isEmpty) return 0;
     final db = await getDatabase();

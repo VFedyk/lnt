@@ -4,7 +4,7 @@ import '../domain/entities/text_document.dart';
 import '../domain/entities/term.dart';
 import '../domain/entities/word_token.dart';
 import '../service_locator.dart';
-import '../services/ai_explanation_service.dart';
+import '../data/services/ai_explanation_service.dart';
 import '../services/dictionary_service.dart';
 import '../services/text_parser_service.dart';
 import '../services/isolate_parser.dart';
@@ -433,9 +433,8 @@ class ReaderController extends BaseController {
     required bool isNew,
   }) async {
     if (isNew) {
-      final termId = await db.terms.create(term);
+      final termId = await saveTerm(term, translations, isNew: true);
       final termWithId = term.copyWith(id: termId);
-      await db.translations.replaceForTerm(termId, translations);
       final newTranslations = await db.translations.getByTermId(termId);
       translationsMap[termId] = newTranslations;
       for (final t in newTranslations) {
@@ -449,8 +448,7 @@ class ReaderController extends BaseController {
         otherLanguageTerms.remove(termWithId.lowerText);
       }
     } else {
-      await db.terms.update(term);
-      await db.translations.replaceForTerm(term.id!, translations);
+      await saveTerm(term, translations, isNew: false);
       final newTranslations = await db.translations.getByTermId(term.id!);
       translationsMap[term.id!] = newTranslations;
       for (final t in newTranslations) {
@@ -471,13 +469,7 @@ class ReaderController extends BaseController {
     required bool isNew,
   }) async {
     cancelSelection();
-    if (isNew) {
-      final termId = await db.terms.create(term);
-      await db.translations.replaceForTerm(termId, translations);
-    } else {
-      await db.terms.update(term);
-      await db.translations.replaceForTerm(term.id!, translations);
-    }
+    await saveTerm(term, translations, isNew: isNew);
     final lowerWords = _textParser.normalizeWord(term.text);
     if (otherLanguageTerms.containsKey(lowerWords)) {
       await db.textForeignWords.deleteWord(text.id!, lowerWords);

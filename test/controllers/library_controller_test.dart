@@ -5,11 +5,11 @@ import 'package:mocktail/mocktail.dart';
 import 'package:language_nerd_tools/controllers/library_controller.dart';
 import 'package:language_nerd_tools/domain/entities/language.dart';
 import 'package:language_nerd_tools/domain/entities/text_document.dart';
-import 'package:language_nerd_tools/repositories/collection_repository.dart';
-import 'package:language_nerd_tools/repositories/term_repository.dart';
-import 'package:language_nerd_tools/repositories/text_repository.dart';
-import 'package:language_nerd_tools/services/data_change_notifier.dart';
-import 'package:language_nerd_tools/services/database_service.dart';
+import 'package:language_nerd_tools/domain/repositories/collection_repository.dart';
+import 'package:language_nerd_tools/domain/repositories/term_repository.dart';
+import 'package:language_nerd_tools/domain/repositories/text_repository.dart';
+import 'package:language_nerd_tools/data/notifiers/data_change_notifier.dart';
+import 'package:language_nerd_tools/data/datasources/database_service.dart';
 
 class MockDatabaseService extends Mock implements DatabaseService {}
 

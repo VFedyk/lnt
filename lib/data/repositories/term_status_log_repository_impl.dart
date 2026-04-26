@@ -1,14 +1,12 @@
-import '../domain/entities/daily_status_snapshot.dart';
+import '../../domain/entities/daily_status_snapshot.dart';
+import '../../domain/repositories/term_status_log_repository.dart';
 import 'base_repository.dart';
 
-/// Repository for term_status_log.
-///
-/// Tracks the status of each term over time (one row per status change).
-/// Used to build the vocabulary progress line chart on the statistics screen.
-class TermStatusLogRepository extends BaseRepository {
-  TermStatusLogRepository(super.getDatabase);
+class TermStatusLogRepositoryImpl extends BaseRepository
+    implements TermStatusLogRepository {
+  TermStatusLogRepositoryImpl(super.getDatabase);
 
-  /// Insert a status change entry (called by ReviewService on every review).
+  @override
   Future<void> logChange(String termId, int status, DateTime changedAt) async {
     final db = await getDatabase();
     await db.insert('term_status_log', {
@@ -18,7 +16,7 @@ class TermStatusLogRepository extends BaseRepository {
     });
   }
 
-  /// Returns daily status snapshots between [from] and [to] (inclusive).
+  @override
   Future<List<DailyStatusSnapshot>> getDailySnapshots({
     required String languageId,
     required DateTime from,
@@ -29,7 +27,6 @@ class TermStatusLogRepository extends BaseRepository {
     final toStr =
         DateTime.utc(to.year, to.month, to.day, 23, 59, 59).toIso8601String();
 
-    // 1. All terms created on or before `to`, for this language.
     final termRows = await db.rawQuery(
       '''
       SELECT id, created_at FROM terms
@@ -42,14 +39,12 @@ class TermStatusLogRepository extends BaseRepository {
     if (termRows.isEmpty) return [];
 
     final termIds = termRows.map((r) => r['id'] as String).toList();
-    // Map term_id → created_at (UTC DateTime)
     final termCreatedAt = <String, DateTime>{};
     for (final r in termRows) {
       termCreatedAt[r['id'] as String] =
           DateTime.parse(r['created_at'] as String).toUtc();
     }
 
-    // 2. All status log entries for those terms, up through `to`.
     final placeholders = List.filled(termIds.length, '?').join(',');
     final logRows = await db.rawQuery(
       '''
@@ -60,7 +55,6 @@ class TermStatusLogRepository extends BaseRepository {
       [...termIds, toStr],
     );
 
-    // Build per-term sorted list of (changed_at, status)
     final termLog = <String, List<(DateTime, int)>>{};
     for (final r in logRows) {
       final tid = r['term_id'] as String;
@@ -69,7 +63,6 @@ class TermStatusLogRepository extends BaseRepository {
       (termLog[tid] ??= []).add((dt, st));
     }
 
-    // 3. For each day, compute per-term status then aggregate.
     final days = _dayRange(from, to);
     final snapshots = <DailyStatusSnapshot>[];
 
@@ -80,13 +73,11 @@ class TermStatusLogRepository extends BaseRepository {
 
       for (final termId in termIds) {
         final created = termCreatedAt[termId]!;
-        // Only count terms that existed by this day.
         if (created.isAfter(dayEnd)) continue;
 
         final log = termLog[termId];
-        int status = 1; // default: unknown
+        int status = 1;
         if (log != null) {
-          // Walk backwards to find the most recent entry on or before dayEnd.
           for (int i = log.length - 1; i >= 0; i--) {
             if (!log[i].$1.isAfter(dayEnd)) {
               status = log[i].$2;

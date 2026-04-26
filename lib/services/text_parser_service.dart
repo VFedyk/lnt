@@ -1,5 +1,5 @@
 import '../domain/entities/language.dart';
-import 'chinese_segmentation_service.dart';
+import '../data/services/chinese_segmentation_service.dart';
 
 /// Represents a word match with its position in the text
 class WordMatch {

@@ -1,12 +1,15 @@
 import 'package:uuid/uuid.dart';
-import '../domain/entities/term_sentence.dart';
+import '../../domain/entities/term_sentence.dart';
+import '../../domain/repositories/term_sentence_repository.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();
 
-class TermSentenceRepository extends BaseRepository {
-  TermSentenceRepository(super.getDatabase, {super.onChange});
+class TermSentenceRepositoryImpl extends BaseRepository
+    implements TermSentenceRepository {
+  TermSentenceRepositoryImpl(super.getDatabase, {super.onChange});
 
+  @override
   Future<TermSentence> create(
     String termId,
     String sentence, {
@@ -27,6 +30,7 @@ class TermSentenceRepository extends BaseRepository {
     return row;
   }
 
+  @override
   Future<List<TermSentence>> getByTermId(String termId) async {
     final db = await getDatabase();
     final rows = await db.query(
@@ -38,7 +42,7 @@ class TermSentenceRepository extends BaseRepository {
     return rows.map(TermSentence.fromMap).toList();
   }
 
-  /// Returns a map of termId → list of sentence strings for batch loading.
+  @override
   Future<Map<String, List<String>>> getByTermIds(List<String> termIds) async {
     if (termIds.isEmpty) return {};
 
@@ -58,6 +62,7 @@ class TermSentenceRepository extends BaseRepository {
     return result;
   }
 
+  @override
   Future<void> delete(String id) async {
     final db = await getDatabase();
     await db.delete('term_sentences', where: 'id = ?', whereArgs: [id]);

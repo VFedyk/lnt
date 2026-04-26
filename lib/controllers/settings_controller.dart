@@ -1,5 +1,5 @@
 import '../service_locator.dart';
-import '../services/deepl_service.dart';
+import '../data/services/deepl_service.dart';
 import '../services/settings_service.dart';
 import '../utils/helpers.dart';
 import 'base_controller.dart';

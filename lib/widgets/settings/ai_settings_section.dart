@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
-import '../../services/ai_explanation_service.dart';
+import '../../data/services/ai_explanation_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/constants.dart';
 

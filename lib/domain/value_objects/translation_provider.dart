@@ -1,0 +1,1 @@
+enum TranslationProvider { deepL, libreTranslate }

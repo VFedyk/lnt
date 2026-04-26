@@ -1,8 +1,11 @@
+import '../../domain/repositories/review_log_repository.dart';
 import 'base_repository.dart';
 
-class ReviewLogRepository extends BaseRepository {
-  ReviewLogRepository(super.getDatabase);
+class ReviewLogRepositoryImpl extends BaseRepository
+    implements ReviewLogRepository {
+  ReviewLogRepositoryImpl(super.getDatabase);
 
+  @override
   Future<int> create(String termId, String logDataJson, DateTime reviewedAt) async {
     final db = await getDatabase();
     return await db.insert('review_logs', {
@@ -12,6 +15,7 @@ class ReviewLogRepository extends BaseRepository {
     });
   }
 
+  @override
   Future<int> getReviewCountToday(String languageId) async {
     final db = await getDatabase();
     final todayStart = DateTime.now().toUtc();
@@ -32,6 +36,7 @@ class ReviewLogRepository extends BaseRepository {
     return result.first['cnt'] as int;
   }
 
+  @override
   Future<Map<String, int>> getReviewCountsByDay(String languageId, String sinceIso) async {
     final db = await getDatabase();
     final result = await db.rawQuery(

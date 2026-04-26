@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import 'logger_service.dart';
-import 'settings_service.dart';
+import '../../services/logger_service.dart';
+import '../../services/settings_service.dart';
 
 enum AiExplanationType { meaning, grammar, wordForms }
 

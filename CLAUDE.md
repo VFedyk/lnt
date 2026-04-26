@@ -10,7 +10,7 @@ Flutter language learning app: import texts (URL, TXT, EPUB), track vocabulary w
 - **State management**: Provider + ChangeNotifier (`AppState` in `main.dart`, screen-level controllers in `lib/controllers/`)
 - **Database**: SQLite via `sqflite` (+ `sqflite_common_ffi` for Linux/Windows)
 - **DI / Service locator**: `get_it` — registered in `lib/service_locator.dart`
-- **Architecture**: Repository pattern → Services (via get_it) → Screens/Widgets
+- **Architecture**: Lightweight Clean Architecture — `domain/` (pure Dart) → `data/` (SQLite/HTTP) → `application/` (use cases) → `services/` (business logic) → `controllers/` + screens/widgets. Dependency inversion via abstract interfaces in `domain/repositories/`.
 - **Localization**: ARB files (`app_en.arb`, `app_uk.arb`) → `flutter gen-l10n`
 - **Platforms**: iOS, macOS, Android, Linux, Windows, Web
 
@@ -20,9 +20,22 @@ Flutter language learning app: import texts (URL, TXT, EPUB), track vocabulary w
 lib/
 ├── main.dart              # Entry point, AppState provider
 ├── service_locator.dart   # get_it registrations + convenience getters
-├── models/                # Data models (Term, TextDocument, Language, etc.)
-├── repositories/          # DB access layer (BaseRepository pattern)
-├── services/              # Business logic (registered via get_it)
+├── domain/                # Pure Dart — no Flutter, no I/O
+│   ├── entities/          # Term, TextDocument, Language, ReviewCard, Collection, Dictionary, …
+│   ├── value_objects/     # TermStatus, PartOfSpeech (immutable, equality-by-value)
+│   ├── events/            # TermEvent (sealed class + subtypes)
+│   └── repositories/      # Abstract interfaces: TermRepository, TextRepository, … (12 interfaces)
+├── data/                  # Concrete implementations — knows about SQLite, HTTP, files
+│   ├── repositories/      # XRepositoryImpl classes (implement domain interfaces); BaseRepository
+│   ├── datasources/       # DatabaseService (connection + migrations), database_migrations.dart
+│   ├── services/          # DeepLService, LibreTranslateService, TtsService, ChineseSegmentationService, AiExplanationService
+│   └── notifiers/         # DataChangeNotifier, DomainNotifier, EventStream
+├── application/           # Use cases — named, injectable, testable operations
+│   └── use_cases/
+│       ├── review/        # ReviewTerm (FSRS scheduling + repo writes)
+│       ├── terms/         # SaveTerm (create/update term + translations), BulkImportTerms
+│       └── translation/   # TranslateTerm (DeepL/LibreTranslate selection)
+├── services/              # Business logic: ReviewService, BackupService, ImportExportService, EpubImportService, UrlImportService, TextParserService, DictionaryService, SettingsService, LoggerService, IsolateParser
 ├── controllers/           # Screen-level ChangeNotifier controllers
 ├── screens/               # Full-page UI screens (thin UI layer)
 ├── widgets/               # UI components organized by screen
@@ -35,6 +48,7 @@ lib/
 │   ├── reader/            # reader_screen.dart only (dialogs, reader_content, paragraph_rich_text, status_legend, word_list_drawer, ai_explanation_dialog)
 │   ├── review/            # review_screen.dart only (exercise_card, review_stats_section)
 │   └── settings/          # settings_screen.dart only (section widgets incl. target_language_section, ai_settings_section)
+├── presentation/          # theme/term_status_ui.dart, models/chart_data.dart
 ├── utils/                 # Helpers, constants, CoverImageHelper, language_utils, radicals
 └── l10n/                  # Localization (ARB files + generated)
 ```
@@ -64,10 +78,11 @@ flutter build macos          # Build macOS
 
 ## Key conventions
 
-- **Service locator**: `setupServiceLocator()` in `main.dart` registers all services. Access via top-level getters: `db`, `settings`, `backupService`, `reviewService`, `deepLService`, `libreTranslateService`, `ttsService`, `chineseSegService`, `dataChanges`
-- **Repository pattern**: `db.terms.getAll()` etc.
-- Repositories use lazy `() => database` callback — DB can be closed and reopened
-- **Reactive data layer**: `DataChangeNotifier` (singleton via get_it) holds per-domain `DomainNotifier` instances (`dataChanges.terms`, `.texts`, `.languages`, `.collections`, `.reviewCards`, `.dictionaries`, `.termSentences`, `.radicalProgress`). Repositories call `notifyChange()` after mutations; screens/controllers `addListener` on relevant domains and auto-reload. Use `dataChanges.notifyAll()` for bulk invalidation (e.g. backup restore).
+- **Service locator**: `setupServiceLocator()` in `main.dart` registers all services. Access via top-level getters: `db`, `settings`, `backupService`, `reviewService`, `deepLService`, `libreTranslateService`, `ttsService`, `chineseSegService`, `dataChanges`. Use case getters: `reviewTerm`, `saveTerm`, `bulkImportTerms`, `translateTerm`.
+- **Repository pattern**: `db.terms.getAll()` etc. `db` is a `DatabaseService` facade that exposes all repos typed to their domain interfaces. Each repo also registered individually: `sl<TermRepository>()`.
+- Repositories use lazy `() => database` callback — DB can be closed and reopened. Concrete impls are `XRepositoryImpl` in `lib/data/repositories/`; domain interfaces are in `lib/domain/repositories/`.
+- **Dependency inversion**: `DatabaseService` accepts `SettingsService` and `DataChangeNotifier` via constructor — no `service_locator.dart` import inside `lib/data/`.
+- **Reactive data layer**: `DataChangeNotifier` (`lib/data/notifiers/`) holds per-domain `DomainNotifier` instances (`dataChanges.terms`, `.texts`, `.languages`, `.collections`, `.reviewCards`, `.dictionaries`, `.termSentences`, `.radicalProgress`, `.translations`). Repositories call `notifyChange()` after mutations; screens/controllers `addListener` on relevant domains and auto-reload. Use `dataChanges.notifyAll()` for bulk invalidation (e.g. backup restore).
 - **Localization**: Always add strings to both `app_en.arb` and `app_uk.arb`, then run `flutter gen-l10n`
 - **Language utilities** (`lib/utils/language_utils.dart`): `localizedLangName(l10n, isoCode)` returns a locale-aware display name; `langSortKey(s, locale)` returns a sort key that correctly orders Ukrainian special letters (Є, І, Ї, Ґ)
 - **Translation provider lookups**: Use `DeepLService.deeplCode(isoCode)` and `LibreTranslateService.libreCode(isoCode)` (ISO 639-1, case-insensitive) — **not** name-based. `TranslationMixin` requires `String get languageCode` in addition to `languageName`
@@ -101,24 +116,26 @@ flutter build macos          # Build macOS
 ## Architecture notes
 
 - `PlatformHelper.isApple` / `PlatformHelper.isDesktop` guards platform-specific features
-- Database migrations in `database_migrations.dart` with version numbering
+- Database migrations in `lib/data/datasources/database_migrations.dart` with version numbering
 - EPUB parsing via `epub_pro` package (camelCase API)
 - **Screen controllers**: `SettingsController`, `LibraryController`, `ReaderController`, `FlashcardReviewController` — each extends `ChangeNotifier`, provided via `ChangeNotifierProvider` at screen level. Controllers own state and business logic; screens are thin UI layers that orchestrate dialogs/navigation. Controllers use `_isDisposed` + `_safeNotify()` for async safety (no `BuildContext` dependency).
 - **SettingsController backup state**: tracks `icloudRemoteDate` (date of file in iCloud), `icloudLocalDate` (last backup from this device), `lastRestoreDate`, `isCheckingBackup`. Call `recheckICloudBackup()` to refresh the remote date.
+- **Use cases** (`lib/application/use_cases/`): `ReviewTerm` (owns FSRS scheduler, writes review log + card + term status), `SaveTerm` (create/update term + replaceForTerm in one call), `BulkImportTerms`, `TranslateTerm` (provider selection + language-code mapping). `ReviewService` delegates to `ReviewTerm` and is injected via constructor. Use case getters in `service_locator.dart`: `reviewTerm`, `saveTerm`, `bulkImportTerms`, `translateTerm`.
 - **TtsService** (`ttsService`): text-to-speech via `flutter_tts`; access via `ttsService` getter.
 - **ChineseSegmentationService** (`chineseSegService`): word tokenization via `jieba_flutter` for Chinese texts.
 - **AiExplanationService**: AI-powered word/phrase explanations; supports OpenAI, Anthropic, and Ollama backends. Not registered as a singleton — instantiated where needed. Settings managed via `ai_settings_section.dart`.
-- **Radicals** (`lib/utils/radicals.dart`): `Radical` class + `kRadicals` constant with all 214 Kangxi radicals. Progress tracked via `radical_progress_repository.dart` and `dataChanges.radicalProgress`.
+- **Radicals** (`lib/utils/radicals.dart`): `Radical` class + `kRadicals` constant with all 214 Kangxi radicals. Progress tracked via `RadicalProgressRepositoryImpl` and `dataChanges.radicalProgress`.
 
 ## Testing
 
-- **Command**: `flutter test` — runs all 107 tests in ~2-3 seconds
+- **Command**: `flutter test` — runs all 133 tests in ~2-3 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
 - **Verification**: Use exit code pattern to avoid parsing verbose output:
   ```bash
   flutter test > /dev/null 2>&1 && echo "✅ All tests passed!" || echo "❌ Some tests failed"
   ```
 - **Test coverage**:
+  - `test/application/` — Use cases: ReviewTerm (FSRS + repo writes), SaveTerm, BulkImportTerms, TranslateTerm
   - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier, Chinese segmentation)
   - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping)
   - `test/controllers/` — Screen controllers (LibraryController listener lifecycle and CRUD delegation)

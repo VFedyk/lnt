@@ -11,6 +11,9 @@ enum TranslationError {
 
   /// Server error (HTTP 5xx) or unexpected response.
   serverError,
+
+  /// Language code not supported by the translation provider.
+  unsupportedLanguage,
 }
 
 /// Result of a translation API call — either translated text or a typed error.

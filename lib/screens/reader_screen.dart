@@ -9,7 +9,7 @@ import '../domain/entities/text_document.dart';
 import '../domain/entities/term.dart';
 import '../domain/entities/dictionary.dart';
 import '../service_locator.dart';
-import '../services/ai_explanation_service.dart';
+import '../data/services/ai_explanation_service.dart';
 import '../widgets/reader/ai_thinking_dialog.dart';
 import '../widgets/reader/edit_text_dialog.dart';
 import '../widgets/reader/reader_ai_explanation_dialog.dart';
