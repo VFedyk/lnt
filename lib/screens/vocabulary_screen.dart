@@ -1,3 +1,5 @@
+import '../utils/dictionary_navigation.dart';
+import '../presentation/theme/term_status_ui.dart';
 // FILE: lib/screens/vocabulary_screen.dart
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -229,7 +231,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
       context,
       term: term,
       sentence: term.sentence,
-      onLookup: (ctx, dict) => _dictService.lookupWord(ctx, term.text, dict),
+      onLookup: (ctx, dict) => openDictionaryLookup(ctx, term.text, dict),
       dictionaries: _dictionaries,
       languageId: widget.language.id!,
       languageName: widget.language.name,
@@ -350,7 +352,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                         final status = i == _TermsConstants.wellKnownStatusIndex
                             ? _TermsConstants.wellKnownStatusValue
                             : i;
-                        final statusName = TermStatus.localizedNameFor(
+                        final statusName = TermStatusUI.localizedNameFor(
                           status,
                           l10n,
                         );
@@ -534,12 +536,12 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                   child: Row(
                     children: [
                       Tooltip(
-                        message: TermStatus.localizedNameFor(term.status, l10n),
+                        message: TermStatusUI.localizedNameFor(term.status, l10n),
                         child: Container(
                           width: _TermsConstants.statusDotSize,
                           height: _TermsConstants.statusDotSize,
                           decoration: BoxDecoration(
-                            color: term.statusColor,
+                            color: TermStatusUI.colorFor(term.status),
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -610,12 +612,12 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
             child: Row(
               children: [
                 Tooltip(
-                  message: TermStatus.localizedNameFor(term.status, l10n),
+                  message: TermStatusUI.localizedNameFor(term.status, l10n),
                   child: Container(
                     width: _TermsConstants.statusDotSize,
                     height: _TermsConstants.statusDotSize,
                     decoration: BoxDecoration(
-                      color: term.statusColor,
+                      color: TermStatusUI.colorFor(term.status),
                       shape: BoxShape.circle,
                     ),
                   ),

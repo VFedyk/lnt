@@ -84,8 +84,8 @@ class ReviewService {
     });
 
     if (notify) {
-      dataChanges.reviewCards.notify();
-      dataChanges.terms.notify();
+      db.reviewCards.notifyChange();
+      db.terms.notifyChange();
     }
 
     return (updatedCard: updatedRecord, newStatus: newStatus);

@@ -27,11 +27,9 @@ class ForeignTermInfo {
 
 class ReaderController extends BaseController {
   final Language language;
-  final _textParser = sl.isRegistered<TextParserService>()
-      ? sl<TextParserService>()
-      : TextParserService();
-  final dictService = DictionaryService();
-  late final aiExplanationService = AiExplanationService(settings: settings);
+  final TextParserService _textParser;
+  final DictionaryService dictService;
+  final AiExplanationService aiExplanationService;
 
   TextDocument text;
   Map<String, Term> termsMap = {};
@@ -51,7 +49,18 @@ class ReaderController extends BaseController {
   int _collectionIndex = -1;
   int? _dragSelectOriginIndex;
 
-  ReaderController({required this.text, required this.language});
+  ReaderController({
+    required this.text,
+    required this.language,
+    TextParserService? textParser,
+    DictionaryService? dictionaryService,
+    AiExplanationService? aiService,
+  })  : _textParser = textParser ??
+            (sl.isRegistered<TextParserService>()
+                ? sl<TextParserService>()
+                : TextParserService()),
+        dictService = dictionaryService ?? DictionaryService(),
+        aiExplanationService = aiService ?? AiExplanationService(settings: settings);
 
   bool get isEpubCollection => text.sourceUri.startsWith('epub://');
   bool get hasPrevInCollection => _collectionIndex > 0;

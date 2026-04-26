@@ -1,3 +1,4 @@
+import '../../presentation/theme/term_status_ui.dart';
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../models/term.dart';
@@ -83,7 +84,7 @@ class WordListDrawer extends StatelessWidget {
                       _StatusSection(
                         label: statusLabels[status]!,
                         tokens: wordsByStatus[status]!,
-                        color: TermStatus.colorFor(status),
+                        color: TermStatusUI.colorFor(status),
                         allTokens: wordTokens,
                         onWordTap: onWordTap,
                         isInitiallyExpanded:

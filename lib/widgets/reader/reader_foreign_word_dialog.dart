@@ -1,8 +1,8 @@
+import '../../presentation/theme/term_status_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../../controllers/reader_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/term.dart';
 import '../../utils/constants.dart';
 
 class ReaderForeignWordDialog extends StatelessWidget {
@@ -68,7 +68,7 @@ class ReaderForeignWordDialog extends StatelessWidget {
                       children: [
                         if (t.partOfSpeech != null) ...[
                           Text(
-                            PartOfSpeech.localizedNameFor(
+                            PartOfSpeechUI.localizedNameFor(
                               t.partOfSpeech!,
                               l10n,
                             ),

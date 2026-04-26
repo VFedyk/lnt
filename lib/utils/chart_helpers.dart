@@ -1,3 +1,4 @@
+import '../presentation/theme/term_status_ui.dart';
 import 'package:intl/intl.dart';
 import '../models/chart_data.dart';
 import '../models/term.dart';
@@ -101,7 +102,7 @@ abstract class ChartHelpers {
         result.add(StatusDistributionData(
           status: status,
           count: count,
-          color: TermStatus.colorFor(status),
+          color: TermStatusUI.colorFor(status),
         ));
       }
     });

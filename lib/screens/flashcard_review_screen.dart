@@ -1,3 +1,5 @@
+import '../utils/dictionary_navigation.dart';
+import '../presentation/theme/term_status_ui.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -9,7 +11,6 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/language.dart';
 import '../models/term.dart';
 import '../service_locator.dart';
-import '../services/dictionary_service.dart';
 import '../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/shared/review_progress_indicator.dart';
@@ -55,7 +56,6 @@ class _FlashcardReviewScreenBody extends StatefulWidget {
 class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
     with TickerProviderStateMixin {
   final _focusNode = FocusNode();
-  final _dictService = DictionaryService();
   late final AnimationController _flipController;
   late final Animation<double> _flipAnimation;
 
@@ -166,7 +166,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
       sentence: term.sentence,
       dictionaries: dictionaries,
       onLookup: (ctx, dict) =>
-          _dictService.lookupWord(ctx, term.text, dict),
+          openDictionaryLookup(ctx, term.text, dict),
       languageId: controller.language.id!,
       languageName: controller.language.name,
       languageCode: controller.language.languageCode,
@@ -232,7 +232,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
             text: term,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: TermStatus.colorFor(status),
+              color: TermStatusUI.colorFor(status),
               fontStyle: FontStyle.normal,
             ),
           ),
@@ -280,7 +280,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
     return AppEmptyState(
       icon: Icons.check_circle_outline,
       iconSize: _FlashcardReviewConstants.completionIconSize,
-      iconColor: TermStatus.colorFor(TermStatus.known),
+      iconColor: TermStatusUI.colorFor(TermStatus.known),
       title: l10n.noCardsDue,
       action: ElevatedButton.icon(
         onPressed: () => Navigator.pop(context),
@@ -529,7 +529,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
                                   children: [
                                     TextSpan(text: t.meaning),
                                     TextSpan(
-                                      text: ' (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})',
+                                      text: ' (${PartOfSpeechUI.localizedNameFor(t.partOfSpeech!, l10n)})',
                                       style: TextStyle(
                                         color: AppConstants.subtitleColor,
                                         fontSize: _FlashcardReviewConstants.translationFontSize - 2,

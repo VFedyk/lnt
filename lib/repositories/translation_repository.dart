@@ -6,7 +6,7 @@ import 'base_repository.dart';
 const _uuid = Uuid();
 
 class TranslationRepository extends BaseRepository {
-  TranslationRepository(super.getDatabase);
+  TranslationRepository(super.getDatabase, {super.onChange});
 
   Future<String> create(Translation translation) async {
     final db = await getDatabase();
@@ -16,6 +16,7 @@ class TranslationRepository extends BaseRepository {
       translation.copyWith(id: id).toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    notifyChange();
     return id;
   }
 
@@ -43,26 +44,32 @@ class TranslationRepository extends BaseRepository {
 
   Future<int> update(Translation translation) async {
     final db = await getDatabase();
-    return await db.update(
+    final count = await db.update(
       'translations',
       translation.toMap(),
       where: 'id = ?',
       whereArgs: [translation.id],
     );
+    notifyChange();
+    return count;
   }
 
   Future<int> delete(String id) async {
     final db = await getDatabase();
-    return await db.delete('translations', where: 'id = ?', whereArgs: [id]);
+    final count = await db.delete('translations', where: 'id = ?', whereArgs: [id]);
+    notifyChange();
+    return count;
   }
 
   Future<int> deleteByTermId(String termId) async {
     final db = await getDatabase();
-    return await db.delete(
+    final count = await db.delete(
       'translations',
       where: 'term_id = ?',
       whereArgs: [termId],
     );
+    notifyChange();
+    return count;
   }
 
   /// Get all translations for multiple terms at once (for batch loading)
@@ -127,5 +134,6 @@ class TranslationRepository extends BaseRepository {
         await txn.delete('translations', where: 'id = ?', whereArgs: [id]);
       }
     });
+    notifyChange();
   }
 }

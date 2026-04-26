@@ -1,3 +1,4 @@
+import '../utils/dictionary_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -200,7 +201,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         term: existingTerm,
         sentence: sentence,
         dictionaries: dictionaries,
-        onLookup: (ctx, dict) => ctrl.dictService.lookupWord(ctx, word, dict),
+        onLookup: (ctx, dict) => openDictionaryLookup(ctx, word, dict),
         languageId: ctrl.language.id!,
         languageName: ctrl.language.name,
         languageCode: ctrl.language.languageCode,
@@ -233,7 +234,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         term: newTerm,
         sentence: sentence,
         dictionaries: dictionaries,
-        onLookup: (ctx, dict) => ctrl.dictService.lookupWord(ctx, word, dict),
+        onLookup: (ctx, dict) => openDictionaryLookup(ctx, word, dict),
         languageId: ctrl.language.id!,
         languageName: ctrl.language.name,
         languageCode: ctrl.language.languageCode,
@@ -400,7 +401,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     );
 
     if (selectedDict != null && mounted) {
-      await ctrl.dictService.lookupWord(context, words, selectedDict);
+      await openDictionaryLookup(context, words, selectedDict);
       if (ctrl.isSelectionMode) ctrl.cancelSelection();
     }
   }
@@ -497,7 +498,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         sentence: sentence,
         dictionaries: dictionaries,
         onLookup: (ctx, dict) =>
-            ctrl.dictService.lookupWord(ctx, selectedWords, dict),
+            openDictionaryLookup(ctx, selectedWords, dict),
         languageId: ctrl.language.id!,
         languageName: ctrl.language.name,
         languageCode: ctrl.language.languageCode,
@@ -517,7 +518,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         sentence: sentence,
         dictionaries: dictionaries,
         onLookup: (ctx, dict) =>
-            ctrl.dictService.lookupWord(ctx, selectedWords, dict),
+            openDictionaryLookup(ctx, selectedWords, dict),
         languageId: ctrl.language.id!,
         languageName: ctrl.language.name,
         languageCode: ctrl.language.languageCode,

@@ -28,6 +28,7 @@ class DataChangeNotifier {
   final dictionaries = DomainNotifier();
   final termSentences = DomainNotifier();
   final radicalProgress = DomainNotifier();
+  final translations = DomainNotifier();
 
   final termEvents = EventStream<TermEvent>();
 
@@ -41,5 +42,6 @@ class DataChangeNotifier {
     dictionaries.notify();
     termSentences.notify();
     radicalProgress.notify();
+    translations.notify();
   }
 }

@@ -1,3 +1,4 @@
+import '../../presentation/theme/term_status_ui.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -788,7 +789,7 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
                     ...PartOfSpeech.all.map(
                       (pos) => DropdownMenuItem(
                         value: pos,
-                        child: Text(PartOfSpeech.localizedNameFor(pos, l10n)),
+                        child: Text(PartOfSpeechUI.localizedNameFor(pos, l10n)),
                       ),
                     ),
                   ],
@@ -907,11 +908,11 @@ class _TermDialogState extends State<TermDialog> with TranslationMixin {
         const SizedBox(width: AppConstants.spacingS),
         Chip(
           avatar: CircleAvatar(
-            backgroundColor: TermStatus.colorFor(_status),
+            backgroundColor: TermStatusUI.colorFor(_status),
             radius: AppConstants.spacingS,
           ),
           label: Text(
-            TermStatus.localizedNameFor(_status, l10n),
+            TermStatusUI.localizedNameFor(_status, l10n),
             style: const TextStyle(
               fontSize: AppConstants.fontSizeCaption,
             ),
@@ -1189,7 +1190,7 @@ class _TranslationPickerDialog extends StatelessWidget {
             return ListTile(
               title: Text(t.meaning),
               subtitle: t.partOfSpeech != null
-                  ? Text(PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n))
+                  ? Text(PartOfSpeechUI.localizedNameFor(t.partOfSpeech!, l10n))
                   : null,
               onTap: () => Navigator.pop(context, t),
             );

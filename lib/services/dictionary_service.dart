@@ -1,53 +1,19 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/dictionary.dart';
 import '../service_locator.dart';
-import '../screens/dictionary_webview_screen.dart';
 
 class DictionaryService {
-  // Open dictionary with word lookup - platform aware
-  Future<void> lookupWord(
-    BuildContext context,
-    String word,
-    Dictionary dictionary,
-  ) async {
-    if (dictionary.url.isEmpty) {
-      throw Exception('Dictionary URL not configured');
-    }
-
+  static String buildLookupUrl(String word, String dictUrl) {
     final encodedWord = Uri.encodeComponent(word.trim());
-    final url = dictionary.url.replaceAll('###', encodedWord);
-
-    // Use in-app webview for all native platforms (mobile and desktop)
-    final useWebView = !kIsWeb;
-
-    if (useWebView) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DictionaryWebViewScreen(
-            url: url,
-            word: word,
-            customCss: dictionary.customCss,
-          ),
-        ),
-      );
-    } else {
-      // Web: Use external browser
-      await lookupWordExternal(word, dictionary.url);
-    }
+    return dictUrl.replaceAll('###', encodedWord);
   }
 
-  // Open in external browser
   Future<void> lookupWordExternal(String word, String dictUrl) async {
     if (dictUrl.isEmpty) {
       throw Exception('Dictionary URL not configured');
     }
 
-    final encodedWord = Uri.encodeComponent(word.trim());
-    final url = dictUrl.replaceAll('###', encodedWord);
-
+    final url = buildLookupUrl(word, dictUrl);
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -56,7 +22,6 @@ class DictionaryService {
     }
   }
 
-  // Get active dictionaries for a language
   Future<List<Dictionary>> getActiveDictionaries(String languageId) async {
     return await db.dictionaries.getAll(
       languageId: languageId,
@@ -64,12 +29,10 @@ class DictionaryService {
     );
   }
 
-  // Get all dictionaries for a language
   Future<List<Dictionary>> getAllDictionaries(String languageId) async {
     return await db.dictionaries.getAll(languageId: languageId);
   }
 
-  // Check if any dictionaries are configured
   Future<bool> hasDictionaries(String languageId) async {
     final dicts = await getActiveDictionaries(languageId);
     return dicts.isNotEmpty;

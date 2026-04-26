@@ -1,3 +1,4 @@
+import '../../presentation/theme/term_status_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:stemmer/stemmer.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -219,7 +220,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                               )
                             : null,
                         leading: CircleAvatar(
-                          backgroundColor: term.statusColor,
+                          backgroundColor: TermStatusUI.colorFor(term.status),
                           radius: _BaseTermSearchConstants.statusAvatarRadius,
                         ),
                         trailing: IconButton(
@@ -440,7 +441,7 @@ class _AddTranslationDialogState extends State<_AddTranslationDialog>
                 ...PartOfSpeech.all.map(
                   (pos) => DropdownMenuItem(
                     value: pos,
-                    child: Text(PartOfSpeech.localizedNameFor(pos, l10n)),
+                    child: Text(PartOfSpeechUI.localizedNameFor(pos, l10n)),
                   ),
                 ),
               ],

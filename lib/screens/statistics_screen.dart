@@ -1,3 +1,4 @@
+import '../presentation/theme/term_status_ui.dart';
 // FILE: lib/screens/statistics_screen.dart
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -307,43 +308,43 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       TermStatus.ignored,
                       l10n.statusIgnored,
                       ignoredCount,
-                      TermStatus.colorFor(TermStatus.ignored),
+                      TermStatusUI.colorFor(TermStatus.ignored),
                     ),
                     _buildStatusBar(
                       TermStatus.unknown,
                       l10n.statusUnknown,
                       _statusCounts[TermStatus.unknown] ?? 0,
-                      TermStatus.colorFor(TermStatus.unknown),
+                      TermStatusUI.colorFor(TermStatus.unknown),
                     ),
                     _buildStatusBar(
                       TermStatus.learning2,
                       l10n.statusLearning2,
                       _statusCounts[TermStatus.learning2] ?? 0,
-                      TermStatus.colorFor(TermStatus.learning2),
+                      TermStatusUI.colorFor(TermStatus.learning2),
                     ),
                     _buildStatusBar(
                       TermStatus.learning3,
                       l10n.statusLearning3,
                       _statusCounts[TermStatus.learning3] ?? 0,
-                      TermStatus.colorFor(TermStatus.learning3),
+                      TermStatusUI.colorFor(TermStatus.learning3),
                     ),
                     _buildStatusBar(
                       TermStatus.learning4,
                       l10n.statusLearning4,
                       _statusCounts[TermStatus.learning4] ?? 0,
-                      TermStatus.colorFor(TermStatus.learning4),
+                      TermStatusUI.colorFor(TermStatus.learning4),
                     ),
                     _buildStatusBar(
                       TermStatus.known,
                       l10n.statusKnown,
                       _statusCounts[TermStatus.known] ?? 0,
-                      TermStatus.colorFor(TermStatus.known),
+                      TermStatusUI.colorFor(TermStatus.known),
                     ),
                     _buildStatusBar(
                       TermStatus.wellKnown,
                       l10n.statusWellKnown,
                       _statusCounts[TermStatus.wellKnown] ?? 0,
-                      TermStatus.colorFor(TermStatus.wellKnown),
+                      TermStatusUI.colorFor(TermStatus.wellKnown),
                     ),
                   ],
                 ),

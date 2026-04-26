@@ -1,6 +1,4 @@
 // FILE: lib/models/term.dart
-import 'package:flutter/material.dart';
-import '../l10n/generated/app_localizations.dart';
 
 /// Centralized definition of term statuses with their colors and names
 class TermStatus {
@@ -21,27 +19,6 @@ class TermStatus {
     known,
     wellKnown,
   ];
-
-  static Color colorFor(int status) {
-    switch (status) {
-      case ignored:
-        return Colors.grey.shade400;
-      case unknown:
-        return Colors.red.shade400;
-      case learning2:
-        return Colors.orange.shade400;
-      case learning3:
-        return Colors.yellow.shade700;
-      case learning4:
-        return Colors.lightGreen.shade500;
-      case known:
-        return Colors.green.shade600;
-      case wellKnown:
-        return Colors.blue.shade400;
-      default:
-        return Colors.red.shade400;
-    }
-  }
 
   static String nameFor(int status) {
     switch (status) {
@@ -64,26 +41,6 @@ class TermStatus {
     }
   }
 
-  static String localizedNameFor(int status, AppLocalizations l10n) {
-    switch (status) {
-      case ignored:
-        return l10n.statusIgnored;
-      case unknown:
-        return l10n.statusUnknown;
-      case learning2:
-        return l10n.statusLearning2;
-      case learning3:
-        return l10n.statusLearning3;
-      case learning4:
-        return l10n.statusLearning4;
-      case known:
-        return l10n.statusKnown;
-      case wellKnown:
-        return l10n.statusWellKnown;
-      default:
-        return l10n.statusUnknown;
-    }
-  }
 }
 
 /// Part of speech categories
@@ -116,36 +73,6 @@ class PartOfSpeech {
     other,
   ];
 
-  static String localizedNameFor(String pos, AppLocalizations l10n) {
-    switch (pos) {
-      case noun:
-        return l10n.posNoun;
-      case verb:
-        return l10n.posVerb;
-      case adjective:
-        return l10n.posAdjective;
-      case adverb:
-        return l10n.posAdverb;
-      case pronoun:
-        return l10n.posPronoun;
-      case preposition:
-        return l10n.posPreposition;
-      case conjunction:
-        return l10n.posConjunction;
-      case interjection:
-        return l10n.posInterjection;
-      case article:
-        return l10n.posArticle;
-      case numeral:
-        return l10n.posNumeral;
-      case particle:
-        return l10n.posParticle;
-      case other:
-        return l10n.posOther;
-      default:
-        return pos;
-    }
-  }
 }
 
 /// A single translation/meaning for a term
@@ -241,8 +168,6 @@ class Term {
     this.baseTermId,
   }) : createdAt = createdAt ?? DateTime.now(),
        lastAccessed = lastAccessed ?? DateTime.now();
-
-  Color get statusColor => TermStatus.colorFor(status);
 
   String get statusName => TermStatus.nameFor(status);
 

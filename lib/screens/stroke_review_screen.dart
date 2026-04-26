@@ -1,3 +1,5 @@
+import '../utils/dictionary_navigation.dart';
+import '../presentation/theme/term_status_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import 'package:provider/provider.dart';
@@ -12,7 +14,6 @@ import '../widgets/shared/handwriting_canvas.dart';
 import '../widgets/shared/review_progress_indicator.dart';
 import '../widgets/shared/review_rating_buttons.dart';
 import '../widgets/shared/term_dialog.dart';
-import '../services/dictionary_service.dart';
 
 abstract class _K {
   static const double characterFontSize = 72.0;
@@ -45,7 +46,6 @@ class _StrokeReviewBody extends StatefulWidget {
 class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
   final _canvasKey = GlobalKey<HandwritingCanvasState>();
   bool _isRevealed = false;
-  final _dictService = DictionaryService();
 
   void _reveal() {
     setState(() => _isRevealed = true);
@@ -77,7 +77,7 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
       sentence: term.sentence,
       dictionaries: dictionaries,
       onLookup: (ctx, dict) =>
-          _dictService.lookupWord(ctx, term.text, dict),
+          openDictionaryLookup(ctx, term.text, dict),
       languageId: controller.language.id!,
       languageName: controller.language.name,
       languageCode: controller.language.languageCode,
@@ -129,7 +129,7 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
     return AppEmptyState(
       icon: Icons.check_circle_outline,
       iconSize: _K.completionIconSize,
-      iconColor: TermStatus.colorFor(TermStatus.known),
+      iconColor: TermStatusUI.colorFor(TermStatus.known),
       title: l10n.noCardsDue,
       action: ElevatedButton.icon(
         onPressed: () => Navigator.pop(context),

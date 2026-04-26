@@ -1,3 +1,4 @@
+import '../../presentation/theme/term_status_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../../controllers/reader_controller.dart';
@@ -108,9 +109,9 @@ class ParagraphRichText extends StatelessWidget {
       } else if (isIgnored || isWellKnown || isOtherLanguage) {
         backgroundColor = _transparent;
       } else if (term != null) {
-        backgroundColor = term.statusColor.withValues(alpha: _backgroundAlpha);
+        backgroundColor = TermStatusUI.colorFor(term.status).withValues(alpha: _backgroundAlpha);
       } else {
-        backgroundColor = TermStatus.colorFor(TermStatus.unknown)
+        backgroundColor = TermStatusUI.colorFor(TermStatus.unknown)
             .withValues(alpha: _backgroundAlpha);
       }
 
@@ -120,9 +121,9 @@ class ParagraphRichText extends StatelessWidget {
       } else if (isIgnored || isWellKnown || isOtherLanguage) {
         borderColor = _transparent;
       } else if (term != null) {
-        borderColor = term.statusColor.withValues(alpha: _borderAlpha);
+        borderColor = TermStatusUI.colorFor(term.status).withValues(alpha: _borderAlpha);
       } else {
-        borderColor = TermStatus.colorFor(TermStatus.unknown)
+        borderColor = TermStatusUI.colorFor(TermStatus.unknown)
             .withValues(alpha: _borderAlpha);
       }
 
@@ -142,7 +143,7 @@ class ParagraphRichText extends StatelessWidget {
           translationText = translations.map((t) {
             final parts = <String>[t.meaning];
             if (t.partOfSpeech != null) {
-              parts.add('(${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})');
+              parts.add('(${PartOfSpeechUI.localizedNameFor(t.partOfSpeech!, l10n)})');
             }
             if (t.baseTranslationId != null) {
               final baseTranslation = translationsById[t.baseTranslationId!];
@@ -174,7 +175,7 @@ class ParagraphRichText extends StatelessWidget {
         if (otherInfo.translations.isNotEmpty) {
           for (final t in otherInfo.translations) {
             final line = t.partOfSpeech != null
-                ? '${t.meaning} (${PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n)})'
+                ? '${t.meaning} (${PartOfSpeechUI.localizedNameFor(t.partOfSpeech!, l10n)})'
                 : t.meaning;
             parts.add(line);
           }

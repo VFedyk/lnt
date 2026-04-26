@@ -1,3 +1,4 @@
+import '../../presentation/theme/term_status_ui.dart';
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../models/term.dart';
@@ -52,8 +53,8 @@ class StatusLegend extends StatelessWidget {
             runSpacing: AppConstants.spacingS,
             children: TermStatus.allStatuses
                 .map((status) => _buildLegendItem(
-                      TermStatus.localizedNameFor(status, l10n),
-                      TermStatus.colorFor(status),
+                      TermStatusUI.localizedNameFor(status, l10n),
+                      TermStatusUI.colorFor(status),
                       status,
                     ))
                 .toList(),

@@ -1,3 +1,4 @@
+import '../../presentation/theme/term_status_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
@@ -84,7 +85,7 @@ class ReaderTranslationDialog extends StatelessWidget {
                     children: [
                       if (t.partOfSpeech != null) ...[
                         Text(
-                          PartOfSpeech.localizedNameFor(t.partOfSpeech!, l10n),
+                          PartOfSpeechUI.localizedNameFor(t.partOfSpeech!, l10n),
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
                                 color: AppConstants.subtitleColor,

@@ -1,3 +1,4 @@
+import '../presentation/theme/term_status_ui.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -322,7 +323,7 @@ class _MultipleChoiceReviewScreenState
     return AppEmptyState(
       icon: Icons.check_circle_outline,
       iconSize: _Constants.completionIconSize,
-      iconColor: TermStatus.colorFor(TermStatus.known),
+      iconColor: TermStatusUI.colorFor(TermStatus.known),
       title: l10n.noCardsDue,
       action: ElevatedButton.icon(
         onPressed: () => Navigator.pop(context),
@@ -346,7 +347,7 @@ class _MultipleChoiceReviewScreenState
     final item = _dueItems[_currentIndex];
     final prompt = _getPromptText(item);
     final answered = _selectedOptionIndex != null;
-    final statusColor = TermStatus.colorFor(item.term.status);
+    final statusColor = TermStatusUI.colorFor(item.term.status);
     final hasAudio =
         widget.direction != MultipleChoiceDirection.targetToSource &&
             widget.language.languageCode.isNotEmpty;

@@ -1,3 +1,4 @@
+import '../presentation/theme/term_status_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
@@ -234,7 +235,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
     return AppEmptyState(
       icon: Icons.check_circle_outline,
       iconSize: _TypingReviewConstants.completionIconSize,
-      iconColor: TermStatus.colorFor(TermStatus.known),
+      iconColor: TermStatusUI.colorFor(TermStatus.known),
       title: hasNoTranslations ? l10n.noTranslationsToReview : l10n.noCardsDue,
       action: ElevatedButton.icon(
         onPressed: () => Navigator.pop(context),

@@ -43,7 +43,7 @@ class DatabaseService {
       onChange: changes.collections,
     );
     dictionaries = DictionaryRepository(() => database, onChange: changes.dictionaries);
-    translations = TranslationRepository(() => database);
+    translations = TranslationRepository(() => database, onChange: changes.translations);
     textForeignWords = TextForeignWordRepository(() => database);
     reviewCards = ReviewCardRepository(
       () => database,

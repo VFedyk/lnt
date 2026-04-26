@@ -1,3 +1,4 @@
+import '../../presentation/theme/term_status_ui.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -88,7 +89,7 @@ class _StatusHistoryChartState extends State<StatusHistoryChart> {
   _LineColors _lineColors(BuildContext context) {
     final appColors = context.appColors;
     return _LineColors(
-      unknown: TermStatus.colorFor(TermStatus.unknown),
+      unknown: TermStatusUI.colorFor(TermStatus.unknown),
       learning: appColors.warning,
       known: appColors.success,
       wellKnown: Theme.of(context).colorScheme.primary,
