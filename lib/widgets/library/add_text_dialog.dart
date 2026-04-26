@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/text_document.dart';
+import '../../domain/entities/text_document.dart';
 import '../../utils/constants.dart';
 
 abstract class _AddTextDialogConstants {

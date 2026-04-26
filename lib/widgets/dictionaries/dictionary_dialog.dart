@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/dictionary.dart';
+import '../../domain/entities/dictionary.dart';
 import '../../service_locator.dart';
 
 abstract class _DictionaryDialogConstants {

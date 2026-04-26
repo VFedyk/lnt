@@ -1,7 +1,5 @@
+import '../domain/entities/text_foreign_word_record.dart';
 import 'base_repository.dart';
-
-/// Record representing a stored foreign word assignment
-typedef ForeignWordRecord = ({String lowerText, String languageId, String? termId});
 
 class TextForeignWordRepository extends BaseRepository {
   TextForeignWordRepository(super.getDatabase);

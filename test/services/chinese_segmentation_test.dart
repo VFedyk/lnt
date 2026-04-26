@@ -11,7 +11,7 @@
 // integration test (see test/integration/chinese_segmentation_integration_test.dart).
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:language_nerd_tools/models/language.dart';
+import 'package:language_nerd_tools/domain/entities/language.dart';
 import 'package:language_nerd_tools/services/chinese_segmentation_service.dart';
 import 'package:language_nerd_tools/services/text_parser_service.dart';
 

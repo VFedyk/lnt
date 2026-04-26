@@ -1,7 +1,7 @@
 import '../presentation/theme/term_status_ui.dart';
 import 'package:intl/intl.dart';
-import '../models/chart_data.dart';
-import '../models/term.dart';
+import '../presentation/models/chart_data.dart';
+import '../domain/value_objects/term_status.dart';
 
 /// Helper functions for transforming repository data into chart-ready format.
 abstract class ChartHelpers {

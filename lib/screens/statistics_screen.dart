@@ -2,14 +2,14 @@ import '../presentation/theme/term_status_ui.dart';
 // FILE: lib/screens/statistics_screen.dart
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
-import '../models/chart_data.dart';
-import '../models/language.dart';
-import '../models/term.dart';
+import '../presentation/models/chart_data.dart';
+import '../domain/entities/language.dart';
 import '../service_locator.dart';
 import '../services/logger_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import '../widgets/statistics/status_history_chart.dart';
+import '../domain/value_objects/term_status.dart';
 
 abstract class _StatisticsConstants {
   static const double progressBarHeight = 10.0;

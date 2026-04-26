@@ -1,14 +1,15 @@
 import 'package:flutter/foundation.dart';
-import '../models/language.dart';
-import '../models/text_document.dart';
-import '../models/term.dart';
-import '../models/word_token.dart';
+import '../domain/entities/language.dart';
+import '../domain/entities/text_document.dart';
+import '../domain/entities/term.dart';
+import '../domain/entities/word_token.dart';
 import '../service_locator.dart';
 import '../services/ai_explanation_service.dart';
 import '../services/dictionary_service.dart';
 import '../services/text_parser_service.dart';
 import '../services/isolate_parser.dart';
 import 'base_controller.dart';
+import '../domain/value_objects/term_status.dart';
 
 /// Info about a foreign-language term found in the text.
 class ForeignTermInfo {

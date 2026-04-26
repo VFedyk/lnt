@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/translation_result.dart';
+import '../../domain/entities/translation_result.dart';
 import '../../service_locator.dart';
 import '../../services/deepl_service.dart';
 import '../../services/libretranslate_service.dart';

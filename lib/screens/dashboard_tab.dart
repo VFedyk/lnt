@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
-import '../models/language.dart';
-import '../models/text_document.dart';
-import '../models/term.dart';
+import '../domain/entities/language.dart';
+import '../domain/entities/text_document.dart';
+import '../domain/entities/term.dart';
 import '../service_locator.dart';
 import '../services/text_parser_service.dart';
-import '../models/day_activity.dart';
+import '../domain/entities/day_activity.dart';
 import '../services/logger_service.dart';
 import '../utils/constants.dart';
 import '../utils/cover_image_helper.dart';
@@ -16,9 +16,10 @@ import '../widgets/shared/animated_counter.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/dashboard/dashboard_charts.dart';
 import '../widgets/shared/review_progress_ring.dart';
-import '../models/chart_data.dart';
+import '../presentation/models/chart_data.dart';
 import '../utils/chart_helpers.dart';
 import 'reader_screen.dart';
+import '../domain/value_objects/term_status.dart';
 
 abstract class _DashboardConstants {
   static const int recentTextsLimit = 5;

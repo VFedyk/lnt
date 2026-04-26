@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import '../models/dictionary.dart';
+import '../domain/entities/dictionary.dart';
 import '../screens/dictionary_webview_screen.dart';
 import '../services/dictionary_service.dart';
 

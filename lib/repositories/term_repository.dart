@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
-import '../models/term.dart';
-import '../models/term_event.dart';
+import '../domain/entities/term.dart';
+import '../domain/events/term_event.dart';
 import '../services/data_change_notifier.dart';
 import 'base_repository.dart';
 

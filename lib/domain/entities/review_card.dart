@@ -1,11 +1,10 @@
 import 'dart:convert';
-import 'package:fsrs/fsrs.dart' as fsrs;
 
-/// Wrapper holding the DB row alongside the deserialized FSRS Card.
+/// Wrapper holding the DB row alongside the serialized FSRS card data.
 class ReviewCardRecord {
   final String? id;
   final String termId;
-  final fsrs.Card card;
+  final Map<String, dynamic> cardData;
   final DateTime nextDue;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -13,7 +12,7 @@ class ReviewCardRecord {
   ReviewCardRecord({
     this.id,
     required this.termId,
-    required this.card,
+    required this.cardData,
     required this.nextDue,
     required this.createdAt,
     required this.updatedAt,
@@ -22,7 +21,7 @@ class ReviewCardRecord {
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
       'term_id': termId,
-      'card_data': jsonEncode(card.toMap()),
+      'card_data': jsonEncode(cardData),
       'next_due': nextDue.toUtc().toIso8601String(),
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': updatedAt.toUtc().toIso8601String(),
@@ -32,13 +31,10 @@ class ReviewCardRecord {
   }
 
   factory ReviewCardRecord.fromMap(Map<String, dynamic> map) {
-    final cardMap =
-        jsonDecode(map['card_data'] as String) as Map<String, dynamic>;
-    final card = fsrs.Card.fromMap(cardMap);
     return ReviewCardRecord(
       id: map['id'] as String?,
       termId: map['term_id'] as String,
-      card: card,
+      cardData: jsonDecode(map['card_data'] as String) as Map<String, dynamic>,
       nextDue: DateTime.parse(map['next_due'] as String),
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
@@ -48,7 +44,7 @@ class ReviewCardRecord {
   ReviewCardRecord copyWith({
     String? id,
     String? termId,
-    fsrs.Card? card,
+    Map<String, dynamic>? cardData,
     DateTime? nextDue,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -56,7 +52,7 @@ class ReviewCardRecord {
     return ReviewCardRecord(
       id: id ?? this.id,
       termId: termId ?? this.termId,
-      card: card ?? this.card,
+      cardData: cardData ?? this.cardData,
       nextDue: nextDue ?? this.nextDue,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../controllers/reader_controller.dart';
 import '../l10n/generated/app_localizations.dart';
-import '../models/language.dart';
-import '../models/text_document.dart';
-import '../models/term.dart';
-import '../models/dictionary.dart';
+import '../domain/entities/language.dart';
+import '../domain/entities/text_document.dart';
+import '../domain/entities/term.dart';
+import '../domain/entities/dictionary.dart';
 import '../service_locator.dart';
 import '../services/ai_explanation_service.dart';
 import '../widgets/reader/ai_thinking_dialog.dart';
@@ -28,6 +28,7 @@ import '../widgets/reader/word_list_drawer.dart';
 import '../utils/app_theme.dart';
 import '../utils/async_helpers.dart';
 import '../utils/snackbar_helpers.dart';
+import '../domain/value_objects/term_status.dart';
 
 class ReaderScreen extends StatelessWidget {
   final TextDocument text;

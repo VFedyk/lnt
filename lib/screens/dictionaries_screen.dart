@@ -1,8 +1,8 @@
 // FILE: lib/screens/dictionaries_screen.dart
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
-import '../models/language.dart';
-import '../models/dictionary.dart';
+import '../domain/entities/language.dart';
+import '../domain/entities/dictionary.dart';
 import '../service_locator.dart';
 import '../utils/dialog_helpers.dart';
 import '../widgets/shared/app_empty_state.dart';

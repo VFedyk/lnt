@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/collection.dart';
-import '../../models/language.dart';
-import '../../models/text_document.dart';
+import '../../domain/entities/collection.dart';
+import '../../domain/entities/language.dart';
+import '../../domain/entities/text_document.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/constants.dart';
 

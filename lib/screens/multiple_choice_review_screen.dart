@@ -6,14 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import '../controllers/flashcard_review_controller.dart';
 import '../l10n/generated/app_localizations.dart';
-import '../models/language.dart';
-import '../models/term.dart';
+import '../domain/entities/language.dart';
+import '../domain/entities/term.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/shared/review_options_grid.dart';
 import '../widgets/shared/review_progress_indicator.dart';
+import '../domain/value_objects/term_status.dart';
 
 enum MultipleChoiceDirection { sourceToTarget, targetToSource, romanization }
 

@@ -5,8 +5,8 @@ import 'package:fsrs/fsrs.dart' as fsrs;
 import 'package:provider/provider.dart';
 import '../controllers/flashcard_review_controller.dart';
 import '../l10n/generated/app_localizations.dart';
-import '../models/language.dart';
-import '../models/term.dart';
+import '../domain/entities/language.dart';
+import '../domain/entities/term.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
@@ -14,6 +14,7 @@ import '../widgets/shared/handwriting_canvas.dart';
 import '../widgets/shared/review_progress_indicator.dart';
 import '../widgets/shared/review_rating_buttons.dart';
 import '../widgets/shared/term_dialog.dart';
+import '../domain/value_objects/term_status.dart';
 
 abstract class _K {
   static const double characterFontSize = 72.0;

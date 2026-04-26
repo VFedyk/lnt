@@ -2,10 +2,12 @@ import '../../presentation/theme/term_status_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:stemmer/stemmer.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/term.dart';
+import '../../domain/entities/term.dart';
 import '../../service_locator.dart';
 import '../../utils/constants.dart';
 import 'translation_mixin.dart';
+import '../../domain/value_objects/term_status.dart';
+import '../../domain/value_objects/part_of_speech.dart';
 
 abstract class _BaseTermSearchConstants {
   static const double statusAvatarRadius = 12.0;

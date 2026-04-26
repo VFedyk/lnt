@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/term.dart';
+import '../../domain/value_objects/term_status.dart';
+import '../../domain/value_objects/part_of_speech.dart';
 
 class TermStatusUI {
   static Color colorFor(int status) {

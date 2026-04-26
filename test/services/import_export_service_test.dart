@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:language_nerd_tools/models/term.dart';
+import 'package:language_nerd_tools/domain/entities/term.dart';
 import 'package:language_nerd_tools/services/import_export_service.dart';
 
 void main() {

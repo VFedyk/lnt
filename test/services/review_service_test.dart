@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
-import 'package:language_nerd_tools/models/term.dart';
 import 'package:language_nerd_tools/services/review_service.dart';
+import 'package:language_nerd_tools/domain/value_objects/term_status.dart';
 
 void main() {
   late ReviewService service;
@@ -63,7 +63,7 @@ void main() {
   group('getNextIntervals', () {
     test('returns an interval for each rating', () {
       final card = fsrs.Card(cardId: 10);
-      final intervals = service.getNextIntervals(card);
+      final intervals = service.getNextIntervals(card.toMap());
 
       expect(intervals.keys, containsAll(fsrs.Rating.values));
       for (final duration in intervals.values) {
@@ -75,7 +75,7 @@ void main() {
   group('getRetrievability', () {
     test('returns 0 for card with no lastReview', () {
       final card = fsrs.Card(cardId: 20);
-      final r = service.getRetrievability(card);
+      final r = service.getRetrievability(card.toMap());
       expect(r, 0.0);
     });
 
@@ -84,7 +84,7 @@ void main() {
         ..state = fsrs.State.review
         ..stability = 10.0
         ..lastReview = DateTime.now().toUtc().subtract(const Duration(days: 1));
-      final r = service.getRetrievability(card);
+      final r = service.getRetrievability(card.toMap());
       expect(r, greaterThan(0.0));
       expect(r, lessThanOrEqualTo(1.0));
     });

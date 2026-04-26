@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../models/term_event.dart';
+import '../domain/events/term_event.dart';
 
 /// A single-domain change notifier. Listeners are called when
 /// any mutation occurs in the corresponding repository.

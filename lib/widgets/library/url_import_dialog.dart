@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/text_document.dart';
+import '../../domain/entities/text_document.dart';
 import '../../services/url_import_service.dart';
 import '../../utils/constants.dart';
 import '../../utils/cover_image_helper.dart';

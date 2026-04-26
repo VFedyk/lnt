@@ -3,9 +3,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../../controllers/reader_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/term.dart';
-import '../../models/word_token.dart';
+import '../../domain/entities/term.dart';
+import '../../domain/entities/word_token.dart';
 import '../../utils/app_theme.dart';
+import '../../domain/value_objects/term_status.dart';
 
 class ParagraphRichText extends StatelessWidget {
   final List<WordToken> tokens;

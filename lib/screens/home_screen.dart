@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../main.dart';
-import '../models/language.dart';
+import '../domain/entities/language.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';

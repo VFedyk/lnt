@@ -2,7 +2,7 @@ import '../../presentation/theme/term_status_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/term.dart';
+import '../../domain/entities/term.dart';
 import '../../utils/constants.dart';
 
 class ReaderTranslationDialog extends StatelessWidget {

@@ -1,5 +1,5 @@
 import 'dart:developer' as developer;
-import '../models/language.dart';
+import '../domain/entities/language.dart';
 import 'text_parser_service.dart';
 
 /// Data passed to isolate for parsing

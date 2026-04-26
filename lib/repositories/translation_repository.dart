@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
-import '../models/term.dart';
+import '../domain/entities/term.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();

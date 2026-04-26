@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import 'package:uuid/uuid.dart';
-import '../models/review_card.dart';
-import '../models/term.dart';
-import '../models/term_event.dart';
+import '../domain/entities/review_card.dart';
+import '../domain/events/term_event.dart';
 import '../utils/constants.dart';
 import 'base_repository.dart';
+import '../domain/value_objects/term_status.dart';
 
 const _uuid = Uuid();
 
@@ -184,7 +184,7 @@ class ReviewCardRepository extends BaseRepository {
     );
     final record = ReviewCardRecord(
       termId: termId,
-      card: card,
+      cardData: card.toMap(),
       nextDue: now,
       createdAt: now,
       updatedAt: now,
@@ -226,7 +226,7 @@ class ReviewCardRepository extends BaseRepository {
       final record = ReviewCardRecord(
         id: _uuid.v4(),
         termId: termId,
-        card: card,
+        cardData: card.toMap(),
         nextDue: now,
         createdAt: now,
         updatedAt: now,

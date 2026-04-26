@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import 'package:epub_pro/epub_pro.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
-import '../models/text_document.dart';
-import '../models/collection.dart';
+import '../domain/entities/text_document.dart';
+import '../domain/entities/collection.dart';
 import '../utils/cover_image_helper.dart';
 import '../service_locator.dart';
 

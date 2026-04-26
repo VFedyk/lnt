@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
-import '../models/language.dart';
+import '../domain/entities/language.dart';
 import '../service_locator.dart';
 import '../services/logger_service.dart';
 import '../utils/constants.dart';

@@ -4,14 +4,15 @@ import '../l10n/generated/app_localizations.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/language.dart';
-import '../models/text_document.dart';
-import '../models/collection.dart';
-import '../models/term.dart';
+import '../domain/entities/language.dart';
+import '../domain/entities/text_document.dart';
+import '../domain/entities/collection.dart';
+import '../domain/entities/term.dart';
 import '../service_locator.dart';
 import '../services/text_parser_service.dart';
 import '../utils/cover_image_helper.dart';
 import 'base_controller.dart';
+import '../domain/value_objects/term_status.dart';
 
 /// Sorting options for texts
 enum TextSortOption {

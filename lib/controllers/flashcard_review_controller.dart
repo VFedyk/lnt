@@ -1,8 +1,8 @@
 import 'package:flutter/scheduler.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
-import '../models/language.dart';
-import '../models/review_card.dart';
-import '../models/term.dart';
+import '../domain/entities/language.dart';
+import '../domain/entities/review_card.dart';
+import '../domain/entities/term.dart';
 import '../service_locator.dart';
 import 'base_controller.dart';
 
@@ -155,7 +155,7 @@ class FlashcardReviewController extends BaseController {
     if (_phase != ReviewPhase.question) return;
 
     final item = _dueItems[_currentIndex];
-    _nextIntervals = reviewService.getNextIntervals(item.reviewCard.card);
+    _nextIntervals = reviewService.getNextIntervals(item.reviewCard.cardData);
     _phase = ReviewPhase.revealed;
     safeNotify();
   }

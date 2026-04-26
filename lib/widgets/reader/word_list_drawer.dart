@@ -1,8 +1,8 @@
 import '../../presentation/theme/term_status_ui.dart';
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/term.dart';
-import '../../models/word_token.dart';
+import '../../domain/entities/word_token.dart';
+import '../../domain/value_objects/term_status.dart';
 
 class WordListDrawer extends StatelessWidget {
   final List<WordToken> wordTokens;

@@ -3,9 +3,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/term.dart';
-import '../../models/dictionary.dart';
-import '../../models/language.dart';
+import '../../domain/entities/term.dart';
+import '../../domain/entities/dictionary.dart';
+import '../../domain/entities/language.dart';
 import '../../service_locator.dart';
 import '../../services/ai_explanation_service.dart';
 import '../../services/deepl_service.dart';
@@ -14,6 +14,8 @@ import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
 import 'base_term_search_dialog.dart';
 import 'translation_mixin.dart';
+import '../../domain/value_objects/term_status.dart';
+import '../../domain/value_objects/part_of_speech.dart';
 
 /// Result returned from TermDialog containing both term and translations
 class TermDialogResult {

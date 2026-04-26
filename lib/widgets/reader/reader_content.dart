@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../controllers/reader_controller.dart';
-import '../../models/term.dart';
-import '../../models/word_token.dart';
+import '../../domain/entities/term.dart';
+import '../../domain/entities/word_token.dart';
 import '../../utils/constants.dart';
 import 'paragraph_rich_text.dart';
 import 'status_legend.dart';

@@ -1,5 +1,5 @@
 import 'package:uuid/uuid.dart';
-import '../models/term_sentence.dart';
+import '../domain/entities/term_sentence.dart';
 import 'base_repository.dart';
 
 const _uuid = Uuid();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/dictionary.dart';
+import '../../domain/entities/dictionary.dart';
 
 class ReaderDictionaryPickerDialog extends StatelessWidget {
   final AppLocalizations l10n;

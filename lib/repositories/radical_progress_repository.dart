@@ -1,16 +1,5 @@
+import '../domain/entities/radical_progress.dart';
 import 'base_repository.dart';
-
-class RadicalProgress {
-  final String radicalChar;
-  final int practicedCount;
-  final DateTime? lastPracticed;
-
-  const RadicalProgress({
-    required this.radicalChar,
-    required this.practicedCount,
-    this.lastPracticed,
-  });
-}
 
 class RadicalProgressRepository extends BaseRepository {
   RadicalProgressRepository(super.getDatabase, {super.onChange});

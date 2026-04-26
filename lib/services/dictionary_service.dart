@@ -1,5 +1,5 @@
 import 'package:url_launcher/url_launcher.dart';
-import '../models/dictionary.dart';
+import '../domain/entities/dictionary.dart';
 import '../service_locator.dart';
 
 class DictionaryService {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/generated/app_localizations.dart';
-import '../repositories/radical_progress_repository.dart';
+import '../domain/entities/radical_progress.dart';
 import '../service_locator.dart';
 import '../utils/constants.dart';
 import '../utils/radicals.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
-import '../../models/language.dart';
+import '../../domain/entities/language.dart';
 
 class ReaderLanguagePickerDialog extends StatelessWidget {
   final AppLocalizations l10n;

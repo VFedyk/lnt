@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:fsrs/fsrs.dart' as fsrs;
-import '../models/review_card.dart';
-import '../models/term.dart';
+import '../domain/entities/review_card.dart';
 import '../service_locator.dart';
+import '../domain/value_objects/term_status.dart';
 
 class ReviewService {
   ReviewService();
@@ -27,7 +27,8 @@ class ReviewService {
     fsrs.Rating rating, {
     bool notify = true,
   }) async {
-    final (:card, :reviewLog) = _scheduler.reviewCard(record.card, rating);
+    final currentCard = fsrs.Card.fromMap(record.cardData);
+    final (:card, :reviewLog) = _scheduler.reviewCard(currentCard, rating);
     final newStatus = mapFsrsToTermStatus(card);
     final now = DateTime.now().toUtc();
     final nowIso = now.toIso8601String();
@@ -35,7 +36,7 @@ class ReviewService {
     final updatedRecord = ReviewCardRecord(
       id: record.id,
       termId: record.termId,
-      card: card,
+      cardData: card.toMap(),
       nextDue: card.due,
       createdAt: record.createdAt,
       updatedAt: now,
@@ -110,7 +111,8 @@ class ReviewService {
   }
 
   /// Get the approximate next interval for each rating (for UI hints).
-  Map<fsrs.Rating, Duration> getNextIntervals(fsrs.Card card) {
+  Map<fsrs.Rating, Duration> getNextIntervals(Map<String, dynamic> cardData) {
+    final card = fsrs.Card.fromMap(cardData);
     final now = DateTime.now().toUtc();
     final result = <fsrs.Rating, Duration>{};
     for (final rating in fsrs.Rating.values) {
@@ -121,8 +123,8 @@ class ReviewService {
   }
 
   /// Get retrievability for a card.
-  double getRetrievability(fsrs.Card card) {
-    return _scheduler.getCardRetrievability(card);
+  double getRetrievability(Map<String, dynamic> cardData) {
+    return _scheduler.getCardRetrievability(fsrs.Card.fromMap(cardData));
   }
 
   /// Ensure review cards exist for all eligible terms in a language.

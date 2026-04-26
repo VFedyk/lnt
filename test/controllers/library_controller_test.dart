@@ -3,8 +3,8 @@ import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:language_nerd_tools/controllers/library_controller.dart';
-import 'package:language_nerd_tools/models/language.dart';
-import 'package:language_nerd_tools/models/text_document.dart';
+import 'package:language_nerd_tools/domain/entities/language.dart';
+import 'package:language_nerd_tools/domain/entities/text_document.dart';
 import 'package:language_nerd_tools/repositories/collection_repository.dart';
 import 'package:language_nerd_tools/repositories/term_repository.dart';
 import 'package:language_nerd_tools/repositories/text_repository.dart';

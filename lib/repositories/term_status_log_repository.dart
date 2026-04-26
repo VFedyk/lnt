@@ -1,13 +1,5 @@
+import '../domain/entities/daily_status_snapshot.dart';
 import 'base_repository.dart';
-
-/// A snapshot of how many terms were in each status on a given date.
-class DailyStatusSnapshot {
-  final DateTime date;
-  /// Map from TermStatus int → count.
-  final Map<int, int> counts;
-
-  const DailyStatusSnapshot({required this.date, required this.counts});
-}
 
 /// Repository for term_status_log.
 ///

@@ -1,4 +1,3 @@
-// FILE: lib/models/dictionary.dart
 class Dictionary {
   final String? id;
   final String languageId;

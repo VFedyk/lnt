@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import '../models/translation_result.dart';
+import '../domain/entities/translation_result.dart';
 import '../service_locator.dart';
 import 'logger_service.dart';
 
