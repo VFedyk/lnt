@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../domain/entities/dictionary.dart';
-import '../screens/dictionary_webview_screen.dart';
+import '../presentation/screens/dictionary_webview_screen.dart';
 import '../services/dictionary_service.dart';
 
 Future<void> openDictionaryLookup(

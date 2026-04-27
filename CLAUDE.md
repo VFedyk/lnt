@@ -7,10 +7,10 @@ Flutter language learning app: import texts (URL, TXT, EPUB), track vocabulary w
 ## Tech stack
 
 - **Flutter** (stable channel), Dart SDK ^3.10.7
-- **State management**: Provider + ChangeNotifier (`AppState` in `main.dart`, screen-level controllers in `lib/controllers/`)
+- **State management**: Provider + ChangeNotifier (`AppState` in `main.dart`, screen-level controllers in `lib/presentation/controllers/`)
 - **Database**: SQLite via `sqflite` (+ `sqflite_common_ffi` for Linux/Windows)
 - **DI / Service locator**: `get_it` — registered in `lib/service_locator.dart`
-- **Architecture**: Lightweight Clean Architecture — `domain/` (pure Dart) → `data/` (SQLite/HTTP) → `application/` (use cases) → `services/` (business logic) → `controllers/` + screens/widgets. Dependency inversion via abstract interfaces in `domain/repositories/`.
+- **Architecture**: Lightweight Clean Architecture — `domain/` (pure Dart) → `data/` (SQLite/HTTP) → `application/` (use cases) → `services/` (business logic) → `presentation/` (controllers + screens + widgets). Dependency inversion via abstract interfaces in `domain/repositories/`.
 - **Localization**: ARB files (`app_en.arb`, `app_uk.arb`) → `flutter gen-l10n`
 - **Platforms**: iOS, macOS, Android, Linux, Windows, Web
 
@@ -36,19 +36,27 @@ lib/
 │       ├── terms/         # SaveTerm (create/update term + translations), BulkImportTerms
 │       └── translation/   # TranslateTerm (DeepL/LibreTranslate selection)
 ├── services/              # Business logic: ReviewService, BackupService, ImportExportService, EpubImportService, UrlImportService, TextParserService, DictionaryService, SettingsService, LoggerService, IsolateParser
-├── controllers/           # Screen-level ChangeNotifier controllers
-├── screens/               # Full-page UI screens (thin UI layer)
-├── widgets/               # UI components organized by screen
-│   ├── shared/            # Used by 2+ screens (app_empty_state, term_dialog, review_progress_*, animated_counter, translation_mixin, base_term_search_dialog, handwriting_canvas, hanzi_writer_widget, review_options_grid)
-│   ├── dashboard/         # dashboard_tab.dart only (activity_heatmap, dashboard_charts, custom_chart_tooltip)
-│   ├── statistics/        # statistics_screen.dart only (status_history_chart)
-│   ├── dictionaries/      # dictionaries_screen.dart only
-│   ├── languages/         # languages_screen.dart only
-│   ├── library/           # library_screen.dart only (dialogs + grid/list/search/status widgets + book_cover)
-│   ├── reader/            # reader_screen.dart only (dialogs, reader_content, paragraph_rich_text, status_legend, word_list_drawer, ai_explanation_dialog)
-│   ├── review/            # review_screen.dart only (exercise_card, review_stats_section)
-│   └── settings/          # settings_screen.dart only (section widgets incl. target_language_section, ai_settings_section)
-├── presentation/          # theme/term_status_ui.dart, models/chart_data.dart
+├── presentation/          # All UI — thin screens, reusable widgets, controllers, theme
+│   ├── controllers/       # ChangeNotifier controllers (one per screen or complex dialog)
+│   │                      #   BaseController, LibraryController, VocabularyController,
+│   │                      #   DashboardController, ReaderController, SettingsController,
+│   │                      #   FlashcardReviewController, TermDialogController,
+│   │                      #   BaseTermSearchDialogController
+│   ├── screens/           # Full-page UI screens (thin UI layer)
+│   ├── widgets/           # UI components organized by screen
+│   │   ├── shared/        # Used by 2+ screens (app_empty_state, term_dialog, review_progress_*,
+│   │   │                  #   animated_counter, translation_mixin, base_term_search_dialog,
+│   │   │                  #   handwriting_canvas, hanzi_writer_widget, review_options_grid)
+│   │   ├── dashboard/     # dashboard_tab.dart only (activity_heatmap, dashboard_charts)
+│   │   ├── statistics/    # statistics_screen.dart only (status_history_chart)
+│   │   ├── dictionaries/  # dictionaries_screen.dart only
+│   │   ├── languages/     # languages_screen.dart only
+│   │   ├── library/       # library_screen.dart only (dialogs + grid/list/search/status + book_cover)
+│   │   ├── reader/        # reader_screen.dart only (dialogs, reader_content, paragraph_rich_text, …)
+│   │   ├── review/        # review_screen.dart only (exercise_card, review_stats_section)
+│   │   └── settings/      # settings_screen.dart only (section widgets)
+│   ├── theme/             # AppTheme, AppColors extension, TermStatusUI, PartOfSpeechUI
+│   └── models/            # chart_data.dart (view models for charts)
 ├── utils/                 # Helpers, constants, CoverImageHelper, language_utils, radicals
 └── l10n/                  # Localization (ARB files + generated)
 ```
@@ -96,7 +104,7 @@ flutter build macos          # Build macOS
 ## UI and theming
 
 - **Theme colors are the foundation**: Always use theme colors instead of hardcoded values for consistency across light/dark modes
-- **AppColors extension** (`lib/utils/app_theme.dart`): Access via `context.appColors` for semantic colors:
+- **AppColors extension** (`lib/presentation/theme/app_theme.dart`): Access via `context.appColors` for semantic colors:
   - `success` / `onSuccess` — Success states (green in light, lighter green in dark)
   - `warning` / `onWarning` — Warnings (orange in light, lighter orange in dark)
   - `streak` — Streak indicators
@@ -118,7 +126,7 @@ flutter build macos          # Build macOS
 - `PlatformHelper.isApple` / `PlatformHelper.isDesktop` guards platform-specific features
 - Database migrations in `lib/data/datasources/database_migrations.dart` with version numbering
 - EPUB parsing via `epub_pro` package (camelCase API)
-- **Screen controllers**: `SettingsController`, `LibraryController`, `ReaderController`, `FlashcardReviewController` — each extends `ChangeNotifier`, provided via `ChangeNotifierProvider` at screen level. Controllers own state and business logic; screens are thin UI layers that orchestrate dialogs/navigation. Controllers use `_isDisposed` + `_safeNotify()` for async safety (no `BuildContext` dependency).
+- **Screen controllers** (`lib/presentation/controllers/`): `SettingsController`, `LibraryController`, `VocabularyController`, `DashboardController`, `ReaderController`, `FlashcardReviewController`, plus `TermDialogController` and `BaseTermSearchDialogController` for complex dialogs. Each extends `BaseController` (which extends `ChangeNotifier`), provided via `ChangeNotifierProvider`. Controllers own all state and db access; screens/widgets are thin UI layers. `BaseController.safeNotify()` prevents post-dispose notification errors. Controllers never hold `BuildContext` — dialog-showing and SnackBars stay in the widget layer.
 - **SettingsController backup state**: tracks `icloudRemoteDate` (date of file in iCloud), `icloudLocalDate` (last backup from this device), `lastRestoreDate`, `isCheckingBackup`. Call `recheckICloudBackup()` to refresh the remote date.
 - **Use cases** (`lib/application/use_cases/`): `ReviewTerm` (owns FSRS scheduler, writes review log + card + term status), `SaveTerm` (create/update term + replaceForTerm in one call), `BulkImportTerms`, `TranslateTerm` (provider selection + language-code mapping). `ReviewService` delegates to `ReviewTerm` and is injected via constructor. Use case getters in `service_locator.dart`: `reviewTerm`, `saveTerm`, `bulkImportTerms`, `translateTerm`.
 - **TtsService** (`ttsService`): text-to-speech via `flutter_tts`; access via `ttsService` getter.

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'app_theme.dart';
+import '../presentation/theme/app_theme.dart';
 
 /// Utility class for showing consistent SnackBar messages
 class SnackbarHelpers {

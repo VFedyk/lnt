@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:language_nerd_tools/controllers/library_controller.dart';
+import 'package:language_nerd_tools/presentation/controllers/library_controller.dart';
 import 'package:language_nerd_tools/domain/entities/language.dart';
 import 'package:language_nerd_tools/domain/entities/text_document.dart';
 import 'package:language_nerd_tools/domain/repositories/collection_repository.dart';

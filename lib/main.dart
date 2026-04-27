@@ -8,11 +8,11 @@ import 'l10n/generated/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
-import 'screens/home_screen.dart';
+import 'presentation/screens/home_screen.dart';
 import 'service_locator.dart';
 import 'services/settings_service.dart';
 import 'utils/cover_image_helper.dart';
-import 'utils/app_theme.dart';
+import 'presentation/theme/app_theme.dart';
 import 'utils/helpers.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
