@@ -44,10 +44,20 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   final _searchController = TextEditingController();
   final _importService = ImportExportService();
+  final _focusNode = FocusNode();
   bool _showSearch = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
+
+  @override
   void dispose() {
+    _focusNode.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -484,7 +494,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             _showAddMenuAtCenter(context, ctrl),
       },
       child: Focus(
-        autofocus: true,
+        focusNode: _focusNode,
         child: Scaffold(
       appBar: AppBar(
         title: Column(

@@ -39,6 +39,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languages => 'Мови';
 
   @override
+  String get manageLanguages => 'Керування мовами';
+
+  @override
   String get settings => 'Налаштування';
 
   @override

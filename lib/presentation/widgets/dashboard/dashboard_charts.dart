@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -51,6 +53,7 @@ class DailyActivityBarChart extends StatefulWidget {
 
 class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
   OverlayEntry? _tooltipOverlay;
+  Timer? _tooltipDismissTimer;
   final GlobalKey _chartKey = GlobalKey();
   int? _currentTouchedBar;
 
@@ -61,6 +64,8 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
   }
 
   void _removeTooltip() {
+    _tooltipDismissTimer?.cancel();
+    _tooltipDismissTimer = null;
     _tooltipOverlay?.remove();
     _tooltipOverlay = null;
     _currentTouchedBar = null;
@@ -130,6 +135,11 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
       onDismiss: _removeTooltip,
       chartBounds: chartBounds,
     );
+
+    if (!PlatformHelper.isDesktop) {
+      _tooltipDismissTimer?.cancel();
+      _tooltipDismissTimer = Timer(const Duration(seconds: 3), _removeTooltip);
+    }
   }
 
   @override
@@ -168,14 +178,21 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
                           alignment: BarChartAlignment.spaceEvenly,
                           maxY: _calculateMaxY(),
                           barTouchData: BarTouchData(
-                            enabled: PlatformHelper.isDesktop,
+                            enabled: true,
                             touchTooltipData: BarTouchTooltipData(
                               // Disable built-in tooltip rendering
                               getTooltipItem: (group, groupIndex, rod, rodIndex) => null,
                             ),
                             touchCallback: (event, response) {
+                              final isDesktop = PlatformHelper.isDesktop;
+
+                              // On mobile only react to tap-up to avoid interfering with scroll
+                              // and to prevent the tooltip from flashing on tap-down then immediately
+                              // disappearing when the null response fires on tap-up.
+                              if (!isDesktop && event is! FlTapUpEvent) return;
+
                               if (response == null || response.spot == null || event.localPosition == null) {
-                                _removeTooltip();
+                                if (isDesktop) _removeTooltip();
                                 return;
                               }
 
@@ -336,6 +353,7 @@ class VocabularyGrowthLineChart extends StatefulWidget {
 
 class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
   OverlayEntry? _tooltipOverlay;
+  Timer? _tooltipDismissTimer;
   final GlobalKey _chartKey = GlobalKey();
   int? _currentTouchedSpot;
 
@@ -346,6 +364,8 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
   }
 
   void _removeTooltip() {
+    _tooltipDismissTimer?.cancel();
+    _tooltipDismissTimer = null;
     _tooltipOverlay?.remove();
     _tooltipOverlay = null;
     _currentTouchedSpot = null;
@@ -397,6 +417,11 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
       onDismiss: _removeTooltip,
       chartBounds: chartBounds,
     );
+
+    if (!PlatformHelper.isDesktop) {
+      _tooltipDismissTimer?.cancel();
+      _tooltipDismissTimer = Timer(const Duration(seconds: 3), _removeTooltip);
+    }
   }
 
   @override
@@ -432,14 +457,21 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
                       child: LineChart(
                         LineChartData(
                           lineTouchData: LineTouchData(
-                            enabled: PlatformHelper.isDesktop,
+                            enabled: true,
                             touchTooltipData: LineTouchTooltipData(
                               // Disable built-in tooltip rendering
                               getTooltipItems: (touchedSpots) => touchedSpots.map((spot) => null).toList(),
                             ),
                             touchCallback: (event, response) {
+                              final isDesktop = PlatformHelper.isDesktop;
+
+                              // On mobile only react to tap-up to avoid interfering with scroll
+                              // and to prevent the tooltip from flashing on tap-down then immediately
+                              // disappearing when the null response fires on tap-up.
+                              if (!isDesktop && event is! FlTapUpEvent) return;
+
                               if (response == null || response.lineBarSpots == null || response.lineBarSpots!.isEmpty) {
-                                _removeTooltip();
+                                if (isDesktop) _removeTooltip();
                                 return;
                               }
 

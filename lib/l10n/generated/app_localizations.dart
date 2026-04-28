@@ -158,6 +158,12 @@ abstract class AppLocalizations {
   /// **'Languages'**
   String get languages;
 
+  /// No description provided for @manageLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage languages'**
+  String get manageLanguages;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:
