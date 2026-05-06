@@ -463,6 +463,17 @@
       }
     }
   },
+  "activityPeriodSummary": "{activeDays} днів з {breakDays} вихідними",
+  "@activityPeriodSummary": {
+    "placeholders": {
+      "activeDays": {
+        "type": "int"
+      },
+      "breakDays": {
+        "type": "int"
+      }
+    }
+  },
   "dailyActivityChart": "Щоденна активність (30 днів)",
   "vocabularyGrowthChart": "Зростання словникового запасу",
   "statusDistributionChart": "Слова за статусом",

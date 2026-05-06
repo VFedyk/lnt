@@ -780,6 +780,17 @@
       }
     }
   },
+  "activityPeriodSummary": "{activeDays} days with {breakDays} break days",
+  "@activityPeriodSummary": {
+    "placeholders": {
+      "activeDays": {
+        "type": "int"
+      },
+      "breakDays": {
+        "type": "int"
+      }
+    }
+  },
   "dailyActivityChart": "Daily Activity (30 Days)",
   "vocabularyGrowthChart": "Vocabulary Growth",
   "statusDistributionChart": "Words by Status",

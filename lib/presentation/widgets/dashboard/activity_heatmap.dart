@@ -35,6 +35,8 @@ class ActivityHeatmap extends StatefulWidget {
   final int weeksToShow;
   final bool useTooltip;
   final int? streakDays;
+  final int? activeDays;
+  final int? breakDays;
 
   const ActivityHeatmap({
     super.key,
@@ -42,6 +44,8 @@ class ActivityHeatmap extends StatefulWidget {
     this.weeksToShow = _HeatmapConstants.defaultWeeks,
     this.useTooltip = false,
     this.streakDays,
+    this.activeDays,
+    this.breakDays,
   });
 
   @override
@@ -331,26 +335,49 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   l10n.activityHeatmap,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                if (widget.streakDays != null && widget.streakDays! > 0) ...[
-                  const Spacer(),
-                  Icon(
-                    Icons.local_fire_department,
-                    size: AppConstants.iconSizeS,
-                    color: context.appColors.streak,
-                  ),
-                  const SizedBox(width: AppConstants.spacingXS),
-                  Text(
-                    l10n.streakDays(widget.streakDays!),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: context.appColors.streak,
-                    ),
+                if (widget.activeDays != null && widget.activeDays! > 0) ...[
+                  const SizedBox(height: AppConstants.spacingXS),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (widget.streakDays != null && widget.streakDays! > 0) ...[
+                        Icon(
+                          Icons.local_fire_department,
+                          size: AppConstants.iconSizeS,
+                          color: context.appColors.streak,
+                        ),
+                        const SizedBox(width: AppConstants.spacingXS),
+                        Text(
+                          l10n.streakDays(widget.streakDays!),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: context.appColors.streak,
+                          ),
+                        ),
+                        Text(
+                          ' · ',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppConstants.subtitleColor,
+                          ),
+                        ),
+                      ],
+                      Text(
+                        l10n.activityPeriodSummary(
+                          widget.activeDays!,
+                          widget.breakDays ?? 0,
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppConstants.subtitleColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ],

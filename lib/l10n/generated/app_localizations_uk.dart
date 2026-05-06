@@ -1444,6 +1444,11 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
+  String activityPeriodSummary(int activeDays, int breakDays) {
+    return '$activeDays днів з $breakDays вихідними';
+  }
+
+  @override
   String get dailyActivityChart => 'Щоденна активність (30 днів)';
 
   @override

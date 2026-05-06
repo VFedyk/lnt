@@ -2690,6 +2690,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 day streak} other{{count} day streak}}'**
   String streakDays(int count);
 
+  /// No description provided for @activityPeriodSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{activeDays} days with {breakDays} break days'**
+  String activityPeriodSummary(int activeDays, int breakDays);
+
   /// No description provided for @dailyActivityChart.
   ///
   /// In en, this message translates to:

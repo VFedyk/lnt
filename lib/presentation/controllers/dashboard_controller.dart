@@ -29,6 +29,8 @@ class DashboardController extends BaseController {
   int dueCount = 0;
   int reviewedToday = 0;
   int streakDays = 0;
+  int activeDays = 0;
+  int breakDays = 0;
   List<DailyActivityChartData> dailyActivityData = [];
   List<VocabularyGrowthChartData> vocabularyGrowthData = [];
   List<StatusDistributionData> statusDistributionData = [];
@@ -128,6 +130,7 @@ class DashboardController extends BaseController {
       final due = await db.reviewCards.getDueCount(language.id!);
       final reviewed = await db.reviewLogs.getReviewCountToday(language.id!);
       final streak = _calculateStreak(newActivityData);
+      final summary = _calculateActivitySummary(newActivityData);
 
       final chartSinceDate = now.subtract(const Duration(days: _chartDays));
       final chartSinceIso = _isoDate(chartSinceDate);
@@ -162,6 +165,8 @@ class DashboardController extends BaseController {
       dueCount = due;
       reviewedToday = reviewed;
       streakDays = streak;
+      activeDays = summary.activeDays;
+      breakDays = summary.breakDays;
       dailyActivityData = newDailyActivity;
       vocabularyGrowthData = newVocabGrowth;
       statusDistributionData = newStatusDist;
@@ -209,6 +214,33 @@ class DashboardController extends BaseController {
       }
     }
     return streak;
+  }
+
+  ({int activeDays, int breakDays}) _calculateActivitySummary(
+      Map<String, DayActivity> activity) {
+    final activeDateKeys = activity.keys
+        .where((k) => activity[k]!.total > 0)
+        .toList()
+      ..sort();
+    if (activeDateKeys.isEmpty) return (activeDays: 0, breakDays: 0);
+
+    final first = DateTime.parse(activeDateKeys.first);
+    final now = DateTime.now();
+    final firstDay = DateTime(first.year, first.month, first.day);
+    final todayDay = DateTime(now.year, now.month, now.day);
+
+    int active = 0, breaks = 0;
+    DateTime cur = firstDay;
+    while (!cur.isAfter(todayDay)) {
+      final key = _isoDate(cur);
+      if ((activity[key]?.total ?? 0) > 0) {
+        active++;
+      } else {
+        breaks++;
+      }
+      cur = DateTime(cur.year, cur.month, cur.day + 1);
+    }
+    return (activeDays: active, breakDays: breaks);
   }
 
   static String _isoDate(DateTime d) =>

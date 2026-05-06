@@ -1437,6 +1437,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String activityPeriodSummary(int activeDays, int breakDays) {
+    return '$activeDays days with $breakDays break days';
+  }
+
+  @override
   String get dailyActivityChart => 'Daily Activity (30 Days)';
 
   @override
