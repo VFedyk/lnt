@@ -320,7 +320,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
                         item.term.romanization,
                         style: TextStyle(
                           fontSize: _TypingReviewConstants.romanizationFontSize,
-                          color: AppConstants.subtitleColor,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         textAlign: TextAlign.center,
                       ),

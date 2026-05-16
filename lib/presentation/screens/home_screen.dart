@@ -332,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       iconColor: _HomeScreenConstants.emptyStateIconColor,
       title: l10n.noLanguagesYet,
       titleStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(
-        color: AppConstants.subtitleColor,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       subtitle: l10n.addLanguageToStart,
       action: ElevatedButton.icon(

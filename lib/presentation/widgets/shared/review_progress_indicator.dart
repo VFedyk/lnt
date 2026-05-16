@@ -40,7 +40,7 @@ class ReviewProgressIndicator extends StatelessWidget {
             children: [
               Text(
                 l10n.reviewProgress(currentIndex + 1, totalCount),
-                style: TextStyle(color: AppConstants.subtitleColor),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               if (showStatusDot)
                 Container(

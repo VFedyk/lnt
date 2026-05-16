@@ -41,7 +41,7 @@ class LibreTranslateSettingsSection extends StatelessWidget {
             Text(
               l10n.libreTranslateHint,
               style: TextStyle(
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: AppConstants.fontSizeCaption,
               ),
             ),
@@ -73,7 +73,7 @@ class LibreTranslateSettingsSection extends StatelessWidget {
             Text(
               l10n.libreTranslateApiKeyOptional,
               style: TextStyle(
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: AppConstants.fontSizeCaption,
               ),
             ),

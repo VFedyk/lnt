@@ -70,7 +70,7 @@ class ReaderTranslationDialog extends StatelessWidget {
                   term.romanization,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontStyle: FontStyle.italic,
-                    color: AppConstants.subtitleColor,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -88,7 +88,7 @@ class ReaderTranslationDialog extends StatelessWidget {
                           PartOfSpeechUI.localizedNameFor(t.partOfSpeech!, l10n),
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: AppConstants.subtitleColor,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontStyle: FontStyle.italic,
                               ),
                         ),
@@ -116,7 +116,7 @@ class ReaderTranslationDialog extends StatelessWidget {
                             return Text(
                               '\u2190 $baseText',
                               style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: AppConstants.subtitleColor),
+                                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                             );
                           },
                         ),

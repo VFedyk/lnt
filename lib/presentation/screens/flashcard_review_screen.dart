@@ -200,7 +200,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
         sentence,
         style: TextStyle(
           fontSize: _FlashcardReviewConstants.sentenceFontSize,
-          color: AppConstants.subtitleColor,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontStyle: FontStyle.italic,
         ),
         textAlign: TextAlign.center,
@@ -218,7 +218,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
       text: TextSpan(
         style: TextStyle(
           fontSize: _FlashcardReviewConstants.sentenceFontSize,
-          color: AppConstants.subtitleColor,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontStyle: FontStyle.italic,
         ),
         children: [
@@ -415,7 +415,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
               term.romanization,
               style: TextStyle(
                 fontSize: _FlashcardReviewConstants.romanizationFontSize,
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -437,7 +437,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
           Text(
             l10n.showAnswer,
             style: TextStyle(
-              color: AppConstants.subtitleColor,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: AppConstants.fontSizeCaption,
             ),
           ),
@@ -484,7 +484,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
                   term.romanization,
                   style: TextStyle(
                     fontSize: _FlashcardReviewConstants.romanizationFontSize,
-                    color: AppConstants.subtitleColor,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -526,7 +526,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
                                     TextSpan(
                                       text: ' (${PartOfSpeechUI.localizedNameFor(t.partOfSpeech!, l10n)})',
                                       style: TextStyle(
-                                        color: AppConstants.subtitleColor,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontSize: _FlashcardReviewConstants.translationFontSize - 2,
                                       ),
                                     ),

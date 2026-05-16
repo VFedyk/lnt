@@ -422,7 +422,7 @@ class _MultipleChoiceReviewScreenState
                           item.term.romanization,
                           style: TextStyle(
                             fontSize: _Constants.romanizationFontSize,
-                            color: AppConstants.subtitleColor,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -434,7 +434,7 @@ class _MultipleChoiceReviewScreenState
                           item.translations.map((t) => t.meaning).join(', '),
                           style: TextStyle(
                             fontSize: _Constants.romanizationFontSize,
-                            color: AppConstants.subtitleColor,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -479,7 +479,7 @@ class _MultipleChoiceReviewScreenState
                         l10n.keyboardHintContinue,
                         style: TextStyle(
                           fontSize: AppConstants.fontSizeCaption,
-                          color: AppConstants.subtitleColor,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],

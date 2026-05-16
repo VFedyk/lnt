@@ -188,14 +188,14 @@ class _CollectionDialogState extends State<CollectionDialog> {
                               Icon(
                                 Icons.add_photo_alternate,
                                 size: _CollectionDialogConstants.coverPickerIconSize,
-                                color: AppConstants.subtitleColor,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                               const SizedBox(height: AppConstants.spacingXS),
                               Text(
                                 l10n.addCover,
                                 style: TextStyle(
                                   fontSize: AppConstants.fontSizeCaption,
-                                  color: AppConstants.subtitleColor,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],

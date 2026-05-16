@@ -230,14 +230,14 @@ class _TermDialogState extends State<TermDialog> {
             name,
             style: TextStyle(
               fontSize: AppConstants.fontSizeCaption,
-              color: AppConstants.subtitleColor,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           if (_controller.languages.length > 1)
             Icon(
               Icons.arrow_drop_down,
               size: AppConstants.iconSizeS,
-              color: AppConstants.subtitleColor,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
         ],
       ),
@@ -305,7 +305,7 @@ class _TermDialogState extends State<TermDialog> {
                   l10n.original(widget.term.text),
                   style: TextStyle(
                     fontSize: AppConstants.fontSizeCaption,
-                    color: AppConstants.subtitleColor,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               _buildLanguageLabel(l10n),
@@ -591,6 +591,7 @@ class _TranslationListSection extends StatelessWidget {
   });
 
   Widget _buildBaseTermSelector(
+    BuildContext context,
     AppLocalizations l10n,
     int index,
     Translation translation,
@@ -610,7 +611,7 @@ class _TranslationListSection extends StatelessWidget {
                   l10n.baseForm,
                   style: TextStyle(
                     fontSize: AppConstants.fontSizeCaption,
-                    color: AppConstants.subtitleColor,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 Text(
@@ -621,7 +622,7 @@ class _TranslationListSection extends StatelessWidget {
                   baseInfo.translation.meaning,
                   style: TextStyle(
                     fontSize: AppConstants.fontSizeCaption,
-                    color: AppConstants.subtitleColor,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -634,7 +635,7 @@ class _TranslationListSection extends StatelessWidget {
               icon: Icon(
                 Icons.close,
                 size: _TermDialogConstants.closeIconSize,
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               padding: EdgeInsets.zero,
               onPressed: () => controller.clearBaseTranslation(index),
@@ -651,16 +652,17 @@ class _TranslationListSection extends StatelessWidget {
           Icon(
             Icons.add_link,
             size: AppConstants.iconSizeS,
-            color: AppConstants.subtitleColor,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: AppConstants.spacingXS),
-          Text(l10n.baseForm, style: TextStyle(color: AppConstants.subtitleColor)),
+          Text(l10n.baseForm, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );
   }
 
   Widget _buildTranslationItem(
+    BuildContext context,
     AppLocalizations l10n,
     int index,
     Translation translation,
@@ -670,7 +672,7 @@ class _TranslationListSection extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppConstants.spacingS),
       padding: const EdgeInsets.all(AppConstants.spacingS),
       decoration: BoxDecoration(
-        border: Border.all(color: AppConstants.borderColor),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
       ),
       child: Column(
@@ -702,7 +704,7 @@ class _TranslationListSection extends StatelessWidget {
                   icon: Icon(
                     Icons.close,
                     size: _TermDialogConstants.closeIconSize,
-                    color: AppConstants.subtitleColor,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   padding: EdgeInsets.zero,
                   onPressed: () => controller.removeTranslation(index),
@@ -720,14 +722,14 @@ class _TranslationListSection extends StatelessWidget {
                   underline: const SizedBox(),
                   hint: Text(
                     l10n.partOfSpeech,
-                    style: TextStyle(color: AppConstants.subtitleColor),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                   items: [
                     DropdownMenuItem<String?>(
                       value: null,
                       child: Text(
                         '—',
-                        style: TextStyle(color: AppConstants.subtitleColor),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     ),
                     ...PartOfSpeech.all.map(
@@ -751,7 +753,7 @@ class _TranslationListSection extends StatelessWidget {
               ),
               const SizedBox(width: AppConstants.spacingM),
               Expanded(
-                child: _buildBaseTermSelector(l10n, index, translation),
+                child: _buildBaseTermSelector(context, l10n, index, translation),
               ),
             ],
           ),
@@ -872,13 +874,13 @@ class _TranslationListSection extends StatelessWidget {
           Text(
             l10n.addTranslation,
             style: TextStyle(
-              color: AppConstants.subtitleColor,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontStyle: FontStyle.italic,
             ),
           )
         else
           ...controller.translations.asMap().entries.map(
-            (entry) => _buildTranslationItem(l10n, entry.key, entry.value),
+            (entry) => _buildTranslationItem(context, l10n, entry.key, entry.value),
           ),
       ],
     );

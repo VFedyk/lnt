@@ -1,6 +1,4 @@
 // FILE: lib/utils/constants.dart
-import 'package:flutter/material.dart';
-
 class AppConstants {
   // Status levels
   static const int statusIgnored = 0;
@@ -80,8 +78,4 @@ class AppConstants {
   // UI: Review
   static const int dueCardLimit = 200;
 
-  // UI: Colors (neutral)
-  static final Color subtitleColor = Colors.grey.shade600;
-  static final Color borderColor = Colors.grey.shade400;
-  static final Color sectionHeaderColor = Colors.grey.shade700;
 }

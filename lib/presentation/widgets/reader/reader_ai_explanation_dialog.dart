@@ -43,7 +43,7 @@ class ReaderAiExplanationDialog extends StatelessWidget {
               Text(
                 contextSentence,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppConstants.subtitleColor,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
                 ),
               ),

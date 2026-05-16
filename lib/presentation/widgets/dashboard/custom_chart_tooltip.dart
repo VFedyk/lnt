@@ -124,7 +124,7 @@ class CustomChartTooltip {
         Icon(
           row.icon,
           size: AppConstants.iconSizeS,
-          color: row.iconColor ?? AppConstants.subtitleColor,
+          color: row.iconColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: AppConstants.spacingS),
         Expanded(

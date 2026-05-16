@@ -42,7 +42,7 @@ class ReaderForeignWordDialog extends StatelessWidget {
               Text(
                 info.languageName,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppConstants.subtitleColor,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -52,7 +52,7 @@ class ReaderForeignWordDialog extends StatelessWidget {
                   info.term!.romanization,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontStyle: FontStyle.italic,
-                    color: AppConstants.subtitleColor,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -74,7 +74,7 @@ class ReaderForeignWordDialog extends StatelessWidget {
                             ),
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
-                                  color: AppConstants.subtitleColor,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontStyle: FontStyle.italic,
                                 ),
                           ),

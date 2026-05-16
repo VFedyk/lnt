@@ -406,7 +406,7 @@ class _VocabularyViewState extends State<_VocabularyView> {
                               Text(
                                 term.romanization,
                                 style: TextStyle(
-                                  color: AppConstants.subtitleColor,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: AppConstants.fontSizeCaption,
                                 ),
                               ),
@@ -418,7 +418,7 @@ class _VocabularyViewState extends State<_VocabularyView> {
                         flex: 2,
                         child: Text(
                           translationText,
-                          style: TextStyle(color: AppConstants.subtitleColor),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 2,
                         ),
@@ -427,7 +427,7 @@ class _VocabularyViewState extends State<_VocabularyView> {
                       Text(
                         DateFormat('dd MMM yyyy').format(term.createdAt),
                         style: TextStyle(
-                          color: AppConstants.subtitleColor,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: AppConstants.fontSizeCaption,
                         ),
                       ),
@@ -490,7 +490,7 @@ class _VocabularyViewState extends State<_VocabularyView> {
                         Text(
                           term.romanization,
                           style: TextStyle(
-                            color: AppConstants.subtitleColor,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                             fontSize: AppConstants.fontSizeCaption,
                           ),
                         ),
@@ -502,7 +502,7 @@ class _VocabularyViewState extends State<_VocabularyView> {
                   flex: 3,
                   child: Text(
                     translationText,
-                    style: TextStyle(color: AppConstants.subtitleColor),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 2,
                   ),

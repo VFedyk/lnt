@@ -127,7 +127,7 @@ class BookCover extends StatelessWidget {
                 fontSize: AppConstants.fontSizeXS,
                 color: isCompleted
                     ? context.appColors.success
-                    : AppConstants.subtitleColor,
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: isCompleted ? FontWeight.bold : null,
               ),
             ),

@@ -369,7 +369,7 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
                         item.translations.map((t) => t.meaning).join(', '),
                         style: TextStyle(
                           fontSize: _Constants.hintFontSize,
-                          color: AppConstants.subtitleColor,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontStyle: FontStyle.italic,
                         ),
                         textAlign: TextAlign.center,

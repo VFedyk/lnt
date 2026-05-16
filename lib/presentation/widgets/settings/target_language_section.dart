@@ -74,7 +74,7 @@ class TargetLanguageSection extends StatelessWidget {
             Text(
               l10n.languageForTranslations,
               style: TextStyle(
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: AppConstants.fontSizeCaption,
               ),
             ),

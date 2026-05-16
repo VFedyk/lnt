@@ -228,7 +228,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
           icon: Icons.menu_book,
           label: l10n.textsCompleted,
           value: activity.textsCompleted.toString(),
-          iconColor: AppConstants.subtitleColor,
+          iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
           labelColor: Theme.of(context).textTheme.bodyMedium?.color,
           valueColor: Theme.of(context).textTheme.bodyMedium?.color,
         ),
@@ -236,7 +236,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
           icon: Icons.add_circle_outline,
           label: l10n.wordsAdded,
           value: activity.wordsAdded.toString(),
-          iconColor: AppConstants.subtitleColor,
+          iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
           labelColor: Theme.of(context).textTheme.bodyMedium?.color,
           valueColor: Theme.of(context).textTheme.bodyMedium?.color,
         ),
@@ -244,7 +244,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
           icon: Icons.school_outlined,
           label: l10n.wordsReviewed,
           value: activity.wordsReviewed.toString(),
-          iconColor: AppConstants.subtitleColor,
+          iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
           labelColor: Theme.of(context).textTheme.bodyMedium?.color,
           valueColor: Theme.of(context).textTheme.bodyMedium?.color,
         ),
@@ -311,7 +311,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         Icon(
           icon,
           size: AppConstants.iconSizeS,
-          color: AppConstants.subtitleColor,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: AppConstants.spacingS),
         Expanded(child: Text(label)),
@@ -364,7 +364,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                         Text(
                           ' · ',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppConstants.subtitleColor,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -374,7 +374,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                           widget.breakDays ?? 0,
                         ),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppConstants.subtitleColor,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -453,7 +453,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
               weeksToShow: weeksToShow,
               primary: primary,
               emptyColor: emptyColor,
-              textColor: AppConstants.subtitleColor,
+              textColor: Theme.of(context).colorScheme.onSurfaceVariant,
               intensityLevel: _intensityLevel,
               colorForIntensity: (level) =>
                   _colorForIntensity(level, primary, emptyColor),
@@ -473,7 +473,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
           l10n.less,
           style: TextStyle(
             fontSize: AppConstants.fontSizeXS,
-            color: AppConstants.subtitleColor,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(width: AppConstants.spacingXS),
@@ -495,7 +495,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
           l10n.more,
           style: TextStyle(
             fontSize: AppConstants.fontSizeXS,
-            color: AppConstants.subtitleColor,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ],

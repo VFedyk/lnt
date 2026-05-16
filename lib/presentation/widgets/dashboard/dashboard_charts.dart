@@ -169,7 +169,7 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
                   ? Center(
                       child: Text(
                         'No activity data',
-                        style: TextStyle(color: AppConstants.subtitleColor),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     )
                   : MouseRegion(
@@ -242,7 +242,7 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
                                     DateFormat('M/d').format(date),
                                     style: TextStyle(
                                       fontSize: AppConstants.fontSizeCaption,
-                                      color: AppConstants.subtitleColor,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 );
@@ -259,7 +259,7 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
                                     value.toInt().toString(),
                                     style: TextStyle(
                                       fontSize: AppConstants.fontSizeCaption,
-                                      color: AppConstants.subtitleColor,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   );
                                 }
@@ -280,7 +280,7 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
                           horizontalInterval: _calculateMaxY() / 4,
                           getDrawingHorizontalLine: (value) {
                             return FlLine(
-                              color: AppConstants.borderColor.withValues(
+                              color: colorScheme.outlineVariant.withValues(
                                 alpha: 0.3,
                               ),
                               strokeWidth: 1,
@@ -453,7 +453,7 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
                   ? Center(
                       child: Text(
                         'No vocabulary data',
-                        style: TextStyle(color: AppConstants.subtitleColor),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     )
                   : MouseRegion(
@@ -527,7 +527,7 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
                                     DateFormat('M/d').format(date),
                                     style: TextStyle(
                                       fontSize: AppConstants.fontSizeCaption,
-                                      color: AppConstants.subtitleColor,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 );
@@ -544,7 +544,7 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
                                     value.toInt().toString(),
                                     style: TextStyle(
                                       fontSize: AppConstants.fontSizeCaption,
-                                      color: AppConstants.subtitleColor,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   );
                                 }
@@ -565,7 +565,7 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
                           horizontalInterval: _calculateHorizontalInterval(),
                           getDrawingHorizontalLine: (value) {
                             return FlLine(
-                              color: AppConstants.borderColor.withValues(
+                              color: colorScheme.outlineVariant.withValues(
                                 alpha: 0.3,
                               ),
                               strokeWidth: 1,
@@ -690,7 +690,7 @@ class _StatusDistributionDonutChartState
                   ? Center(
                       child: Text(
                         'No status data',
-                        style: TextStyle(color: AppConstants.subtitleColor),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     )
                   : Stack(
@@ -729,7 +729,7 @@ class _StatusDistributionDonutChartState
                               l10n.words,
                               style: TextStyle(
                                 fontSize: AppConstants.fontSizeCaption,
-                                color: AppConstants.subtitleColor,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -773,7 +773,7 @@ class _StatusDistributionDonutChartState
               '$statusName ($percentage%)',
               style: TextStyle(
                 fontSize: AppConstants.fontSizeCaption,
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: _touchedIndex == index
                     ? FontWeight.bold
                     : FontWeight.normal,

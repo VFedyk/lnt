@@ -223,13 +223,13 @@ class _UnsupportedPlaceholder extends StatelessWidget {
             Icon(
               Icons.desktop_access_disabled_outlined,
               size: 48,
-              color: AppConstants.subtitleColor,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: AppConstants.spacingM),
             Text(
               'Radical writing practice is not supported on this platform.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppConstants.subtitleColor),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -253,13 +253,13 @@ class _ErrorPlaceholder extends StatelessWidget {
             Icon(
               Icons.wifi_off_outlined,
               size: 48,
-              color: AppConstants.subtitleColor,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: AppConstants.spacingM),
             Text(
               'Could not load stroke data.\nCheck your internet connection.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppConstants.subtitleColor),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: AppConstants.spacingL),
             OutlinedButton.icon(

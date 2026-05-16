@@ -187,7 +187,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                   ),
                   child: Text(
                     l10n.noExistingTermsFound,
-                    style: TextStyle(color: AppConstants.subtitleColor),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ),
               if (_searchController.text.isNotEmpty) ...[
@@ -203,7 +203,7 @@ class _BaseTermSearchDialogState extends State<BaseTermSearchDialog>
                         l10n.createNewBaseTerm,
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
-                          color: AppConstants.sectionHeaderColor,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: AppConstants.spacingS),
@@ -383,7 +383,7 @@ class _AddTranslationDialogState extends State<_AddTranslationDialog>
                   value: null,
                   child: Text(
                     '—',
-                    style: TextStyle(color: AppConstants.subtitleColor),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ),
                 ...PartOfSpeech.all.map(

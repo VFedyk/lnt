@@ -47,7 +47,7 @@ class DeepLSettingsSection extends StatelessWidget {
             Text(
               l10n.deepLApiKeyHint,
               style: TextStyle(
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: AppConstants.fontSizeCaption,
               ),
             ),
@@ -83,7 +83,7 @@ class DeepLSettingsSection extends StatelessWidget {
             Text(
               isApiFree ? l10n.freeApiLimit : l10n.proApiPayPerUse,
               style: TextStyle(
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: AppConstants.fontSizeCaption,
               ),
             ),

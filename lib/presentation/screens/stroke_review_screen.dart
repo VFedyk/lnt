@@ -190,7 +190,7 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
                       term.romanization,
                       style: TextStyle(
                         fontSize: _K.romanizationFontSize,
-                        color: AppConstants.subtitleColor,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],

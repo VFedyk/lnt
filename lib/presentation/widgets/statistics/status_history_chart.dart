@@ -237,14 +237,14 @@ class _StatusHistoryChartState extends State<StatusHistoryChart> {
                   ? Center(
                       child: Text(
                         l10n.noActivityInRange,
-                        style: TextStyle(color: AppConstants.subtitleColor),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     )
                   : MouseRegion(
                       key: _chartKey,
                       onExit: (_) => _removeTooltip(),
                       child: LineChart(
-                        _buildChartData(colors, l10n),
+                        _buildChartData(context, colors, l10n),
                         duration: const Duration(milliseconds: 600),
                         curve: Curves.easeOutCubic,
                       ),
@@ -357,7 +357,7 @@ class _StatusHistoryChartState extends State<StatusHistoryChart> {
               label,
               style: TextStyle(
                 fontSize: AppConstants.fontSizeCaption,
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 decoration: hidden ? TextDecoration.lineThrough : null,
               ),
             ),
@@ -367,7 +367,7 @@ class _StatusHistoryChartState extends State<StatusHistoryChart> {
     );
   }
 
-  LineChartData _buildChartData(_LineColors colors, AppLocalizations l10n) {
+  LineChartData _buildChartData(BuildContext context, _LineColors colors, AppLocalizations l10n) {
     final n = widget.data.length;
     final step = _labelStep;
 
@@ -407,7 +407,7 @@ class _StatusHistoryChartState extends State<StatusHistoryChart> {
                   _dateLabel(widget.data[i].date),
                   style: TextStyle(
                     fontSize: AppConstants.fontSizeCaption,
-                    color: AppConstants.subtitleColor,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               );
@@ -426,7 +426,7 @@ class _StatusHistoryChartState extends State<StatusHistoryChart> {
                 value.toInt().toString(),
                 style: TextStyle(
                   fontSize: AppConstants.fontSizeCaption,
-                  color: AppConstants.subtitleColor,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               );
             },
@@ -443,7 +443,7 @@ class _StatusHistoryChartState extends State<StatusHistoryChart> {
         show: true,
         drawVerticalLine: false,
         getDrawingHorizontalLine: (_) => FlLine(
-          color: AppConstants.borderColor.withValues(alpha: 0.3),
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
           strokeWidth: 1,
         ),
       ),

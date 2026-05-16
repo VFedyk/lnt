@@ -225,7 +225,7 @@ class _AiSettingsSectionState extends State<AiSettingsSection> {
             Text(
               l10n.aiApiKeyHint,
               style: TextStyle(
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: AppConstants.fontSizeCaption,
               ),
             ),
@@ -262,7 +262,7 @@ class _AiSettingsSectionState extends State<AiSettingsSection> {
             Text(
               l10n.aiProviderHint,
               style: TextStyle(
-                color: AppConstants.subtitleColor,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: AppConstants.fontSizeCaption,
               ),
             ),

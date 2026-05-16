@@ -39,7 +39,7 @@ class AppEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final defaultTitleStyle = theme.textTheme.headlineSmall;
-    final defaultSubtitleStyle = TextStyle(color: AppConstants.subtitleColor);
+    final defaultSubtitleStyle = TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
     return Center(
       child: Padding(
@@ -50,7 +50,7 @@ class AppEmptyState extends StatelessWidget {
             Icon(
               icon,
               size: iconSize,
-              color: iconColor ?? AppConstants.subtitleColor,
+              color: iconColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: AppConstants.spacingL),
             Text(

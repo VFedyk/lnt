@@ -355,7 +355,7 @@ class _UrlImportDialogState extends State<UrlImportDialog> {
                 const SizedBox(height: AppConstants.spacingS),
                 Text(
                   l10n.wordsCount(_content.split(RegExp(r'\s+')).length),
-                  style: TextStyle(fontSize: AppConstants.fontSizeCaption, color: AppConstants.subtitleColor),
+                  style: TextStyle(fontSize: AppConstants.fontSizeCaption, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
             ],

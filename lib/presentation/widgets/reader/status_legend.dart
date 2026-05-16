@@ -53,6 +53,7 @@ class StatusLegend extends StatelessWidget {
             runSpacing: AppConstants.spacingS,
             children: TermStatus.allStatuses
                 .map((status) => _buildLegendItem(
+                      context,
                       TermStatusUI.localizedNameFor(status, l10n),
                       TermStatusUI.colorFor(status),
                       status,
@@ -64,7 +65,7 @@ class StatusLegend extends StatelessWidget {
     );
   }
 
-  Widget _buildLegendItem(String label, Color color, int status) {
+  Widget _buildLegendItem(BuildContext context, String label, Color color, int status) {
     final isIgnored = status == TermStatus.ignored;
     final isWellKnown = status == TermStatus.wellKnown;
     final count = termCounts?[status] ?? 0;
@@ -81,7 +82,7 @@ class StatusLegend extends StatelessWidget {
               color: Colors.transparent,
               border: Border.all(
                 color: isIgnored
-                    ? AppConstants.borderColor
+                    ? Theme.of(context).colorScheme.outlineVariant
                     : _StatusLegendConstants.wellKnownBorderColor,
               ),
               borderRadius: BorderRadius.circular(
@@ -94,7 +95,7 @@ class StatusLegend extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AppConstants.fontSizeXS,
                   color: isIgnored
-                      ? AppConstants.subtitleColor
+                      ? Theme.of(context).colorScheme.onSurfaceVariant
                       : _StatusLegendConstants.wellKnownTextColor,
                   fontWeight: FontWeight.w500,
                 ),
