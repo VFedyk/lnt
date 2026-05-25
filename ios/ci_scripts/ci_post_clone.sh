@@ -13,6 +13,11 @@ export PATH="$PATH:$HOME/flutter/bin"
 # Install Flutter artifacts for iOS (--ios), or macOS (--macos) platforms.
 flutter precache --ios
 
+# Disable Swift Package Manager: device_info_plus 11.x ships Package.swift, which
+# causes Flutter on macOS to skip it as a CocoaPods pod while GeneratedPluginRegistrant.m
+# still imports it — resulting in "Module not found" at compile time.
+flutter config --no-enable-swift-package-manager
+
 # Install Flutter dependencies.
 flutter pub get
 
