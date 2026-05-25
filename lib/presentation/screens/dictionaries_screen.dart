@@ -93,9 +93,6 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
 
   Future<void> _reorderDictionaries(int oldIndex, int newIndex) async {
     setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
       final item = _dictionaries.removeAt(oldIndex);
       _dictionaries.insert(newIndex, item);
     });
@@ -128,7 +125,7 @@ class _DictionariesScreenState extends State<DictionariesScreen> {
                 _DictionariesScreenConstants.listPadding,
               ),
               itemCount: _dictionaries.length,
-              onReorder: _reorderDictionaries,
+              onReorderItem: _reorderDictionaries,
               itemBuilder: (context, index) {
                 final dict = _dictionaries[index];
                 return Card(

@@ -153,7 +153,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _setCoverImage(LibraryController ctrl, TextDocument text) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    final result = await FilePicker.pickFiles(type: FileType.image);
     if (result != null && result.files.single.path != null) {
       await ctrl.setCoverImage(text, result.files.single.path!);
     }
@@ -162,7 +162,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   // ── Import ──
 
   Future<void> _importFromTextFile(LibraryController ctrl) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['txt'],
     );
@@ -182,7 +182,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _importFromEpub(LibraryController ctrl) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['epub'],
       withData: true,

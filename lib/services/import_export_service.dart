@@ -28,7 +28,7 @@ class ImportExportService {
       ]);
     }
 
-    return const ListToCsvConverter().convert(rows);
+    return const CsvEncoder().convert(rows);
   }
 
   // Import terms from CSV
@@ -39,7 +39,7 @@ class ImportExportService {
     final terms = <Term>[];
 
     try {
-      final rows = const CsvToListConverter().convert(csvContent);
+      final rows = const CsvDecoder().convert(csvContent);
 
       // Skip header row
       for (var i = 1; i < rows.length; i++) {
@@ -105,7 +105,7 @@ class ImportExportService {
     String mimeType,
   ) async {
     if (PlatformHelper.isDesktop) {
-      final result = await FilePicker.platform.saveFile(
+      final result = await FilePicker.saveFile(
         dialogTitle: 'Save export',
         fileName: fileName,
       );
