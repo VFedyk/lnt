@@ -29,7 +29,7 @@ class _AiThinkingDialogState extends State<AiThinkingDialog> {
       }
     });
     // Text changes every 1400ms (different rhythm)
-    _textTimer = Timer.periodic(const Duration(milliseconds: 5), (timer) {
+    _textTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (mounted) {
         setState(() {
           _textIndex = (_textIndex + 1) % 4;
