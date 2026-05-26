@@ -45,7 +45,7 @@ class _AiThinkingDialogState extends State<AiThinkingDialog> {
     super.dispose();
   }
 
-  static const _emojis = ['🤔', '💭', '📖', '✨', '💡', '🔍', '🌀', '📝'];
+  static const _emojis = ['🔍', '🔬', '📚', '💭', '🧠', '💡', '✨', '🌟'];
 
   @override
   Widget build(BuildContext context) {
