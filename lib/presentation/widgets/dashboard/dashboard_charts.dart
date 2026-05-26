@@ -77,8 +77,9 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
     Offset localPosition,
     AppLocalizations l10n,
     ColorScheme colorScheme,
-    AppColors appColors,
-  ) {
+    AppColors appColors, {
+    bool isHoverEvent = false,
+  }) {
     // Only remove tooltip if we don't have one yet (prevents blinking)
     _tooltipOverlay?.remove();
     _tooltipOverlay = null;
@@ -136,7 +137,8 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
       chartBounds: chartBounds,
     );
 
-    if (!PlatformHelper.isDesktop) {
+    // Auto-dismiss only for touch taps, not pointer hover (hover dismisses on exit)
+    if (!PlatformHelper.isDesktop && !isHoverEvent) {
       _tooltipDismissTimer?.cancel();
       _tooltipDismissTimer = Timer(const Duration(seconds: 3), _removeTooltip);
     }
@@ -185,14 +187,14 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
                             ),
                             touchCallback: (event, response) {
                               final isDesktop = PlatformHelper.isDesktop;
+                              final isHover = event is FlPointerHoverEvent;
 
-                              // On mobile only react to tap-up to avoid interfering with scroll
-                              // and to prevent the tooltip from flashing on tap-down then immediately
-                              // disappearing when the null response fires on tap-up.
-                              if (!isDesktop && event is! FlTapUpEvent) return;
+                              // On mobile: allow tap-up (touch) and pointer hover (mouse/Apple Pencil on iPad).
+                              // Block other events to avoid interfering with scroll.
+                              if (!isDesktop && !isHover && event is! FlTapUpEvent) return;
 
                               if (response == null || response.spot == null || event.localPosition == null) {
-                                if (isDesktop) _removeTooltip();
+                                if (isDesktop || isHover) _removeTooltip();
                                 return;
                               }
 
@@ -212,6 +214,7 @@ class _DailyActivityBarChartState extends State<DailyActivityBarChart> {
                                   l10n,
                                   colorScheme,
                                   appColors,
+                                  isHoverEvent: isHover,
                                 );
                               }
                             },
@@ -376,8 +379,9 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
     int spotIndex,
     Offset localPosition,
     AppLocalizations l10n,
-    ColorScheme colorScheme,
-  ) {
+    ColorScheme colorScheme, {
+    bool isHoverEvent = false,
+  }) {
     _tooltipOverlay?.remove();
     _tooltipOverlay = null;
 
@@ -418,7 +422,8 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
       chartBounds: chartBounds,
     );
 
-    if (!PlatformHelper.isDesktop) {
+    // Auto-dismiss only for touch taps, not pointer hover (hover dismisses on exit)
+    if (!PlatformHelper.isDesktop && !isHoverEvent) {
       _tooltipDismissTimer?.cancel();
       _tooltipDismissTimer = Timer(const Duration(seconds: 3), _removeTooltip);
     }
@@ -464,14 +469,14 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
                             ),
                             touchCallback: (event, response) {
                               final isDesktop = PlatformHelper.isDesktop;
+                              final isHover = event is FlPointerHoverEvent;
 
-                              // On mobile only react to tap-up to avoid interfering with scroll
-                              // and to prevent the tooltip from flashing on tap-down then immediately
-                              // disappearing when the null response fires on tap-up.
-                              if (!isDesktop && event is! FlTapUpEvent) return;
+                              // On mobile: allow tap-up (touch) and pointer hover (mouse/Apple Pencil on iPad).
+                              // Block other events to avoid interfering with scroll.
+                              if (!isDesktop && !isHover && event is! FlTapUpEvent) return;
 
                               if (response == null || response.lineBarSpots == null || response.lineBarSpots!.isEmpty) {
-                                if (isDesktop) _removeTooltip();
+                                if (isDesktop || isHover) _removeTooltip();
                                 return;
                               }
 
@@ -492,6 +497,7 @@ class _VocabularyGrowthLineChartState extends State<VocabularyGrowthLineChart> {
                                     event.localPosition!,
                                     l10n,
                                     colorScheme,
+                                    isHoverEvent: isHover,
                                   );
                                 }
                               }
