@@ -20,11 +20,10 @@ class _AiThinkingDialogState extends State<AiThinkingDialog> {
   @override
   void initState() {
     super.initState();
-    // Emoji changes every animationVerySlow interval
-    _emojiTimer = Timer.periodic(AppConstants.animationVerySlow, (timer) {
+    _emojiTimer = Timer.periodic(AppConstants.animationSlow, (timer) {
       if (mounted) {
         setState(() {
-          _emojiIndex = (_emojiIndex + 1) % _emojis.length;
+          _emojiIndex = (_emojiIndex + 1) % _waveFrames.length;
         });
       }
     });
@@ -45,7 +44,8 @@ class _AiThinkingDialogState extends State<AiThinkingDialog> {
     super.dispose();
   }
 
-  static const _emojis = ['🔍', '🔬', '📚', '💭', '🧠', '💡', '✨', '🌟'];
+  // Ping-pong: active dot index per frame → 0,1,2,1 → wave effect
+  static const _waveFrames = [0, 1, 2, 1];
 
   @override
   Widget build(BuildContext context) {
@@ -67,11 +67,20 @@ class _AiThinkingDialogState extends State<AiThinkingDialog> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    _emojis[_emojiIndex],
-                    style: const TextStyle(
-                      fontSize: AppConstants.fontSizeTitle,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(3, (i) {
+                      final isActive = _waveFrames[_emojiIndex] == i;
+                      return Text(
+                        isActive ? '●' : '○',
+                        style: TextStyle(
+                          fontSize: AppConstants.fontSizeTitle,
+                          color: isActive
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      );
+                    }),
                   ),
                   const SizedBox(width: AppConstants.spacingS),
                   Text(
