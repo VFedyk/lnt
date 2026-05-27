@@ -23,7 +23,7 @@ flutter pub get
 
 # Install CocoaPods using Homebrew.
 export HOMEBREW_NO_AUTO_UPDATE=1 # disable homebrew's automatic updates.
-brew install cocoapods
+which pod || brew install cocoapods
 
 # Install CocoaPods dependencies.
 cd macos && pod install --repo-update

@@ -495,6 +495,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       },
       child: Focus(
         focusNode: _focusNode,
+        autofocus: true,
         child: Scaffold(
       appBar: AppBar(
         title: Column(
