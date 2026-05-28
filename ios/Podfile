@@ -38,7 +38,6 @@ end
 
 target 'ShareExtension' do
   use_frameworks!
-  inherit! :search_paths
 end
 
 post_install do |installer|
