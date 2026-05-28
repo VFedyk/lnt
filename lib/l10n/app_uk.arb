@@ -572,5 +572,17 @@
   "noSentencesToReviewHint": "Натисніть правою кнопкою на слово в читачі та оберіть «Зберегти речення», щоб додати контекстні речення для клоуз-тренування.",
   "mineSentence": "Зберегти речення",
   "sentenceMined": "Речення збережено для клоуз-тренування",
-  "noSentenceFound": "Речення в цій позиції не знайдено"
+  "noSentenceFound": "Речення в цій позиції не знайдено",
+  "importFromLink": "Імпортувати з посилання",
+  "importingEllipsis": "Імпортування…",
+  "noFolderRoot": "Без теки (корінь)",
+  "selectCollection": "Виберіть теку",
+  "fetchFailed": "Не вдалося завантажити сторінку: {error}",
+  "@fetchFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

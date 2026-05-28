@@ -72,6 +72,7 @@ dependencies:
       url: https://github.com/w568w/jieba_flutter.git
       ref: master  # Chinese word segmentation (Apache-2.0 / GPL-3.0)
   pinyin: ^3.3.0          # Hanzi → pinyin auto-conversion (BSD-2-Clause)
+  receive_sharing_intent: ^1.8.1
 
 dev_dependencies:
   flutter_test:

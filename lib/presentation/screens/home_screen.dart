@@ -1,9 +1,11 @@
 // FILE: lib/screens/home_screen.dart
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../main.dart';
 import '../../domain/entities/language.dart';
@@ -11,6 +13,7 @@ import '../../service_locator.dart';
 import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
 import '../widgets/shared/app_empty_state.dart';
+import '../widgets/shared/share_import_dialog.dart';
 import 'dashboard_tab.dart';
 import 'languages_screen.dart';
 import 'library_screen.dart';
@@ -134,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _loadInProgress = false;
   bool _pendingReload = false;
   int _dueCount = 0;
+  StreamSubscription<List<SharedMediaFile>>? _sharingSubscription;
 
   static const _navigationChannel = MethodChannel('lnt/navigation');
 
@@ -154,6 +158,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (Platform.isMacOS) {
       _navigationChannel.setMethodCallHandler(_handleNativeNavigation);
     }
+    if (Platform.isIOS || Platform.isAndroid) {
+      _initSharingIntent();
+    }
     // Delay to ensure context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadLanguages();
@@ -168,6 +175,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (Platform.isMacOS) {
       _navigationChannel.setMethodCallHandler(null);
     }
+    _sharingSubscription?.cancel();
     super.dispose();
   }
 
@@ -178,6 +186,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         MaterialPageRoute(builder: (context) => const SettingsScreen()),
       );
     }
+  }
+
+  void _initSharingIntent() {
+    _sharingSubscription = ReceiveSharingIntent.instance
+        .getMediaStream()
+        .listen(_onSharedMedia);
+    ReceiveSharingIntent.instance.getInitialMedia().then(_onSharedMedia);
+  }
+
+  void _onSharedMedia(List<SharedMediaFile> media) {
+    final url = media
+        .where((m) => m.type == SharedMediaType.url)
+        .map((m) => m.path)
+        .firstOrNull;
+    if (url == null || url.isEmpty || !mounted) return;
+    ReceiveSharingIntent.instance.reset();
+    showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ShareImportDialog(url: url),
+    );
   }
 
   Future<void> _loadLanguages() async {

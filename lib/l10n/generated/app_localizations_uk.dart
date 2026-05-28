@@ -1614,4 +1614,21 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get noSentenceFound => 'Речення в цій позиції не знайдено';
+
+  @override
+  String get importFromLink => 'Імпортувати з посилання';
+
+  @override
+  String get importingEllipsis => 'Імпортування…';
+
+  @override
+  String get noFolderRoot => 'Без теки (корінь)';
+
+  @override
+  String get selectCollection => 'Виберіть теку';
+
+  @override
+  String fetchFailed(String error) {
+    return 'Не вдалося завантажити сторінку: $error';
+  }
 }

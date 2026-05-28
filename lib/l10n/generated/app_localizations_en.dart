@@ -1605,4 +1605,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noSentenceFound => 'No sentence found at this position';
+
+  @override
+  String get importFromLink => 'Import from link';
+
+  @override
+  String get importingEllipsis => 'Importing…';
+
+  @override
+  String get noFolderRoot => 'No folder (root)';
+
+  @override
+  String get selectCollection => 'Select collection';
+
+  @override
+  String fetchFailed(String error) {
+    return 'Could not load page: $error';
+  }
 }

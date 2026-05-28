@@ -2965,6 +2965,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No sentence found at this position'**
   String get noSentenceFound;
+
+  /// No description provided for @importFromLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from link'**
+  String get importFromLink;
+
+  /// No description provided for @importingEllipsis.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing…'**
+  String get importingEllipsis;
+
+  /// No description provided for @noFolderRoot.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder (root)'**
+  String get noFolderRoot;
+
+  /// No description provided for @selectCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Select collection'**
+  String get selectCollection;
+
+  /// No description provided for @fetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load page: {error}'**
+  String fetchFailed(String error);
 }
 
 class _AppLocalizationsDelegate

@@ -14,5 +14,9 @@
 	<array>
 		<string>iCloud.lnt-db-backup</string>
 	</array>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.volodymyrfedyk.lnt</string>
+	</array>
 </dict>
 </plist>
