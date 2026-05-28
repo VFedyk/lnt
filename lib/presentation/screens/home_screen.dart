@@ -15,6 +15,7 @@ import '../../utils/helpers.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/shared/share_import_dialog.dart';
 import 'dashboard_tab.dart';
+import 'reader_screen.dart';
 import 'languages_screen.dart';
 import 'library_screen.dart';
 import 'vocabulary_screen.dart';
@@ -202,11 +203,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         .firstOrNull;
     if (url == null || url.isEmpty || !mounted) return;
     ReceiveSharingIntent.instance.reset();
-    showDialog<bool>(
+    showDialog<ShareImportResult?>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => ShareImportDialog(url: url),
-    );
+      builder: (_) => ShareImportDialog(url: url, initialLanguage: _selectedLanguage),
+    ).then((result) {
+      if (result == null || !mounted) return;
+      if (result.openInReader) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                ReaderScreen(text: result.doc, language: result.language),
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _loadLanguages() async {

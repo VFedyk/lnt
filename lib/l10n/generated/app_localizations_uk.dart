@@ -1631,4 +1631,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String fetchFailed(String error) {
     return 'Не вдалося завантажити сторінку: $error';
   }
+
+  @override
+  String get openInReader => 'Відкрити в читачі після імпорту';
 }

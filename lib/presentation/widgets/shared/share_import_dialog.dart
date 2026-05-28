@@ -8,13 +8,18 @@ import '../../../service_locator.dart';
 import '../../../services/url_import_service.dart';
 import '../../../utils/cover_image_helper.dart';
 
+/// Return value from [ShareImportDialog].
+/// [openInReader] is true when the user checked the "open in reader" option.
+typedef ShareImportResult = ({TextDocument doc, Language language, bool openInReader});
+
 /// Dialog shown when the user shares a URL to LNT from another app.
 /// Starts fetching the URL immediately; the user picks a language and
 /// navigates the folder tree while the fetch runs in the background.
 class ShareImportDialog extends StatefulWidget {
   final String url;
+  final Language? initialLanguage;
 
-  const ShareImportDialog({super.key, required this.url});
+  const ShareImportDialog({super.key, required this.url, this.initialLanguage});
 
   @override
   State<ShareImportDialog> createState() => _ShareImportDialogState();
@@ -27,6 +32,7 @@ class _ShareImportDialogState extends State<ShareImportDialog> {
   List<Language> _languages = [];
   Language? _selectedLanguage;
   String? _selectedCollectionId; // current folder; null = root
+  bool _openInReader = false;
   bool _isSaving = false;
   String? _errorMessage;
 
@@ -42,7 +48,14 @@ class _ShareImportDialogState extends State<ShareImportDialog> {
     if (!mounted) return;
     setState(() {
       _languages = langs;
-      if (langs.length == 1) _selectedLanguage = langs.first;
+      // Pre-select: passed-in language > single language > nothing
+      if (widget.initialLanguage != null &&
+          langs.any((l) => l.id == widget.initialLanguage!.id)) {
+        _selectedLanguage =
+            langs.firstWhere((l) => l.id == widget.initialLanguage!.id);
+      } else if (langs.length == 1) {
+        _selectedLanguage = langs.first;
+      }
     });
   }
 
@@ -73,7 +86,12 @@ class _ShareImportDialogState extends State<ShareImportDialog> {
         coverImage: coverImage,
       );
       await db.texts.create(doc);
-      if (mounted) Navigator.of(context).pop(true);
+      if (!mounted) return;
+      Navigator.of(context).pop<ShareImportResult>((
+        doc: doc,
+        language: _selectedLanguage!,
+        openInReader: _openInReader,
+      ));
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -144,19 +162,28 @@ class _ShareImportDialogState extends State<ShareImportDialog> {
                   style: theme.textTheme.labelMedium),
               const SizedBox(height: 4),
               _CollectionBrowser(
-                // Recreate picker when language changes to reset navigation.
                 key: ValueKey(_selectedLanguage!.id),
                 language: _selectedLanguage!,
                 onLevelChanged: (id) =>
                     setState(() => _selectedCollectionId = id),
               ),
             ],
+            const SizedBox(height: 8),
+            CheckboxListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              value: _openInReader,
+              title: Text(l10n.openInReader,
+                  style: theme.textTheme.bodyMedium),
+              onChanged: (v) => setState(() => _openInReader = v ?? false),
+            ),
           ],
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
+          onPressed: () => Navigator.of(context).pop<ShareImportResult?>(null),
           child: Text(l10n.cancel),
         ),
         FilledButton(
@@ -257,7 +284,6 @@ class _CollectionBrowserState extends State<_CollectionBrowser> {
     final isRoot = _currentParent == null;
     final isEmpty = _collections.isEmpty;
 
-    // Hide at root level when there are no collections at all.
     if (isRoot && isEmpty) return const SizedBox.shrink();
 
     return ConstrainedBox(
@@ -274,13 +300,12 @@ class _CollectionBrowserState extends State<_CollectionBrowser> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (!isRoot) ...[
+                  // Header row: shows the CURRENT folder + back arrow.
                   ListTile(
                     dense: true,
                     leading: const Icon(Icons.arrow_back, size: 18),
                     title: Text(
-                      _parentStack.isEmpty || _parentStack.last == null
-                          ? 'Root'
-                          : _parentStack.last!.name,
+                      _currentParent!.name,
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(fontWeight: FontWeight.w500),
                     ),

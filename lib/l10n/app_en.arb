@@ -901,5 +901,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "openInReader": "Open in reader after import"
 }

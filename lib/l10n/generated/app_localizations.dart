@@ -2995,6 +2995,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load page: {error}'**
   String fetchFailed(String error);
+
+  /// No description provided for @openInReader.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in reader after import'**
+  String get openInReader;
 }
 
 class _AppLocalizationsDelegate

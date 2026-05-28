@@ -1622,4 +1622,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String fetchFailed(String error) {
     return 'Could not load page: $error';
   }
+
+  @override
+  String get openInReader => 'Open in reader after import';
 }
