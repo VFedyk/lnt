@@ -6,10 +6,11 @@ import '../../../domain/entities/text_document.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../service_locator.dart';
 import '../../../services/url_import_service.dart';
+import '../../../utils/cover_image_helper.dart';
 
 /// Dialog shown when the user shares a URL to LNT from another app.
-/// Starts fetching the URL immediately and lets the user pick a language
-/// and collection while the fetch runs in the background.
+/// Starts fetching the URL immediately; the user picks a language and
+/// navigates the folder tree while the fetch runs in the background.
 class ShareImportDialog extends StatefulWidget {
   final String url;
 
@@ -20,19 +21,19 @@ class ShareImportDialog extends StatefulWidget {
 }
 
 class _ShareImportDialogState extends State<ShareImportDialog> {
+  final _service = UrlImportService();
   late Future<UrlImportResult> _fetchFuture;
 
   List<Language> _languages = [];
   Language? _selectedLanguage;
-  List<Collection> _collections = [];
-  String? _selectedCollectionId; // null = root
+  String? _selectedCollectionId; // current folder; null = root
   bool _isSaving = false;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _fetchFuture = UrlImportService().importFromUrl(widget.url);
+    _fetchFuture = _service.importFromUrl(widget.url);
     _loadLanguages();
   }
 
@@ -41,19 +42,7 @@ class _ShareImportDialogState extends State<ShareImportDialog> {
     if (!mounted) return;
     setState(() {
       _languages = langs;
-      if (langs.length == 1) {
-        _selectedLanguage = langs.first;
-        _loadCollections(langs.first);
-      }
-    });
-  }
-
-  Future<void> _loadCollections(Language language) async {
-    final cols = await db.collections.getAll(languageId: language.id);
-    if (!mounted) return;
-    setState(() {
-      _collections = cols;
-      _selectedCollectionId = null;
+      if (langs.length == 1) _selectedLanguage = langs.first;
     });
   }
 
@@ -65,13 +54,23 @@ class _ShareImportDialogState extends State<ShareImportDialog> {
     });
     try {
       final result = await _fetchFuture;
+
+      String? coverImage;
+      if (result.coverImageUrl != null) {
+        final localPath =
+            await _service.downloadCoverImage(result.coverImageUrl!);
+        if (localPath != null) {
+          coverImage = CoverImageHelper.toRelative(localPath);
+        }
+      }
+
       final doc = TextDocument(
         languageId: _selectedLanguage!.id!,
         collectionId: _selectedCollectionId,
         title: result.title,
         content: result.content,
         sourceUri: result.url,
-        coverImage: result.coverImageUrl,
+        coverImage: coverImage,
       );
       await db.texts.create(doc);
       if (mounted) Navigator.of(context).pop(true);
@@ -121,34 +120,35 @@ class _ShareImportDialogState extends State<ShareImportDialog> {
                 items: _languages
                     .map((lang) => DropdownMenuItem(
                           value: lang,
-                          child: Row(
-                            children: [
-                              if (lang.flagEmoji.isNotEmpty) ...[
-                                Text(lang.flagEmoji),
-                                const SizedBox(width: 8),
-                              ],
-                              Text(lang.name),
+                          child: Row(children: [
+                            if (lang.flagEmoji.isNotEmpty) ...[
+                              Text(lang.flagEmoji),
+                              const SizedBox(width: 8),
                             ],
-                          ),
+                            Text(lang.name),
+                          ]),
                         ))
                     .toList(),
                 onChanged: (lang) {
                   if (lang == null) return;
-                  setState(() => _selectedLanguage = lang);
-                  _loadCollections(lang);
+                  setState(() {
+                    _selectedLanguage = lang;
+                    _selectedCollectionId = null;
+                  });
                 },
               ),
             ),
-            if (_selectedLanguage != null && _collections.isNotEmpty) ...[
+            if (_selectedLanguage != null) ...[
               const SizedBox(height: 12),
               Text(l10n.selectCollection,
                   style: theme.textTheme.labelMedium),
-              const SizedBox(height: 8),
-              _CollectionPicker(
-                collections: _collections,
-                selectedId: _selectedCollectionId,
-                onChanged: (id) => setState(() => _selectedCollectionId = id),
-                noFolderLabel: l10n.noFolderRoot,
+              const SizedBox(height: 4),
+              _CollectionBrowser(
+                // Recreate picker when language changes to reset navigation.
+                key: ValueKey(_selectedLanguage!.id),
+                language: _selectedLanguage!,
+                onLevelChanged: (id) =>
+                    setState(() => _selectedCollectionId = id),
               ),
             ],
           ],
@@ -160,7 +160,8 @@ class _ShareImportDialogState extends State<ShareImportDialog> {
           child: Text(l10n.cancel),
         ),
         FilledButton(
-          onPressed: _selectedLanguage != null && !_isSaving ? _import : null,
+          onPressed:
+              _selectedLanguage != null && !_isSaving ? _import : null,
           child: _isSaving
               ? const SizedBox(
                   width: 18,
@@ -200,42 +201,118 @@ class _UrlPreview extends StatelessWidget {
   }
 }
 
-class _CollectionPicker extends StatelessWidget {
-  final List<Collection> collections;
-  final String? selectedId;
-  final ValueChanged<String?> onChanged;
-  final String noFolderLabel;
+/// Folder-browser collection picker. Navigating into a folder makes it the
+/// selected destination. Fires [onLevelChanged] on every navigation step.
+class _CollectionBrowser extends StatefulWidget {
+  final Language language;
+  final ValueChanged<String?> onLevelChanged;
 
-  const _CollectionPicker({
-    required this.collections,
-    required this.selectedId,
-    required this.onChanged,
-    required this.noFolderLabel,
+  const _CollectionBrowser({
+    super.key,
+    required this.language,
+    required this.onLevelChanged,
   });
 
   @override
+  State<_CollectionBrowser> createState() => _CollectionBrowserState();
+}
+
+class _CollectionBrowserState extends State<_CollectionBrowser> {
+  List<Collection> _collections = [];
+  Collection? _currentParent; // null = root
+  final _parentStack = <Collection?>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLevel(null);
+  }
+
+  Future<void> _loadLevel(Collection? parent) async {
+    final cols = await db.collections.getAll(
+      languageId: widget.language.id,
+      parentId: parent?.id,
+    );
+    if (!mounted) return;
+    setState(() {
+      _currentParent = parent;
+      _collections = cols;
+    });
+    widget.onLevelChanged(parent?.id);
+  }
+
+  void _navigateInto(Collection collection) {
+    _parentStack.add(_currentParent);
+    _loadLevel(collection);
+  }
+
+  void _navigateBack() {
+    if (_parentStack.isEmpty) return;
+    _loadLevel(_parentStack.removeLast());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final all = <String?>[null, ...collections.map((c) => c.id)];
+    final theme = Theme.of(context);
+    final isRoot = _currentParent == null;
+    final isEmpty = _collections.isEmpty;
+
+    // Hide at root level when there are no collections at all.
+    if (isRoot && isEmpty) return const SizedBox.shrink();
+
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 160),
-      child: SingleChildScrollView(
-        child: RadioGroup<String?>(
-          groupValue: selectedId,
-          onChanged: onChanged,
-          child: Column(
-            children: all.map((id) {
-              final label = id == null
-                  ? noFolderLabel
-                  : collections.firstWhere((c) => c.id == id).name;
-              return RadioListTile<String?>(
-                value: id,
-                title: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            }).toList(),
+      constraints: const BoxConstraints(maxHeight: 200),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(color: theme.dividerColor),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!isRoot) ...[
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.arrow_back, size: 18),
+                    title: Text(
+                      _parentStack.isEmpty || _parentStack.last == null
+                          ? 'Root'
+                          : _parentStack.last!.name,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w500),
+                    ),
+                    onTap: _navigateBack,
+                  ),
+                  Divider(height: 1, color: theme.dividerColor),
+                ],
+                if (isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 16),
+                    child: Text(
+                      'No sub-folders',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  ..._collections.map((col) => ListTile(
+                        dense: true,
+                        leading: Icon(Icons.folder_outlined,
+                            size: 20,
+                            color: theme.colorScheme.primary),
+                        title: Text(col.name,
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                        trailing:
+                            const Icon(Icons.chevron_right, size: 18),
+                        onTap: () => _navigateInto(col),
+                      )),
+              ],
+            ),
           ),
         ),
       ),
