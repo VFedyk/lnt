@@ -38,9 +38,7 @@ end
 
 target 'ShareExtension' do
   use_frameworks!
-  pod 'receive_sharing_intent', :path => File.join(
-    File.dirname(File.realpath(__FILE__)), '.symlinks', 'plugins', 'receive_sharing_intent', 'ios'
-  )
+  inherit! :search_paths
 end
 
 post_install do |installer|
