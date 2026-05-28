@@ -46,10 +46,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
   final _importService = ImportExportService();
   final _focusNode = FocusNode();
   bool _showSearch = false;
+  LibraryController? _ctrl;
 
   @override
   void initState() {
     super.initState();
+    HardwareKeyboard.instance.addHandler(_handleKey);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNode.requestFocus();
     });
@@ -57,9 +59,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleKey);
     _focusNode.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  bool _handleKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+    if (event.logicalKey != LogicalKeyboardKey.keyN) return false;
+    final kb = HardwareKeyboard.instance;
+    if (!kb.isMetaPressed && !kb.isControlPressed) return false;
+    if (!mounted || _ctrl == null) return false;
+    _showAddMenuAtCenter(context, _ctrl!);
+    return true;
   }
 
   // ── Dialog orchestration ──
@@ -469,6 +482,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       child: Builder(
         builder: (context) {
           final ctrl = context.watch<LibraryController>();
+          _ctrl = ctrl;
           return _buildScaffold(context, ctrl);
         },
       ),
@@ -486,17 +500,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Widget _buildScaffold(BuildContext context, LibraryController ctrl) {
     final l10n = AppLocalizations.of(context);
-    return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.keyN, meta: true): () =>
-            _showAddMenuAtCenter(context, ctrl),
-        const SingleActivator(LogicalKeyboardKey.keyN, control: true): () =>
-            _showAddMenuAtCenter(context, ctrl),
-      },
-      child: Focus(
-        focusNode: _focusNode,
-        autofocus: true,
-        child: Scaffold(
+    return Focus(
+      focusNode: _focusNode,
+      autofocus: true,
+      child: Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,7 +655,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
           },
           child: const Icon(Icons.add),
         ),
-      ),
       ),
     ),
   );
