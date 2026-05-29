@@ -66,13 +66,13 @@ dependencies:
   fl_chart: ^1.1.1
   flutter_svg: ^2.0.0
   super_clipboard: ^0.9.0
-  flutter_markdown: ^0.7.7+1
   jieba_flutter:
     git:
       url: https://github.com/w568w/jieba_flutter.git
       ref: master  # Chinese word segmentation (Apache-2.0 / GPL-3.0)
   pinyin: ^3.3.0          # Hanzi → pinyin auto-conversion (BSD-2-Clause)
   receive_sharing_intent: ^1.8.1
+  flutter_markdown_plus: ^1.0.7
 
 dev_dependencies:
   flutter_test:
