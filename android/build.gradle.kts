@@ -20,8 +20,8 @@ subprojects {
 }
 
 subprojects {
-    afterEvaluate {
-        extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
+    plugins.withId("com.android.library") {
+        configure<com.android.build.gradle.LibraryExtension> {
             compileOptions {
                 sourceCompatibility = JavaVersion.VERSION_17
                 targetCompatibility = JavaVersion.VERSION_17
