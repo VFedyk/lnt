@@ -85,10 +85,10 @@ class _ShareImportDialogState extends State<ShareImportDialog> {
         sourceUri: result.url,
         coverImage: coverImage,
       );
-      await db.texts.create(doc);
+      final docId = await db.texts.create(doc);
       if (!mounted) return;
       Navigator.of(context).pop<ShareImportResult>((
-        doc: doc,
+        doc: doc.copyWith(id: docId),
         language: _selectedLanguage!,
         openInReader: _openInReader,
       ));
