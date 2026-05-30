@@ -53,7 +53,7 @@ class _AiThinkingDialogState extends State<AiThinkingDialog>
       ),
       child: SizedBox(
         width: 220,
-        height: 110,
+        height: 56,
         child: AnimatedBuilder(
           animation: _controller,
           builder: (_, _) => CustomPaint(
