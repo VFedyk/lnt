@@ -139,6 +139,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _pendingReload = false;
   int _dueCount = 0;
   StreamSubscription<List<SharedMediaFile>>? _sharingSubscription;
+  bool _sharingDialogOpen = false;
 
   static const _navigationChannel = MethodChannel('lnt/navigation');
 
@@ -201,13 +202,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         .where((m) => m.type == SharedMediaType.url)
         .map((m) => m.path)
         .firstOrNull;
-    if (url == null || url.isEmpty || !mounted) return;
+    if (url == null || url.isEmpty || !mounted || _sharingDialogOpen) return;
+    _sharingDialogOpen = true;
     ReceiveSharingIntent.instance.reset();
     showDialog<ShareImportResult?>(
       context: context,
       barrierDismissible: false,
       builder: (_) => ShareImportDialog(url: url, initialLanguage: _selectedLanguage),
     ).then((result) {
+      _sharingDialogOpen = false;
       if (result == null || !mounted) return;
       if (result.openInReader) {
         Navigator.push(
