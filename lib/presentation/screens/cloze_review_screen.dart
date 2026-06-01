@@ -348,12 +348,14 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
             statusDotSize: _Constants.statusDotSize,
           ),
           Expanded(
-            child: Card(
-              elevation: _Constants.cardElevation,
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(_Constants.cardBorderRadius),
-              ),
+            child: SizedBox(
+              width: double.infinity,
+              child: Card(
+                elevation: _Constants.cardElevation,
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(_Constants.cardBorderRadius),
+                ),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppConstants.spacingXL),
                 child: Column(
@@ -387,6 +389,7 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
                 ),
               ),
             ),
+          ),
           ),
           if (answered) ...[
             const SizedBox(height: AppConstants.spacingM),
