@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:convert' show jsonDecode, jsonEncode;
 import 'package:http/http.dart' as http;
 
 class SyncApiException implements Exception {
@@ -25,7 +25,7 @@ class EventInput {
   Map<String, dynamic> toJson() => {
     'domain': domain,
     'entity_id': entityId,
-    'payload': jsonEncode(payload),
+    'payload': payload,
     'client_ts': clientTs.toUtc().toIso8601String(),
   };
 }
