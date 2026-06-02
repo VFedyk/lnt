@@ -21,6 +21,7 @@ import '../widgets/settings/database_section.dart';
 import '../widgets/settings/deepl_settings_section.dart';
 import '../widgets/settings/deepl_usage_section.dart';
 import '../widgets/settings/libretranslate_settings_section.dart';
+import '../widgets/settings/sync_settings_section.dart';
 import '../widgets/settings/target_language_section.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -284,6 +285,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           setState(() => _obscureAiApiKey = !_obscureAiApiKey);
                         },
                       ),
+                      const SizedBox(height: AppConstants.spacingL),
+                      const SyncSettingsSection(),
                       const SizedBox(height: AppConstants.spacingL),
                       ElevatedButton.icon(
                         onPressed: () => _saveSettings(ctrl),

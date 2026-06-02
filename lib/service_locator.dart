@@ -25,6 +25,7 @@ import 'application/use_cases/translation/translate_term.dart';
 import 'services/settings_service.dart';
 import 'services/review_service.dart';
 import 'services/backup_service.dart';
+import 'services/sync_service.dart';
 import 'services/text_parser_service.dart';
 import 'services/import_export_service.dart';
 import 'services/epub_import_service.dart';
@@ -37,6 +38,7 @@ final sl = GetIt.instance;
 DatabaseService get db => sl<DatabaseService>();
 SettingsService get settings => sl<SettingsService>();
 BackupService get backupService => sl<BackupService>();
+SyncService get syncService => sl<SyncService>();
 ReviewService get reviewService => sl<ReviewService>();
 DeepLService get deepLService => sl<DeepLService>();
 LibreTranslateService get libreTranslateService => sl<LibreTranslateService>();
@@ -85,6 +87,13 @@ void setupServiceLocator() {
 
   sl.registerLazySingleton<ReviewService>(() => ReviewService(sl<ReviewTerm>()));
   sl.registerLazySingleton<BackupService>(() => BackupService());
+  sl.registerLazySingleton<SyncService>(
+    () => SyncService(
+      db: sl<DatabaseService>(),
+      settings: sl<SettingsService>(),
+      changes: sl<DataChangeNotifier>(),
+    ),
+  );
   sl.registerLazySingleton<DeepLService>(() => DeepLService());
   sl.registerLazySingleton<LibreTranslateService>(
     () => LibreTranslateService(),

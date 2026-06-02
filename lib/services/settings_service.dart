@@ -1,6 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import '../utils/constants.dart';
+
+const _uuid = Uuid();
 
 class SettingsService {
   SettingsService();
@@ -254,6 +257,93 @@ class SettingsService {
   Future<void> setLastRestore(DateTime date) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_lastRestoreKey, date.millisecondsSinceEpoch);
+  }
+
+  // Sync settings
+
+  static const String _syncServerUrlKey = 'sync_server_url';
+  static const String _syncNicknameKey = 'sync_nickname';
+  static const String _syncUserIdKey = 'sync_user_id';
+  static const String _syncDeviceIdKey = 'sync_device_id';
+  static const String _syncLastPulledSeqKey = 'sync_last_pulled_seq';
+  static const String _syncLastPushedAtKey = 'sync_last_pushed_at';
+
+  Future<String?> getSyncServerUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_syncServerUrlKey);
+  }
+
+  Future<void> setSyncServerUrl(String? url) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (url == null || url.isEmpty) {
+      await prefs.remove(_syncServerUrlKey);
+    } else {
+      await prefs.setString(_syncServerUrlKey, url.trimRight().replaceAll(RegExp(r'/+$'), ''));
+    }
+  }
+
+  Future<String?> getSyncNickname() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_syncNicknameKey);
+  }
+
+  Future<void> setSyncNickname(String? nickname) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (nickname == null || nickname.isEmpty) {
+      await prefs.remove(_syncNicknameKey);
+      await prefs.remove(_syncUserIdKey); // invalidate cached UUID on nickname change
+    } else {
+      await prefs.setString(_syncNicknameKey, nickname.trim());
+    }
+  }
+
+  Future<String?> getSyncUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_syncUserIdKey);
+  }
+
+  Future<void> setSyncUserId(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_syncUserIdKey, userId);
+  }
+
+  /// Returns a stable per-device UUID, generating one on first call.
+  Future<String> getSyncDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    var id = prefs.getString(_syncDeviceIdKey);
+    if (id == null) {
+      id = _uuid.v4();
+      await prefs.setString(_syncDeviceIdKey, id);
+    }
+    return id;
+  }
+
+  Future<int> getSyncLastPulledSeq() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_syncLastPulledSeqKey) ?? 0;
+  }
+
+  Future<void> setSyncLastPulledSeq(int seq) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_syncLastPulledSeqKey, seq);
+  }
+
+  Future<DateTime?> getSyncLastPushedAt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ms = prefs.getInt(_syncLastPushedAtKey);
+    return ms != null ? DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true) : null;
+  }
+
+  Future<void> setSyncLastPushedAt(DateTime dt) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_syncLastPushedAtKey, dt.millisecondsSinceEpoch);
+  }
+
+  Future<void> clearSyncState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_syncUserIdKey);
+    await prefs.remove(_syncLastPulledSeqKey);
+    await prefs.remove(_syncLastPushedAtKey);
   }
 
   Future<void> saveWindowState({

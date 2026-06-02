@@ -1,5 +1,9 @@
+import 'package:uuid/uuid.dart';
+
 import '../../domain/repositories/review_log_repository.dart';
 import 'base_repository.dart';
+
+const _uuid = Uuid();
 
 class ReviewLogRepositoryImpl extends BaseRepository
     implements ReviewLogRepository {
@@ -9,6 +13,7 @@ class ReviewLogRepositoryImpl extends BaseRepository
   Future<int> create(String termId, String logDataJson, DateTime reviewedAt) async {
     final db = await getDatabase();
     return await db.insert('review_logs', {
+      'id': _uuid.v4(),
       'term_id': termId,
       'log_data': logDataJson,
       'reviewed_at': reviewedAt.toUtc().toIso8601String(),
