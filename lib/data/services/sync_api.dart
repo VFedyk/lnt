@@ -48,11 +48,14 @@ class RemoteSyncEvent {
   });
 
   factory RemoteSyncEvent.fromJson(Map<String, dynamic> json) {
+    // payload may be a JSON object or a double-encoded string (from earlier bug)
+    var decoded = jsonDecode(json['payload'] as String);
+    if (decoded is String) decoded = jsonDecode(decoded);
     return RemoteSyncEvent(
       seq: json['seq'] as int,
       domain: json['domain'] as String,
       entityId: json['entity_id'] as String,
-      payload: jsonDecode(json['payload'] as String) as Map<String, dynamic>,
+      payload: decoded as Map<String, dynamic>,
       clientTs: DateTime.parse(json['client_ts'] as String),
       serverTs: DateTime.parse(json['server_ts'] as String),
     );
