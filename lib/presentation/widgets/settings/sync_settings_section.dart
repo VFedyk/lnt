@@ -54,8 +54,28 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
   }
 
   Future<void> _fullSync() async {
-    await settings.clearSyncState();
-    await _sync();
+    setState(() {
+      _syncing = true;
+      _progress = 0;
+      _statusText = '';
+    });
+    try {
+      await syncService.fullSync(
+        onProgress: (p, s) {
+          if (mounted) setState(() { _progress = p; _statusText = s; });
+        },
+      );
+      final lastPushedAt = await settings.getSyncLastPushedAt();
+      if (!mounted) return;
+      setState(() {
+        _lastSyncedAt = lastPushedAt?.toLocal().toString().substring(0, 16);
+      });
+      SnackbarHelpers.showSuccess(context, 'Full sync completed');
+    } catch (e) {
+      if (mounted) SnackbarHelpers.showError(context, 'Sync failed: $e');
+    } finally {
+      if (mounted) setState(() { _syncing = false; _progress = null; _statusText = ''; });
+    }
   }
 
   Future<void> _sync() async {

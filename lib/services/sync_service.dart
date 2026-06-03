@@ -32,6 +32,14 @@ class SyncService {
 
   SyncApi _api(String serverUrl) => SyncApi(serverUrl);
 
+  /// Resets all sync cursors and clears image upload state, then does a full sync.
+  Future<void> fullSync({SyncProgressCallback? onProgress}) async {
+    await _settings.clearSyncState();
+    final rawDb = await _db.database;
+    await rawDb.update('cover_images', {'sync_hash': null});
+    await sync(onProgress: onProgress);
+  }
+
   /// Full sync: pull new events from server, then push new local data.
   Future<void> sync({SyncProgressCallback? onProgress}) async {
     final serverUrl = await _settings.getSyncServerUrl();
