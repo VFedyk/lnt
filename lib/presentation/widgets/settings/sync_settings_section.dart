@@ -16,7 +16,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
   final _nicknameController = TextEditingController();
   bool _loaded = false;
   bool _syncing = false;
-  double? _progress;
+  double? _progress; // null = indeterminate, 0.0–1.0 = determinate
   String _statusText = '';
   String? _lastSyncedAt;
 

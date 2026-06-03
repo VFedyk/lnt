@@ -1,4 +1,4 @@
-import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:convert' show jsonDecode, jsonEncode, utf8;
 import 'package:http/http.dart' as http;
 
 class SyncApiException implements Exception {
@@ -150,15 +150,40 @@ class SyncApi {
     return res.bodyBytes;
   }
 
-  Future<PullResponse> pullEvents(String userId, {int since = 0, String? domain}) async {
+  Future<PullResponse> pullEvents(
+    String userId, {
+    int since = 0,
+    String? domain,
+    void Function(double)? onProgress,
+  }) async {
     final query = {
       'since': since.toString(),
       'domain': ?domain,
     };
     final uri = Uri.parse('$baseUrl/api/v1/users/$userId/events')
         .replace(queryParameters: query);
-    final res = await http.get(uri, headers: _headers);
-    _checkStatus(res);
-    return PullResponse.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+
+    final request = http.Request('GET', uri)..headers.addAll(_headers);
+    final streamed = await http.Client().send(request);
+
+    if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
+      throw SyncApiException(streamed.statusCode, 'pull failed');
+    }
+
+    final contentLength = streamed.contentLength; // null if server omits header
+    int received = 0;
+    final chunks = <int>[];
+
+    await for (final chunk in streamed.stream) {
+      chunks.addAll(chunk);
+      received += chunk.length;
+      if (onProgress != null && contentLength != null && contentLength > 0) {
+        onProgress(received / contentLength);
+      }
+    }
+
+    return PullResponse.fromJson(
+      jsonDecode(utf8.decode(chunks)) as Map<String, dynamic>,
+    );
   }
 }

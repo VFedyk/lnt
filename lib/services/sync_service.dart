@@ -15,7 +15,8 @@ import 'settings_service.dart';
 const _batchSize = 200;
 const _uuid = Uuid();
 
-typedef SyncProgressCallback = void Function(double progress, String status);
+/// [progress] is 0.0–1.0 for determinate progress, or null for indeterminate.
+typedef SyncProgressCallback = void Function(double? progress, String status);
 
 class SyncService {
   final DatabaseService _db;
@@ -83,7 +84,12 @@ class SyncService {
     SyncProgressCallback? onProgress,
   ) async {
     _report(onProgress, 0.10, 'Pulling events…');
-    final response = await api.pullEvents(userId, since: since);
+    final response = await api.pullEvents(
+      userId,
+      since: since,
+      onProgress: (fraction) =>
+          _report(onProgress, 0.10 + fraction * 0.10, 'Pulling events…'),
+    );
     if (response.events.isEmpty) return;
 
     final total = response.events.length;
@@ -231,7 +237,7 @@ class SyncService {
     final events = <EventInput>[];
 
     _report(onProgress, 0.40, 'Uploading images…');
-    final coverRefs = await _syncCoverImages(api, userId, rawDb);
+    final coverRefs = await _syncCoverImages(api, userId, rawDb, onProgress);
 
     await _collectLanguages(rawDb, events);
     await _collectCollections(rawDb, events, sinceStr, coverRefs);
@@ -263,6 +269,7 @@ class SyncService {
     SyncApi api,
     String userId,
     Database rawDb,
+    SyncProgressCallback? onProgress,
   ) async {
     final allRows = await rawDb.query('cover_images');
     final idToRef = <String, String>{};
@@ -277,8 +284,7 @@ class SyncService {
     if (unsynced.isEmpty) return idToRef;
 
     // Read bytes and compute hashes for unsynced images
-    final idToHash = <String, String>{};   // cover_images.id → sha256 hex
-    final idToRef2 = <String, String>{};   // cover_images.id → "hash.ext"
+    final idToRef2 = <String, String>{};
     final hashToBytes = <String, List<int>>{};
 
     for (final row in unsynced) {
@@ -291,19 +297,22 @@ class SyncService {
       final bytes = await file.readAsBytes();
       final hash = sha256.convert(bytes).toString();
       final ext = p.extension(localPath).toLowerCase();
-      final ref = '$hash$ext';
-
-      idToHash[id] = hash;
-      idToRef2[id] = ref;
+      idToRef2[id] = '$hash$ext';
       hashToBytes[hash] = bytes;
     }
 
     if (hashToBytes.isEmpty) return idToRef;
 
-    // Batch-check and upload missing images
+    // Batch-check which hashes the server is missing
     final missing = await api.checkImages(userId, hashToBytes.keys.toList());
-    for (final hash in missing) {
+    final total = missing.length;
+
+    // Upload missing images one by one with progress
+    for (int i = 0; i < total; i++) {
+      final hash = missing[i];
       await api.uploadImage(userId, hash, hashToBytes[hash]!);
+      _report(onProgress, 0.40 + (i + 1) / total * 0.15,
+          'Uploading images (${i + 1}/$total)…');
     }
 
     // Persist sync_hash and update return map
@@ -532,6 +541,6 @@ class SyncService {
     return {...map, 'id': id};
   }
 
-  void _report(SyncProgressCallback? cb, double progress, String status) =>
+  void _report(SyncProgressCallback? cb, double? progress, String status) =>
       cb?.call(progress, status);
 }
