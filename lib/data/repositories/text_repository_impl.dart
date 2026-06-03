@@ -19,8 +19,12 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
   Future<String> create(TextDocument text) async {
     final db = await getDatabase();
     final id = text.id ?? _uuid.v4();
+    final now = DateTime.now().toUtc();
     final coverImageId = await BaseRepository.getOrCreateCoverImageId(db, text.coverImage);
-    await db.insert('texts', text.copyWith(id: id, coverImageId: coverImageId).toMap());
+    await db.insert(
+      'texts',
+      text.copyWith(id: id, coverImageId: coverImageId, updatedAt: now).toMap(),
+    );
     notifyChange();
     return id;
   }
@@ -48,11 +52,12 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
   @override
   Future<int> update(TextDocument text) async {
     final db = await getDatabase();
+    final now = DateTime.now().toUtc();
     final coverImageId = text.coverImageId ??
         await BaseRepository.getOrCreateCoverImageId(db, text.coverImage);
     final result = await db.update(
       'texts',
-      text.copyWith(coverImageId: coverImageId).toMap(),
+      text.copyWith(coverImageId: coverImageId, updatedAt: now).toMap(),
       where: 'id = ?',
       whereArgs: [text.id],
     );
@@ -135,11 +140,12 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
       pathToId[path] = (await BaseRepository.getOrCreateCoverImageId(db, path))!;
     }
 
+    final now = DateTime.now().toUtc();
     final batch = db.batch();
     for (final text in texts) {
       final id = text.id ?? _uuid.v4();
       final coverImageId = text.coverImage != null ? pathToId[text.coverImage] : null;
-      batch.insert('texts', text.copyWith(id: id, coverImageId: coverImageId).toMap());
+      batch.insert('texts', text.copyWith(id: id, coverImageId: coverImageId, updatedAt: now).toMap());
     }
     await batch.commit(noResult: true);
     notifyChange();

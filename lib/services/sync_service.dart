@@ -352,7 +352,11 @@ class SyncService {
     Map<String, String> coverRefs,
   ) async {
     final rows = sinceStr != null
-        ? await rawDb.query('texts', where: 'created_at > ?', whereArgs: [sinceStr])
+        ? await rawDb.query(
+            'texts',
+            where: 'COALESCE(updated_at, created_at) > ?',
+            whereArgs: [sinceStr],
+          )
         : await rawDb.query('texts');
     for (final row in rows) {
       final id = row['id'] as String?;

@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 20;
+const int databaseVersion = 21;
 
 const _uuid = Uuid();
 
@@ -235,6 +235,15 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
   }
   if (oldVersion < 20) {
     await _migrateCoverImagesToTable(db);
+  }
+  if (oldVersion < 21) {
+    // Add updated_at to texts; backfill from last_read (best available proxy).
+    await db.execute(
+      'ALTER TABLE texts ADD COLUMN updated_at TEXT',
+    );
+    await db.execute(
+      'UPDATE texts SET updated_at = last_read',
+    );
   }
 }
 
@@ -869,6 +878,7 @@ Future<void> onCreate(Database db, int version) async {
       sort_order     INTEGER DEFAULT 0,
       cover_image_id TEXT,
       status         INTEGER DEFAULT 0,
+      updated_at     TEXT,
       FOREIGN KEY (language_id)    REFERENCES languages (id)    ON DELETE CASCADE,
       FOREIGN KEY (collection_id)  REFERENCES collections (id)  ON DELETE SET NULL,
       FOREIGN KEY (cover_image_id) REFERENCES cover_images (id) ON DELETE SET NULL

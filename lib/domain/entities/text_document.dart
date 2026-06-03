@@ -30,6 +30,8 @@ class TextDocument {
   /// Relative local path, populated via JOIN when reading. Not stored in texts table.
   final String? coverImage;
   final TextStatus status;
+  /// Set automatically on every update. Used by sync to detect changed rows.
+  final DateTime? updatedAt;
 
   TextDocument({
     this.id,
@@ -45,6 +47,7 @@ class TextDocument {
     this.coverImageId,
     this.coverImage,
     this.status = TextStatus.pending,
+    this.updatedAt,
   }) : createdAt = createdAt ?? DateTime.now(),
        lastRead = lastRead ?? DateTime.now();
 
@@ -62,10 +65,12 @@ class TextDocument {
       'sort_order': sortOrder,
       'cover_image_id': coverImageId,
       'status': status.value,
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 
   factory TextDocument.fromMap(Map<String, dynamic> map) {
+    final updatedAtStr = map['updated_at'] as String?;
     return TextDocument(
       id: map['id'] as String?,
       languageId: map['language_id'] as String,
@@ -80,6 +85,7 @@ class TextDocument {
       coverImageId: map['cover_image_id'] as String?,
       coverImage: map['cover_image'] as String?, // from LEFT JOIN alias
       status: TextStatus.fromValue(map['status'] ?? 0),
+      updatedAt: updatedAtStr != null ? DateTime.parse(updatedAtStr) : null,
     );
   }
 
@@ -99,6 +105,7 @@ class TextDocument {
     String? coverImage,
     bool clearCoverImage = false,
     TextStatus? status,
+    DateTime? updatedAt,
   }) {
     return TextDocument(
       id: id ?? this.id,
@@ -114,6 +121,7 @@ class TextDocument {
       coverImageId: clearCoverImageId ? null : (coverImageId ?? this.coverImageId),
       coverImage: clearCoverImage ? null : (coverImage ?? this.coverImage),
       status: status ?? this.status,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
