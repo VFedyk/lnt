@@ -15,6 +15,8 @@ import 'settings_service.dart';
 const _batchSize = 200;
 const _uuid = Uuid();
 
+typedef SyncProgressCallback = void Function(double progress, String status);
+
 class SyncService {
   final DatabaseService _db;
   final SettingsService _settings;
@@ -31,7 +33,7 @@ class SyncService {
   SyncApi _api(String serverUrl) => SyncApi(serverUrl);
 
   /// Full sync: pull new events from server, then push new local data.
-  Future<void> sync() async {
+  Future<void> sync({SyncProgressCallback? onProgress}) async {
     final serverUrl = await _settings.getSyncServerUrl();
     final nickname = await _settings.getSyncNickname();
     if (serverUrl == null || serverUrl.isEmpty) {
@@ -41,16 +43,18 @@ class SyncService {
       throw Exception('Sync nickname is not configured');
     }
 
+    _report(onProgress, 0.00, 'Connecting…');
+
     final api = _api(serverUrl);
 
     final userId = await _resolveUserId(api, nickname);
     final deviceId = await _settings.getSyncDeviceId();
 
     final lastPulledSeq = await _settings.getSyncLastPulledSeq();
-    await _pull(api, userId, lastPulledSeq);
+    await _pull(api, userId, lastPulledSeq, onProgress);
 
     final lastPushedAt = await _settings.getSyncLastPushedAt();
-    await _push(api, userId, deviceId, lastPushedAt);
+    await _push(api, userId, deviceId, lastPushedAt, onProgress);
     await _settings.setSyncLastPushedAt(DateTime.now().toUtc());
   }
 
@@ -64,9 +68,18 @@ class SyncService {
 
   // ── Pull ─────────────────────────────────────────────────────────────────
 
-  Future<void> _pull(SyncApi api, String userId, int since) async {
+  Future<void> _pull(
+    SyncApi api,
+    String userId,
+    int since,
+    SyncProgressCallback? onProgress,
+  ) async {
+    _report(onProgress, 0.10, 'Pulling events…');
     final response = await api.pullEvents(userId, since: since);
     if (response.events.isEmpty) return;
+
+    final total = response.events.length;
+    _report(onProgress, 0.20, 'Applying $total events…');
 
     final rawDb = await _db.database;
     for (final event in response.events) {
@@ -92,28 +105,28 @@ class SyncService {
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       case 'collection':
-        final coverRef = payload['cover_image'] as String?;
         final row = Map<String, dynamic>.from(payload)
           ..remove('cover_image')
           ..remove('cover_image_id')
           ..['id'] = event.entityId;
-        if (coverRef != null && _isImageRef(coverRef)) {
-          row['cover_image_id'] = await _downloadAndRegisterCoverImage(
-            rawDb, api, userId, coverRef,
-          );
-        }
+        row['cover_image_id'] = await _resolveCoverImageId(
+          rawDb, api, userId,
+          ref: payload['cover_image'] as String?,
+          table: 'collections',
+          entityId: event.entityId,
+        );
         await rawDb.insert('collections', row, conflictAlgorithm: ConflictAlgorithm.replace);
       case 'text':
-        final coverRef = payload['cover_image'] as String?;
         final row = Map<String, dynamic>.from(payload)
           ..remove('cover_image')
           ..remove('cover_image_id')
           ..['id'] = event.entityId;
-        if (coverRef != null && _isImageRef(coverRef)) {
-          row['cover_image_id'] = await _downloadAndRegisterCoverImage(
-            rawDb, api, userId, coverRef,
-          );
-        }
+        row['cover_image_id'] = await _resolveCoverImageId(
+          rawDb, api, userId,
+          ref: payload['cover_image'] as String?,
+          table: 'texts',
+          entityId: event.entityId,
+        );
         await rawDb.insert('texts', row, conflictAlgorithm: ConflictAlgorithm.replace);
       case 'term':
         final translations = payload['translations'] as List<dynamic>?;
@@ -148,6 +161,34 @@ class SyncService {
     }
   }
 
+  /// Returns the cover_image_id to store on a pulled entity row.
+  ///
+  /// Priority:
+  /// 1. If [ref] is a valid image ref, download and register it → use that ID.
+  /// 2. Otherwise (no ref or download failed) fall back to the existing local
+  ///    cover_image_id so we don't erase a cover the user already has.
+  Future<String?> _resolveCoverImageId(
+    Database rawDb,
+    SyncApi api,
+    String userId, {
+    required String? ref,
+    required String table,
+    required String entityId,
+  }) async {
+    if (ref != null && _isImageRef(ref)) {
+      final id = await _downloadAndRegisterCoverImage(rawDb, api, userId, ref);
+      if (id != null) return id;
+    }
+    // Fall back to whatever the local row currently has.
+    final existing = await rawDb.query(
+      table,
+      columns: ['cover_image_id'],
+      where: 'id = ?',
+      whereArgs: [entityId],
+    );
+    return existing.isNotEmpty ? existing.first['cover_image_id'] as String? : null;
+  }
+
   /// Downloads image for [ref], saves to disk, inserts into cover_images table.
   /// Returns the cover_images.id for use as a FK.
   Future<String?> _downloadAndRegisterCoverImage(
@@ -168,12 +209,13 @@ class SyncService {
     String userId,
     String deviceId,
     DateTime? lastPushedAt,
+    SyncProgressCallback? onProgress,
   ) async {
     final rawDb = await _db.database;
     final sinceStr = lastPushedAt?.toIso8601String();
     final events = <EventInput>[];
 
-    // Upload all unsynced cover images; returns id → sync_hash map for payloads.
+    _report(onProgress, 0.40, 'Uploading images…');
     final coverRefs = await _syncCoverImages(api, userId, rawDb);
 
     await _collectLanguages(rawDb, events);
@@ -185,9 +227,18 @@ class SyncService {
 
     if (events.isEmpty) return;
 
+    final totalBatches = (events.length / _batchSize).ceil();
+    _report(onProgress, 0.55, 'Pushing ${events.length} events…');
+
     for (int i = 0; i < events.length; i += _batchSize) {
+      final batchIndex = i ~/ _batchSize + 1;
       final batch = events.sublist(i, min(i + _batchSize, events.length));
       await api.pushEvents(userId, deviceId, batch);
+      _report(
+        onProgress,
+        0.55 + (batchIndex / totalBatches) * 0.45,
+        'Pushing events ($batchIndex/$totalBatches)…',
+      );
     }
   }
 
@@ -461,4 +512,7 @@ class SyncService {
   Map<String, dynamic> _withId(Map<String, dynamic> map, String id) {
     return {...map, 'id': id};
   }
+
+  void _report(SyncProgressCallback? cb, double progress, String status) =>
+      cb?.call(progress, status);
 }

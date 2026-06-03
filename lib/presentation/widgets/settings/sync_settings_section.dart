@@ -16,6 +16,8 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
   final _nicknameController = TextEditingController();
   bool _loaded = false;
   bool _syncing = false;
+  double? _progress;
+  String _statusText = '';
   String? _lastSyncedAt;
 
   @override
@@ -52,9 +54,17 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
   }
 
   Future<void> _sync() async {
-    setState(() => _syncing = true);
+    setState(() {
+      _syncing = true;
+      _progress = 0;
+      _statusText = '';
+    });
     try {
-      await syncService.sync();
+      await syncService.sync(
+        onProgress: (p, s) {
+          if (mounted) setState(() { _progress = p; _statusText = s; });
+        },
+      );
       final lastPushedAt = await settings.getSyncLastPushedAt();
       if (!mounted) return;
       setState(() {
@@ -64,7 +74,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
     } catch (e) {
       if (mounted) SnackbarHelpers.showError(context, 'Sync failed: $e');
     } finally {
-      if (mounted) setState(() => _syncing = false);
+      if (mounted) setState(() { _syncing = false; _progress = null; _statusText = ''; });
     }
   }
 
@@ -86,18 +96,16 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
                 const Icon(Icons.sync),
                 const SizedBox(width: AppConstants.spacingS),
                 Text('Sync', style: Theme.of(context).textTheme.titleMedium),
-                if (_syncing) ...[
-                  const SizedBox(width: AppConstants.spacingM),
-                  SizedBox(
-                    width: AppConstants.progressIndicatorSizeS,
-                    height: AppConstants.progressIndicatorSizeS,
-                    child: const CircularProgressIndicator(
-                      strokeWidth: AppConstants.progressStrokeWidth,
-                    ),
-                  ),
-                ],
               ],
             ),
+            if (_syncing) ...[
+              const SizedBox(height: AppConstants.spacingS),
+              LinearProgressIndicator(value: _progress),
+              if (_statusText.isNotEmpty) ...[
+                const SizedBox(height: AppConstants.spacingXS),
+                Text(_statusText, style: captionStyle),
+              ],
+            ],
             if (!_loaded)
               const Padding(
                 padding: EdgeInsets.only(top: AppConstants.spacingM),
