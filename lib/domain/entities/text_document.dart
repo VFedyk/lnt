@@ -25,7 +25,10 @@ class TextDocument {
   final DateTime lastRead;
   final int position;
   final int sortOrder; // For ordering chapters within a collection
-  final String? coverImage; // Path to cover image file
+  /// FK into the cover_images table. null when no cover is set.
+  final String? coverImageId;
+  /// Relative local path, populated via JOIN when reading. Not stored in texts table.
+  final String? coverImage;
   final TextStatus status;
 
   TextDocument({
@@ -39,6 +42,7 @@ class TextDocument {
     DateTime? lastRead,
     this.position = 0,
     this.sortOrder = 0,
+    this.coverImageId,
     this.coverImage,
     this.status = TextStatus.pending,
   }) : createdAt = createdAt ?? DateTime.now(),
@@ -56,7 +60,7 @@ class TextDocument {
       'last_read': lastRead.toIso8601String(),
       'position': position,
       'sort_order': sortOrder,
-      'cover_image': coverImage,
+      'cover_image_id': coverImageId,
       'status': status.value,
     };
   }
@@ -73,7 +77,8 @@ class TextDocument {
       lastRead: DateTime.parse(map['last_read']),
       position: map['position'] ?? 0,
       sortOrder: map['sort_order'] ?? 0,
-      coverImage: map['cover_image'],
+      coverImageId: map['cover_image_id'] as String?,
+      coverImage: map['cover_image'] as String?, // from LEFT JOIN alias
       status: TextStatus.fromValue(map['status'] ?? 0),
     );
   }
@@ -89,6 +94,8 @@ class TextDocument {
     DateTime? lastRead,
     int? position,
     int? sortOrder,
+    String? coverImageId,
+    bool clearCoverImageId = false,
     String? coverImage,
     bool clearCoverImage = false,
     TextStatus? status,
@@ -104,6 +111,7 @@ class TextDocument {
       lastRead: lastRead ?? this.lastRead,
       position: position ?? this.position,
       sortOrder: sortOrder ?? this.sortOrder,
+      coverImageId: clearCoverImageId ? null : (coverImageId ?? this.coverImageId),
       coverImage: clearCoverImage ? null : (coverImage ?? this.coverImage),
       status: status ?? this.status,
     );

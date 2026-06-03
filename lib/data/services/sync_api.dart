@@ -153,7 +153,7 @@ class SyncApi {
   Future<PullResponse> pullEvents(String userId, {int since = 0, String? domain}) async {
     final query = {
       'since': since.toString(),
-      if (domain != null) 'domain': domain,
+      'domain': ?domain,
     };
     final uri = Uri.parse('$baseUrl/api/v1/users/$userId/events')
         .replace(queryParameters: query);

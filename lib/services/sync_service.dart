@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 
 import '../data/datasources/database_service.dart';
 import '../data/notifiers/data_change_notifier.dart';
@@ -12,6 +13,7 @@ import '../data/services/sync_api.dart';
 import 'settings_service.dart';
 
 const _batchSize = 200;
+const _uuid = Uuid();
 
 class SyncService {
   final DatabaseService _db;
@@ -41,15 +43,12 @@ class SyncService {
 
     final api = _api(serverUrl);
 
-    // Resolve nickname → userId (cached in settings)
     final userId = await _resolveUserId(api, nickname);
     final deviceId = await _settings.getSyncDeviceId();
 
-    // Pull first so we have the latest server state before pushing
     final lastPulledSeq = await _settings.getSyncLastPulledSeq();
     await _pull(api, userId, lastPulledSeq);
 
-    // Push local data that isn't on the server yet
     final lastPushedAt = await _settings.getSyncLastPushedAt();
     await _push(api, userId, deviceId, lastPushedAt);
     await _settings.setSyncLastPushedAt(DateTime.now().toUtc());
@@ -62,6 +61,8 @@ class SyncService {
     await _settings.setSyncUserId(userId);
     return userId;
   }
+
+  // ── Pull ─────────────────────────────────────────────────────────────────
 
   Future<void> _pull(SyncApi api, String userId, int since) async {
     final response = await api.pullEvents(userId, since: since);
@@ -76,7 +77,12 @@ class SyncService {
     _changes.notifyAll();
   }
 
-  Future<void> _applyEvent(Database rawDb, RemoteSyncEvent event, SyncApi api, String userId) async {
+  Future<void> _applyEvent(
+    Database rawDb,
+    RemoteSyncEvent event,
+    SyncApi api,
+    String userId,
+  ) async {
     final payload = event.payload;
     switch (event.domain) {
       case 'language':
@@ -86,12 +92,28 @@ class SyncService {
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       case 'collection':
-        final row = _withId(payload, event.entityId);
-        row['cover_image'] = await _resolveCoverImage(api, userId, payload['cover_image'] as String?);
+        final coverRef = payload['cover_image'] as String?;
+        final row = Map<String, dynamic>.from(payload)
+          ..remove('cover_image')
+          ..remove('cover_image_id')
+          ..['id'] = event.entityId;
+        if (coverRef != null && _isImageRef(coverRef)) {
+          row['cover_image_id'] = await _downloadAndRegisterCoverImage(
+            rawDb, api, userId, coverRef,
+          );
+        }
         await rawDb.insert('collections', row, conflictAlgorithm: ConflictAlgorithm.replace);
       case 'text':
-        final row = _withId(payload, event.entityId);
-        row['cover_image'] = await _resolveCoverImage(api, userId, payload['cover_image'] as String?);
+        final coverRef = payload['cover_image'] as String?;
+        final row = Map<String, dynamic>.from(payload)
+          ..remove('cover_image')
+          ..remove('cover_image_id')
+          ..['id'] = event.entityId;
+        if (coverRef != null && _isImageRef(coverRef)) {
+          row['cover_image_id'] = await _downloadAndRegisterCoverImage(
+            rawDb, api, userId, coverRef,
+          );
+        }
         await rawDb.insert('texts', row, conflictAlgorithm: ConflictAlgorithm.replace);
       case 'term':
         final translations = payload['translations'] as List<dynamic>?;
@@ -102,11 +124,7 @@ class SyncService {
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
         if (translations != null) {
-          await rawDb.delete(
-            'translations',
-            where: 'term_id = ?',
-            whereArgs: [event.entityId],
-          );
+          await rawDb.delete('translations', where: 'term_id = ?', whereArgs: [event.entityId]);
           for (final t in translations) {
             await rawDb.insert(
               'translations',
@@ -130,19 +148,22 @@ class SyncService {
     }
   }
 
-  /// If [value] is a "hash.ext" ref, download and return local relative path.
-  /// If it's already a local path (or null), return it unchanged.
-  Future<String?> _resolveCoverImage(SyncApi api, String userId, String? value) async {
-    if (value == null || value.isEmpty) return null;
-    if (_isImageRef(value)) return await _downloadCoverImage(api, userId, value);
-    return value; // already a local path
+  /// Downloads image for [ref], saves to disk, inserts into cover_images table.
+  /// Returns the cover_images.id for use as a FK.
+  Future<String?> _downloadAndRegisterCoverImage(
+    Database rawDb,
+    SyncApi api,
+    String userId,
+    String ref,
+  ) async {
+    final localPath = await _downloadCoverImage(api, userId, ref);
+    if (localPath == null) return null;
+    return _getOrCreateCoverImage(rawDb, localPath, syncHash: ref);
   }
 
-  Map<String, dynamic> _withId(Map<String, dynamic> map, String id) {
-    return {...map, 'id': id};
-  }
+  // ── Push ─────────────────────────────────────────────────────────────────
 
-Future<void> _push(
+  Future<void> _push(
     SyncApi api,
     String userId,
     String deviceId,
@@ -151,13 +172,13 @@ Future<void> _push(
     final rawDb = await _db.database;
     final sinceStr = lastPushedAt?.toIso8601String();
     final events = <EventInput>[];
-    // Deduplicates cover uploads within a sync run (same image on every EPUB chapter).
-    // Key: relative path → "hash.ext" already uploaded this run.
-    final imageCache = <String, String?>{};
+
+    // Upload all unsynced cover images; returns id → sync_hash map for payloads.
+    final coverRefs = await _syncCoverImages(api, userId, rawDb);
 
     await _collectLanguages(rawDb, events);
-    await _collectCollections(rawDb, events, sinceStr, api, userId, imageCache);
-    await _collectTexts(rawDb, events, sinceStr, api, userId, imageCache);
+    await _collectCollections(rawDb, events, sinceStr, coverRefs);
+    await _collectTexts(rawDb, events, sinceStr, coverRefs);
     await _collectTerms(rawDb, events, sinceStr);
     await _collectReviewLogs(rawDb, events, sinceStr);
     await _collectStatusLogs(rawDb, events, sinceStr);
@@ -170,11 +191,73 @@ Future<void> _push(
     }
   }
 
+  /// Uploads all cover images whose sync_hash is not yet set.
+  /// Returns a map of cover_images.id → sync_hash ref for use in event payloads.
+  Future<Map<String, String>> _syncCoverImages(
+    SyncApi api,
+    String userId,
+    Database rawDb,
+  ) async {
+    final allRows = await rawDb.query('cover_images');
+    final idToRef = <String, String>{};
+
+    // Pre-populate already-uploaded entries
+    for (final row in allRows) {
+      final syncHash = row['sync_hash'] as String?;
+      if (syncHash != null) idToRef[row['id'] as String] = syncHash;
+    }
+
+    final unsynced = allRows.where((r) => r['sync_hash'] == null).toList();
+    if (unsynced.isEmpty) return idToRef;
+
+    // Read bytes and compute hashes for unsynced images
+    final idToHash = <String, String>{};   // cover_images.id → sha256 hex
+    final idToRef2 = <String, String>{};   // cover_images.id → "hash.ext"
+    final hashToBytes = <String, List<int>>{};
+
+    for (final row in unsynced) {
+      final id = row['id'] as String;
+      final localPath = row['local_path'] as String;
+      final absPath = await _resolveLocalPath(localPath);
+      final file = File(absPath);
+      if (!file.existsSync()) continue;
+
+      final bytes = await file.readAsBytes();
+      final hash = sha256.convert(bytes).toString();
+      final ext = p.extension(localPath).toLowerCase();
+      final ref = '$hash$ext';
+
+      idToHash[id] = hash;
+      idToRef2[id] = ref;
+      hashToBytes[hash] = bytes;
+    }
+
+    if (hashToBytes.isEmpty) return idToRef;
+
+    // Batch-check and upload missing images
+    final missing = await api.checkImages(userId, hashToBytes.keys.toList());
+    for (final hash in missing) {
+      await api.uploadImage(userId, hash, hashToBytes[hash]!);
+    }
+
+    // Persist sync_hash and update return map
+    for (final entry in idToRef2.entries) {
+      await rawDb.update(
+        'cover_images',
+        {'sync_hash': entry.value},
+        where: 'id = ?',
+        whereArgs: [entry.key],
+      );
+      idToRef[entry.key] = entry.value;
+    }
+
+    return idToRef;
+  }
+
   Future<void> _collectLanguages(
     Database rawDb,
     List<EventInput> events,
   ) async {
-    // Languages have no created_at — always push all (usually just a handful)
     final rows = await rawDb.query('languages');
     for (final row in rows) {
       final id = row['id'] as String?;
@@ -192,9 +275,7 @@ Future<void> _push(
     Database rawDb,
     List<EventInput> events,
     String? sinceStr,
-    SyncApi api,
-    String userId,
-    Map<String, String?> imageCache,
+    Map<String, String> coverRefs,
   ) async {
     final rows = sinceStr != null
         ? await rawDb.query('collections', where: 'created_at > ?', whereArgs: [sinceStr])
@@ -202,8 +283,8 @@ Future<void> _push(
     for (final row in rows) {
       final id = row['id'] as String?;
       if (id == null) continue;
-      final payload = Map<String, dynamic>.from(row);
-      payload['cover_image'] = await _uploadCoverImage(api, userId, row['cover_image'] as String?, imageCache);
+      final payload = Map<String, dynamic>.from(row)..remove('cover_image_id');
+      payload['cover_image'] = coverRefs[row['cover_image_id']];
       events.add(EventInput(
         domain: 'collection',
         entityId: id,
@@ -217,9 +298,7 @@ Future<void> _push(
     Database rawDb,
     List<EventInput> events,
     String? sinceStr,
-    SyncApi api,
-    String userId,
-    Map<String, String?> imageCache,
+    Map<String, String> coverRefs,
   ) async {
     final rows = sinceStr != null
         ? await rawDb.query('texts', where: 'created_at > ?', whereArgs: [sinceStr])
@@ -227,8 +306,8 @@ Future<void> _push(
     for (final row in rows) {
       final id = row['id'] as String?;
       if (id == null) continue;
-      final payload = Map<String, dynamic>.from(row);
-      payload['cover_image'] = await _uploadCoverImage(api, userId, row['cover_image'] as String?, imageCache);
+      final payload = Map<String, dynamic>.from(row)..remove('cover_image_id');
+      payload['cover_image'] = coverRefs[row['cover_image_id']];
       events.add(EventInput(
         domain: 'text',
         entityId: id,
@@ -236,77 +315,6 @@ Future<void> _push(
         clientTs: DateTime.parse(row['created_at'] as String).toUtc(),
       ));
     }
-  }
-
-  /// Uploads a cover image to the server if not already there.
-  /// Returns "sha256hex.ext" (e.g. "abc...f.png") to store in payload, or null.
-  /// [imageCache] deduplicates within a sync run — same path is processed only once.
-  Future<String?> _uploadCoverImage(
-    SyncApi api,
-    String userId,
-    String? relativePath,
-    Map<String, String?> imageCache,
-  ) async {
-    if (relativePath == null || relativePath.isEmpty) return null;
-    if (imageCache.containsKey(relativePath)) return imageCache[relativePath];
-
-    final absPath = await _resolveLocalPath(relativePath);
-    final file = File(absPath);
-    if (!file.existsSync()) return imageCache[relativePath] = null;
-
-    final bytes = await file.readAsBytes();
-    final hash = sha256.convert(bytes).toString();
-    final ext = p.extension(relativePath).toLowerCase();
-    final ref = '$hash$ext';
-
-    final missing = await api.checkImages(userId, [hash]);
-    if (missing.contains(hash)) {
-      await api.uploadImage(userId, hash, bytes);
-    }
-    return imageCache[relativePath] = ref;
-  }
-
-  /// Downloads a cover image from the server and saves it locally.
-  /// [ref] is "sha256hex.ext". Returns the relative path for the DB, or null.
-  Future<String?> _downloadCoverImage(SyncApi api, String userId, String ref) async {
-    final hash = _hashFromRef(ref);
-    final ext = _extFromRef(ref);
-    final appDir = await getApplicationDocumentsDirectory();
-    final relPath = p.join('covers', '$hash$ext');
-    final absPath = p.join(appDir.path, relPath);
-
-    if (File(absPath).existsSync()) return relPath; // already cached
-
-    final bytes = await api.downloadImage(userId, hash);
-    if (bytes == null) return null;
-
-    final coversDir = Directory(p.join(appDir.path, 'covers'));
-    if (!coversDir.existsSync()) await coversDir.create(recursive: true);
-    await File(absPath).writeAsBytes(bytes);
-    return relPath;
-  }
-
-  Future<String> _resolveLocalPath(String relativePath) async {
-    if (relativePath.startsWith('/')) return relativePath;
-    final appDir = await getApplicationDocumentsDirectory();
-    return p.join(appDir.path, relativePath);
-  }
-
-  // "sha256hex" or "sha256hex.ext" — hash part is always 64 lowercase hex chars
-  bool _isImageRef(String? value) {
-    if (value == null) return false;
-    final hashPart = value.contains('.') ? value.substring(0, value.indexOf('.')) : value;
-    return hashPart.length == 64 && RegExp(r'^[0-9a-f]+$').hasMatch(hashPart);
-  }
-
-  String _hashFromRef(String ref) {
-    final dot = ref.indexOf('.');
-    return dot == -1 ? ref : ref.substring(0, dot);
-  }
-
-  String _extFromRef(String ref) {
-    final dot = ref.lastIndexOf('.');
-    return dot == -1 ? '.jpg' : ref.substring(dot);
   }
 
   Future<void> _collectTerms(
@@ -353,7 +361,7 @@ Future<void> _push(
         : await rawDb.query('review_logs');
     for (final row in rows) {
       final id = row['id'] as String?;
-      if (id == null) continue; // legacy rows without UUID
+      if (id == null) continue;
       events.add(EventInput(
         domain: 'review_log',
         entityId: id,
@@ -373,7 +381,7 @@ Future<void> _push(
         : await rawDb.query('term_status_log');
     for (final row in rows) {
       final id = row['id'] as String?;
-      if (id == null) continue; // legacy rows without UUID
+      if (id == null) continue;
       events.add(EventInput(
         domain: 'term_status_log',
         entityId: id,
@@ -381,5 +389,76 @@ Future<void> _push(
         clientTs: DateTime.parse(row['changed_at'] as String).toUtc(),
       ));
     }
+  }
+
+  // ── Image helpers ─────────────────────────────────────────────────────────
+
+  /// Downloads image for [ref] ("hash.ext") and saves to disk.
+  /// Returns the relative local path, or null on failure.
+  Future<String?> _downloadCoverImage(SyncApi api, String userId, String ref) async {
+    final hash = _hashFromRef(ref);
+    final ext = _extFromRef(ref);
+    final appDir = await getApplicationDocumentsDirectory();
+    final relPath = p.join('covers', '$hash$ext');
+    final absPath = p.join(appDir.path, relPath);
+
+    if (File(absPath).existsSync()) return relPath;
+
+    final bytes = await api.downloadImage(userId, hash);
+    if (bytes == null) return null;
+
+    final coversDir = Directory(p.join(appDir.path, 'covers'));
+    if (!coversDir.existsSync()) await coversDir.create(recursive: true);
+    await File(absPath).writeAsBytes(bytes);
+    return relPath;
+  }
+
+  /// Looks up or creates a cover_images row for [localPath].
+  Future<String> _getOrCreateCoverImage(
+    Database rawDb,
+    String localPath, {
+    String? syncHash,
+  }) async {
+    final rows = await rawDb.query(
+      'cover_images',
+      columns: ['id'],
+      where: 'local_path = ?',
+      whereArgs: [localPath],
+    );
+    if (rows.isNotEmpty) return rows.first['id'] as String;
+    final id = _uuid.v4();
+    await rawDb.insert('cover_images', {
+      'id': id,
+      'local_path': localPath,
+      'sync_hash': syncHash,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+    });
+    return id;
+  }
+
+  Future<String> _resolveLocalPath(String relativePath) async {
+    if (relativePath.startsWith('/')) return relativePath;
+    final appDir = await getApplicationDocumentsDirectory();
+    return p.join(appDir.path, relativePath);
+  }
+
+  bool _isImageRef(String? value) {
+    if (value == null) return false;
+    final hashPart = value.contains('.') ? value.substring(0, value.indexOf('.')) : value;
+    return hashPart.length == 64 && RegExp(r'^[0-9a-f]+$').hasMatch(hashPart);
+  }
+
+  String _hashFromRef(String ref) {
+    final dot = ref.indexOf('.');
+    return dot == -1 ? ref : ref.substring(0, dot);
+  }
+
+  String _extFromRef(String ref) {
+    final dot = ref.lastIndexOf('.');
+    return dot == -1 ? '.jpg' : ref.substring(dot);
+  }
+
+  Map<String, dynamic> _withId(Map<String, dynamic> map, String id) {
+    return {...map, 'id': id};
   }
 }

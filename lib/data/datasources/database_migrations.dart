@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 19;
+const int databaseVersion = 20;
 
 const _uuid = Uuid();
 
@@ -232,6 +232,9 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
   }
   if (oldVersion < 19) {
     await _recoverOrphanedEpubTexts(db);
+  }
+  if (oldVersion < 20) {
+    await _migrateCoverImagesToTable(db);
   }
 }
 
@@ -708,6 +711,123 @@ Future<void> _recoverOrphanedEpubTexts(Database db) async {
   }
 }
 
+/// Extract cover images into their own table (v19 → v20).
+Future<void> _migrateCoverImagesToTable(Database db) async {
+  await db.execute('PRAGMA foreign_keys = OFF');
+
+  // 1. Create cover_images table
+  await db.execute('''
+    CREATE TABLE cover_images (
+      id         TEXT PRIMARY KEY NOT NULL,
+      local_path TEXT NOT NULL UNIQUE,
+      sync_hash  TEXT,
+      created_at TEXT NOT NULL
+    )
+  ''');
+
+  // 2. Populate with distinct paths from texts and collections
+  final now = DateTime.now().toUtc().toIso8601String();
+  final paths = <String>{};
+  for (final row in await db.rawQuery(
+      'SELECT DISTINCT cover_image FROM texts WHERE cover_image IS NOT NULL')) {
+    paths.add(row['cover_image'] as String);
+  }
+  for (final row in await db.rawQuery(
+      'SELECT DISTINCT cover_image FROM collections WHERE cover_image IS NOT NULL')) {
+    paths.add(row['cover_image'] as String);
+  }
+  for (final path in paths) {
+    await db.insert('cover_images', {
+      'id': _uuid.v4(),
+      'local_path': path,
+      'created_at': now,
+    });
+  }
+
+  // 3. Add cover_image_id columns (temporary — will be dropped with table recreate)
+  await db.execute('ALTER TABLE texts ADD COLUMN cover_image_id TEXT');
+  await db.execute('ALTER TABLE collections ADD COLUMN cover_image_id TEXT');
+
+  // 4. Populate cover_image_id from existing cover_image paths
+  await db.execute('''
+    UPDATE texts SET cover_image_id = (
+      SELECT id FROM cover_images WHERE local_path = texts.cover_image
+    ) WHERE cover_image IS NOT NULL
+  ''');
+  await db.execute('''
+    UPDATE collections SET cover_image_id = (
+      SELECT id FROM cover_images WHERE local_path = collections.cover_image
+    ) WHERE cover_image IS NOT NULL
+  ''');
+
+  // 5. Recreate texts without cover_image, with cover_image_id
+  await db.execute('''
+    CREATE TABLE new_texts (
+      id             TEXT PRIMARY KEY,
+      language_id    TEXT NOT NULL,
+      collection_id  TEXT,
+      title          TEXT NOT NULL,
+      content        TEXT NOT NULL,
+      source_uri     TEXT,
+      created_at     TEXT NOT NULL,
+      last_read      TEXT NOT NULL,
+      position       INTEGER DEFAULT 0,
+      sort_order     INTEGER DEFAULT 0,
+      cover_image_id TEXT,
+      status         INTEGER DEFAULT 0,
+      FOREIGN KEY (language_id)    REFERENCES languages (id)     ON DELETE CASCADE,
+      FOREIGN KEY (collection_id)  REFERENCES collections (id)   ON DELETE SET NULL,
+      FOREIGN KEY (cover_image_id) REFERENCES cover_images (id)  ON DELETE SET NULL
+    )
+  ''');
+  await db.execute('''
+    INSERT INTO new_texts
+      (id, language_id, collection_id, title, content, source_uri,
+       created_at, last_read, position, sort_order, cover_image_id, status)
+    SELECT
+      id, language_id, collection_id, title, content, source_uri,
+      created_at, last_read, position, sort_order, cover_image_id, status
+    FROM texts
+  ''');
+  await db.execute('DROP TABLE texts');
+  await db.execute('ALTER TABLE new_texts RENAME TO texts');
+
+  // 6. Recreate collections without cover_image, with cover_image_id
+  await db.execute('''
+    CREATE TABLE new_collections (
+      id             TEXT PRIMARY KEY,
+      language_id    TEXT NOT NULL,
+      name           TEXT NOT NULL,
+      description    TEXT,
+      parent_id      TEXT,
+      created_at     TEXT NOT NULL,
+      sort_order     INTEGER DEFAULT 0,
+      cover_image_id TEXT,
+      FOREIGN KEY (language_id)    REFERENCES languages (id)     ON DELETE CASCADE,
+      FOREIGN KEY (parent_id)      REFERENCES collections (id)   ON DELETE CASCADE,
+      FOREIGN KEY (cover_image_id) REFERENCES cover_images (id)  ON DELETE SET NULL
+    )
+  ''');
+  await db.execute('''
+    INSERT INTO new_collections
+      (id, language_id, name, description, parent_id, created_at, sort_order, cover_image_id)
+    SELECT
+      id, language_id, name, description, parent_id, created_at, sort_order, cover_image_id
+    FROM collections
+  ''');
+  await db.execute('DROP TABLE collections');
+  await db.execute('ALTER TABLE new_collections RENAME TO collections');
+
+  // 7. Recreate indexes
+  await db.execute('CREATE INDEX idx_texts_language ON texts(language_id)');
+  await db.execute('CREATE INDEX idx_texts_lang_status ON texts(language_id, status)');
+  await db.execute('CREATE INDEX idx_texts_lang_collection ON texts(language_id, collection_id)');
+  await db.execute('CREATE INDEX idx_collections_language ON collections(language_id)');
+  await db.execute('CREATE INDEX idx_collections_parent ON collections(parent_id)');
+
+  await db.execute('PRAGMA foreign_keys = ON');
+}
+
 /// Create fresh database with all tables (UUID PKs from the start)
 Future<void> onCreate(Database db, int version) async {
   await db.execute('''
@@ -727,21 +847,31 @@ Future<void> onCreate(Database db, int version) async {
   ''');
 
   await db.execute('''
+    CREATE TABLE cover_images (
+      id         TEXT PRIMARY KEY NOT NULL,
+      local_path TEXT NOT NULL UNIQUE,
+      sync_hash  TEXT,
+      created_at TEXT NOT NULL
+    )
+  ''');
+
+  await db.execute('''
     CREATE TABLE texts (
-      id TEXT PRIMARY KEY,
-      language_id TEXT NOT NULL,
-      collection_id TEXT,
-      title TEXT NOT NULL,
-      content TEXT NOT NULL,
-      source_uri TEXT,
-      created_at TEXT NOT NULL,
-      last_read TEXT NOT NULL,
-      position INTEGER DEFAULT 0,
-      sort_order INTEGER DEFAULT 0,
-      cover_image TEXT,
-      status INTEGER DEFAULT 0,
-      FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE,
-      FOREIGN KEY (collection_id) REFERENCES collections (id) ON DELETE SET NULL
+      id             TEXT PRIMARY KEY,
+      language_id    TEXT NOT NULL,
+      collection_id  TEXT,
+      title          TEXT NOT NULL,
+      content        TEXT NOT NULL,
+      source_uri     TEXT,
+      created_at     TEXT NOT NULL,
+      last_read      TEXT NOT NULL,
+      position       INTEGER DEFAULT 0,
+      sort_order     INTEGER DEFAULT 0,
+      cover_image_id TEXT,
+      status         INTEGER DEFAULT 0,
+      FOREIGN KEY (language_id)    REFERENCES languages (id)    ON DELETE CASCADE,
+      FOREIGN KEY (collection_id)  REFERENCES collections (id)  ON DELETE SET NULL,
+      FOREIGN KEY (cover_image_id) REFERENCES cover_images (id) ON DELETE SET NULL
     )
   ''');
 
@@ -792,16 +922,17 @@ Future<void> onCreate(Database db, int version) async {
 
   await db.execute('''
     CREATE TABLE collections (
-      id TEXT PRIMARY KEY,
-      language_id TEXT NOT NULL,
-      name TEXT NOT NULL,
-      description TEXT,
-      parent_id TEXT,
-      created_at TEXT NOT NULL,
-      sort_order INTEGER DEFAULT 0,
-      cover_image TEXT,
-      FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE,
-      FOREIGN KEY (parent_id) REFERENCES collections (id) ON DELETE CASCADE
+      id             TEXT PRIMARY KEY,
+      language_id    TEXT NOT NULL,
+      name           TEXT NOT NULL,
+      description    TEXT,
+      parent_id      TEXT,
+      created_at     TEXT NOT NULL,
+      sort_order     INTEGER DEFAULT 0,
+      cover_image_id TEXT,
+      FOREIGN KEY (language_id)    REFERENCES languages (id)    ON DELETE CASCADE,
+      FOREIGN KEY (parent_id)      REFERENCES collections (id)  ON DELETE CASCADE,
+      FOREIGN KEY (cover_image_id) REFERENCES cover_images (id) ON DELETE SET NULL
     )
   ''');
 

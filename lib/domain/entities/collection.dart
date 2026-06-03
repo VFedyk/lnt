@@ -6,7 +6,10 @@ class Collection {
   final String? parentId; // For nested folders
   final DateTime createdAt;
   final int sortOrder;
-  final String? coverImage; // Path to cover image
+  /// FK into the cover_images table. null when no cover is set.
+  final String? coverImageId;
+  /// Relative local path, populated via JOIN when reading. Not stored in collections table.
+  final String? coverImage;
 
   Collection({
     this.id,
@@ -16,6 +19,7 @@ class Collection {
     this.parentId,
     DateTime? createdAt,
     this.sortOrder = 0,
+    this.coverImageId,
     this.coverImage,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -28,7 +32,7 @@ class Collection {
       'parent_id': parentId,
       'created_at': createdAt.toIso8601String(),
       'sort_order': sortOrder,
-      'cover_image': coverImage,
+      'cover_image_id': coverImageId,
     };
   }
 
@@ -41,7 +45,8 @@ class Collection {
       parentId: map['parent_id'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       sortOrder: map['sort_order'] ?? 0,
-      coverImage: map['cover_image'] as String?,
+      coverImageId: map['cover_image_id'] as String?,
+      coverImage: map['cover_image'] as String?, // from LEFT JOIN alias
     );
   }
 
@@ -53,6 +58,8 @@ class Collection {
     String? parentId,
     DateTime? createdAt,
     int? sortOrder,
+    String? coverImageId,
+    bool clearCoverImageId = false,
     String? coverImage,
     bool clearCoverImage = false,
   }) {
@@ -64,6 +71,7 @@ class Collection {
       parentId: parentId ?? this.parentId,
       createdAt: createdAt ?? this.createdAt,
       sortOrder: sortOrder ?? this.sortOrder,
+      coverImageId: clearCoverImageId ? null : (coverImageId ?? this.coverImageId),
       coverImage: clearCoverImage ? null : (coverImage ?? this.coverImage),
     );
   }

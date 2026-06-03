@@ -5,6 +5,13 @@ import 'base_repository.dart';
 
 const _uuid = Uuid();
 
+// All reads JOIN cover_images so TextDocument.coverImage is always populated.
+const _select = '''
+  SELECT t.*, ci.local_path AS cover_image
+  FROM texts t
+  LEFT JOIN cover_images ci ON ci.id = t.cover_image_id
+''';
+
 class TextRepositoryImpl extends BaseRepository implements TextRepository {
   TextRepositoryImpl(super.getDatabase, {super.onChange});
 
@@ -12,7 +19,8 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
   Future<String> create(TextDocument text) async {
     final db = await getDatabase();
     final id = text.id ?? _uuid.v4();
-    await db.insert('texts', text.copyWith(id: id).toMap());
+    final coverImageId = await BaseRepository.getOrCreateCoverImageId(db, text.coverImage);
+    await db.insert('texts', text.copyWith(id: id, coverImageId: coverImageId).toMap());
     notifyChange();
     return id;
   }
@@ -21,20 +29,18 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
   Future<List<TextDocument>> getAll({String? languageId}) async {
     final db = await getDatabase();
     final maps = languageId != null
-        ? await db.query(
-            'texts',
-            where: 'language_id = ?',
-            whereArgs: [languageId],
-            orderBy: 'last_read DESC',
+        ? await db.rawQuery(
+            '$_select WHERE t.language_id = ? ORDER BY t.last_read DESC',
+            [languageId],
           )
-        : await db.query('texts', orderBy: 'last_read DESC');
+        : await db.rawQuery('$_select ORDER BY t.last_read DESC');
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
   @override
   Future<TextDocument?> getById(String id) async {
     final db = await getDatabase();
-    final maps = await db.query('texts', where: 'id = ?', whereArgs: [id]);
+    final maps = await db.rawQuery('$_select WHERE t.id = ?', [id]);
     if (maps.isEmpty) return null;
     return TextDocument.fromMap(maps.first);
   }
@@ -42,9 +48,11 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
   @override
   Future<int> update(TextDocument text) async {
     final db = await getDatabase();
+    final coverImageId = text.coverImageId ??
+        await BaseRepository.getOrCreateCoverImageId(db, text.coverImage);
     final result = await db.update(
       'texts',
-      text.toMap(),
+      text.copyWith(coverImageId: coverImageId).toMap(),
       where: 'id = ?',
       whereArgs: [text.id],
     );
@@ -65,7 +73,7 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
     final db = await getDatabase();
     final escaped = '%${BaseRepository.escapeLike(query)}%';
     final maps = await db.rawQuery(
-      r"SELECT * FROM texts WHERE language_id = ? AND (title LIKE ? ESCAPE '\' OR content LIKE ? ESCAPE '\') ORDER BY last_read DESC LIMIT 50",
+      "$_select WHERE t.language_id = ? AND (t.title LIKE ? ESCAPE '\\' OR t.content LIKE ? ESCAPE '\\') ORDER BY t.last_read DESC LIMIT 50",
       [languageId, escaped, escaped],
     );
     return maps.map((map) => TextDocument.fromMap(map)).toList();
@@ -116,10 +124,22 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
   @override
   Future<void> batchCreate(List<TextDocument> texts) async {
     final db = await getDatabase();
+
+    // Resolve cover_image_id for each unique path in one pass
+    final uniquePaths = texts
+        .map((t) => t.coverImage)
+        .whereType<String>()
+        .toSet();
+    final pathToId = <String, String>{};
+    for (final path in uniquePaths) {
+      pathToId[path] = (await BaseRepository.getOrCreateCoverImageId(db, path))!;
+    }
+
     final batch = db.batch();
     for (final text in texts) {
       final id = text.id ?? _uuid.v4();
-      batch.insert('texts', text.copyWith(id: id).toMap());
+      final coverImageId = text.coverImage != null ? pathToId[text.coverImage] : null;
+      batch.insert('texts', text.copyWith(id: id, coverImageId: coverImageId).toMap());
     }
     await batch.commit(noResult: true);
     notifyChange();
@@ -128,17 +148,18 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
   @override
   Future<List<TextDocument>> getByCollection(String collectionId) async {
     final db = await getDatabase();
-    final maps = await db.query(
-      'texts',
-      where: 'collection_id = ?',
-      whereArgs: [collectionId],
-      orderBy: 'sort_order ASC, title ASC',
+    final maps = await db.rawQuery(
+      '$_select WHERE t.collection_id = ? ORDER BY t.sort_order ASC, t.title ASC',
+      [collectionId],
     );
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
   @override
-  Future<Map<String, int>> getCompletedCountsByDay(String languageId, String sinceIso) async {
+  Future<Map<String, int>> getCompletedCountsByDay(
+    String languageId,
+    String sinceIso,
+  ) async {
     final db = await getDatabase();
     final result = await db.rawQuery(
       '''
@@ -153,27 +174,27 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
   }
 
   @override
-  Future<List<TextDocument>> getRecentlyAdded(String languageId, {int limit = 5}) async {
+  Future<List<TextDocument>> getRecentlyAdded(
+    String languageId, {
+    int limit = 5,
+  }) async {
     final db = await getDatabase();
-    final maps = await db.query(
-      'texts',
-      where: 'language_id = ?',
-      whereArgs: [languageId],
-      orderBy: 'created_at DESC',
-      limit: limit,
+    final maps = await db.rawQuery(
+      '$_select WHERE t.language_id = ? ORDER BY t.created_at DESC LIMIT ?',
+      [languageId, limit],
     );
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
 
   @override
-  Future<List<TextDocument>> getRecentlyRead(String languageId, {int limit = 5}) async {
+  Future<List<TextDocument>> getRecentlyRead(
+    String languageId, {
+    int limit = 5,
+  }) async {
     final db = await getDatabase();
-    final maps = await db.query(
-      'texts',
-      where: 'language_id = ? AND status IN (1, 2)',
-      whereArgs: [languageId],
-      orderBy: 'last_read DESC',
-      limit: limit,
+    final maps = await db.rawQuery(
+      '$_select WHERE t.language_id = ? AND t.status IN (1, 2) ORDER BY t.last_read DESC LIMIT ?',
+      [languageId, limit],
     );
     return maps.map((map) => TextDocument.fromMap(map)).toList();
   }
