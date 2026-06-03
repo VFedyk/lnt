@@ -121,6 +121,35 @@ class SyncApi {
     return json['last_seq'] as int;
   }
 
+  Future<List<String>> checkImages(String userId, List<String> hashes) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/v1/users/$userId/images/check'),
+      headers: _headers,
+      body: jsonEncode({'hashes': hashes}),
+    );
+    _checkStatus(res);
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    return (json['missing'] as List).cast<String>();
+  }
+
+  Future<void> uploadImage(String userId, String hash, List<int> bytes) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/v1/users/$userId/images/$hash'),
+      headers: {'Content-Type': 'application/octet-stream'},
+      body: bytes,
+    );
+    _checkStatus(res);
+  }
+
+  Future<List<int>?> downloadImage(String userId, String hash) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/api/v1/users/$userId/images/$hash'),
+    );
+    if (res.statusCode == 404) return null;
+    _checkStatus(res);
+    return res.bodyBytes;
+  }
+
   Future<PullResponse> pullEvents(String userId, {int since = 0, String? domain}) async {
     final query = {
       'since': since.toString(),

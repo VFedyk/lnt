@@ -1,5 +1,9 @@
+import 'dart:io';
 import 'dart:math';
 
+import 'package:crypto/crypto.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../data/datasources/database_service.dart';
@@ -65,37 +69,33 @@ class SyncService {
 
     final rawDb = await _db.database;
     for (final event in response.events) {
-      await _applyEvent(rawDb, event);
+      await _applyEvent(rawDb, event, api, userId);
     }
 
     await _settings.setSyncLastPulledSeq(response.latestSeq);
     _changes.notifyAll();
   }
 
-  Future<void> _applyEvent(Database rawDb, RemoteSyncEvent event) async {
-    final p = event.payload;
+  Future<void> _applyEvent(Database rawDb, RemoteSyncEvent event, SyncApi api, String userId) async {
+    final payload = event.payload;
     switch (event.domain) {
       case 'language':
         await rawDb.insert(
           'languages',
-          _withId(p, event.entityId),
+          _withId(payload, event.entityId),
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       case 'collection':
-        await rawDb.insert(
-          'collections',
-          _withId(p, event.entityId),
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        final row = _withId(payload, event.entityId);
+        row['cover_image'] = await _resolveCoverImage(api, userId, payload['cover_image'] as String?);
+        await rawDb.insert('collections', row, conflictAlgorithm: ConflictAlgorithm.replace);
       case 'text':
-        await rawDb.insert(
-          'texts',
-          _withId(p, event.entityId),
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        final row = _withId(payload, event.entityId);
+        row['cover_image'] = await _resolveCoverImage(api, userId, payload['cover_image'] as String?);
+        await rawDb.insert('texts', row, conflictAlgorithm: ConflictAlgorithm.replace);
       case 'term':
-        final translations = p['translations'] as List<dynamic>?;
-        final termRow = Map<String, dynamic>.from(p)..remove('translations');
+        final translations = payload['translations'] as List<dynamic>?;
+        final termRow = Map<String, dynamic>.from(payload)..remove('translations');
         await rawDb.insert(
           'terms',
           _withId(termRow, event.entityId),
@@ -118,23 +118,31 @@ class SyncService {
       case 'review_log':
         await rawDb.insert(
           'review_logs',
-          _withId(p, event.entityId),
+          _withId(payload, event.entityId),
           conflictAlgorithm: ConflictAlgorithm.ignore,
         );
       case 'term_status_log':
         await rawDb.insert(
           'term_status_log',
-          _withId(p, event.entityId),
+          _withId(payload, event.entityId),
           conflictAlgorithm: ConflictAlgorithm.ignore,
         );
     }
+  }
+
+  /// If [value] is a "hash.ext" ref, download and return local relative path.
+  /// If it's already a local path (or null), return it unchanged.
+  Future<String?> _resolveCoverImage(SyncApi api, String userId, String? value) async {
+    if (value == null || value.isEmpty) return null;
+    if (_isImageRef(value)) return await _downloadCoverImage(api, userId, value);
+    return value; // already a local path
   }
 
   Map<String, dynamic> _withId(Map<String, dynamic> map, String id) {
     return {...map, 'id': id};
   }
 
-  Future<void> _push(
+Future<void> _push(
     SyncApi api,
     String userId,
     String deviceId,
@@ -143,10 +151,13 @@ class SyncService {
     final rawDb = await _db.database;
     final sinceStr = lastPushedAt?.toIso8601String();
     final events = <EventInput>[];
+    // Deduplicates cover uploads within a sync run (same image on every EPUB chapter).
+    // Key: relative path → "hash.ext" already uploaded this run.
+    final imageCache = <String, String?>{};
 
     await _collectLanguages(rawDb, events);
-    await _collectCollections(rawDb, events, sinceStr);
-    await _collectTexts(rawDb, events, sinceStr);
+    await _collectCollections(rawDb, events, sinceStr, api, userId, imageCache);
+    await _collectTexts(rawDb, events, sinceStr, api, userId, imageCache);
     await _collectTerms(rawDb, events, sinceStr);
     await _collectReviewLogs(rawDb, events, sinceStr);
     await _collectStatusLogs(rawDb, events, sinceStr);
@@ -181,6 +192,9 @@ class SyncService {
     Database rawDb,
     List<EventInput> events,
     String? sinceStr,
+    SyncApi api,
+    String userId,
+    Map<String, String?> imageCache,
   ) async {
     final rows = sinceStr != null
         ? await rawDb.query('collections', where: 'created_at > ?', whereArgs: [sinceStr])
@@ -188,7 +202,8 @@ class SyncService {
     for (final row in rows) {
       final id = row['id'] as String?;
       if (id == null) continue;
-      final payload = Map<String, dynamic>.from(row)..remove('cover_image');
+      final payload = Map<String, dynamic>.from(row);
+      payload['cover_image'] = await _uploadCoverImage(api, userId, row['cover_image'] as String?, imageCache);
       events.add(EventInput(
         domain: 'collection',
         entityId: id,
@@ -202,6 +217,9 @@ class SyncService {
     Database rawDb,
     List<EventInput> events,
     String? sinceStr,
+    SyncApi api,
+    String userId,
+    Map<String, String?> imageCache,
   ) async {
     final rows = sinceStr != null
         ? await rawDb.query('texts', where: 'created_at > ?', whereArgs: [sinceStr])
@@ -209,7 +227,8 @@ class SyncService {
     for (final row in rows) {
       final id = row['id'] as String?;
       if (id == null) continue;
-      final payload = Map<String, dynamic>.from(row)..remove('cover_image');
+      final payload = Map<String, dynamic>.from(row);
+      payload['cover_image'] = await _uploadCoverImage(api, userId, row['cover_image'] as String?, imageCache);
       events.add(EventInput(
         domain: 'text',
         entityId: id,
@@ -217,6 +236,77 @@ class SyncService {
         clientTs: DateTime.parse(row['created_at'] as String).toUtc(),
       ));
     }
+  }
+
+  /// Uploads a cover image to the server if not already there.
+  /// Returns "sha256hex.ext" (e.g. "abc...f.png") to store in payload, or null.
+  /// [imageCache] deduplicates within a sync run — same path is processed only once.
+  Future<String?> _uploadCoverImage(
+    SyncApi api,
+    String userId,
+    String? relativePath,
+    Map<String, String?> imageCache,
+  ) async {
+    if (relativePath == null || relativePath.isEmpty) return null;
+    if (imageCache.containsKey(relativePath)) return imageCache[relativePath];
+
+    final absPath = await _resolveLocalPath(relativePath);
+    final file = File(absPath);
+    if (!file.existsSync()) return imageCache[relativePath] = null;
+
+    final bytes = await file.readAsBytes();
+    final hash = sha256.convert(bytes).toString();
+    final ext = p.extension(relativePath).toLowerCase();
+    final ref = '$hash$ext';
+
+    final missing = await api.checkImages(userId, [hash]);
+    if (missing.contains(hash)) {
+      await api.uploadImage(userId, hash, bytes);
+    }
+    return imageCache[relativePath] = ref;
+  }
+
+  /// Downloads a cover image from the server and saves it locally.
+  /// [ref] is "sha256hex.ext". Returns the relative path for the DB, or null.
+  Future<String?> _downloadCoverImage(SyncApi api, String userId, String ref) async {
+    final hash = _hashFromRef(ref);
+    final ext = _extFromRef(ref);
+    final appDir = await getApplicationDocumentsDirectory();
+    final relPath = p.join('covers', '$hash$ext');
+    final absPath = p.join(appDir.path, relPath);
+
+    if (File(absPath).existsSync()) return relPath; // already cached
+
+    final bytes = await api.downloadImage(userId, hash);
+    if (bytes == null) return null;
+
+    final coversDir = Directory(p.join(appDir.path, 'covers'));
+    if (!coversDir.existsSync()) await coversDir.create(recursive: true);
+    await File(absPath).writeAsBytes(bytes);
+    return relPath;
+  }
+
+  Future<String> _resolveLocalPath(String relativePath) async {
+    if (relativePath.startsWith('/')) return relativePath;
+    final appDir = await getApplicationDocumentsDirectory();
+    return p.join(appDir.path, relativePath);
+  }
+
+  // "sha256hex" or "sha256hex.ext" — hash part is always 64 lowercase hex chars
+  bool _isImageRef(String? value) {
+    if (value == null) return false;
+    final hashPart = value.contains('.') ? value.substring(0, value.indexOf('.')) : value;
+    return hashPart.length == 64 && RegExp(r'^[0-9a-f]+$').hasMatch(hashPart);
+  }
+
+  String _hashFromRef(String ref) {
+    final dot = ref.indexOf('.');
+    return dot == -1 ? ref : ref.substring(0, dot);
+  }
+
+  String _extFromRef(String ref) {
+    final dot = ref.lastIndexOf('.');
+    return dot == -1 ? '.jpg' : ref.substring(dot);
   }
 
   Future<void> _collectTerms(
