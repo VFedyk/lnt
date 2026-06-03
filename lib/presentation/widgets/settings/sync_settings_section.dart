@@ -53,6 +53,11 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
     if (mounted) SnackbarHelpers.showSuccess(context, 'Sync settings saved');
   }
 
+  Future<void> _fullSync() async {
+    await settings.clearSyncState();
+    await _sync();
+  }
+
   Future<void> _sync() async {
     setState(() {
       _syncing = true;
@@ -149,6 +154,11 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
                     onPressed: _syncing ? null : _sync,
                     icon: const Icon(Icons.sync),
                     label: const Text('Sync now'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _syncing ? null : _fullSync,
+                    icon: const Icon(Icons.sync_problem),
+                    label: const Text('Full sync'),
                   ),
                 ],
               ),
