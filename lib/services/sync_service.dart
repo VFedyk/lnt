@@ -79,11 +79,13 @@ class SyncService {
     if (response.events.isEmpty) return;
 
     final total = response.events.length;
-    _report(onProgress, 0.20, 'Applying $total events…');
-
     final rawDb = await _db.database;
-    for (final event in response.events) {
-      await _applyEvent(rawDb, event, api, userId);
+    // Cache ref → cover_image_id so the same image is only downloaded/queried once.
+    final imageRefCache = <String, String?>{};
+
+    for (int i = 0; i < total; i++) {
+      await _applyEvent(rawDb, response.events[i], api, userId, imageRefCache);
+      _report(onProgress, 0.20 + (i + 1) / total * 0.20, 'Applying events (${i + 1}/$total)…');
     }
 
     await _settings.setSyncLastPulledSeq(response.latestSeq);
@@ -95,6 +97,7 @@ class SyncService {
     RemoteSyncEvent event,
     SyncApi api,
     String userId,
+    Map<String, String?> imageRefCache,
   ) async {
     final payload = event.payload;
     switch (event.domain) {
@@ -114,6 +117,7 @@ class SyncService {
           ref: payload['cover_image'] as String?,
           table: 'collections',
           entityId: event.entityId,
+          cache: imageRefCache,
         );
         await rawDb.insert('collections', row, conflictAlgorithm: ConflictAlgorithm.replace);
       case 'text':
@@ -126,6 +130,7 @@ class SyncService {
           ref: payload['cover_image'] as String?,
           table: 'texts',
           entityId: event.entityId,
+          cache: imageRefCache,
         );
         await rawDb.insert('texts', row, conflictAlgorithm: ConflictAlgorithm.replace);
       case 'term':
@@ -164,9 +169,8 @@ class SyncService {
   /// Returns the cover_image_id to store on a pulled entity row.
   ///
   /// Priority:
-  /// 1. If [ref] is a valid image ref, download and register it → use that ID.
-  /// 2. Otherwise (no ref or download failed) fall back to the existing local
-  ///    cover_image_id so we don't erase a cover the user already has.
+  /// 1. If [ref] is a valid image ref, resolve via [cache] (download + register on miss).
+  /// 2. Otherwise fall back to the existing local cover_image_id.
   Future<String?> _resolveCoverImageId(
     Database rawDb,
     SyncApi api,
@@ -174,9 +178,12 @@ class SyncService {
     required String? ref,
     required String table,
     required String entityId,
+    required Map<String, String?> cache,
   }) async {
     if (ref != null && _isImageRef(ref)) {
+      if (cache.containsKey(ref)) return cache[ref];
       final id = await _downloadAndRegisterCoverImage(rawDb, api, userId, ref);
+      cache[ref] = id;
       if (id != null) return id;
     }
     // Fall back to whatever the local row currently has.
