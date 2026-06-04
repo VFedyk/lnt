@@ -87,14 +87,16 @@ class SyncService {
     final imageRefCache = <String, String?>{};
     int cursor = since;
     int? latestSeq;
-    bool firstPage = true;
+    int page = 1;
+    int totalReceived = 0;
 
     while (true) {
-      _report(onProgress, 0.10, firstPage ? 'Pulling events…' : 'Pulling events (page 2+)…');
+      _report(onProgress, 0.10,
+          page == 1 ? 'Pulling events…' : 'Pulling events (page $page, $totalReceived received)…');
       final response = await api.pullEvents(
         userId,
         since: cursor,
-        onProgress: firstPage
+        onProgress: page == 1
             ? (fraction) => _report(
                 onProgress,
                 0.10 + fraction * 0.10,
@@ -102,22 +104,24 @@ class SyncService {
               )
             : null,
       );
-      firstPage = false;
       if (response.events.isEmpty) break;
       latestSeq = response.latestSeq;
+      totalReceived += response.events.length;
+      page++;
 
       await _imageService.prefetchImageRefs(
           rawDb, api, userId, response.events, imageRefCache, onProgress);
 
-      final total = response.events.length;
-      for (int i = 0; i < total; i++) {
+      final pageEvents = response.events.length;
+      final alreadyApplied = totalReceived - pageEvents;
+      for (int i = 0; i < pageEvents; i++) {
         final event = response.events[i];
         try {
           await _pullService.applyEvent(rawDb, event, api, userId, imageRefCache);
         } catch (e, st) {
           debugPrint('SyncService: skipped event seq=${event.seq} domain=${event.domain}: $e\n$st');
         }
-        _report(onProgress, 0.20 + (i + 1) / total * 0.20, 'Applying events (${i + 1}/$total)…');
+        _report(onProgress, null, 'Applying events (${alreadyApplied + i + 1}/$totalReceived)…');
       }
 
       cursor = response.events.last.seq;
