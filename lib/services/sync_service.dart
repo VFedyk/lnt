@@ -37,7 +37,8 @@ class SyncService {
         _settings = settings,
         _changes = changes;
 
-  SyncApi _api(String serverUrl) => SyncApi(serverUrl);
+  SyncApi _unauthApi(String serverUrl) => SyncApi(serverUrl);
+  SyncApi _authApi(String serverUrl, String token) => SyncApi.withToken(serverUrl, token);
 
   /// Resets all sync cursors and clears image upload state, then does a full sync.
   Future<void> fullSync({SyncProgressCallback? onProgress}) async {
@@ -60,8 +61,10 @@ class SyncService {
 
     _report(onProgress, 0.00, 'Connecting…');
 
-    final api = _api(serverUrl);
-    final userId = await _resolveUserId(api, nickname);
+    // Resolve returns a token; use an unauthenticated client for this one call.
+    final userId = await _resolveUserId(_unauthApi(serverUrl), nickname);
+    final token = (await _settings.getSyncToken())!;
+    final api = _authApi(serverUrl, token);
     final deviceId = await _settings.getSyncDeviceId();
 
     final lastPulledSeq = await _settings.getSyncLastPulledSeq();
@@ -169,10 +172,15 @@ class SyncService {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   Future<String> _resolveUserId(SyncApi api, String nickname) async {
-    var cached = await _settings.getSyncUserId();
-    if (cached != null && cached.isNotEmpty) return cached;
-    final userId = await api.resolveUser(nickname);
+    final cachedId = await _settings.getSyncUserId();
+    final cachedToken = await _settings.getSyncToken();
+    if (cachedId != null && cachedId.isNotEmpty &&
+        cachedToken != null && cachedToken.isNotEmpty) {
+      return cachedId;
+    }
+    final (userId, token) = await api.resolveUser(nickname);
     await _settings.setSyncUserId(userId);
+    await _settings.setSyncToken(token);
     return userId;
   }
 

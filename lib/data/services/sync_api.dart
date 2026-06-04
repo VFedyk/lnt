@@ -101,12 +101,18 @@ class PullResponse {
 
 class SyncApi {
   final String baseUrl;
+  final String? _token;
 
-  SyncApi(this.baseUrl);
+  /// Create an unauthenticated client (for /users/resolve only).
+  SyncApi(this.baseUrl) : _token = null;
+
+  /// Create an authenticated client that includes `Authorization: Bearer <token>`.
+  SyncApi.withToken(this.baseUrl, String token) : _token = token;
 
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    if (_token != null) 'Authorization': 'Bearer $_token',
   };
 
   void _checkStatus(http.Response res) {
@@ -115,7 +121,8 @@ class SyncApi {
     }
   }
 
-  Future<String> resolveUser(String nickname) => _retry(() async {
+  /// Returns (userId, bearerToken). Use an unauthenticated [SyncApi] instance.
+  Future<(String userId, String token)> resolveUser(String nickname) => _retry(() async {
     final res = await http
         .post(
           Uri.parse('$baseUrl/api/v1/users/resolve'),
@@ -125,7 +132,7 @@ class SyncApi {
         .timeout(_kTimeout);
     _checkStatus(res);
     final json = jsonDecode(res.body) as Map<String, dynamic>;
-    return json['user_id'] as String;
+    return (json['user_id'] as String, json['token'] as String);
   });
 
   // Not retried: pushing the same batch twice would duplicate events on the server.

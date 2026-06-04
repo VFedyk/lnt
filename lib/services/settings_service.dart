@@ -264,6 +264,7 @@ class SettingsService {
   static const String _syncServerUrlKey = 'sync_server_url';
   static const String _syncNicknameKey = 'sync_nickname';
   static const String _syncUserIdKey = 'sync_user_id';
+  static const String _syncTokenKey = 'sync_token';
   static const String _syncDeviceIdKey = 'sync_device_id';
   static const String _syncLastPulledSeqKey = 'sync_last_pulled_seq';
   static const String _syncLastPushedAtKey = 'sync_last_pushed_at';
@@ -307,6 +308,16 @@ class SettingsService {
     await prefs.setString(_syncUserIdKey, userId);
   }
 
+  Future<String?> getSyncToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_syncTokenKey);
+  }
+
+  Future<void> setSyncToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_syncTokenKey, token);
+  }
+
   /// Returns a stable per-device UUID, generating one on first call.
   Future<String> getSyncDeviceId() async {
     final prefs = await SharedPreferences.getInstance();
@@ -342,6 +353,7 @@ class SettingsService {
   Future<void> clearSyncState() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_syncUserIdKey);
+    await prefs.remove(_syncTokenKey);
     await prefs.remove(_syncLastPulledSeqKey);
     await prefs.remove(_syncLastPushedAtKey);
   }

@@ -134,9 +134,63 @@ flutter build macos          # Build macOS
 - **AiExplanationService**: AI-powered word/phrase explanations; supports OpenAI, Anthropic, and Ollama backends. Not registered as a singleton — instantiated where needed. Settings managed via `ai_settings_section.dart`.
 - **Radicals** (`lib/utils/radicals.dart`): `Radical` class + `kRadicals` constant with all 214 Kangxi radicals. Progress tracked via `RadicalProgressRepositoryImpl` and `dataChanges.radicalProgress`.
 
+## Sync layer
+
+Sync with `lnt-server` (sibling project at `../lnt-server`) is split across four services in `lib/services/`:
+
+| File | Responsibility |
+|---|---|
+| `sync_service.dart` | Orchestrator: `sync()` / `fullSync()`; creates API clients; drives pull → push pipeline |
+| `sync_image_service.dart` | Image upload (push) and download/register (pull); `prefetchImageRefs`, `syncCoverImages`, `resolveCoverImageId` |
+| `sync_push_service.dart` | Collects local DB rows into `EventInput` batches: `collect{Languages,Collections,Texts,Terms,ReviewLogs,StatusLogs}` |
+| `sync_pull_service.dart` | Applies remote events to local DB: `applyEvent`, `validatePayload` |
+
+### SyncApi (`lib/data/services/sync_api.dart`)
+
+- `SyncApi(baseUrl)` — unauthenticated; use **only** for `resolveUser()`.
+- `SyncApi.withToken(baseUrl, token)` — authenticated; adds `Authorization: Bearer <token>` to all requests.
+
+`resolveUser()` returns `(String userId, String token)`. The token is persisted in `SettingsService` under `sync_token` and passed to `SyncApi.withToken` on every subsequent sync. Clearing the token (via `clearSyncState()` or changing nickname) forces a fresh resolve.
+
+All calls except `pushEvents` retry up to 3× on transient network errors with exponential backoff. `pushEvents` has a timeout but **no retry** — retrying a push would duplicate events server-side.
+
+### Pull phase (pagination-aware)
+
+1. Loop `api.pullEvents(userId, since: cursor, limit: 1000)` until `events` is empty.
+2. Before applying each page: `imageService.prefetchImageRefs` downloads all referenced cover images in parallel (concurrency 4) into `imageRefCache`.
+3. Apply each event via `pullService.applyEvent`; catch exceptions per-event so one bad event doesn't abort the whole pull.
+4. Advance cursor to `events.last.seq`; persist `latestSeq` when done.
+
+`applyEvent` uses `ConflictAlgorithm.replace` for LWW domains (`language/collection/text/term`) and `ConflictAlgorithm.ignore` for append-only logs. The `term` domain wraps delete-old-translations + insert-new-translations in a **sqflite transaction** to prevent partial writes leaving a term with no translations.
+
+### Push phase
+
+1. `imageService.syncCoverImages`: SHA-256-hash unsynced cover images, batch-check server, upload missing in parallel (concurrency 4), persist `sync_hash`.
+2. `pushService.collect*`: query local tables filtered by `lastPushedAt`.
+3. Push in batches of 200 via `api.pushEvents`.
+
+### Settings keys (SharedPreferences)
+
+| Key | Purpose |
+|---|---|
+| `sync_server_url` | Base URL of lnt-server |
+| `sync_nickname` | User's nickname |
+| `sync_user_id` | UUID from server (cached after first resolve) |
+| `sync_token` | Bearer token (cached after first resolve; cleared with sync state) |
+| `sync_device_id` | Stable per-install UUID |
+| `sync_last_pulled_seq` | Server seq cursor for next pull |
+| `sync_last_pushed_at` | Milliseconds epoch; used to filter push queries |
+
+### Error UX (`sync_settings_section.dart`)
+
+`_syncErrorMessage(e)` maps to user-readable strings:
+- `SyncApiException` → `"Server error (N): …"` (shows HTTP status)
+- `SocketException` / `TimeoutException` → `"Network error — check your connection and server URL"`
+- Everything else → `"Sync failed: $e"`
+
 ## Testing
 
-- **Command**: `flutter test` — runs all 133 tests in ~2-3 seconds
+- **Command**: `flutter test` — runs all 151 tests in ~2-3 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
 - **Verification**: Use exit code pattern to avoid parsing verbose output:
   ```bash
@@ -147,6 +201,7 @@ flutter build macos          # Build macOS
   - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier, Chinese segmentation)
   - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping)
   - `test/controllers/` — Screen controllers (LibraryController listener lifecycle and CRUD delegation)
+  - `test/services/sync_service_test.dart` — Sync layer: `validatePayload` (all domains), `applyEvent` (LWW replace, ignore-duplicate, term atomicity), collectors with timestamp windowing; uses `sqflite_common_ffi` in-memory DB with full v21 schema
   - Widget tests are not yet comprehensive (default `widget_test.dart` is a leftover)
 - **Platform notes**: Tests use `sqflite_common_ffi` for in-memory SQLite on all platforms (no platform-specific setup required)
 - **Running specific tests**: `flutter test test/services/review_service_test.dart`
