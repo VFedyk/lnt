@@ -1,5 +1,28 @@
+import 'dart:async' show TimeoutException;
 import 'dart:convert' show jsonDecode, jsonEncode, utf8;
+import 'dart:io' show SocketException;
 import 'package:http/http.dart' as http;
+
+const _kTimeout = Duration(seconds: 30);
+
+/// Retries [fn] up to 3 times on transient network errors (socket / timeout),
+/// backing off 1 s → 2 s between attempts. Not used for mutating calls that
+/// are not idempotent (push events).
+Future<T> _retry<T>(Future<T> Function() fn) async {
+  var delay = const Duration(seconds: 1);
+  for (var attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await fn();
+    } on SocketException {
+      if (attempt == 2) rethrow;
+    } on TimeoutException {
+      if (attempt == 2) rethrow;
+    }
+    await Future<void>.delayed(delay);
+    delay *= 2;
+  }
+  throw StateError('unreachable');
+}
 
 class SyncApiException implements Exception {
   final int statusCode;
@@ -92,79 +115,95 @@ class SyncApi {
     }
   }
 
-  Future<String> resolveUser(String nickname) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/api/v1/users/resolve'),
-      headers: _headers,
-      body: jsonEncode({'nickname': nickname}),
-    );
+  Future<String> resolveUser(String nickname) => _retry(() async {
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/api/v1/users/resolve'),
+          headers: _headers,
+          body: jsonEncode({'nickname': nickname}),
+        )
+        .timeout(_kTimeout);
     _checkStatus(res);
     final json = jsonDecode(res.body) as Map<String, dynamic>;
     return json['user_id'] as String;
-  }
+  });
 
+  // Not retried: pushing the same batch twice would duplicate events on the server.
   Future<int> pushEvents(
     String userId,
     String deviceId,
     List<EventInput> events,
   ) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/api/v1/users/$userId/events'),
-      headers: _headers,
-      body: jsonEncode({
-        'device_id': deviceId,
-        'events': events.map((e) => e.toJson()).toList(),
-      }),
-    );
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/api/v1/users/$userId/events'),
+          headers: _headers,
+          body: jsonEncode({
+            'device_id': deviceId,
+            'events': events.map((e) => e.toJson()).toList(),
+          }),
+        )
+        .timeout(_kTimeout);
     _checkStatus(res);
     final json = jsonDecode(res.body) as Map<String, dynamic>;
     return json['last_seq'] as int;
   }
 
-  Future<List<String>> checkImages(String userId, List<String> hashes) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/api/v1/users/$userId/images/check'),
-      headers: _headers,
-      body: jsonEncode({'hashes': hashes}),
-    );
-    _checkStatus(res);
-    final json = jsonDecode(res.body) as Map<String, dynamic>;
-    return (json['missing'] as List).cast<String>();
-  }
+  Future<List<String>> checkImages(String userId, List<String> hashes) =>
+      _retry(() async {
+        final res = await http
+            .post(
+              Uri.parse('$baseUrl/api/v1/users/$userId/images/check'),
+              headers: _headers,
+              body: jsonEncode({'hashes': hashes}),
+            )
+            .timeout(_kTimeout);
+        _checkStatus(res);
+        final json = jsonDecode(res.body) as Map<String, dynamic>;
+        return (json['missing'] as List).cast<String>();
+      });
 
-  Future<void> uploadImage(String userId, String hash, List<int> bytes) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/api/v1/users/$userId/images/$hash'),
-      headers: {'Content-Type': 'application/octet-stream'},
-      body: bytes,
-    );
-    _checkStatus(res);
-  }
+  // Idempotent: server uses INSERT OR IGNORE so duplicate uploads are safe.
+  Future<void> uploadImage(String userId, String hash, List<int> bytes) =>
+      _retry(() async {
+        final res = await http
+            .post(
+              Uri.parse('$baseUrl/api/v1/users/$userId/images/$hash'),
+              headers: {'Content-Type': 'application/octet-stream'},
+              body: bytes,
+            )
+            .timeout(_kTimeout);
+        _checkStatus(res);
+      });
 
-  Future<List<int>?> downloadImage(String userId, String hash) async {
-    final res = await http.get(
-      Uri.parse('$baseUrl/api/v1/users/$userId/images/$hash'),
-    );
-    if (res.statusCode == 404) return null;
-    _checkStatus(res);
-    return res.bodyBytes;
-  }
+  Future<List<int>?> downloadImage(String userId, String hash) =>
+      _retry(() async {
+        final res = await http
+            .get(Uri.parse('$baseUrl/api/v1/users/$userId/images/$hash'))
+            .timeout(_kTimeout);
+        if (res.statusCode == 404) return null;
+        _checkStatus(res);
+        return res.bodyBytes;
+      });
 
   Future<PullResponse> pullEvents(
     String userId, {
     int since = 0,
+    int limit = 1000,
     String? domain,
     void Function(double)? onProgress,
   }) async {
     final query = {
       'since': since.toString(),
+      'limit': limit.toString(),
       'domain': ?domain,
     };
     final uri = Uri.parse('$baseUrl/api/v1/users/$userId/events')
         .replace(queryParameters: query);
 
     final request = http.Request('GET', uri)..headers.addAll(_headers);
-    final streamed = await http.Client().send(request);
+    // Timeout on initial connection; per-chunk timeout guards against stalled streams.
+    final streamed = await http.Client().send(request).timeout(_kTimeout);
 
     if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
       throw SyncApiException(streamed.statusCode, 'pull failed');
@@ -174,7 +213,7 @@ class SyncApi {
     int received = 0;
     final chunks = <int>[];
 
-    await for (final chunk in streamed.stream) {
+    await for (final chunk in streamed.stream.timeout(_kTimeout)) {
       chunks.addAll(chunk);
       received += chunk.length;
       if (onProgress != null && contentLength != null && contentLength > 0) {

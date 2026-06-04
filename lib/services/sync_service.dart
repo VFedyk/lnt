@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
@@ -13,6 +14,7 @@ import '../data/services/sync_api.dart';
 import 'settings_service.dart';
 
 const _batchSize = 200;
+const _transferConcurrency = 4;
 const _uuid = Uuid();
 
 /// [progress] is 0.0–1.0 for determinate progress, or null for indeterminate.
@@ -83,27 +85,88 @@ class SyncService {
     int since,
     SyncProgressCallback? onProgress,
   ) async {
-    _report(onProgress, 0.10, 'Pulling events…');
-    final response = await api.pullEvents(
-      userId,
-      since: since,
-      onProgress: (fraction) =>
-          _report(onProgress, 0.10 + fraction * 0.10, 'Pulling events…'),
-    );
-    if (response.events.isEmpty) return;
-
-    final total = response.events.length;
     final rawDb = await _db.database;
-    // Cache ref → cover_image_id so the same image is only downloaded/queried once.
+    // Persists across pages so the same image ref is never downloaded twice.
     final imageRefCache = <String, String?>{};
+    int cursor = since;
+    int? latestSeq;
+    bool firstPage = true;
 
-    for (int i = 0; i < total; i++) {
-      await _applyEvent(rawDb, response.events[i], api, userId, imageRefCache);
-      _report(onProgress, 0.20 + (i + 1) / total * 0.20, 'Applying events (${i + 1}/$total)…');
+    while (true) {
+      _report(onProgress, 0.10, firstPage ? 'Pulling events…' : 'Pulling events (page 2+)…');
+      final response = await api.pullEvents(
+        userId,
+        since: cursor,
+        onProgress: firstPage
+            ? (fraction) => _report(
+                onProgress,
+                0.10 + fraction * 0.10,
+                'Pulling events (${(fraction * 100).round()}%)…',
+              )
+            : null,
+      );
+      firstPage = false;
+      if (response.events.isEmpty) break;
+      latestSeq = response.latestSeq;
+
+      // Pre-fetch all cover images referenced in this page before applying events.
+      // Deduped via imageRefCache; parallelised with bounded concurrency.
+      await _prefetchImageRefs(rawDb, api, userId, response.events, imageRefCache, onProgress);
+
+      final total = response.events.length;
+      for (int i = 0; i < total; i++) {
+        final event = response.events[i];
+        try {
+          await _applyEvent(rawDb, event, api, userId, imageRefCache);
+        } catch (e, st) {
+          debugPrint('SyncService: skipped event seq=${event.seq} domain=${event.domain}: $e\n$st');
+        }
+        _report(onProgress, 0.20 + (i + 1) / total * 0.20, 'Applying events (${i + 1}/$total)…');
+      }
+
+      cursor = response.events.last.seq;
     }
 
-    await _settings.setSyncLastPulledSeq(response.latestSeq);
-    _changes.notifyAll();
+    if (latestSeq != null) {
+      await _settings.setSyncLastPulledSeq(latestSeq);
+      _changes.notifyAll();
+    }
+  }
+
+  /// Downloads all cover image refs referenced in [events] that are not already
+  /// in [cache]. Downloads run in parallel, [_transferConcurrency] at a time.
+  Future<void> _prefetchImageRefs(
+    Database rawDb,
+    SyncApi api,
+    String userId,
+    List<RemoteSyncEvent> events,
+    Map<String, String?> cache,
+    SyncProgressCallback? onProgress,
+  ) async {
+    final newRefs = <String>{};
+    for (final event in events) {
+      if (event.domain == 'collection' || event.domain == 'text') {
+        final ref = event.payload['cover_image'] as String?;
+        if (ref != null && _isImageRef(ref) && !cache.containsKey(ref)) {
+          newRefs.add(ref);
+        }
+      }
+    }
+    if (newRefs.isEmpty) return;
+
+    final refs = newRefs.toList();
+    int done = 0;
+    for (int i = 0; i < refs.length; i += _transferConcurrency) {
+      final chunk = refs.sublist(i, min(i + _transferConcurrency, refs.length));
+      final results = await Future.wait(
+        chunk.map((ref) => _downloadAndRegisterCoverImage(rawDb, api, userId, ref)),
+      );
+      for (var j = 0; j < chunk.length; j++) {
+        cache[chunk[j]] = results[j];
+      }
+      done += chunk.length;
+      _report(onProgress, null, 'Downloading images ($done/${refs.length})…');
+    }
   }
 
   Future<void> _applyEvent(
@@ -113,6 +176,10 @@ class SyncService {
     String userId,
     Map<String, String?> imageRefCache,
   ) async {
+    if (!_validatePayload(event.domain, event.payload)) {
+      debugPrint('SyncService: invalid payload for domain=${event.domain} seq=${event.seq}');
+      return;
+    }
     final payload = event.payload;
     switch (event.domain) {
       case 'language':
@@ -150,21 +217,26 @@ class SyncService {
       case 'term':
         final translations = payload['translations'] as List<dynamic>?;
         final termRow = Map<String, dynamic>.from(payload)..remove('translations');
-        await rawDb.insert(
-          'terms',
-          _withId(termRow, event.entityId),
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-        if (translations != null) {
-          await rawDb.delete('translations', where: 'term_id = ?', whereArgs: [event.entityId]);
-          for (final t in translations) {
-            await rawDb.insert(
-              'translations',
-              Map<String, dynamic>.from(t as Map),
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
+        // Transaction ensures the term row and its translations land atomically.
+        // Without it, a mid-loop failure after deleting translations leaves a term
+        // with no translations — visible as a silent data loss to the user.
+        await rawDb.transaction((txn) async {
+          await txn.insert(
+            'terms',
+            _withId(termRow, event.entityId),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+          if (translations != null) {
+            await txn.delete('translations', where: 'term_id = ?', whereArgs: [event.entityId]);
+            for (final t in translations) {
+              await txn.insert(
+                'translations',
+                Map<String, dynamic>.from(t as Map),
+                conflictAlgorithm: ConflictAlgorithm.replace,
+              );
+            }
           }
-        }
+        });
       case 'review_log':
         await rawDb.insert(
           'review_logs',
@@ -307,12 +379,13 @@ class SyncService {
     final missing = await api.checkImages(userId, hashToBytes.keys.toList());
     final total = missing.length;
 
-    // Upload missing images one by one with progress
-    for (int i = 0; i < total; i++) {
-      final hash = missing[i];
-      await api.uploadImage(userId, hash, hashToBytes[hash]!);
-      _report(onProgress, 0.40 + (i + 1) / total * 0.15,
-          'Uploading images (${i + 1}/$total)…');
+    // Upload missing images with bounded concurrency.
+    int uploaded = 0;
+    for (int i = 0; i < total; i += _transferConcurrency) {
+      final chunk = missing.sublist(i, min(i + _transferConcurrency, total));
+      await Future.wait(chunk.map((hash) => api.uploadImage(userId, hash, hashToBytes[hash]!)));
+      uploaded += chunk.length;
+      _report(onProgress, 0.40 + uploaded / total * 0.15, 'Uploading images ($uploaded/$total)…');
     }
 
     // Persist sync_hash and update return map
@@ -535,6 +608,19 @@ class SyncService {
   String _extFromRef(String ref) {
     final dot = ref.lastIndexOf('.');
     return dot == -1 ? '.jpg' : ref.substring(dot);
+  }
+
+  bool _validatePayload(String domain, Map<String, dynamic> payload) {
+    switch (domain) {
+      case 'language': return payload['name'] != null;
+      case 'collection': return payload['language_id'] != null;
+      case 'text': return payload['language_id'] != null && payload['collection_id'] != null;
+      case 'term': return payload['language_id'] != null && payload['text'] != null;
+      case 'review_log': return payload['term_id'] != null && payload['reviewed_at'] != null;
+      case 'term_status_log':
+        return payload['term_id'] != null && payload['status'] != null && payload['changed_at'] != null;
+      default: return true;
+    }
   }
 
   Map<String, dynamic> _withId(Map<String, dynamic> map, String id) {
