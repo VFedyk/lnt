@@ -1,5 +1,9 @@
+import 'dart:async' show TimeoutException;
+import 'dart:io' show SocketException;
+
 import 'package:flutter/material.dart';
 
+import '../../../data/services/sync_api.dart' show SyncApiException;
 import '../../../service_locator.dart';
 import '../../../utils/constants.dart';
 import '../../../utils/snackbar_helpers.dart';
@@ -31,6 +35,16 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
     _serverUrlController.dispose();
     _nicknameController.dispose();
     super.dispose();
+  }
+
+  String _syncErrorMessage(Object e) {
+    if (e is SyncApiException) {
+      return 'Server error (${e.statusCode}): ${e.message}';
+    }
+    if (e is SocketException || e is TimeoutException) {
+      return 'Network error — check your connection and server URL';
+    }
+    return 'Sync failed: $e';
   }
 
   Future<void> _loadSettings() async {
@@ -72,7 +86,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
       });
       SnackbarHelpers.showSuccess(context, 'Full sync completed');
     } catch (e) {
-      if (mounted) SnackbarHelpers.showError(context, 'Sync failed: $e');
+      if (mounted) SnackbarHelpers.showError(context, _syncErrorMessage(e));
     } finally {
       if (mounted) setState(() { _syncing = false; _progress = null; _statusText = ''; });
     }
@@ -97,7 +111,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
       });
       SnackbarHelpers.showSuccess(context, 'Sync completed');
     } catch (e) {
-      if (mounted) SnackbarHelpers.showError(context, 'Sync failed: $e');
+      if (mounted) SnackbarHelpers.showError(context, _syncErrorMessage(e));
     } finally {
       if (mounted) setState(() { _syncing = false; _progress = null; _statusText = ''; });
     }
