@@ -170,13 +170,18 @@ class SyncApi {
         return (json['missing'] as List).cast<String>();
       });
 
+  Map<String, String> get _binaryHeaders => {
+    'Content-Type': 'application/octet-stream',
+    if (_token != null) 'Authorization': 'Bearer $_token',
+  };
+
   // Idempotent: server uses INSERT OR IGNORE so duplicate uploads are safe.
   Future<void> uploadImage(String userId, String hash, List<int> bytes) =>
       _retry(() async {
         final res = await http
             .post(
               Uri.parse('$baseUrl/api/v1/users/$userId/images/$hash'),
-              headers: {'Content-Type': 'application/octet-stream'},
+              headers: _binaryHeaders,
               body: bytes,
             )
             .timeout(_kTimeout);
@@ -186,7 +191,10 @@ class SyncApi {
   Future<List<int>?> downloadImage(String userId, String hash) =>
       _retry(() async {
         final res = await http
-            .get(Uri.parse('$baseUrl/api/v1/users/$userId/images/$hash'))
+            .get(
+              Uri.parse('$baseUrl/api/v1/users/$userId/images/$hash'),
+              headers: _headers,
+            )
             .timeout(_kTimeout);
         if (res.statusCode == 404) return null;
         _checkStatus(res);
