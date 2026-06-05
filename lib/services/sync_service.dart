@@ -71,8 +71,18 @@ class SyncService {
     await _pull(api, userId, lastPulledSeq, onProgress);
 
     final lastPushedAt = await _settings.getSyncLastPushedAt();
-    await _push(api, userId, deviceId, lastPushedAt, onProgress);
+    final pushLastSeq = await _push(api, userId, deviceId, lastPushedAt, onProgress);
     await _settings.setSyncLastPushedAt(DateTime.now().toUtc());
+
+    // Advance the pull cursor past the events we just pushed. Without this,
+    // the next pull would start from the pre-push seq and fetch all our own
+    // events back from the server.
+    if (pushLastSeq > 0) {
+      final pulledSeq = await _settings.getSyncLastPulledSeq();
+      if (pushLastSeq > pulledSeq) {
+        await _settings.setSyncLastPulledSeq(pushLastSeq);
+      }
+    }
   }
 
   // ── Pull ──────────────────────────────────────────────────────────────────
@@ -135,7 +145,8 @@ class SyncService {
 
   // ── Push ──────────────────────────────────────────────────────────────────
 
-  Future<void> _push(
+  /// Returns the highest seq the server assigned to the pushed batch (0 if nothing pushed).
+  Future<int> _push(
     SyncApi api,
     String userId,
     String deviceId,
@@ -157,21 +168,23 @@ class SyncService {
     await _pushService.collectReviewLogs(rawDb, events, sinceStr);
     await _pushService.collectStatusLogs(rawDb, events, sinceStr);
 
-    if (events.isEmpty) return;
+    if (events.isEmpty) return 0;
 
     final totalBatches = (events.length / _batchSize).ceil();
     _report(onProgress, 0.55, 'Pushing ${events.length} events…');
 
+    int lastSeq = 0;
     for (int i = 0; i < events.length; i += _batchSize) {
       final batchIndex = i ~/ _batchSize + 1;
       final batch = events.sublist(i, min(i + _batchSize, events.length));
-      await api.pushEvents(userId, deviceId, batch);
+      lastSeq = await api.pushEvents(userId, deviceId, batch);
       _report(
         onProgress,
         0.55 + (batchIndex / totalBatches) * 0.45,
         'Pushing events ($batchIndex/$totalBatches)…',
       );
     }
+    return lastSeq;
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
