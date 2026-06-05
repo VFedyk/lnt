@@ -82,6 +82,15 @@ class SyncPullService {
             }
           }
         });
+      case 'review_card':
+        // LWW: replace by id; ConflictAlgorithm.replace also handles the
+        // UNIQUE(term_id) constraint, so a card from another device that
+        // shares term_id but has a different id will replace the local one.
+        await rawDb.insert(
+          'review_cards',
+          withId(payload, event.entityId),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       case 'review_log':
         await rawDb.insert(
           'review_logs',
@@ -104,6 +113,7 @@ class SyncPullService {
       case 'collection': return payload['language_id'] != null;
       case 'text': return payload['language_id'] != null && payload['collection_id'] != null;
       case 'term': return payload['language_id'] != null && payload['text'] != null;
+      case 'review_card': return payload['term_id'] != null && payload['card_data'] != null;
       case 'review_log': return payload['term_id'] != null && payload['reviewed_at'] != null;
       case 'term_status_log':
         return payload['term_id'] != null &&

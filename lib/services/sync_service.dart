@@ -153,6 +153,7 @@ class SyncService {
     await _pushService.collectCollections(rawDb, events, sinceStr, coverRefs);
     await _pushService.collectTexts(rawDb, events, sinceStr, coverRefs);
     await _pushService.collectTerms(rawDb, events, sinceStr);
+    await _pushService.collectReviewCards(rawDb, events, sinceStr);
     await _pushService.collectReviewLogs(rawDb, events, sinceStr);
     await _pushService.collectStatusLogs(rawDb, events, sinceStr);
 

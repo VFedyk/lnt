@@ -161,7 +161,7 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 3. Apply each event via `pullService.applyEvent`; catch exceptions per-event so one bad event doesn't abort the whole pull.
 4. Advance cursor to `events.last.seq`; persist `latestSeq` when done.
 
-`applyEvent` uses `ConflictAlgorithm.replace` for LWW domains (`language/collection/text/term`) and `ConflictAlgorithm.ignore` for append-only logs. The `term` domain wraps delete-old-translations + insert-new-translations in a **sqflite transaction** to prevent partial writes leaving a term with no translations.
+`applyEvent` uses `ConflictAlgorithm.replace` for LWW domains (`language/collection/text/term/review_card`) and `ConflictAlgorithm.ignore` for append-only logs (`review_log/term_status_log`). The `term` domain wraps delete-old-translations + insert-new-translations in a **sqflite transaction** to prevent partial writes leaving a term with no translations.
 
 ### Push phase
 

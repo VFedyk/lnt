@@ -115,6 +115,25 @@ class SyncPushService {
     }
   }
 
+  Future<void> collectReviewCards(
+      Database rawDb, List<EventInput> events, String? sinceStr) async {
+    final rows = sinceStr != null
+        ? await rawDb.query('review_cards',
+            where: 'COALESCE(updated_at, created_at) > ?', whereArgs: [sinceStr])
+        : await rawDb.query('review_cards');
+    for (final row in rows) {
+      final id = row['id'] as String?;
+      if (id == null) continue;
+      events.add(EventInput(
+        domain: 'review_card',
+        entityId: id,
+        payload: Map<String, dynamic>.from(row),
+        clientTs: DateTime.parse(
+            (row['updated_at'] ?? row['created_at']) as String).toUtc(),
+      ));
+    }
+  }
+
   Future<void> collectStatusLogs(
       Database rawDb, List<EventInput> events, String? sinceStr) async {
     final rows = sinceStr != null
