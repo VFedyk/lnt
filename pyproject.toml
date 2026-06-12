@@ -1,0 +1,7 @@
+[project]
+name = "lnt"
+version = "0.1.0"
+description = "Stub project in order to use AI tools"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
