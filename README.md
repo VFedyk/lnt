@@ -1,8 +1,32 @@
 # LNT - Language Nerd Tools
 
-Yet another language learning application
-
 <img width="1840" height="1196" alt="image" src="https://github.com/user-attachments/assets/261a8d77-37f3-4ac8-9d05-4b7c620be2d8" />
+
+## Why LNT?
+
+Most language learning apps make one of two tradeoffs: they're either
+**flashcard-first** (great for drilling, poor for reading real content) or
+**reading-first** (great for immersion, but vocabulary review is an afterthought).
+LNT treats both as first-class citizens in a single offline, open-source app.
+
+|                                                   | Anki   | LingQ | Memrise | **LNT**    |
+| ------------------------------------------------- | ------ | ----- | ------- | ---------- |
+| Import any text / EPUB / URL                      | —      | ✓     | —       | ✓          |
+| Color-coded reader by vocab level                 | —      | ✓     | —       | ✓          |
+| FSRS spaced repetition                            | plugin | —     | —       | ✓ built-in |
+| Multiple review modes (MC, cloze, typing, stroke) | —      | —     | —       | ✓          |
+| Chinese stroke & radical practice                 | —      | —     | —       | ✓          |
+| AI-powered word explanations                      | —      | —     | —       | ✓          |
+| 100% local, no account required                   | ✓      | —     | —       | ✓          |
+| Open source & self-hostable                       | ✓      | —     | —       | ✓          |
+| Export to Anki / CSV                              | ✓      | —     | —       | ✓          |
+
+**LNT is for language learners who:**
+
+- Want to study from real content (articles, books, podcasts) — not pre-made decks
+- Care about owning their data and not paying a subscription
+- Are serious about Chinese (stroke order, radical practice, jieba segmentation)
+- Want FSRS scheduling without wrestling with Anki plugins
 
 ## Features
 
