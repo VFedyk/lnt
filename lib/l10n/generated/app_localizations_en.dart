@@ -959,6 +959,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressOverview => 'Progress Overview';
 
   @override
+  String get retention => 'Retention';
+
+  @override
+  String get retentionDescription =>
+      'Share of reviews you recalled correctly over the last 30 days.';
+
+  @override
+  String retentionReviewCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reviews',
+      one: '1 review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get noReviewsYet => 'No reviews yet';
+
+  @override
+  String get reviewForecast => 'Review forecast';
+
+  @override
+  String get nothingDueSoon => 'Nothing due soon';
+
+  @override
+  String cardsDueCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cards',
+      one: '1 card',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String percentKnown(String percent) {
     return '$percent% Known';
   }

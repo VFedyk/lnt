@@ -963,6 +963,48 @@ class AppLocalizationsUk extends AppLocalizations {
   String get progressOverview => 'Огляд прогресу';
 
   @override
+  String get retention => 'Утримання';
+
+  @override
+  String get retentionDescription =>
+      'Частка повторень, які ви правильно згадали за останні 30 днів.';
+
+  @override
+  String retentionReviewCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count повторення',
+      many: '$count повторень',
+      few: '$count повторення',
+      one: '1 повторення',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get noReviewsYet => 'Ще немає повторень';
+
+  @override
+  String get reviewForecast => 'Прогноз повторень';
+
+  @override
+  String get nothingDueSoon => 'Найближчим часом нічого немає';
+
+  @override
+  String cardsDueCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count картки',
+      many: '$count карток',
+      few: '$count картки',
+      one: '1 картка',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String percentKnown(String percent) {
     return '$percent% відомо';
   }

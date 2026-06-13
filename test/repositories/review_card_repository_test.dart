@@ -31,8 +31,8 @@ Future<void> _insertTerm(
   await db.insert('terms', {
     'id': id,
     'language_id': languageId,
-    'text': 't',
-    'lower_text': 't',
+    'text': id,
+    'lower_text': id,
     'status': status,
     'created_at': now,
     'last_accessed': now,
@@ -132,6 +132,52 @@ void main() {
       await _insertDueCard(repo, termId: 'ig');
       final due = await repo.getDueCards('lang-1');
       expect(due.map((c) => c.termId), isNot(contains('ig')));
+    });
+  });
+
+  group('getDueForecast', () {
+    late Database db;
+    late ReviewCardRepositoryImpl repo;
+
+    setUp(() async {
+      db = await _openTestDb();
+      repo = ReviewCardRepositoryImpl(() async => db);
+    });
+
+    tearDown(() async => db.close());
+
+    Future<void> insertCard(String termId, DateTime due) async {
+      await repo.create(ReviewCardRecord(
+        termId: termId,
+        cardData: fsrs.Card(cardId: 1, due: due).toMap(),
+        nextDue: due,
+        createdAt: due,
+        updatedAt: due,
+      ));
+    }
+
+    test('buckets upcoming cards and folds overdue into today', () async {
+      final now = DateTime.utc(2026, 6, 13, 12);
+      final today = DateTime.utc(2026, 6, 13);
+      await _insertTerm(db, id: 'a');
+      await _insertTerm(db, id: 'b');
+      await _insertTerm(db, id: 'c');
+      await _insertTerm(db, id: 'd');
+      await _insertTerm(db, id: 'e', status: TermStatus.ignored);
+
+      await insertCard('a', today.subtract(const Duration(days: 2))); // overdue
+      await insertCard('b', today.add(const Duration(hours: 5))); // today
+      await insertCard('c', today.add(const Duration(days: 3))); // +3 days
+      await insertCard('d', today.add(const Duration(days: 30))); // out of range
+      await insertCard('e', today); // ignored term
+
+      final forecast = await repo.getDueForecast('lang-1', days: 7, now: now);
+
+      expect(forecast.length, 7);
+      expect(forecast.first.count, 2); // overdue + today
+      expect(forecast[3].count, 1); // +3 days
+      // 'd' (out of range) and 'e' (ignored) are excluded.
+      expect(forecast.fold<int>(0, (s, d) => s + d.count), 3);
     });
   });
 }

@@ -1850,6 +1850,48 @@ abstract class AppLocalizations {
   /// **'Progress Overview'**
   String get progressOverview;
 
+  /// No description provided for @retention.
+  ///
+  /// In en, this message translates to:
+  /// **'Retention'**
+  String get retention;
+
+  /// No description provided for @retentionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Share of reviews you recalled correctly over the last 30 days.'**
+  String get retentionDescription;
+
+  /// No description provided for @retentionReviewCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 review} other{{count} reviews}}'**
+  String retentionReviewCount(int count);
+
+  /// No description provided for @noReviewsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No reviews yet'**
+  String get noReviewsYet;
+
+  /// No description provided for @reviewForecast.
+  ///
+  /// In en, this message translates to:
+  /// **'Review forecast'**
+  String get reviewForecast;
+
+  /// No description provided for @nothingDueSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing due soon'**
+  String get nothingDueSoon;
+
+  /// No description provided for @cardsDueCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 card} other{{count} cards}}'**
+  String cardsDueCount(int count);
+
   /// No description provided for @percentKnown.
   ///
   /// In en, this message translates to:

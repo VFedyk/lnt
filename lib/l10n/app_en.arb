@@ -490,6 +490,27 @@
   },
   "termsByStatus": "Terms by Status",
   "progressOverview": "Progress Overview",
+  "retention": "Retention",
+  "retentionDescription": "Share of reviews you recalled correctly over the last 30 days.",
+  "retentionReviewCount": "{count, plural, =1{1 review} other{{count} reviews}}",
+  "@retentionReviewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noReviewsYet": "No reviews yet",
+  "reviewForecast": "Review forecast",
+  "nothingDueSoon": "Nothing due soon",
+  "cardsDueCount": "{count, plural, =1{1 card} other{{count} cards}}",
+  "@cardsDueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "percentKnown": "{percent}% Known",
   "@percentKnown": {
     "placeholders": {

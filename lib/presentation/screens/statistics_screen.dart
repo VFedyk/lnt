@@ -8,6 +8,7 @@ import '../../service_locator.dart';
 import '../../services/logger_service.dart';
 import '../theme/app_theme.dart';
 import '../../utils/constants.dart';
+import '../widgets/statistics/due_forecast_chart.dart';
 import '../widgets/statistics/status_history_chart.dart';
 import '../../domain/value_objects/term_status.dart';
 
@@ -33,6 +34,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Map<int, int> _statusCounts = {};
   int _totalTerms = 0;
   int _totalTexts = 0;
+  ({int total, int recalled})? _retention;
+  List<({DateTime date, int count})> _forecast = [];
   bool _isLoading = true;
   String? _error;
 
@@ -72,12 +75,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       final counts = await db.terms.getCountsByStatus(widget.language.id!);
       final termCount = await db.terms.getTotalCount(widget.language.id!);
       final textCount = await db.texts.getCountByLanguage(widget.language.id!);
+      final retention = await db.reviewLogs.getRetention(widget.language.id!);
+      final forecast = await db.reviewCards.getDueForecast(widget.language.id!);
 
       if (mounted) {
         setState(() {
           _statusCounts = counts;
           _totalTerms = termCount;
           _totalTexts = textCount;
+          _retention = retention;
+          _forecast = forecast;
           _isLoading = false;
         });
       }
@@ -292,6 +299,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
             const SizedBox(height: AppConstants.spacingL),
 
+            // Review forecast
+            DueForecastChart(data: _forecast),
+            const SizedBox(height: AppConstants.spacingL),
+
+            // Retention
+            _buildRetentionCard(l10n),
+            const SizedBox(height: AppConstants.spacingL),
+
             // Terms by status bars
             Card(
               child: Padding(
@@ -406,6 +421,70 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                   ],
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRetentionCard(AppLocalizations l10n) {
+    final r = _retention;
+    final total = r?.total ?? 0;
+    final recalled = r?.recalled ?? 0;
+    final hasData = total > 0;
+    final rate = hasData ? recalled / total : 0.0;
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.spacingL),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.retention,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppConstants.spacingL),
+            if (!hasData)
+              Text(l10n.noReviewsYet, style: TextStyle(color: onSurfaceVariant))
+            else ...[
+              Text(
+                '${(rate * 100).toStringAsFixed(1)}%',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: context.appColors.success,
+                    ),
+              ),
+              const SizedBox(height: AppConstants.spacingS),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppConstants.borderRadiusS),
+                child: LinearProgressIndicator(
+                  value: rate,
+                  minHeight: _StatisticsConstants.progressBarHeight,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  valueColor:
+                      AlwaysStoppedAnimation(context.appColors.success),
+                ),
+              ),
+              const SizedBox(height: AppConstants.spacingS),
+              Text(
+                l10n.retentionReviewCount(total),
+                style: TextStyle(
+                  color: onSurfaceVariant,
+                  fontSize: AppConstants.fontSizeCaption,
+                ),
+              ),
+            ],
+            const SizedBox(height: AppConstants.spacingS),
+            Text(
+              l10n.retentionDescription,
+              style: TextStyle(
+                color: onSurfaceVariant,
+                fontSize: AppConstants.fontSizeCaption,
               ),
             ),
           ],

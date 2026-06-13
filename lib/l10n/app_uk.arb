@@ -292,6 +292,27 @@
   "continueReadingPrompt": "Бажаєте продовжити з наступним текстом?\n\n\"{title}\"",
   "termsByStatus": "Терміни за статусом",
   "progressOverview": "Огляд прогресу",
+  "retention": "Утримання",
+  "retentionDescription": "Частка повторень, які ви правильно згадали за останні 30 днів.",
+  "retentionReviewCount": "{count, plural, =1{1 повторення} few{{count} повторення} many{{count} повторень} other{{count} повторення}}",
+  "@retentionReviewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noReviewsYet": "Ще немає повторень",
+  "reviewForecast": "Прогноз повторень",
+  "nothingDueSoon": "Найближчим часом нічого немає",
+  "cardsDueCount": "{count, plural, =1{1 картка} few{{count} картки} many{{count} карток} other{{count} картки}}",
+  "@cardsDueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "percentKnown": "{percent}% відомо",
   "noTermsYet": "Ще немає термінів",
   "learning": "Вивчення",

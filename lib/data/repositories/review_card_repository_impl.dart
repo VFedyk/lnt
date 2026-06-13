@@ -169,6 +169,48 @@ class ReviewCardRepositoryImpl extends BaseRepository
   }
 
   @override
+  Future<List<({DateTime date, int count})>> getDueForecast(
+    String languageId, {
+    int days = 14,
+    DateTime? now,
+  }) async {
+    final db = await getDatabase();
+    now ??= DateTime.now().toUtc();
+    final todayStart = DateTime.utc(now.year, now.month, now.day);
+    final end = todayStart.add(Duration(days: days));
+
+    // No lower bound: overdue cards are folded into today's bucket below.
+    final rows = await db.rawQuery(
+      '''
+      SELECT DATE(rc.next_due) as date, COUNT(*) as cnt
+      FROM review_cards rc
+      INNER JOIN terms t ON t.id = rc.term_id
+      WHERE t.language_id = ?
+        AND t.status != 0
+        AND rc.next_due < ?
+      GROUP BY DATE(rc.next_due)
+      ''',
+      [languageId, end.toIso8601String()],
+    );
+
+    String dayKey(DateTime d) => d.toIso8601String().substring(0, 10);
+    final todayKey = dayKey(todayStart);
+    final counts = <String, int>{};
+    for (final row in rows) {
+      final date = row['date'] as String;
+      final cnt = row['cnt'] as int;
+      // Anything due today or earlier (overdue) collapses into the first bar.
+      final key = date.compareTo(todayKey) <= 0 ? todayKey : date;
+      counts[key] = (counts[key] ?? 0) + cnt;
+    }
+
+    return List.generate(days, (i) {
+      final day = todayStart.add(Duration(days: i));
+      return (date: day, count: counts[dayKey(day)] ?? 0);
+    });
+  }
+
+  @override
   Future<ReviewCardRecord> getOrCreate(String termId) async {
     final existing = await getByTermId(termId);
     if (existing != null) return existing;
