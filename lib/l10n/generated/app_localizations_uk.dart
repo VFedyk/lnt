@@ -157,6 +157,16 @@ class AppLocalizationsUk extends AppLocalizations {
       'Вище утримання — частіші повторення й краще запам\'ятовування; нижче — менше повторень.';
 
   @override
+  String get newCardsPerDay => 'Нових карток на день';
+
+  @override
+  String get newCardsPerDayDescription =>
+      'Обмежує кількість нових слів, що потрапляють у повторення щодня. 0 — без обмежень.';
+
+  @override
+  String get unlimited => 'Без обмежень';
+
+  @override
   String get libreTranslate => 'LibreTranslate';
 
   @override

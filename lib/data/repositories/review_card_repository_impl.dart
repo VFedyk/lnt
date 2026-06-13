@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entities/review_card.dart';
 import '../../domain/events/term_event.dart';
 import '../../domain/repositories/review_card_repository.dart';
+import '../../services/settings_service.dart';
 import '../../utils/constants.dart';
 import '../../domain/value_objects/term_status.dart';
 import 'base_repository.dart';
@@ -13,8 +14,47 @@ const _uuid = Uuid();
 class ReviewCardRepositoryImpl extends BaseRepository
     implements ReviewCardRepository {
   StreamSubscription<TermEvent>? _termSub;
+  final SettingsService? _settings;
 
-  ReviewCardRepositoryImpl(super.getDatabase, {super.onChange});
+  ReviewCardRepositoryImpl(super.getDatabase,
+      {super.onChange, SettingsService? settings})
+      : _settings = settings;
+
+  /// SQL fragment that is 1 when a card has never been reviewed.
+  static const String _isNewExpr =
+      "CASE WHEN NOT EXISTS (SELECT 1 FROM review_logs rl WHERE rl.term_id = rc.term_id) THEN 1 ELSE 0 END";
+
+  /// Remaining new cards allowed today, or null when there is no limit.
+  Future<int?> _newCardBudget(String languageId) async {
+    final settings = _settings;
+    if (settings == null) return null;
+    final perDay = await settings.getNewCardsPerDay();
+    if (perDay <= 0) return null;
+    final introduced = await _countNewCardsIntroducedToday(languageId);
+    final budget = perDay - introduced;
+    return budget < 0 ? 0 : budget;
+  }
+
+  /// Number of terms whose first-ever review happened today.
+  Future<int> _countNewCardsIntroducedToday(String languageId) async {
+    final db = await getDatabase();
+    final now = DateTime.now().toUtc();
+    final todayStart =
+        DateTime.utc(now.year, now.month, now.day).toIso8601String();
+    final result = await db.rawQuery(
+      '''
+      SELECT COUNT(*) as cnt FROM (
+        SELECT rl.term_id FROM review_logs rl
+        INNER JOIN terms t ON t.id = rl.term_id
+        WHERE t.language_id = ?
+        GROUP BY rl.term_id
+        HAVING MIN(rl.reviewed_at) >= ?
+      )
+      ''',
+      [languageId, todayStart],
+    );
+    return result.first['cnt'] as int;
+  }
 
   void subscribeToTermEvents(Stream<TermEvent> events) {
     _termSub = events.listen(_onTermEvent);
@@ -100,7 +140,7 @@ class ReviewCardRepositoryImpl extends BaseRepository
     final effectiveLimit = limit ?? AppConstants.dueCardLimit;
     final maps = await db.rawQuery(
       '''
-      SELECT rc.* FROM review_cards rc
+      SELECT rc.*, $_isNewExpr AS is_new FROM review_cards rc
       INNER JOIN terms t ON t.id = rc.term_id
       WHERE t.language_id = ?
         AND t.status != 0
@@ -110,7 +150,31 @@ class ReviewCardRepositoryImpl extends BaseRepository
       ''',
       [languageId, now.toIso8601String(), effectiveLimit],
     );
-    return maps.map((m) => ReviewCardRecord.fromMap(m)).toList();
+
+    final budget = await _newCardBudget(languageId);
+    if (budget == null) {
+      return maps.map((m) => ReviewCardRecord.fromMap(m)).toList();
+    }
+
+    // Review cards are always shown; new cards are capped by the daily budget.
+    final result = <ReviewCardRecord>[];
+    var newUsed = 0;
+    for (final m in maps) {
+      if ((m['is_new'] as int) == 1) {
+        if (newUsed >= budget) continue;
+        newUsed++;
+      }
+      result.add(ReviewCardRecord.fromMap(m));
+    }
+    return result;
+  }
+
+  /// Total due once the daily new-card [budget] is applied (review cards are
+  /// always counted; new cards are capped).
+  int _applyBudget(int total, int newCnt, int? budget) {
+    if (budget == null) return total;
+    final cappedNew = newCnt < budget ? newCnt : budget;
+    return (total - newCnt) + cappedNew;
   }
 
   @override
@@ -119,7 +183,8 @@ class ReviewCardRepositoryImpl extends BaseRepository
     now ??= DateTime.now().toUtc();
     final result = await db.rawQuery(
       '''
-      SELECT COUNT(*) as cnt FROM review_cards rc
+      SELECT COUNT(*) as total, COALESCE(SUM($_isNewExpr), 0) as new_cnt
+      FROM review_cards rc
       INNER JOIN terms t ON t.id = rc.term_id
       WHERE t.language_id = ?
         AND t.status != 0
@@ -127,7 +192,9 @@ class ReviewCardRepositoryImpl extends BaseRepository
       ''',
       [languageId, now.toIso8601String()],
     );
-    return result.first['cnt'] as int;
+    final total = result.first['total'] as int;
+    final newCnt = result.first['new_cnt'] as int;
+    return _applyBudget(total, newCnt, await _newCardBudget(languageId));
   }
 
   @override
@@ -136,7 +203,8 @@ class ReviewCardRepositoryImpl extends BaseRepository
     now ??= DateTime.now().toUtc();
     final result = await db.rawQuery(
       '''
-      SELECT COUNT(*) as cnt FROM review_cards rc
+      SELECT COUNT(*) as total, COALESCE(SUM($_isNewExpr), 0) as new_cnt
+      FROM review_cards rc
       INNER JOIN terms t ON t.id = rc.term_id
       WHERE t.language_id = ?
         AND t.status != 0
@@ -148,7 +216,9 @@ class ReviewCardRepositoryImpl extends BaseRepository
       ''',
       [languageId, now.toIso8601String()],
     );
-    return result.first['cnt'] as int;
+    final total = result.first['total'] as int;
+    final newCnt = result.first['new_cnt'] as int;
+    return _applyBudget(total, newCnt, await _newCardBudget(languageId));
   }
 
   @override

@@ -157,6 +157,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Higher retention schedules reviews more often for stronger recall; lower retention means fewer reviews.';
 
   @override
+  String get newCardsPerDay => 'New cards per day';
+
+  @override
+  String get newCardsPerDayDescription =>
+      'Caps how many new words enter review each day. Set to 0 for no limit.';
+
+  @override
+  String get unlimited => 'Unlimited';
+
+  @override
   String get libreTranslate => 'LibreTranslate';
 
   @override

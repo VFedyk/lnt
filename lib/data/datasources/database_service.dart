@@ -56,7 +56,8 @@ class DatabaseService {
     dictionaries = DictionaryRepositoryImpl(() => database, onChange: _changes.dictionaries);
     translations = TranslationRepositoryImpl(() => database, onChange: _changes.translations);
     textForeignWords = TextForeignWordRepositoryImpl(() => database);
-    final rcImpl = ReviewCardRepositoryImpl(() => database, onChange: _changes.reviewCards);
+    final rcImpl = ReviewCardRepositoryImpl(() => database,
+        onChange: _changes.reviewCards, settings: _settings);
     rcImpl.subscribeToTermEvents(_changes.termEvents.stream);
     reviewCards = rcImpl;
     reviewLogs = ReviewLogRepositoryImpl(() => database);

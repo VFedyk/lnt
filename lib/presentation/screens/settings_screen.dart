@@ -246,6 +246,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         l10n: AppLocalizations.of(context),
                         desiredRetention: ctrl.desiredRetention,
                         onChanged: ctrl.setDesiredRetention,
+                        newCardsPerDay: ctrl.newCardsPerDay,
+                        onNewCardsPerDayChanged: ctrl.setNewCardsPerDay,
                       ),
                       if (PlatformHelper.isDesktop) ...[
                         const SizedBox(height: AppConstants.spacingL),

@@ -9,12 +9,16 @@ class ReviewSettingsSection extends StatelessWidget {
   final AppLocalizations l10n;
   final double desiredRetention;
   final ValueChanged<double> onChanged;
+  final int newCardsPerDay;
+  final ValueChanged<int> onNewCardsPerDayChanged;
 
   const ReviewSettingsSection({
     super.key,
     required this.l10n,
     required this.desiredRetention,
     required this.onChanged,
+    required this.newCardsPerDay,
+    required this.onNewCardsPerDayChanged,
   });
 
   @override
@@ -61,6 +65,35 @@ class ReviewSettingsSection extends StatelessWidget {
             ),
             Text(
               l10n.targetRetentionDescription,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: AppConstants.fontSizeCaption,
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacingL),
+            Row(
+              children: [
+                Expanded(child: Text(l10n.newCardsPerDay)),
+                Text(
+                  newCardsPerDay == 0
+                      ? l10n.unlimited
+                      : newCardsPerDay.toString(),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            Slider(
+              value: newCardsPerDay.toDouble(),
+              min: 0,
+              max: SettingsService.maxNewCardsPerDay.toDouble(),
+              divisions: SettingsService.maxNewCardsPerDay ~/ 5,
+              label: newCardsPerDay == 0
+                  ? l10n.unlimited
+                  : newCardsPerDay.toString(),
+              onChanged: (v) => onNewCardsPerDayChanged(v.round()),
+            ),
+            Text(
+              l10n.newCardsPerDayDescription,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: AppConstants.fontSizeCaption,

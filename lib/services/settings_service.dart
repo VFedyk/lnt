@@ -26,6 +26,9 @@ class SettingsService {
   static const double defaultDesiredRetention = 0.9;
   static const double minDesiredRetention = 0.80;
   static const double maxDesiredRetention = 0.97;
+  static const String _newCardsPerDayKey = 'new_cards_per_day';
+  static const int defaultNewCardsPerDay = 20;
+  static const int maxNewCardsPerDay = 50;
 
   // LibreTranslate settings
   static const String _libreTranslateUrlKey = 'libretranslate_url';
@@ -118,6 +121,19 @@ class SettingsService {
       _desiredRetentionKey,
       value.clamp(minDesiredRetention, maxDesiredRetention),
     );
+  }
+
+  /// Maximum number of brand-new cards introduced into review per day.
+  /// `0` means no limit.
+  Future<int> getNewCardsPerDay() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getInt(_newCardsPerDayKey) ?? defaultNewCardsPerDay;
+    return value.clamp(0, maxNewCardsPerDay);
+  }
+
+  Future<void> setNewCardsPerDay(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_newCardsPerDayKey, value.clamp(0, maxNewCardsPerDay));
   }
 
   // Window size persistence

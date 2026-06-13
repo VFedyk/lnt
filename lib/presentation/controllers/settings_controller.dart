@@ -9,6 +9,7 @@ class SettingsController extends BaseController {
   bool isApiFree = true;
   String targetLang = SettingsService.defaultTargetLang;
   double desiredRetention = SettingsService.defaultDesiredRetention;
+  int newCardsPerDay = SettingsService.defaultNewCardsPerDay;
   DeepLUsage? usage;
   bool isLoadingUsage = false;
   String? dbPath;
@@ -42,6 +43,7 @@ class SettingsController extends BaseController {
     final aiApiUrl = await settings.getAiApiUrl();
     final aiProvider = await settings.getAiProvider();
     final retention = await settings.getDesiredRetention();
+    final newCards = await settings.getNewCardsPerDay();
 
     String? path;
     if (PlatformHelper.isDesktop) {
@@ -63,6 +65,7 @@ class SettingsController extends BaseController {
     isApiFree = isFree;
     targetLang = tgtLang;
     desiredRetention = retention;
+    newCardsPerDay = newCards;
     dbPath = path;
     icloudRemoteDate = icloudRemote;
     icloudLocalDate = icloudLocal;
@@ -103,6 +106,7 @@ class SettingsController extends BaseController {
     await settings.setAiApiUrl(aiApiUrl.trim());
     await settings.setAiProvider(aiProvider.trim());
     await settings.setDesiredRetention(desiredRetention);
+    await settings.setNewCardsPerDay(newCardsPerDay);
     reviewService.configure(desiredRetention: desiredRetention);
   }
 
@@ -180,6 +184,11 @@ class SettingsController extends BaseController {
 
   void setDesiredRetention(double value) {
     desiredRetention = value;
+    safeNotify();
+  }
+
+  void setNewCardsPerDay(int value) {
+    newCardsPerDay = value;
     safeNotify();
   }
 

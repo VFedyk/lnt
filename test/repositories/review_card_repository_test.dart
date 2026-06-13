@@ -8,6 +8,8 @@ import 'package:language_nerd_tools/data/repositories/review_card_repository_imp
 import 'package:language_nerd_tools/domain/entities/review_card.dart';
 import 'package:language_nerd_tools/domain/events/term_event.dart';
 import 'package:language_nerd_tools/domain/value_objects/term_status.dart';
+import 'package:language_nerd_tools/services/settings_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 Future<Database> _openTestDb() async {
@@ -178,6 +180,85 @@ void main() {
       expect(forecast[3].count, 1); // +3 days
       // 'd' (out of range) and 'e' (ignored) are excluded.
       expect(forecast.fold<int>(0, (s, d) => s + d.count), 3);
+    });
+  });
+
+  group('daily new-card limit', () {
+    late Database db;
+
+    setUp(() async {
+      db = await _openTestDb();
+    });
+
+    tearDown(() async => db.close());
+
+    ReviewCardRepositoryImpl makeRepo(int perDay) {
+      SharedPreferences.setMockInitialValues({'new_cards_per_day': perDay});
+      return ReviewCardRepositoryImpl(() async => db, settings: SettingsService());
+    }
+
+    final past = DateTime.now().toUtc().subtract(const Duration(days: 1));
+
+    Future<void> insertDueCard(ReviewCardRepositoryImpl repo, String termId) async {
+      await _insertTerm(db, id: termId);
+      await repo.create(ReviewCardRecord(
+        termId: termId,
+        cardData: fsrs.Card(cardId: 1, due: past).toMap(),
+        nextDue: past,
+        createdAt: past,
+        updatedAt: past,
+      ));
+    }
+
+    // Adds a prior review so the card counts as "review" rather than "new".
+    Future<void> markReviewed(String termId, {required DateTime at}) async {
+      await db.insert('review_logs', {
+        'id': '$termId-log',
+        'term_id': termId,
+        'log_data': '{}',
+        'reviewed_at': at.toIso8601String(),
+      });
+    }
+
+    test('caps new cards but never review cards', () async {
+      final repo = makeRepo(2);
+      for (final id in ['n1', 'n2', 'n3', 'n4', 'n5']) {
+        await insertDueCard(repo, id);
+      }
+      for (final id in ['r1', 'r2']) {
+        await insertDueCard(repo, id);
+        await markReviewed(id, at: past); // reviewed yesterday → not "new"
+      }
+
+      final due = await repo.getDueCards('lang-1');
+      final newCount = due.where((c) => c.termId.startsWith('n')).length;
+      final reviewCount = due.where((c) => c.termId.startsWith('r')).length;
+      expect(newCount, 2); // capped at budget
+      expect(reviewCount, 2); // all review cards
+      expect(await repo.getDueCount('lang-1'), 4);
+    });
+
+    test('cards already introduced today reduce the budget', () async {
+      final repo = makeRepo(3);
+      for (final id in ['n1', 'n2', 'n3', 'n4']) {
+        await insertDueCard(repo, id);
+      }
+      // A term first reviewed today consumes one of today's new-card slots.
+      await _insertTerm(db, id: 'seenToday');
+      await markReviewed('seenToday', at: DateTime.now().toUtc());
+
+      final due = await repo.getDueCards('lang-1');
+      expect(due.where((c) => c.termId.startsWith('n')).length, 2); // 3 - 1
+      expect(await repo.getDueCount('lang-1'), 2);
+    });
+
+    test('zero means unlimited', () async {
+      final repo = makeRepo(0);
+      for (final id in ['n1', 'n2', 'n3', 'n4', 'n5']) {
+        await insertDueCard(repo, id);
+      }
+      expect((await repo.getDueCards('lang-1')).length, 5);
+      expect(await repo.getDueCount('lang-1'), 5);
     });
   });
 }

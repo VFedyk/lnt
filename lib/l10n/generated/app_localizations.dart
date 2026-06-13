@@ -392,6 +392,24 @@ abstract class AppLocalizations {
   /// **'Higher retention schedules reviews more often for stronger recall; lower retention means fewer reviews.'**
   String get targetRetentionDescription;
 
+  /// No description provided for @newCardsPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'New cards per day'**
+  String get newCardsPerDay;
+
+  /// No description provided for @newCardsPerDayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Caps how many new words enter review each day. Set to 0 for no limit.'**
+  String get newCardsPerDayDescription;
+
+  /// No description provided for @unlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get unlimited;
+
   /// No description provided for @libreTranslate.
   ///
   /// In en, this message translates to:
