@@ -153,8 +153,8 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
     setState(() => _isCorrect = correct);
     _keyboardFocusNode.requestFocus();
 
-    // Rate: correct → easy, incorrect → hard
-    final rating = correct ? fsrs.Rating.easy : fsrs.Rating.hard;
+    // Rate: correct → good, incorrect → again (triggers relearning)
+    final rating = correct ? fsrs.Rating.good : fsrs.Rating.again;
     _hasReviewed = true;
     reviewService.reviewTerm(item.reviewCard, rating, notify: false);
   }

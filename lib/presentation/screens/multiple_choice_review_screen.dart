@@ -264,7 +264,7 @@ class _MultipleChoiceReviewScreenState
     if (_selectedOptionIndex != null) return;
 
     final isCorrect = index == _correctOptionIndex;
-    final rating = isCorrect ? fsrs.Rating.easy : fsrs.Rating.hard;
+    final rating = isCorrect ? fsrs.Rating.good : fsrs.Rating.again;
     _hasReviewed = true;
     reviewService.reviewTerm(
       _dueItems[_currentIndex].reviewCard,
