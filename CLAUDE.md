@@ -129,6 +129,13 @@ flutter build macos          # Build macOS
 - **Screen controllers** (`lib/presentation/controllers/`): `SettingsController`, `LibraryController`, `VocabularyController`, `DashboardController`, `ReaderController`, `FlashcardReviewController`, plus `TermDialogController` and `BaseTermSearchDialogController` for complex dialogs. Each extends `BaseController` (which extends `ChangeNotifier`), provided via `ChangeNotifierProvider`. Controllers own all state and db access; screens/widgets are thin UI layers. `BaseController.safeNotify()` prevents post-dispose notification errors. Controllers never hold `BuildContext` — dialog-showing and SnackBars stay in the widget layer.
 - **SettingsController backup state**: tracks `icloudRemoteDate` (date of file in iCloud), `icloudLocalDate` (last backup from this device), `lastRestoreDate`, `isCheckingBackup`. Call `recheckICloudBackup()` to refresh the remote date.
 - **Use cases** (`lib/application/use_cases/`): `ReviewTerm` (owns FSRS scheduler, writes review log + card + term status), `SaveTerm` (create/update term + replaceForTerm in one call), `BulkImportTerms`, `TranslateTerm` (provider selection + language-code mapping). `ReviewService` delegates to `ReviewTerm` and is injected via constructor. Use case getters in `service_locator.dart`: `reviewTerm`, `saveTerm`, `bulkImportTerms`, `translateTerm`.
+- **FSRS / spaced repetition**:
+  - `ReviewTerm` holds a rebuildable `fsrs.Scheduler`. Desired retention is user-configurable (`settings.getDesiredRetention()`, default 0.9, clamped 0.80–0.97); `ReviewService.initialize()` (called once at startup in `main.dart`) loads it and calls `ReviewTerm.configure(...)`. `SettingsController.saveSettings()` re-applies it via `reviewService.configure(...)`. Learning steps `[1m, 10m]`, relearning `[10m]`, max interval 36500, fuzzing on.
+  - **Rating mapping**: flashcard/stroke modes let the user pick all four ratings. Auto-graded modes (multiple choice, typing, cloze) map **correct → `good`, wrong → `again`** (a wrong answer must lapse the card into relearning — never `hard`, which would keep growing the interval).
+  - **Term status** is derived from FSRS card state after each review (`ReviewTerm.mapFsrsToTermStatus`): learning/relearning → unknown/learning2; review state bucketed by stability (<7 learning3, <30 learning4, <90 known, ≥90 wellKnown). "Well known" terms **stay scheduled** — they keep their review card and resurface when FSRS says they're due (only `ignored` terms have cards deleted / are excluded from due queries).
+  - **Daily new-card limit** (`settings.getNewCardsPerDay()`, default 20, max 50, `0` = unlimited): enforced inside `ReviewCardRepositoryImpl` (which takes an optional `SettingsService`), so `getDueCards`/`getDueCount`/`getClozeDueCount` consistently cap "new" cards (those with no `review_logs` row) while never capping review cards. Budget = `perDay − terms first reviewed today`.
+  - **Stats** (statistics screen): `reviewLogs.getRetention(languageId, {days=30})` returns `(total, recalled)` where recalled = ratings better than `again`; `reviewCards.getDueForecast(languageId, {days})` returns per-day due counts (overdue folded into today). Rendered by `widgets/statistics/due_forecast_chart.dart` + an inline retention card.
+  - Review settings UI: `widgets/settings/review_settings_section.dart` (retention + new-cards-per-day sliders), driven by `SettingsController` (`desiredRetention`, `newCardsPerDay`). SharedPreferences keys: `desired_retention`, `new_cards_per_day`.
 - **TtsService** (`ttsService`): text-to-speech via `flutter_tts`; access via `ttsService` getter.
 - **ChineseSegmentationService** (`chineseSegService`): word tokenization via `jieba_flutter` for Chinese texts.
 - **AiExplanationService**: AI-powered word/phrase explanations; supports OpenAI, Anthropic, and Ollama backends. Not registered as a singleton — instantiated where needed. Settings managed via `ai_settings_section.dart`.
@@ -190,16 +197,16 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 
 ## Testing
 
-- **Command**: `flutter test` — runs all 151 tests in ~2-3 seconds
+- **Command**: `flutter test` — runs all 169 tests in ~2-3 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
 - **Verification**: Use exit code pattern to avoid parsing verbose output:
   ```bash
   flutter test > /dev/null 2>&1 && echo "✅ All tests passed!" || echo "❌ Some tests failed"
   ```
 - **Test coverage**:
-  - `test/application/` — Use cases: ReviewTerm (FSRS + repo writes), SaveTerm, BulkImportTerms, TranslateTerm
+  - `test/application/` — Use cases: ReviewTerm (FSRS + repo writes, rating semantics, retention `configure()`), SaveTerm, BulkImportTerms, TranslateTerm
   - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier, Chinese segmentation)
-  - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping)
+  - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping); `review_card_repository_test.dart` (term-event card lifecycle, due-card status filtering, due forecast, daily new-card limit — in-memory DB); `review_log_repository_test.dart` (retention aggregation)
   - `test/controllers/` — Screen controllers (LibraryController listener lifecycle and CRUD delegation)
   - `test/services/sync_service_test.dart` — Sync layer: `validatePayload` (all domains), `applyEvent` (LWW replace, ignore-duplicate, term atomicity), collectors with timestamp windowing; uses `sqflite_common_ffi` in-memory DB with full v21 schema
   - Widget tests are not yet comprehensive (default `widget_test.dart` is a leftover)
