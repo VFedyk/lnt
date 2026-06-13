@@ -374,6 +374,24 @@ abstract class AppLocalizations {
   /// **'Language for translations'**
   String get languageForTranslations;
 
+  /// No description provided for @reviewSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get reviewSettings;
+
+  /// No description provided for @targetRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'Target retention'**
+  String get targetRetention;
+
+  /// No description provided for @targetRetentionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher retention schedules reviews more often for stronger recall; lower retention means fewer reviews.'**
+  String get targetRetentionDescription;
+
   /// No description provided for @libreTranslate.
   ///
   /// In en, this message translates to:

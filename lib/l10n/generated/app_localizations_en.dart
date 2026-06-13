@@ -147,6 +147,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageForTranslations => 'Language for translations';
 
   @override
+  String get reviewSettings => 'Review';
+
+  @override
+  String get targetRetention => 'Target retention';
+
+  @override
+  String get targetRetentionDescription =>
+      'Higher retention schedules reviews more often for stronger recall; lower retention means fewer reviews.';
+
+  @override
   String get libreTranslate => 'LibreTranslate';
 
   @override

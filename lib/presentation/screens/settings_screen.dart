@@ -21,6 +21,7 @@ import '../widgets/settings/database_section.dart';
 import '../widgets/settings/deepl_settings_section.dart';
 import '../widgets/settings/deepl_usage_section.dart';
 import '../widgets/settings/libretranslate_settings_section.dart';
+import '../widgets/settings/review_settings_section.dart';
 import '../widgets/settings/sync_settings_section.dart';
 import '../widgets/settings/target_language_section.dart';
 
@@ -239,6 +240,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         l10n: AppLocalizations.of(context),
                         targetLang: ctrl.targetLang,
                         onChanged: ctrl.setTargetLang,
+                      ),
+                      const SizedBox(height: AppConstants.spacingL),
+                      ReviewSettingsSection(
+                        l10n: AppLocalizations.of(context),
+                        desiredRetention: ctrl.desiredRetention,
+                        onChanged: ctrl.setDesiredRetention,
                       ),
                       if (PlatformHelper.isDesktop) ...[
                         const SizedBox(height: AppConstants.spacingL),

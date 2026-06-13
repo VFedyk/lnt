@@ -9,7 +9,18 @@ class ReviewService {
 
   ReviewService(this._reviewTerm);
 
-  void initialize() {}
+  /// Loads the persisted desired retention and applies it to the scheduler.
+  /// Called once at app startup.
+  Future<void> initialize() async {
+    final retention = await settings.getDesiredRetention();
+    _reviewTerm.configure(desiredRetention: retention);
+  }
+
+  /// Rebuilds the scheduler with a new desired retention rate. Call after the
+  /// setting changes so interval previews and future scheduling reflect it.
+  void configure({required double desiredRetention}) {
+    _reviewTerm.configure(desiredRetention: desiredRetention);
+  }
 
   Future<({ReviewCardRecord updatedCard, int newStatus})> reviewTerm(
     ReviewCardRecord record,

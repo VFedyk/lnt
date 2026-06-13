@@ -202,6 +202,35 @@ void main() {
     });
   });
 
+  group('configure() / desired retention', () {
+    test('defaults to 0.9', () {
+      expect(useCase.desiredRetention, 0.9);
+    });
+
+    test('exposes the configured retention', () {
+      useCase.configure(desiredRetention: 0.85);
+      expect(useCase.desiredRetention, 0.85);
+    });
+
+    test('lower retention schedules longer intervals', () {
+      final now = DateTime.now().toUtc();
+      final card = fsrs.Card(cardId: 1)
+        ..state = fsrs.State.review
+        ..stability = 50.0
+        ..difficulty = 5.0
+        ..due = now
+        ..lastReview = now.subtract(const Duration(days: 50));
+
+      useCase.configure(desiredRetention: 0.95);
+      final high = useCase.nextIntervals(card.toMap())[fsrs.Rating.good]!;
+
+      useCase.configure(desiredRetention: 0.80);
+      final low = useCase.nextIntervals(card.toMap())[fsrs.Rating.good]!;
+
+      expect(low, greaterThan(high));
+    });
+  });
+
   group('mapFsrsToTermStatus()', () {
     test('learning step 0 → unknown', () {
       final card = fsrs.Card(cardId: 20)

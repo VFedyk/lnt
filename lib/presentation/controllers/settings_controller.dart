@@ -8,6 +8,7 @@ class SettingsController extends BaseController {
   bool isLoading = true;
   bool isApiFree = true;
   String targetLang = SettingsService.defaultTargetLang;
+  double desiredRetention = SettingsService.defaultDesiredRetention;
   DeepLUsage? usage;
   bool isLoadingUsage = false;
   String? dbPath;
@@ -40,6 +41,7 @@ class SettingsController extends BaseController {
     final aiModel = await settings.getAiModel();
     final aiApiUrl = await settings.getAiApiUrl();
     final aiProvider = await settings.getAiProvider();
+    final retention = await settings.getDesiredRetention();
 
     String? path;
     if (PlatformHelper.isDesktop) {
@@ -60,6 +62,7 @@ class SettingsController extends BaseController {
     initialAiProvider = aiProvider;
     isApiFree = isFree;
     targetLang = tgtLang;
+    desiredRetention = retention;
     dbPath = path;
     icloudRemoteDate = icloudRemote;
     icloudLocalDate = icloudLocal;
@@ -99,6 +102,8 @@ class SettingsController extends BaseController {
     await settings.setAiModel(aiModel.trim());
     await settings.setAiApiUrl(aiApiUrl.trim());
     await settings.setAiProvider(aiProvider.trim());
+    await settings.setDesiredRetention(desiredRetention);
+    reviewService.configure(desiredRetention: desiredRetention);
   }
 
   /// Returns true on success.
@@ -170,6 +175,11 @@ class SettingsController extends BaseController {
 
   void setTargetLang(String value) {
     targetLang = value;
+    safeNotify();
+  }
+
+  void setDesiredRetention(double value) {
+    desiredRetention = value;
     safeNotify();
   }
 

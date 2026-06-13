@@ -13,23 +13,40 @@ class ReviewTerm {
     required TermRepository terms,
     required ReviewLogRepository reviewLogs,
     required TermStatusLogRepository termStatusLog,
+    double desiredRetention = defaultDesiredRetention,
   })  : _reviewCards = reviewCards,
         _terms = terms,
         _reviewLogs = reviewLogs,
         _termStatusLog = termStatusLog,
-        _scheduler = fsrs.Scheduler(
-          desiredRetention: 0.9,
-          learningSteps: const [Duration(minutes: 1), Duration(minutes: 10)],
-          relearningSteps: const [Duration(minutes: 10)],
-          maximumInterval: 36500,
-          enableFuzzing: true,
-        );
+        _desiredRetention = desiredRetention,
+        _scheduler = _buildScheduler(desiredRetention);
+
+  static const double defaultDesiredRetention = 0.9;
 
   final ReviewCardRepository _reviewCards;
   final TermRepository _terms;
   final ReviewLogRepository _reviewLogs;
   final TermStatusLogRepository _termStatusLog;
-  final fsrs.Scheduler _scheduler;
+  fsrs.Scheduler _scheduler;
+  double _desiredRetention;
+
+  double get desiredRetention => _desiredRetention;
+
+  /// Rebuilds the FSRS scheduler with a new desired retention rate. Existing
+  /// cards keep their stored state; only future scheduling reflects the change.
+  void configure({required double desiredRetention}) {
+    _desiredRetention = desiredRetention;
+    _scheduler = _buildScheduler(desiredRetention);
+  }
+
+  static fsrs.Scheduler _buildScheduler(double desiredRetention) =>
+      fsrs.Scheduler(
+        desiredRetention: desiredRetention,
+        learningSteps: const [Duration(minutes: 1), Duration(minutes: 10)],
+        relearningSteps: const [Duration(minutes: 10)],
+        maximumInterval: 36500,
+        enableFuzzing: true,
+      );
 
   Future<({ReviewCardRecord updatedCard, int newStatus})> call(
     ReviewCardRecord record,

@@ -28,6 +28,7 @@ void main() async {
   }
 
   setupServiceLocator();
+  await reviewService.initialize();
   await chineseSegService.init();
   await db.database;
   await CoverImageHelper.initialize();

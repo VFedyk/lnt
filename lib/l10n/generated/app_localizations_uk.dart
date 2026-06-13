@@ -147,6 +147,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languageForTranslations => 'Мова для перекладів';
 
   @override
+  String get reviewSettings => 'Повторення';
+
+  @override
+  String get targetRetention => 'Цільове утримання';
+
+  @override
+  String get targetRetentionDescription =>
+      'Вище утримання — частіші повторення й краще запам\'ятовування; нижче — менше повторень.';
+
+  @override
   String get libreTranslate => 'LibreTranslate';
 
   @override

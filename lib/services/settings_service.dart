@@ -21,6 +21,12 @@ class SettingsService {
   static const double defaultWindowWidth = 1280;
   static const double defaultWindowHeight = 720;
 
+  // Review / FSRS settings
+  static const String _desiredRetentionKey = 'desired_retention';
+  static const double defaultDesiredRetention = 0.9;
+  static const double minDesiredRetention = 0.80;
+  static const double maxDesiredRetention = 0.97;
+
   // LibreTranslate settings
   static const String _libreTranslateUrlKey = 'libretranslate_url';
   static const String _libreTranslateApiKeyKey = 'libretranslate_api_key';
@@ -93,6 +99,25 @@ class SettingsService {
   Future<void> setTargetLang(String langCode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_targetLangKey, langCode);
+  }
+
+  // Review / FSRS settings
+
+  /// Desired retention rate passed to the FSRS scheduler (clamped to a sane
+  /// range). Higher values schedule reviews more often for stronger recall.
+  Future<double> getDesiredRetention() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value =
+        prefs.getDouble(_desiredRetentionKey) ?? defaultDesiredRetention;
+    return value.clamp(minDesiredRetention, maxDesiredRetention);
+  }
+
+  Future<void> setDesiredRetention(double value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(
+      _desiredRetentionKey,
+      value.clamp(minDesiredRetention, maxDesiredRetention),
+    );
   }
 
   // Window size persistence
