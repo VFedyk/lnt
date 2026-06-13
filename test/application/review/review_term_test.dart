@@ -33,6 +33,25 @@ ReviewCardRecord _makeRecord({String termId = 'term-1'}) {
 Term _makeTerm({String id = 'term-1', int status = TermStatus.unknown}) =>
     Term(id: id, languageId: 'lang-1', text: 'hello', lowerText: 'hello', status: status);
 
+/// A mature card in the FSRS review state — what an auto-graded mode rates.
+ReviewCardRecord _makeReviewStateRecord({String termId = 'term-1'}) {
+  final now = DateTime.now().toUtc();
+  final card = fsrs.Card(cardId: 1)
+    ..state = fsrs.State.review
+    ..stability = 50.0
+    ..difficulty = 5.0
+    ..due = now
+    ..lastReview = now.subtract(const Duration(days: 50));
+  return ReviewCardRecord(
+    id: 'card-1',
+    termId: termId,
+    cardData: card.toMap(),
+    nextDue: now,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
 void main() {
   late MockReviewCardRepository mockReviewCards;
   late MockTermRepository mockTerms;
@@ -113,6 +132,38 @@ void main() {
 
       expect(result.updatedCard.id, record.id);
       expect(result.updatedCard.termId, record.termId);
+    });
+  });
+
+  // Auto-graded modes (multiple choice, typing, cloze) map a wrong answer to
+  // Rating.again and a correct answer to Rating.good. These lock in the FSRS
+  // semantics that mapping relies on: `again` must lapse a review card into
+  // relearning and reschedule it sooner, while `good` keeps it in review.
+  group('rating semantics for auto-graded modes', () {
+    setUp(() {
+      when(() => mockTerms.getById(any()))
+          .thenAnswer((_) async => _makeTerm(status: TermStatus.known));
+    });
+
+    test('wrong answer (again) lapses a review card into relearning', () async {
+      final result = await useCase(_makeReviewStateRecord(), fsrs.Rating.again);
+      final updated = fsrs.Card.fromMap(result.updatedCard.cardData);
+      expect(updated.state, fsrs.State.relearning);
+    });
+
+    test('correct answer (good) keeps the card in review', () async {
+      final result = await useCase(_makeReviewStateRecord(), fsrs.Rating.good);
+      final updated = fsrs.Card.fromMap(result.updatedCard.cardData);
+      expect(updated.state, fsrs.State.review);
+    });
+
+    test('wrong answer reschedules sooner than a correct answer', () async {
+      final again = await useCase(_makeReviewStateRecord(), fsrs.Rating.again);
+      final good = await useCase(_makeReviewStateRecord(), fsrs.Rating.good);
+      expect(
+        again.updatedCard.nextDue.isBefore(good.updatedCard.nextDue),
+        isTrue,
+      );
     });
   });
 

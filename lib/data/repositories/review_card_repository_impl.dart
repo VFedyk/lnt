@@ -23,22 +23,18 @@ class ReviewCardRepositoryImpl extends BaseRepository
   Future<void> _onTermEvent(TermEvent event) async {
     switch (event) {
       case TermWritten(:final id, :final status):
-        if (status == TermStatus.ignored || status == TermStatus.wellKnown) {
+        if (status == TermStatus.ignored) {
           await deleteByTermId(id);
         } else {
           await getOrCreate(id);
         }
       case TermsBulkWritten(:final terms):
         final reviewable = terms
-            .where((t) =>
-                t.status != TermStatus.ignored &&
-                t.status != TermStatus.wellKnown)
+            .where((t) => t.status != TermStatus.ignored)
             .map((t) => t.id)
             .toList();
         final nonReviewable = terms
-            .where((t) =>
-                t.status == TermStatus.ignored ||
-                t.status == TermStatus.wellKnown)
+            .where((t) => t.status == TermStatus.ignored)
             .map((t) => t.id)
             .toList();
         await ensureCardsExist(reviewable);
@@ -108,7 +104,6 @@ class ReviewCardRepositoryImpl extends BaseRepository
       INNER JOIN terms t ON t.id = rc.term_id
       WHERE t.language_id = ?
         AND t.status != 0
-        AND t.status != 99
         AND rc.next_due <= ?
       ORDER BY rc.next_due ASC
       LIMIT ?
@@ -128,7 +123,6 @@ class ReviewCardRepositoryImpl extends BaseRepository
       INNER JOIN terms t ON t.id = rc.term_id
       WHERE t.language_id = ?
         AND t.status != 0
-        AND t.status != 99
         AND rc.next_due <= ?
       ''',
       [languageId, now.toIso8601String()],
@@ -146,7 +140,6 @@ class ReviewCardRepositoryImpl extends BaseRepository
       INNER JOIN terms t ON t.id = rc.term_id
       WHERE t.language_id = ?
         AND t.status != 0
-        AND t.status != 99
         AND rc.next_due <= ?
         AND (
           (t.sentence IS NOT NULL AND t.sentence != '')
@@ -167,7 +160,6 @@ class ReviewCardRepositoryImpl extends BaseRepository
       INNER JOIN terms t ON t.id = rc.term_id
       WHERE t.language_id = ?
         AND t.status != 0
-        AND t.status != 99
       ''',
       [languageId],
     );

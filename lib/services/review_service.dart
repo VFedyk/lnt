@@ -34,10 +34,7 @@ class ReviewService {
     final allTerms = await db.terms.getAll(languageId: languageId);
     final eligibleIds = allTerms
         .where(
-          (t) =>
-              t.id != null &&
-              t.status != TermStatus.ignored &&
-              t.status != TermStatus.wellKnown,
+          (t) => t.id != null && t.status != TermStatus.ignored,
         )
         .map((t) => t.id!)
         .toList();
