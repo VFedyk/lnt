@@ -602,6 +602,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get statusWellKnown => 'Добре відомі';
 
   @override
+  String get reviewByStatus => 'Повторення за статусом';
+
+  @override
   String get addDictionariesQuestion => 'Додати словники?';
 
   @override

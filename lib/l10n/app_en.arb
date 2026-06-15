@@ -329,6 +329,7 @@
   "statusLearning4": "Learning 4",
   "statusKnown": "Known",
   "statusWellKnown": "Well Known",
+  "reviewByStatus": "Review by status",
   "addDictionariesQuestion": "Add Dictionaries?",
   "addDictionariesPrompt": "Would you like to add dictionaries for {name}?",
   "@addDictionariesPrompt": {

@@ -7,6 +7,7 @@ import '../../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/review/exercise_card.dart';
 import '../widgets/review/review_stats_section.dart';
+import '../widgets/review/review_status_filter_chips.dart';
 import 'cloze_review_screen.dart';
 import 'flashcard_review_screen.dart';
 import 'multiple_choice_review_screen.dart';
@@ -30,6 +31,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
   int _reviewedToday = 0;
   bool _isLoading = true;
   String? _error;
+  Set<ReviewStatusGroup> _selectedGroups = ReviewStatusGroup.values.toSet();
+
+  List<int>? get _statusFilter => ReviewStatusGroup.filterFor(_selectedGroups);
 
   @override
   void initState() {
@@ -57,9 +61,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _error = null;
     });
     try {
-      final dueCount = await db.reviewCards.getDueCount(widget.language.id!);
+      final dueCount = await db.reviewCards
+          .getDueCount(widget.language.id!, statuses: _statusFilter);
       final clozeDueCount = await db.reviewCards.getClozeDueCount(
         widget.language.id!,
+        statuses: _statusFilter,
       );
       final reviewedToday = await db.reviewLogs.getReviewCountToday(
         widget.language.id!,
@@ -113,7 +119,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FlashcardReviewScreen(language: widget.language),
+            builder: (_) => FlashcardReviewScreen(
+              language: widget.language,
+              statusFilter: _statusFilter,
+            ),
           ),
         ),
       ),
@@ -128,6 +137,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             builder: (_) => TypingReviewScreen(
               language: widget.language,
               direction: TypingDirection.sourceToTarget,
+              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -143,6 +153,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             builder: (_) => TypingReviewScreen(
               language: widget.language,
               direction: TypingDirection.targetToSource,
+              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -158,6 +169,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             builder: (_) => MultipleChoiceReviewScreen(
               language: widget.language,
               direction: MultipleChoiceDirection.sourceToTarget,
+              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -173,6 +185,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             builder: (_) => MultipleChoiceReviewScreen(
               language: widget.language,
               direction: MultipleChoiceDirection.targetToSource,
+              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -189,6 +202,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               builder: (_) => MultipleChoiceReviewScreen(
                 language: widget.language,
                 direction: MultipleChoiceDirection.romanization,
+                statusFilter: _statusFilter,
               ),
             ),
           ),
@@ -204,6 +218,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             builder: (_) => ClozeReviewScreen(
               language: widget.language,
               mode: ClozeMode.easy,
+              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -219,6 +234,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             builder: (_) => ClozeReviewScreen(
               language: widget.language,
               mode: ClozeMode.advanced,
+              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -232,7 +248,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => StrokeReviewScreen(language: widget.language),
+              builder: (_) => StrokeReviewScreen(
+                language: widget.language,
+                statusFilter: _statusFilter,
+              ),
             ),
           ),
         ),
@@ -263,6 +282,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 builder: (_) => StatisticsScreen(language: widget.language),
               ),
             ),
+          ),
+          const SizedBox(height: AppConstants.spacingL),
+
+          ReviewStatusFilterChips(
+            selected: _selectedGroups,
+            onChanged: (groups) {
+              setState(() => _selectedGroups = groups);
+              _loadStats();
+            },
           ),
           const SizedBox(height: AppConstants.spacingL),
 

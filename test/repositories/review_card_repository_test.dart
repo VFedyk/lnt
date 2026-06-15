@@ -261,4 +261,55 @@ void main() {
       expect(await repo.getDueCount('lang-1'), 5);
     });
   });
+
+  group('status filter', () {
+    late Database db;
+    late ReviewCardRepositoryImpl repo;
+
+    setUp(() async {
+      db = await _openTestDb();
+      repo = ReviewCardRepositoryImpl(() async => db);
+      // One due card per status group.
+      for (final entry in {
+        'u': TermStatus.unknown,
+        'l': TermStatus.learning3,
+        'k': TermStatus.known,
+        'w': TermStatus.wellKnown,
+        'ig': TermStatus.ignored,
+      }.entries) {
+        await _insertTerm(db, id: entry.key, status: entry.value);
+        await _insertDueCard(repo, termId: entry.key);
+      }
+    });
+
+    tearDown(() async => db.close());
+
+    test('null returns every non-ignored due card', () async {
+      final due = await repo.getDueCards('lang-1');
+      expect(due.map((c) => c.termId).toSet(), {'u', 'l', 'k', 'w'});
+      expect(await repo.getDueCount('lang-1'), 4);
+    });
+
+    test('filters cards and count to the requested statuses', () async {
+      final due = await repo.getDueCards('lang-1', statuses: [TermStatus.known]);
+      expect(due.map((c) => c.termId), ['k']);
+      expect(await repo.getDueCount('lang-1', statuses: [TermStatus.known]), 1);
+    });
+
+    test('supports multiple statuses', () async {
+      final due = await repo.getDueCards(
+        'lang-1',
+        statuses: [TermStatus.unknown, TermStatus.wellKnown],
+      );
+      expect(due.map((c) => c.termId).toSet(), {'u', 'w'});
+    });
+
+    test('ignored stays excluded even if its status is requested', () async {
+      final due = await repo.getDueCards(
+        'lang-1',
+        statuses: [TermStatus.ignored, TermStatus.known],
+      );
+      expect(due.map((c) => c.termId), ['k']);
+    });
+  });
 }

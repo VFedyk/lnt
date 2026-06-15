@@ -50,6 +50,7 @@ enum ReviewPhase {
 
 class FlashcardReviewController extends BaseController {
   final Language language;
+  final List<int>? statusFilter;
 
   List<ReviewItem> _dueItems = [];
   int _currentIndex = 0;
@@ -70,7 +71,7 @@ class FlashcardReviewController extends BaseController {
   ReviewItem? get currentItem =>
       _currentIndex < _dueItems.length ? _dueItems[_currentIndex] : null;
 
-  FlashcardReviewController({required this.language}) {
+  FlashcardReviewController({required this.language, this.statusFilter}) {
     loadDueCards();
   }
 
@@ -100,7 +101,8 @@ class FlashcardReviewController extends BaseController {
     _phase = ReviewPhase.loading;
     safeNotify();
 
-    final dueCards = await db.reviewCards.getDueCards(language.id!);
+    final dueCards =
+        await db.reviewCards.getDueCards(language.id!, statuses: statusFilter);
 
     // Batch load terms and translations (2 queries instead of 2N)
     final termIds = dueCards.map((rc) => rc.termId).toList();

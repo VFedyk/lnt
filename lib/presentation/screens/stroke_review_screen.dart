@@ -25,13 +25,15 @@ abstract class _K {
 
 class StrokeReviewScreen extends StatelessWidget {
   final Language language;
+  final List<int>? statusFilter;
 
-  const StrokeReviewScreen({super.key, required this.language});
+  const StrokeReviewScreen({super.key, required this.language, this.statusFilter});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => FlashcardReviewController(language: language),
+      create: (_) =>
+          FlashcardReviewController(language: language, statusFilter: statusFilter),
       child: const _StrokeReviewBody(),
     );
   }

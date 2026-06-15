@@ -29,11 +29,13 @@ abstract class _TypingReviewConstants {
 class TypingReviewScreen extends StatefulWidget {
   final Language language;
   final TypingDirection direction;
+  final List<int>? statusFilter;
 
   const TypingReviewScreen({
     super.key,
     required this.language,
     required this.direction,
+    this.statusFilter,
   });
 
   @override
@@ -91,7 +93,7 @@ class _TypingReviewScreenState extends State<TypingReviewScreen> {
     await _ensureCardsSeeded();
 
     final dueCards = await db.reviewCards
-        .getDueCards(widget.language.id!);
+        .getDueCards(widget.language.id!, statuses: widget.statusFilter);
 
     // Batch load terms and translations (2 queries instead of 2N)
     final termIds = dueCards.map((rc) => rc.termId).toList();

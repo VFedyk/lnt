@@ -29,11 +29,13 @@ abstract class _Constants {
 class ClozeReviewScreen extends StatefulWidget {
   final Language language;
   final ClozeMode mode;
+  final List<int>? statusFilter;
 
   const ClozeReviewScreen({
     super.key,
     required this.language,
     required this.mode,
+    this.statusFilter,
   });
 
   @override
@@ -142,7 +144,8 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
 
     await _ensureCardsSeeded();
 
-    final dueCards = await db.reviewCards.getDueCards(widget.language.id!);
+    final dueCards = await db.reviewCards
+        .getDueCards(widget.language.id!, statuses: widget.statusFilter);
     final termIds = dueCards.map((rc) => rc.termId).toList();
     final termsMap = await db.terms.getByIds(termIds);
     final translationsMap = await db.translations.getByTermIds(termIds);

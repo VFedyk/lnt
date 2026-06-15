@@ -1178,6 +1178,12 @@ abstract class AppLocalizations {
   /// **'Well Known'**
   String get statusWellKnown;
 
+  /// No description provided for @reviewByStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Review by status'**
+  String get reviewByStatus;
+
   /// No description provided for @addDictionariesQuestion.
   ///
   /// In en, this message translates to:

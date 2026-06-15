@@ -132,12 +132,19 @@ class ReviewCardRepositoryImpl extends BaseRepository
     return result;
   }
 
+  /// `AND t.status IN (?, ?, …)` fragment, or empty when no filter is applied.
+  static String _statusClause(List<int>? statuses) =>
+      (statuses != null && statuses.isNotEmpty)
+          ? 'AND t.status IN (${List.filled(statuses.length, '?').join(', ')})'
+          : '';
+
   @override
   Future<List<ReviewCardRecord>> getDueCards(String languageId,
-      {DateTime? now, int? limit}) async {
+      {DateTime? now, int? limit, List<int>? statuses}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
     final effectiveLimit = limit ?? AppConstants.dueCardLimit;
+    final statusArgs = statuses ?? const <int>[];
     final maps = await db.rawQuery(
       '''
       SELECT rc.*, $_isNewExpr AS is_new FROM review_cards rc
@@ -145,10 +152,11 @@ class ReviewCardRepositoryImpl extends BaseRepository
       WHERE t.language_id = ?
         AND t.status != 0
         AND rc.next_due <= ?
+        ${_statusClause(statuses)}
       ORDER BY rc.next_due ASC
       LIMIT ?
       ''',
-      [languageId, now.toIso8601String(), effectiveLimit],
+      [languageId, now.toIso8601String(), ...statusArgs, effectiveLimit],
     );
 
     final budget = await _newCardBudget(languageId);
@@ -178,9 +186,11 @@ class ReviewCardRepositoryImpl extends BaseRepository
   }
 
   @override
-  Future<int> getDueCount(String languageId, {DateTime? now}) async {
+  Future<int> getDueCount(String languageId,
+      {DateTime? now, List<int>? statuses}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
+    final statusArgs = statuses ?? const <int>[];
     final result = await db.rawQuery(
       '''
       SELECT COUNT(*) as total, COALESCE(SUM($_isNewExpr), 0) as new_cnt
@@ -189,8 +199,9 @@ class ReviewCardRepositoryImpl extends BaseRepository
       WHERE t.language_id = ?
         AND t.status != 0
         AND rc.next_due <= ?
+        ${_statusClause(statuses)}
       ''',
-      [languageId, now.toIso8601String()],
+      [languageId, now.toIso8601String(), ...statusArgs],
     );
     final total = result.first['total'] as int;
     final newCnt = result.first['new_cnt'] as int;
@@ -198,9 +209,11 @@ class ReviewCardRepositoryImpl extends BaseRepository
   }
 
   @override
-  Future<int> getClozeDueCount(String languageId, {DateTime? now}) async {
+  Future<int> getClozeDueCount(String languageId,
+      {DateTime? now, List<int>? statuses}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
+    final statusArgs = statuses ?? const <int>[];
     final result = await db.rawQuery(
       '''
       SELECT COUNT(*) as total, COALESCE(SUM($_isNewExpr), 0) as new_cnt
@@ -209,12 +222,13 @@ class ReviewCardRepositoryImpl extends BaseRepository
       WHERE t.language_id = ?
         AND t.status != 0
         AND rc.next_due <= ?
+        ${_statusClause(statuses)}
         AND (
           (t.sentence IS NOT NULL AND t.sentence != '')
           OR EXISTS (SELECT 1 FROM term_sentences ts WHERE ts.term_id = t.id)
         )
       ''',
-      [languageId, now.toIso8601String()],
+      [languageId, now.toIso8601String(), ...statusArgs],
     );
     final total = result.first['total'] as int;
     final newCnt = result.first['new_cnt'] as int;

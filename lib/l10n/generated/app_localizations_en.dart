@@ -601,6 +601,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusWellKnown => 'Well Known';
 
   @override
+  String get reviewByStatus => 'Review by status';
+
+  @override
   String get addDictionariesQuestion => 'Add Dictionaries?';
 
   @override

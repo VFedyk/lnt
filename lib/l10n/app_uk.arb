@@ -180,6 +180,7 @@
   "statusLearning4": "Вивчення 4",
   "statusKnown": "Відомі",
   "statusWellKnown": "Добре відомі",
+  "reviewByStatus": "Повторення за статусом",
   "addDictionariesQuestion": "Додати словники?",
   "addDictionariesPrompt": "Бажаєте додати словники для {name}?",
   "later": "Пізніше",
