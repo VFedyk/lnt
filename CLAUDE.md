@@ -199,7 +199,7 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 
 ## Testing
 
-- **Command**: `flutter test` — runs all 177 tests in ~2-3 seconds
+- **Command**: `flutter test` — runs all 179 tests in ~2-3 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
 - **Verification**: Use exit code pattern to avoid parsing verbose output:
   ```bash

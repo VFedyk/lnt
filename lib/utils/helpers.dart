@@ -36,6 +36,28 @@ class DateHelper {
       return 'Just now';
     }
   }
+
+  /// Relative time for a *future* date (e.g. a next-review due date). Past or
+  /// now reads as "Due now".
+  static String formatRelativeFuture(DateTime date) {
+    final difference = date.difference(DateTime.now());
+
+    if (difference.inSeconds <= 0) {
+      return 'Due now';
+    } else if (difference.inDays > 365) {
+      return 'in ${(difference.inDays / 365).floor()} year${difference.inDays > 730 ? 's' : ''}';
+    } else if (difference.inDays > 30) {
+      return 'in ${(difference.inDays / 30).floor()} month${difference.inDays > 60 ? 's' : ''}';
+    } else if (difference.inDays > 0) {
+      return 'in ${difference.inDays} day${difference.inDays > 1 ? 's' : ''}';
+    } else if (difference.inHours > 0) {
+      return 'in ${difference.inHours} hour${difference.inHours > 1 ? 's' : ''}';
+    } else if (difference.inMinutes > 0) {
+      return 'in ${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''}';
+    } else {
+      return 'Soon';
+    }
+  }
 }
 
 class TextHelper {

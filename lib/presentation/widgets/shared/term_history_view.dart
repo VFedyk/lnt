@@ -100,7 +100,7 @@ class TermHistoryView extends StatelessWidget {
               _summaryRow(
                 context,
                 l10n.nextReview,
-                DateHelper.formatRelativeTime(nextDue),
+                DateHelper.formatRelativeFuture(nextDue),
               ),
           ],
         ),
