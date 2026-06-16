@@ -7,4 +7,7 @@ abstract class TermStatusLogRepository {
     required DateTime from,
     required DateTime to,
   });
+
+  /// All status changes for a single term, oldest first.
+  Future<List<({DateTime changedAt, int status})>> getByTermId(String termId);
 }

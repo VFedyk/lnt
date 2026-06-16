@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../../application/use_cases/translation/translate_term.dart';
 import '../../data/services/ai_explanation_service.dart';
 import '../../domain/entities/language.dart';
+import '../../domain/entities/review_card.dart';
 import '../../domain/entities/term.dart';
 import '../../domain/entities/translation_result.dart';
 import '../../domain/value_objects/translation_provider.dart';
@@ -48,6 +49,19 @@ class TermDialogController extends BaseController {
   bool hasAi = false;
   bool isAiTranslating = false;
 
+  // Per-word history (loaded when term.id != null).
+  bool historyLoading = false;
+  List<({DateTime reviewedAt, int rating, int? durationMs})> reviewHistory = [];
+  List<({DateTime changedAt, int status})> statusTransitions = [];
+  ReviewCardRecord? reviewCard;
+
+  int get totalReviews => reviewHistory.length;
+  int get recalledCount => reviewHistory.where((r) => r.rating != 1).length;
+  DateTime? get lastReviewedAt =>
+      reviewHistory.isEmpty ? null : reviewHistory.last.reviewedAt;
+  DateTime? get nextDue => reviewCard?.nextDue;
+  double? get stability => (reviewCard?.cardData['stability'] as num?)?.toDouble();
+
   bool get hasAnyTranslationProvider => hasDeepL || hasLibreTranslate;
   bool get hasMultipleTranslationProviders => hasDeepL && hasLibreTranslate;
 
@@ -80,6 +94,7 @@ class TermDialogController extends BaseController {
     required this.languageCode,
   }) {
     status = term.status;
+    historyLoading = term.id != null;
     selectedLanguageId = languageId;
     selectedLanguageName = languageName;
     termController = TextEditingController(text: term.lowerText);
@@ -96,7 +111,33 @@ class TermDialogController extends BaseController {
       _checkTranslationProviders(),
       _loadLanguages(),
       _checkAiProvider(),
+      _loadHistory(),
     ]);
+  }
+
+  Future<void> _loadHistory() async {
+    if (term.id == null) return;
+    final reviews = await db.reviewLogs.getByTermId(term.id!);
+    final statuses = await db.termStatusLog.getByTermId(term.id!);
+    final card = await db.reviewCards.getByTermId(term.id!);
+    if (isDisposed) return;
+    reviewHistory = reviews;
+    statusTransitions = _collapseStatuses(statuses);
+    reviewCard = card;
+    historyLoading = false;
+    safeNotify();
+  }
+
+  /// Drops consecutive identical statuses so only transitions remain (a status
+  /// row is logged on every review, not just on change).
+  static List<({DateTime changedAt, int status})> _collapseStatuses(
+    List<({DateTime changedAt, int status})> rows,
+  ) {
+    final out = <({DateTime changedAt, int status})>[];
+    for (final r in rows) {
+      if (out.isEmpty || out.last.status != r.status) out.add(r);
+    }
+    return out;
   }
 
   Future<void> _checkTranslationProviders() async {

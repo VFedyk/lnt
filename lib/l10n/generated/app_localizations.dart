@@ -1184,6 +1184,54 @@ abstract class AppLocalizations {
   /// **'Review by status'**
   String get reviewByStatus;
 
+  /// No description provided for @history.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get history;
+
+  /// No description provided for @created.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get created;
+
+  /// No description provided for @lastReviewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Last reviewed'**
+  String get lastReviewed;
+
+  /// No description provided for @neverReviewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Never reviewed'**
+  String get neverReviewed;
+
+  /// No description provided for @nextReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Next review'**
+  String get nextReview;
+
+  /// No description provided for @statusChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Status changes'**
+  String get statusChanges;
+
+  /// No description provided for @reviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews'**
+  String get reviews;
+
+  /// No description provided for @noHistoryYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No history yet'**
+  String get noHistoryYet;
+
   /// No description provided for @addDictionariesQuestion.
   ///
   /// In en, this message translates to:

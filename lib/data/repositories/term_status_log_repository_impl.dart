@@ -94,6 +94,26 @@ class TermStatusLogRepositoryImpl extends BaseRepository
     return snapshots;
   }
 
+  @override
+  Future<List<({DateTime changedAt, int status})>> getByTermId(
+    String termId,
+  ) async {
+    final db = await getDatabase();
+    final rows = await db.query(
+      'term_status_log',
+      columns: ['status', 'changed_at'],
+      where: 'term_id = ?',
+      whereArgs: [termId],
+      orderBy: 'changed_at ASC',
+    );
+    return rows
+        .map((r) => (
+              changedAt: DateTime.parse(r['changed_at'] as String),
+              status: r['status'] as int,
+            ))
+        .toList();
+  }
+
   List<DateTime> _dayRange(DateTime from, DateTime to) {
     final days = <DateTime>[];
     var cur = DateTime.utc(from.year, from.month, from.day);

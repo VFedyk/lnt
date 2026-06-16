@@ -136,6 +136,7 @@ flutter build macos          # Build macOS
   - **Daily new-card limit** (`settings.getNewCardsPerDay()`, default 20, max 50, `0` = unlimited): enforced inside `ReviewCardRepositoryImpl` (which takes an optional `SettingsService`), so `getDueCards`/`getDueCount`/`getClozeDueCount` consistently cap "new" cards (those with no `review_logs` row) while never capping review cards. Budget = `perDay − terms first reviewed today`.
   - **Status filter**: `getDueCards`/`getDueCount`/`getClozeDueCount` take an optional `List<int>? statuses` that appends `AND t.status IN (…)` (composes with the `ignored` guard + new-card budget). The review screen (`widgets/review/review_status_filter_chips.dart`, `ReviewStatusGroup` enum grouping Unknown / Learning / Known / Well-known) holds a multi-select chip set and threads a flattened `statusFilter` into every exercise screen + the displayed due counts; all-or-none selected → `null` (no filter).
   - **Stats** (statistics screen): `reviewLogs.getRetention(languageId, {days=30})` returns `(total, recalled)` where recalled = ratings better than `again`; `reviewCards.getDueForecast(languageId, {days})` returns per-day due counts (overdue folded into today). Rendered by `widgets/statistics/due_forecast_chart.dart` + an inline retention card.
+  - **Per-word history**: `reviewLogs.getByTermId(termId)` → `List<({DateTime reviewedAt, int rating, int? durationMs})>` and `termStatusLog.getByTermId(termId)` → `List<({DateTime changedAt, int status})>` (both oldest-first). `TermDialog` is a two-tab dialog (Edit / History via `DefaultTabController`); the History tab (`widgets/shared/term_history_view.dart`) shows a summary, a status-journey `fl_chart`, the status timeline (consecutive identical statuses collapsed in `TermDialogController`), and the review log. A status row is written on *every* review, so collapse to transitions before display.
   - Review settings UI: `widgets/settings/review_settings_section.dart` (retention + new-cards-per-day sliders), driven by `SettingsController` (`desiredRetention`, `newCardsPerDay`). SharedPreferences keys: `desired_retention`, `new_cards_per_day`.
 - **TtsService** (`ttsService`): text-to-speech via `flutter_tts`; access via `ttsService` getter.
 - **ChineseSegmentationService** (`chineseSegService`): word tokenization via `jieba_flutter` for Chinese texts.
@@ -198,7 +199,7 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 
 ## Testing
 
-- **Command**: `flutter test` — runs all 173 tests in ~2-3 seconds
+- **Command**: `flutter test` — runs all 177 tests in ~2-3 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
 - **Verification**: Use exit code pattern to avoid parsing verbose output:
   ```bash
@@ -207,7 +208,7 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 - **Test coverage**:
   - `test/application/` — Use cases: ReviewTerm (FSRS + repo writes, rating semantics, retention `configure()`), SaveTerm, BulkImportTerms, TranslateTerm
   - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier, Chinese segmentation)
-  - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping); `review_card_repository_test.dart` (term-event card lifecycle, due-card status filtering, status-filter queries, due forecast, daily new-card limit — in-memory DB); `review_log_repository_test.dart` (retention aggregation)
+  - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping); `review_card_repository_test.dart` (term-event card lifecycle, due-card status filtering, status-filter queries, due forecast, daily new-card limit — in-memory DB); `review_log_repository_test.dart` (retention aggregation, per-term history); `term_status_log_repository_test.dart` (per-term status history)
   - `test/controllers/` — Screen controllers (LibraryController listener lifecycle and CRUD delegation)
   - `test/services/sync_service_test.dart` — Sync layer: `validatePayload` (all domains), `applyEvent` (LWW replace, ignore-duplicate, term atomicity), collectors with timestamp windowing; uses `sqflite_common_ffi` in-memory DB with full v21 schema
   - Widget tests are not yet comprehensive (default `widget_test.dart` is a leftover)

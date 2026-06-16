@@ -9,4 +9,10 @@ abstract class ReviewLogRepository {
     String languageId, {
     int days,
   });
+
+  /// All reviews for a single term, oldest first. `rating` is the FSRS rating
+  /// (1=again … 4=easy); `durationMs` is the review duration if recorded.
+  Future<List<({DateTime reviewedAt, int rating, int? durationMs})>> getByTermId(
+    String termId,
+  );
 }

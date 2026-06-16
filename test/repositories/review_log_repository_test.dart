@@ -27,8 +27,8 @@ Future<void> _insertTerm(
   await db.insert('terms', {
     'id': id,
     'language_id': languageId,
-    'text': 't',
-    'lower_text': 't',
+    'text': id,
+    'lower_text': id,
     'status': TermStatus.known,
     'created_at': now,
     'last_accessed': now,
@@ -91,6 +91,49 @@ void main() {
       final r = await repo.getRetention('lang-1');
       expect(r.total, 0);
       expect(r.recalled, 0);
+    });
+  });
+
+  group('getByTermId', () {
+    late Database db;
+    late ReviewLogRepositoryImpl repo;
+
+    setUp(() async {
+      db = await _openTestDb();
+      repo = ReviewLogRepositoryImpl(() async => db);
+    });
+
+    tearDown(() async => db.close());
+
+    test('returns parsed reviews oldest-first for the term only', () async {
+      await _insertTerm(db, id: 't1');
+      await _insertTerm(db, id: 't2');
+      final base = DateTime.utc(2026, 6, 1, 12);
+      await repo.create(
+        't1',
+        jsonEncode({'cardId': 1, 'rating': 3, 'reviewDuration': 1500}),
+        base.add(const Duration(days: 1)),
+      );
+      await repo.create(
+        't1',
+        jsonEncode({'cardId': 1, 'rating': 1, 'reviewDuration': null}),
+        base, // earlier — should sort first
+      );
+      await repo.create(
+        't2',
+        jsonEncode({'cardId': 2, 'rating': 4, 'reviewDuration': null}),
+        base,
+      );
+
+      final history = await repo.getByTermId('t1');
+      expect(history.map((e) => e.rating), [1, 3]); // oldest-first
+      expect(history.first.reviewedAt, base);
+      expect(history.last.durationMs, 1500);
+    });
+
+    test('returns empty for a term with no reviews', () async {
+      await _insertTerm(db, id: 't1');
+      expect(await repo.getByTermId('t1'), isEmpty);
     });
   });
 }

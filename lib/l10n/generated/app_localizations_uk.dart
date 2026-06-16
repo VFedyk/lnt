@@ -605,6 +605,30 @@ class AppLocalizationsUk extends AppLocalizations {
   String get reviewByStatus => 'Повторення за статусом';
 
   @override
+  String get history => 'Історія';
+
+  @override
+  String get created => 'Створено';
+
+  @override
+  String get lastReviewed => 'Останнє повторення';
+
+  @override
+  String get neverReviewed => 'Ще не повторювалося';
+
+  @override
+  String get nextReview => 'Наступне повторення';
+
+  @override
+  String get statusChanges => 'Зміни статусу';
+
+  @override
+  String get reviews => 'Повторення';
+
+  @override
+  String get noHistoryYet => 'Ще немає історії';
+
+  @override
   String get addDictionariesQuestion => 'Додати словники?';
 
   @override

@@ -604,6 +604,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reviewByStatus => 'Review by status';
 
   @override
+  String get history => 'History';
+
+  @override
+  String get created => 'Created';
+
+  @override
+  String get lastReviewed => 'Last reviewed';
+
+  @override
+  String get neverReviewed => 'Never reviewed';
+
+  @override
+  String get nextReview => 'Next review';
+
+  @override
+  String get statusChanges => 'Status changes';
+
+  @override
+  String get reviews => 'Reviews';
+
+  @override
+  String get noHistoryYet => 'No history yet';
+
+  @override
   String get addDictionariesQuestion => 'Add Dictionaries?';
 
   @override

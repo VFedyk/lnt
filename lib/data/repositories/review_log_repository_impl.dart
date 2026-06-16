@@ -91,4 +91,25 @@ class ReviewLogRepositoryImpl extends BaseRepository
     }
     return (total: total, recalled: recalled);
   }
+
+  @override
+  Future<List<({DateTime reviewedAt, int rating, int? durationMs})>> getByTermId(
+    String termId,
+  ) async {
+    final db = await getDatabase();
+    final rows = await db.query(
+      'review_logs',
+      where: 'term_id = ?',
+      whereArgs: [termId],
+      orderBy: 'reviewed_at ASC',
+    );
+    return rows.map((row) {
+      final data = jsonDecode(row['log_data'] as String) as Map<String, dynamic>;
+      return (
+        reviewedAt: DateTime.parse(row['reviewed_at'] as String),
+        rating: (data['rating'] as int?) ?? 0,
+        durationMs: data['reviewDuration'] as int?,
+      );
+    }).toList();
+  }
 }

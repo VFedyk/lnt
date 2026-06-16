@@ -18,6 +18,7 @@ import '../../../service_locator.dart';
 import '../../../utils/constants.dart';
 import '../../../utils/helpers.dart';
 import 'base_term_search_dialog.dart';
+import 'term_history_view.dart';
 import '../../controllers/term_dialog_controller.dart';
 
 abstract class _TermDialogConstants {
@@ -395,6 +396,39 @@ class _TermDialogState extends State<TermDialog> {
     );
   }
 
+  Widget _buildTabBar(AppLocalizations l10n) {
+    return TabBar(
+      tabs: [
+        Tab(text: l10n.edit),
+        Tab(text: l10n.history),
+      ],
+    );
+  }
+
+  /// Edit form + History tab. Caller must place it where it gets a bounded
+  /// height (Expanded / fixed-height SizedBox) so the TabBarView can lay out.
+  Widget _buildTabbedBody(AppLocalizations l10n) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildTabBar(l10n),
+        Expanded(
+          child: TabBarView(
+            children: [
+              SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppConstants.spacingS,
+                ),
+                child: _buildFormBody(l10n),
+              ),
+              TermHistoryView(controller: _controller, term: widget.term),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   List<Widget> _buildActionButtons(AppLocalizations l10n) {
     return [
       if (widget.term.id != null)
@@ -423,7 +457,8 @@ class _TermDialogState extends State<TermDialog> {
       title: _buildTitleRow(l10n),
       content: SizedBox(
         width: AppConstants.dialogWidth,
-        child: SingleChildScrollView(child: _buildFormBody(l10n)),
+        height: 480,
+        child: _buildTabbedBody(l10n),
       ),
       actions: _buildActionButtons(l10n),
     );
@@ -463,9 +498,11 @@ class _TermDialogState extends State<TermDialog> {
             ),
             const Divider(height: 1),
             Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppConstants.spacingL),
-                child: _buildFormBody(l10n),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.spacingL,
+                ),
+                child: _buildTabbedBody(l10n),
               ),
             ),
             const Divider(height: 1),
@@ -490,7 +527,10 @@ class _TermDialogState extends State<TermDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return widget.isSheet ? _buildSheet(l10n) : _buildDialog(l10n);
+    return DefaultTabController(
+      length: 2,
+      child: widget.isSheet ? _buildSheet(l10n) : _buildDialog(l10n),
+    );
   }
 }
 
