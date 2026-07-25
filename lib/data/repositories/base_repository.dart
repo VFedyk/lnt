@@ -23,6 +23,25 @@ abstract class BaseRepository {
         .replaceAll('_', r'\_');
   }
 
+  /// Records a deletion so the next sync pushes it as a tombstone event and
+  /// other devices remove the row instead of resurrecting it.
+  /// Takes a [DatabaseExecutor] so it also works inside a transaction.
+  static Future<void> recordTombstone(
+    DatabaseExecutor db,
+    String domain,
+    String entityId,
+  ) async {
+    await db.insert(
+      'sync_tombstones',
+      {
+        'domain': domain,
+        'entity_id': entityId,
+        'deleted_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   /// Returns the cover_images.id for [localPath], creating a row if needed.
   /// Returns null when [localPath] is null or empty.
   static Future<String?> getOrCreateCoverImageId(

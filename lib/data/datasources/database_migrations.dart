@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 21;
+const int databaseVersion = 22;
 
 const _uuid = Uuid();
 
@@ -245,6 +245,98 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
       'UPDATE texts SET updated_at = last_read',
     );
   }
+  if (oldVersion < 22) {
+    await _migrateForConcurrentSync(db);
+  }
+}
+
+/// Prepare the schema for concurrent-edit-safe sync (v21 → v22).
+///
+/// 1. `updated_at` on the tables that lacked it, so push can filter by last
+///    write and pull can resolve last-write-wins.
+/// 2. `sync_tombstones`, so deletions propagate instead of resurrecting.
+/// 3. Orphan cleanup — mandatory before FK enforcement starts. SQLite validates
+///    child key columns on UPDATE too, so a row holding a dangling reference
+///    would become permanently un-updatable once `PRAGMA foreign_keys = ON`.
+Future<void> _migrateForConcurrentSync(Database db) async {
+  // ── 1. updated_at columns ──
+  await db.execute('ALTER TABLE terms ADD COLUMN updated_at TEXT');
+  await db.execute('UPDATE terms SET updated_at = created_at');
+  await db.execute('ALTER TABLE collections ADD COLUMN updated_at TEXT');
+  await db.execute('UPDATE collections SET updated_at = created_at');
+  await db.execute('ALTER TABLE languages ADD COLUMN updated_at TEXT');
+  // languages have no created_at — backfill to migration time.
+  await db.execute(
+    'UPDATE languages SET updated_at = ?',
+    [DateTime.now().toUtc().toIso8601String()],
+  );
+
+  // ── 2. tombstone table ──
+  await db.execute('''
+    CREATE TABLE sync_tombstones (
+      domain     TEXT NOT NULL,
+      entity_id  TEXT NOT NULL,
+      deleted_at TEXT NOT NULL,
+      PRIMARY KEY (domain, entity_id)
+    )
+  ''');
+
+  // ── 3. orphan cleanup ──
+  // Rows whose NOT NULL CASCADE parent is gone.
+  await db.execute(
+      'DELETE FROM collections WHERE language_id NOT IN (SELECT id FROM languages)');
+  await db.execute(
+      'DELETE FROM texts WHERE language_id NOT IN (SELECT id FROM languages)');
+  await db.execute(
+      'DELETE FROM terms WHERE language_id NOT IN (SELECT id FROM languages)');
+  await db.execute(
+      'DELETE FROM dictionaries WHERE language_id NOT IN (SELECT id FROM languages)');
+  await db.execute(
+      'DELETE FROM translations WHERE term_id NOT IN (SELECT id FROM terms)');
+  await db.execute(
+      'DELETE FROM review_cards WHERE term_id NOT IN (SELECT id FROM terms)');
+  await db.execute(
+      'DELETE FROM review_logs WHERE term_id NOT IN (SELECT id FROM terms)');
+  await db.execute(
+      'DELETE FROM term_status_log WHERE term_id NOT IN (SELECT id FROM terms)');
+  await db.execute(
+      'DELETE FROM term_sentences WHERE term_id NOT IN (SELECT id FROM terms)');
+  await db.execute(
+      'DELETE FROM text_foreign_words WHERE text_id NOT IN (SELECT id FROM texts)');
+
+  // Dangling nullable refs — mirror ON DELETE SET NULL.
+  await db.execute('''
+    UPDATE texts SET collection_id = NULL
+    WHERE collection_id IS NOT NULL
+      AND collection_id NOT IN (SELECT id FROM collections)
+  ''');
+  await db.execute('''
+    UPDATE texts SET cover_image_id = NULL
+    WHERE cover_image_id IS NOT NULL
+      AND cover_image_id NOT IN (SELECT id FROM cover_images)
+  ''');
+  await db.execute('''
+    UPDATE collections SET cover_image_id = NULL
+    WHERE cover_image_id IS NOT NULL
+      AND cover_image_id NOT IN (SELECT id FROM cover_images)
+  ''');
+  // parent_id is CASCADE, but a dangling parent means an orphaned subtree —
+  // recover it to the root rather than deleting user data.
+  await db.execute('''
+    UPDATE collections SET parent_id = NULL
+    WHERE parent_id IS NOT NULL
+      AND parent_id NOT IN (SELECT id FROM collections)
+  ''');
+  await db.execute('''
+    UPDATE terms SET base_term_id = NULL
+    WHERE base_term_id IS NOT NULL
+      AND base_term_id NOT IN (SELECT id FROM terms)
+  ''');
+  await db.execute('''
+    UPDATE text_foreign_words SET term_id = NULL
+    WHERE term_id IS NOT NULL
+      AND term_id NOT IN (SELECT id FROM terms)
+  ''');
 }
 
 /// Migrate all integer primary keys to TEXT UUIDs (v17 → v18).
@@ -851,7 +943,8 @@ Future<void> onCreate(Database db, int version) async {
       character_substitutions TEXT,
       regexp_word_characters TEXT,
       regexp_split_sentences TEXT,
-      exceptions_split_sentences TEXT
+      exceptions_split_sentences TEXT,
+      updated_at TEXT
     )
   ''');
 
@@ -898,6 +991,7 @@ Future<void> onCreate(Database db, int version) async {
       created_at TEXT NOT NULL,
       last_accessed TEXT NOT NULL,
       base_term_id TEXT,
+      updated_at TEXT,
       FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE,
       FOREIGN KEY (base_term_id) REFERENCES terms (id) ON DELETE SET NULL,
       UNIQUE(language_id, lower_text)
@@ -940,6 +1034,7 @@ Future<void> onCreate(Database db, int version) async {
       created_at     TEXT NOT NULL,
       sort_order     INTEGER DEFAULT 0,
       cover_image_id TEXT,
+      updated_at     TEXT,
       FOREIGN KEY (language_id)    REFERENCES languages (id)    ON DELETE CASCADE,
       FOREIGN KEY (parent_id)      REFERENCES collections (id)  ON DELETE CASCADE,
       FOREIGN KEY (cover_image_id) REFERENCES cover_images (id) ON DELETE SET NULL
@@ -1054,4 +1149,14 @@ Future<void> onCreate(Database db, int version) async {
   await db.execute(
     'CREATE INDEX idx_term_sentences_term ON term_sentences(term_id)',
   );
+
+  // Records deletions so they propagate on sync instead of resurrecting.
+  await db.execute('''
+    CREATE TABLE sync_tombstones (
+      domain     TEXT NOT NULL,
+      entity_id  TEXT NOT NULL,
+      deleted_at TEXT NOT NULL,
+      PRIMARY KEY (domain, entity_id)
+    )
+  ''');
 }

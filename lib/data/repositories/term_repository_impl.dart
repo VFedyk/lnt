@@ -13,13 +13,16 @@ class TermRepositoryImpl extends BaseRepository implements TermRepository {
 
   TermRepositoryImpl(super.getDatabase, {super.onChange, this.termEvents});
 
+  /// Last-write timestamp stamped on every mutation, so sync can order edits.
+  static String _nowIso() => DateTime.now().toUtc().toIso8601String();
+
   @override
   Future<String> create(Term term) async {
     final db = await getDatabase();
     final id = term.id ?? _uuid.v4();
     await db.insert(
       'terms',
-      term.copyWith(id: id).toMap(),
+      term.copyWith(id: id).toMap()..['updated_at'] = _nowIso(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     notifyChange();
@@ -130,7 +133,7 @@ class TermRepositoryImpl extends BaseRepository implements TermRepository {
     final db = await getDatabase();
     final result = await db.update(
       'terms',
-      term.toMap(),
+      term.toMap()..['updated_at'] = _nowIso(),
       where: 'id = ?',
       whereArgs: [term.id],
     );
@@ -143,6 +146,7 @@ class TermRepositoryImpl extends BaseRepository implements TermRepository {
   Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('terms', where: 'id = ?', whereArgs: [id]);
+    if (result > 0) await BaseRepository.recordTombstone(db, 'term', id);
     notifyChange();
     return result;
   }
@@ -192,7 +196,7 @@ class TermRepositoryImpl extends BaseRepository implements TermRepository {
     final written = <({String id, int status})>[];
     for (final term in terms) {
       final id = term.id ?? _uuid.v4();
-      batch.insert('terms', term.copyWith(id: id).toMap(),
+      batch.insert('terms', term.copyWith(id: id).toMap()..['updated_at'] = _nowIso(),
           conflictAlgorithm: ConflictAlgorithm.replace);
       written.add((id: id, status: term.status));
     }
@@ -211,6 +215,7 @@ class TermRepositoryImpl extends BaseRepository implements TermRepository {
         {
           'status': newStatus,
           'last_accessed': DateTime.now().toIso8601String(),
+          'updated_at': _nowIso(),
         },
         where: 'id = ?',
         whereArgs: [id],

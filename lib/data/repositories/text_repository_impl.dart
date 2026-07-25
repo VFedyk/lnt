@@ -69,6 +69,7 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
   Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('texts', where: 'id = ?', whereArgs: [id]);
+    if (result > 0) await BaseRepository.recordTombstone(db, 'text', id);
     notifyChange();
     return result;
   }
@@ -119,7 +120,10 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
     final db = await getDatabase();
     await db.update(
       'texts',
-      {'collection_id': collectionId},
+      {
+        'collection_id': collectionId,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
       where: 'id = ?',
       whereArgs: [textId],
     );

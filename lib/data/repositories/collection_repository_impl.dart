@@ -15,12 +15,17 @@ class CollectionRepositoryImpl extends BaseRepository
     implements CollectionRepository {
   CollectionRepositoryImpl(super.getDatabase, {super.onChange});
 
+  /// Last-write timestamp stamped on every mutation, so sync can order edits.
+  static String _nowIso() => DateTime.now().toUtc().toIso8601String();
+
   @override
   Future<String> create(Collection collection) async {
     final db = await getDatabase();
     final id = collection.id ?? _uuid.v4();
     final coverImageId = await BaseRepository.getOrCreateCoverImageId(db, collection.coverImage);
-    await db.insert('collections', collection.copyWith(id: id, coverImageId: coverImageId).toMap());
+    await db.insert('collections',
+        collection.copyWith(id: id, coverImageId: coverImageId).toMap()
+          ..['updated_at'] = _nowIso());
     notifyChange();
     return id;
   }
@@ -65,7 +70,8 @@ class CollectionRepositoryImpl extends BaseRepository
         await BaseRepository.getOrCreateCoverImageId(db, collection.coverImage);
     final result = await db.update(
       'collections',
-      collection.copyWith(coverImageId: coverImageId).toMap(),
+      collection.copyWith(coverImageId: coverImageId).toMap()
+        ..['updated_at'] = _nowIso(),
       where: 'id = ?',
       whereArgs: [collection.id],
     );
@@ -78,7 +84,7 @@ class CollectionRepositoryImpl extends BaseRepository
     final db = await getDatabase();
     await db.update(
       'collections',
-      {'parent_id': parentId},
+      {'parent_id': parentId, 'updated_at': _nowIso()},
       where: 'id = ?',
       whereArgs: [collectionId],
     );
@@ -89,6 +95,7 @@ class CollectionRepositoryImpl extends BaseRepository
   Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('collections', where: 'id = ?', whereArgs: [id]);
+    if (result > 0) await BaseRepository.recordTombstone(db, 'collection', id);
     notifyChange();
     return result;
   }

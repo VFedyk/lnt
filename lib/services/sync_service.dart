@@ -160,13 +160,14 @@ class SyncService {
     _report(onProgress, 0.40, 'Uploading images…');
     final coverRefs = await _imageService.syncCoverImages(api, userId, rawDb, onProgress);
 
-    await _pushService.collectLanguages(rawDb, events);
+    await _pushService.collectLanguages(rawDb, events, sinceStr);
     await _pushService.collectCollections(rawDb, events, sinceStr, coverRefs);
     await _pushService.collectTexts(rawDb, events, sinceStr, coverRefs);
     await _pushService.collectTerms(rawDb, events, sinceStr);
     await _pushService.collectReviewCards(rawDb, events, sinceStr);
     await _pushService.collectReviewLogs(rawDb, events, sinceStr);
     await _pushService.collectStatusLogs(rawDb, events, sinceStr);
+    await _pushService.collectTombstones(rawDb, events, sinceStr);
 
     if (events.isEmpty) return 0;
 

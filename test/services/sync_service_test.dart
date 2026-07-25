@@ -59,8 +59,12 @@ void main() {
           isTrue);
     });
 
-    test('rejects text payload missing collection_id', () {
-      expect(pullService.validatePayload('text', {'language_id': 'en'}), isFalse);
+    test('accepts text payload without collection_id (root text)', () {
+      expect(pullService.validatePayload('text', {'language_id': 'en'}), isTrue);
+    });
+
+    test('rejects text payload missing language_id', () {
+      expect(pullService.validatePayload('text', {}), isFalse);
     });
 
     test('accepts valid term payload', () {
@@ -109,20 +113,98 @@ void main() {
       expect(rows.first['name'], 'English');
     });
 
-    test('replaces language row on re-apply (LWW)', () async {
-      await pullService.applyEvent(
-        db,
-        _makeEvent('language', 'lang-1', {'name': 'Old', 'language_code': 'en'}),
-        _noOpApi(), 'user1', {},
-      );
-      await pullService.applyEvent(
-        db,
-        _makeEvent('language', 'lang-1', {'name': 'New', 'language_code': 'en'}),
-        _noOpApi(), 'user1', {},
-      );
+    /// Applies a language write stamped with [updatedAt].
+    Future<void> applyLang(String name, String updatedAt) => pullService.applyEvent(
+          db,
+          _makeEvent('language', 'lang-1',
+              {'name': name, 'language_code': 'en', 'updated_at': updatedAt}),
+          _noOpApi(), 'user1', {},
+        );
+
+    Future<String?> currentName() async {
       final rows = await db.query('languages', where: 'id = ?', whereArgs: ['lang-1']);
       expect(rows.length, 1);
-      expect(rows.first['name'], 'New');
+      return rows.first['name'] as String?;
+    }
+
+    test('newer event replaces the local row', () async {
+      await applyLang('Old', '2024-01-01T00:00:00.000Z');
+      await applyLang('New', '2024-02-01T00:00:00.000Z');
+      expect(await currentName(), 'New');
+    });
+
+    test('older event is skipped', () async {
+      await applyLang('New', '2024-02-01T00:00:00.000Z');
+      await applyLang('Stale', '2024-01-01T00:00:00.000Z');
+      expect(await currentName(), 'New');
+    });
+
+    test('equal timestamp is a no-op (own push echoing back)', () async {
+      await applyLang('Original', '2024-01-01T00:00:00.000Z');
+      await applyLang('Echo', '2024-01-01T00:00:00.000Z');
+      expect(await currentName(), 'Original');
+    });
+  });
+
+  group('SyncPullService.applyEvent — tombstones', () {
+    late Database db;
+
+    setUp(() async { db = await _openTestDb(); });
+    tearDown(() async { await db.close(); });
+
+    Future<void> insertLang(String updatedAt) => pullService.applyEvent(
+          db,
+          _makeEvent('language', 'lang-1',
+              {'name': 'English', 'language_code': 'en', 'updated_at': updatedAt}),
+          _noOpApi(), 'user1', {},
+        );
+
+    Future<void> applyDelete(String deletedAt) => pullService.applyEvent(
+          db,
+          _makeEvent('language', 'lang-1', {'_deleted': true, 'deleted_at': deletedAt}),
+          _noOpApi(), 'user1', {},
+        );
+
+    Future<int> langCount() async =>
+        (await db.query('languages', where: 'id = ?', whereArgs: ['lang-1'])).length;
+
+    Future<int> tombstoneCount() async => (await db.query('sync_tombstones',
+            where: 'domain = ? AND entity_id = ?',
+            whereArgs: ['language', 'lang-1']))
+        .length;
+
+    test('delete event removes the row and records a tombstone', () async {
+      await insertLang('2024-01-01T00:00:00.000Z');
+      await applyDelete('2024-02-01T00:00:00.000Z');
+
+      expect(await langCount(), 0);
+      expect(await tombstoneCount(), 1);
+    });
+
+    test('write older than the tombstone leaves the entity deleted', () async {
+      await insertLang('2024-01-01T00:00:00.000Z');
+      await applyDelete('2024-02-01T00:00:00.000Z');
+      await insertLang('2024-01-15T00:00:00.000Z');
+
+      expect(await langCount(), 0);
+      expect(await tombstoneCount(), 1);
+    });
+
+    test('write newer than the tombstone resurrects and clears it', () async {
+      await insertLang('2024-01-01T00:00:00.000Z');
+      await applyDelete('2024-02-01T00:00:00.000Z');
+      await insertLang('2024-03-01T00:00:00.000Z');
+
+      expect(await langCount(), 1);
+      expect(await tombstoneCount(), 0);
+    });
+
+    test('delete older than the local write is ignored', () async {
+      await insertLang('2024-02-01T00:00:00.000Z');
+      await applyDelete('2024-01-01T00:00:00.000Z');
+
+      expect(await langCount(), 1);
+      expect(await tombstoneCount(), 0);
     });
   });
 
@@ -201,15 +283,18 @@ void main() {
       await pullService.applyEvent(db,
           _makeEvent('term', 'term-1', {
             ...base,
+            'updated_at': '2024-01-01T00:00:00.000Z',
             'translations': [
               {'id': 'tr-old', 'term_id': 'term-1', 'meaning': 'old meaning', 'sort_order': 0},
             ],
           }),
           _noOpApi(), 'u', {});
 
+      // Must be strictly newer, otherwise LWW correctly skips the second event.
       await pullService.applyEvent(db,
           _makeEvent('term', 'term-1', {
             ...base,
+            'updated_at': '2024-02-01T00:00:00.000Z',
             'translations': [
               {'id': 'tr-new', 'term_id': 'term-1', 'meaning': 'new meaning', 'sort_order': 0},
             ],
@@ -236,11 +321,73 @@ void main() {
       await db.insert('languages', {'id': 'lang-1', 'name': 'English', 'language_code': 'en'});
 
       final events = <EventInput>[];
-      await push.collectLanguages(db, events);
+      await push.collectLanguages(db, events, null);
 
       expect(events.length, 1);
       expect(events.first.domain, 'language');
       expect(events.first.entityId, 'lang-1');
+    });
+
+    test('collects only languages updated after sinceStr', () async {
+      await db.insert('languages', {'id': 'lang-old', 'name': 'Old', 'language_code': 'en',
+          'updated_at': '2023-01-01T00:00:00.000Z'});
+      await db.insert('languages', {'id': 'lang-new', 'name': 'New', 'language_code': 'uk',
+          'updated_at': '2025-01-01T00:00:00.000Z'});
+
+      final events = <EventInput>[];
+      await push.collectLanguages(db, events, '2024-01-01T00:00:00.000Z');
+
+      expect(events.length, 1);
+      expect(events.first.entityId, 'lang-new');
+      expect(events.first.clientTs, DateTime.utc(2025));
+    });
+  });
+
+  group('SyncPushService.collectTerms — updated_at window', () {
+    late Database db;
+    final push = SyncPushService();
+
+    setUp(() async { db = await _openTestDb(); });
+    tearDown(() async { await db.close(); });
+
+    test('collects a term edited after sinceStr but created before it', () async {
+      await db.insert('languages', {'id': 'lang-1', 'name': 'English', 'language_code': 'en'});
+      await db.insert('terms', {'id': 'term-1', 'language_id': 'lang-1',
+          'text': 'hello', 'lower_text': 'hello', 'status': 1,
+          'created_at': '2023-01-01T00:00:00.000Z',
+          'last_accessed': '2023-01-01T00:00:00.000Z',
+          'updated_at': '2025-01-01T00:00:00.000Z'});
+
+      final events = <EventInput>[];
+      await push.collectTerms(db, events, '2024-01-01T00:00:00.000Z');
+
+      expect(events.length, 1);
+      expect(events.first.entityId, 'term-1');
+      expect(events.first.clientTs, DateTime.utc(2025));
+    });
+  });
+
+  group('SyncPushService.collectTombstones', () {
+    late Database db;
+    final push = SyncPushService();
+
+    setUp(() async { db = await _openTestDb(); });
+    tearDown(() async { await db.close(); });
+
+    test('emits only tombstones newer than sinceStr', () async {
+      await db.insert('sync_tombstones', {'domain': 'term', 'entity_id': 'term-old',
+          'deleted_at': '2023-01-01T00:00:00.000Z'});
+      await db.insert('sync_tombstones', {'domain': 'term', 'entity_id': 'term-new',
+          'deleted_at': '2025-01-01T00:00:00.000Z'});
+
+      final events = <EventInput>[];
+      await push.collectTombstones(db, events, '2024-01-01T00:00:00.000Z');
+
+      expect(events.length, 1);
+      expect(events.first.domain, 'term');
+      expect(events.first.entityId, 'term-new');
+      expect(events.first.payload['_deleted'], isTrue);
+      expect(events.first.clientTs, DateTime.utc(2025));
     });
   });
 

@@ -124,7 +124,8 @@ flutter build macos          # Build macOS
 ## Architecture notes
 
 - `PlatformHelper.isApple` / `PlatformHelper.isDesktop` guards platform-specific features
-- Database migrations in `lib/data/datasources/database_migrations.dart` with version numbering
+- Database migrations in `lib/data/datasources/database_migrations.dart` with version numbering (current: **v22**)
+- **Foreign keys are enforced**: `PRAGMA foreign_keys = ON` is set in `openDatabase(onOpen:)` — deliberately *not* `onConfigure`, because sqflite wraps `onCreate`/`onUpgrade` in a transaction where the pragma is a silent no-op, and the drop/recreate migrations (v18, v20) must run unenforced. Consequences: `ON DELETE CASCADE`/`SET NULL` now actually fire, and any new code must insert parents before children. v22 cleans pre-existing orphans first — mandatory, since SQLite validates child key columns on UPDATE, so a dangling reference makes its row permanently un-updatable.
 - EPUB parsing via `epub_pro` package (camelCase API)
 - **Screen controllers** (`lib/presentation/controllers/`): `SettingsController`, `LibraryController`, `VocabularyController`, `DashboardController`, `ReaderController`, `FlashcardReviewController`, plus `TermDialogController` and `BaseTermSearchDialogController` for complex dialogs. Each extends `BaseController` (which extends `ChangeNotifier`), provided via `ChangeNotifierProvider`. Controllers own all state and db access; screens/widgets are thin UI layers. `BaseController.safeNotify()` prevents post-dispose notification errors. Controllers never hold `BuildContext` — dialog-showing and SnackBars stay in the widget layer.
 - **SettingsController backup state**: tracks `icloudRemoteDate` (date of file in iCloud), `icloudLocalDate` (last backup from this device), `lastRestoreDate`, `isCheckingBackup`. Call `recheckICloudBackup()` to refresh the remote date.
@@ -170,13 +171,22 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 3. Apply each event via `pullService.applyEvent`; catch exceptions per-event so one bad event doesn't abort the whole pull.
 4. Advance cursor to `events.last.seq`; persist `latestSeq` when done.
 
-`applyEvent` uses `ConflictAlgorithm.replace` for LWW domains (`language/collection/text/term/review_card`) and `ConflictAlgorithm.ignore` for append-only logs (`review_log/term_status_log`). The `term` domain wraps delete-old-translations + insert-new-translations in a **sqflite transaction** to prevent partial writes leaving a term with no translations.
+`applyEvent` resolves the LWW domains (`language/collection/text/term/review_card`, mapped to tables in `SyncPullService._lwwTables`) by comparing timestamps, and uses `ConflictAlgorithm.ignore` for append-only logs (`review_log/term_status_log`, which bypass LWW entirely). The `term` domain wraps delete-old-translations + insert-new-translations in a **sqflite transaction** to prevent partial writes leaving a term with no translations.
+
+### Last-write-wins and tombstones
+
+- **Event timestamp** = `payload['updated_at']` → `payload['created_at']` → `event.clientTs`. **Local row timestamp** = `updated_at` → `created_at`. A remote write is applied only when strictly newer; equal timestamps are a no-op (the device's own push echoing back).
+- Writes go through `_upsert` (UPDATE, then INSERT if no row matched) — **never `ConflictAlgorithm.replace` on LWW parent tables**. With FKs enforced, SQLite REPLACE deletes the existing row first and cascades its children away. Rows inside `translations` may still use `replace`; they are rewritten wholesale inside the term transaction.
+- **Deletions** are `{'_deleted': true, 'deleted_at': …}` payloads under the entity's own domain/`entity_id`. Local table `sync_tombstones(domain, entity_id, deleted_at)` records both locally-initiated and remotely-applied deletes. Every user-initiated delete in a repository calls `BaseRepository.recordTombstone(db, domain, id)` when `result > 0`; `collectTombstones` pushes them.
+- A write **newer** than a tombstone resurrects the entity and clears the tombstone; a delete **older than or equal to** the local row's timestamp loses and records nothing. Children removed by FK cascade get **no tombstones of their own** — the parent's tombstone triggers the same cascade elsewhere.
+- Every mutation of a synced table must set `updated_at` (`terms`, `collections`, `languages`, `texts`, `review_cards`), otherwise the edit is invisible to push and loses every LWW comparison.
 
 ### Push phase
 
 1. `imageService.syncCoverImages`: SHA-256-hash unsynced cover images, batch-check server, upload missing in parallel (concurrency 4), persist `sync_hash`.
-2. `pushService.collect*`: query local tables filtered by `lastPushedAt`.
-3. Push in batches of 200 via `api.pushEvents`.
+2. `pushService.collect*`: query local tables filtered by `lastPushedAt`. Content collectors filter on `COALESCE(updated_at, created_at) > since` and stamp `clientTs` from the row's own timestamp; `collectLanguages` is incremental too (`updated_at > since`).
+3. `pushService.collectTombstones` (runs last): emits `_deleted` events for `sync_tombstones` rows newer than `since`.
+4. Push in batches of 200 via `api.pushEvents`.
 
 ### Settings keys (SharedPreferences)
 
@@ -199,7 +209,7 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 
 ## Testing
 
-- **Command**: `flutter test` — runs all 179 tests in ~2-3 seconds
+- **Command**: `flutter test` — runs all 207 tests in ~5-7 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
 - **Verification**: Use exit code pattern to avoid parsing verbose output:
   ```bash
@@ -210,7 +220,8 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
   - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier, Chinese segmentation)
   - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping); `review_card_repository_test.dart` (term-event card lifecycle, due-card status filtering, status-filter queries, due forecast, daily new-card limit — in-memory DB); `review_log_repository_test.dart` (retention aggregation, per-term history); `term_status_log_repository_test.dart` (per-term status history)
   - `test/controllers/` — Screen controllers (LibraryController listener lifecycle and CRUD delegation)
-  - `test/services/sync_service_test.dart` — Sync layer: `validatePayload` (all domains), `applyEvent` (LWW replace, ignore-duplicate, term atomicity), collectors with timestamp windowing; uses `sqflite_common_ffi` in-memory DB with full v21 schema
+  - `test/services/sync_service_test.dart` — Sync layer: `validatePayload` (all domains), `applyEvent` (LWW newer/older/equal-timestamp, tombstone delete + resurrect, ignore-duplicate, term atomicity), collectors with timestamp windowing (`collectLanguages`, `collectTerms` `updated_at` window, `collectTombstones`); uses `sqflite_common_ffi` in-memory DB with the full current schema
+  - `test/datasources/database_migrations_test.dart` — v21 → v22 upgrade on a real file DB: orphan cleanup, `updated_at` backfill, `sync_tombstones` creation, live FK cascade
   - Widget tests are not yet comprehensive (default `widget_test.dart` is a leftover)
 - **Platform notes**: Tests use `sqflite_common_ffi` for in-memory SQLite on all platforms (no platform-specific setup required)
 - **Running specific tests**: `flutter test test/services/review_service_test.dart`

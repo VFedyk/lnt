@@ -86,6 +86,12 @@ class DatabaseService {
     return await openDatabase(
       _dbPath!,
       version: migrations.databaseVersion,
+      // Deliberately onOpen, not onConfigure: sqflite wraps onCreate/onUpgrade
+      // in a transaction where `PRAGMA foreign_keys` is a silent no-op, and the
+      // drop/recreate migrations (v18 UUID migration, v20 cover images) must run
+      // without FK enforcement anyway. onOpen runs after migrations, on every
+      // connection — which is exactly when we want cascades to fire.
+      onOpen: (db) => db.execute('PRAGMA foreign_keys = ON'),
       onCreate: migrations.onCreate,
       onUpgrade: migrations.onUpgrade,
     );

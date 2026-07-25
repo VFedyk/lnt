@@ -123,11 +123,20 @@ class ReviewCardRepositoryImpl extends BaseRepository
   @override
   Future<int> deleteByTermId(String termId) async {
     final db = await getDatabase();
+    // Ids are read up front so each removed card gets its own tombstone —
+    // sync addresses cards by id, not by term_id.
+    final cardIds = (await db.query('review_cards',
+            columns: ['id'], where: 'term_id = ?', whereArgs: [termId]))
+        .map((r) => r['id'] as String)
+        .toList();
     final result = await db.delete(
       'review_cards',
       where: 'term_id = ?',
       whereArgs: [termId],
     );
+    for (final cardId in cardIds) {
+      await BaseRepository.recordTombstone(db, 'review_card', cardId);
+    }
     notifyChange();
     return result;
   }

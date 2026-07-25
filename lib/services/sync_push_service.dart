@@ -7,8 +7,13 @@ import '../data/services/sync_api.dart';
 class SyncPushService {
   const SyncPushService();
 
-  Future<void> collectLanguages(Database rawDb, List<EventInput> events) async {
-    final rows = await rawDb.query('languages');
+  Future<void> collectLanguages(
+      Database rawDb, List<EventInput> events, String? sinceStr) async {
+    // Incremental: pushing every language on every sync grew the server event
+    // log without bound and stamped bogus (now()) timestamps on unchanged rows.
+    final rows = sinceStr != null
+        ? await rawDb.query('languages', where: 'updated_at > ?', whereArgs: [sinceStr])
+        : await rawDb.query('languages');
     for (final row in rows) {
       final id = row['id'] as String?;
       if (id == null) continue;
@@ -16,7 +21,7 @@ class SyncPushService {
         domain: 'language',
         entityId: id,
         payload: Map<String, dynamic>.from(row),
-        clientTs: DateTime.now().toUtc(),
+        clientTs: _rowTs(row) ?? DateTime.now().toUtc(),
       ));
     }
   }
@@ -28,7 +33,8 @@ class SyncPushService {
     Map<String, String> coverRefs,
   ) async {
     final rows = sinceStr != null
-        ? await rawDb.query('collections', where: 'created_at > ?', whereArgs: [sinceStr])
+        ? await rawDb.query('collections',
+            where: 'COALESCE(updated_at, created_at) > ?', whereArgs: [sinceStr])
         : await rawDb.query('collections');
     for (final row in rows) {
       final id = row['id'] as String?;
@@ -39,7 +45,7 @@ class SyncPushService {
         domain: 'collection',
         entityId: id,
         payload: payload,
-        clientTs: DateTime.parse(row['created_at'] as String).toUtc(),
+        clientTs: _rowTs(row) ?? DateTime.now().toUtc(),
       ));
     }
   }
@@ -63,14 +69,15 @@ class SyncPushService {
         domain: 'text',
         entityId: id,
         payload: payload,
-        clientTs: DateTime.parse(row['created_at'] as String).toUtc(),
+        clientTs: _rowTs(row) ?? DateTime.now().toUtc(),
       ));
     }
   }
 
   Future<void> collectTerms(Database rawDb, List<EventInput> events, String? sinceStr) async {
     final rows = sinceStr != null
-        ? await rawDb.query('terms', where: 'created_at > ?', whereArgs: [sinceStr])
+        ? await rawDb.query('terms',
+            where: 'COALESCE(updated_at, created_at) > ?', whereArgs: [sinceStr])
         : await rawDb.query('terms');
     if (rows.isEmpty) return;
 
@@ -93,7 +100,7 @@ class SyncPushService {
         domain: 'term',
         entityId: id,
         payload: payload,
-        clientTs: DateTime.parse(row['created_at'] as String).toUtc(),
+        clientTs: _rowTs(row) ?? DateTime.now().toUtc(),
       ));
     }
   }
@@ -149,5 +156,30 @@ class SyncPushService {
         clientTs: DateTime.parse(row['changed_at'] as String).toUtc(),
       ));
     }
+  }
+
+  /// Collects deletion tombstones as `_deleted` events so removals propagate
+  /// to other devices. The receiving side applies them with LWW semantics.
+  Future<void> collectTombstones(
+      Database rawDb, List<EventInput> events, String? sinceStr) async {
+    final rows = sinceStr != null
+        ? await rawDb.query('sync_tombstones',
+            where: 'deleted_at > ?', whereArgs: [sinceStr])
+        : await rawDb.query('sync_tombstones');
+    for (final row in rows) {
+      final deletedAt = DateTime.parse(row['deleted_at'] as String).toUtc();
+      events.add(EventInput(
+        domain: row['domain'] as String,
+        entityId: row['entity_id'] as String,
+        payload: {'_deleted': true, 'deleted_at': row['deleted_at']},
+        clientTs: deletedAt,
+      ));
+    }
+  }
+
+  /// Last-write timestamp of a row: updated_at, falling back to created_at.
+  static DateTime? _rowTs(Map<String, Object?> row) {
+    final raw = (row['updated_at'] ?? row['created_at']) as String?;
+    return raw == null ? null : DateTime.parse(raw).toUtc();
   }
 }

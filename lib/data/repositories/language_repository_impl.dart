@@ -9,11 +9,15 @@ class LanguageRepositoryImpl extends BaseRepository
     implements LanguageRepository {
   LanguageRepositoryImpl(super.getDatabase, {super.onChange});
 
+  /// Last-write timestamp stamped on every mutation, so sync can order edits.
+  static String _nowIso() => DateTime.now().toUtc().toIso8601String();
+
   @override
   Future<String> create(Language language) async {
     final db = await getDatabase();
     final id = language.id ?? _uuid.v4();
-    await db.insert('languages', language.copyWith(id: id).toMap());
+    await db.insert(
+        'languages', language.copyWith(id: id).toMap()..['updated_at'] = _nowIso());
     notifyChange();
     return id;
   }
@@ -38,7 +42,7 @@ class LanguageRepositoryImpl extends BaseRepository
     final db = await getDatabase();
     final result = await db.update(
       'languages',
-      language.toMap(),
+      language.toMap()..['updated_at'] = _nowIso(),
       where: 'id = ?',
       whereArgs: [language.id],
     );
@@ -50,6 +54,7 @@ class LanguageRepositoryImpl extends BaseRepository
   Future<int> delete(String id) async {
     final db = await getDatabase();
     final result = await db.delete('languages', where: 'id = ?', whereArgs: [id]);
+    if (result > 0) await BaseRepository.recordTombstone(db, 'language', id);
     notifyChange();
     return result;
   }
