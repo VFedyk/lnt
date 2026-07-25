@@ -435,6 +435,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         selectedText: selectedText,
         contextSentence: sentence,
         languageName: ctrl.language.name,
+        languageCode: ctrl.language.languageCode,
       );
 
       if (!mounted) return;

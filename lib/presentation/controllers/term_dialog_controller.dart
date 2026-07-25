@@ -320,6 +320,7 @@ class TermDialogController extends BaseController {
         word: termController.text.trim(),
         contextSentence: sentenceController.text.trim(),
         languageName: selectedLanguageName,
+        languageCode: selectedLanguageCode,
       );
       if (!isDisposed && meanings.isNotEmpty) {
         for (final entry in meanings) {
