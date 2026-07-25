@@ -41,10 +41,13 @@ class AppEmptyState extends StatelessWidget {
     final defaultTitleStyle = theme.textTheme.headlineSmall;
     final defaultSubtitleStyle = TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
+    // Scrollable so a tall footer (e.g. the reread suggestion) cannot overflow
+    // on a short screen; Center keeps the usual look when it fits.
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppConstants.spacingXL),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
@@ -88,6 +91,10 @@ class ReviewCompletionState extends StatelessWidget {
   final String reviewedCountMessage;
   final String doneLabel;
 
+  /// Rendered below the done button — used for the reread suggestion, which
+  /// collapses to nothing when there is no good candidate.
+  final Widget? footer;
+
   const ReviewCompletionState({
     super.key,
     required this.reviewedCount,
@@ -95,6 +102,7 @@ class ReviewCompletionState extends StatelessWidget {
     required this.completionMessage,
     required this.reviewedCountMessage,
     required this.doneLabel,
+    this.footer,
   });
 
   @override
@@ -105,11 +113,14 @@ class ReviewCompletionState extends StatelessWidget {
       iconColor: Theme.of(context).colorScheme.primary,
       title: completionMessage,
       subtitle: reviewedCountMessage,
-      action: ElevatedButton.icon(
-        onPressed: onDone,
-        icon: const Icon(Icons.done),
-        label: Text(doneLabel),
-      ),
+      actions: [
+        ElevatedButton.icon(
+          onPressed: onDone,
+          icon: const Icon(Icons.done),
+          label: Text(doneLabel),
+        ),
+        ?footer,
+      ],
     );
   }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/language.dart';
+import '../../domain/value_objects/review_scope.dart';
 import '../../service_locator.dart';
+import '../models/review_session_spec.dart';
 import '../../services/logger_service.dart';
 import '../../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
@@ -61,11 +63,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _error = null;
     });
     try {
-      final dueCount = await db.reviewCards
-          .getDueCount(widget.language.id!, statuses: _statusFilter);
+      final scope = ReviewScope(statuses: _statusFilter);
+      final dueCount =
+          await db.reviewCards.getDueCount(widget.language.id!, scope: scope);
       final clozeDueCount = await db.reviewCards.getClozeDueCount(
         widget.language.id!,
-        statuses: _statusFilter,
+        scope: scope,
       );
       final reviewedToday = await db.reviewLogs.getReviewCountToday(
         widget.language.id!,
@@ -110,6 +113,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
       );
     }
 
+    final spec = ReviewSessionSpec.forLanguage(widget.language, _statusFilter);
+
     final exerciseCards = <Widget>[
       ExerciseCard(
         icon: Icons.style,
@@ -120,8 +125,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => FlashcardReviewScreen(
-              language: widget.language,
-              statusFilter: _statusFilter,
+              spec: spec,
             ),
           ),
         ),
@@ -135,9 +139,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => TypingReviewScreen(
-              language: widget.language,
+              spec: spec,
               direction: TypingDirection.sourceToTarget,
-              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -151,9 +154,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => TypingReviewScreen(
-              language: widget.language,
+              spec: spec,
               direction: TypingDirection.targetToSource,
-              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -167,9 +169,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => MultipleChoiceReviewScreen(
-              language: widget.language,
+              spec: spec,
               direction: MultipleChoiceDirection.sourceToTarget,
-              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -183,9 +184,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => MultipleChoiceReviewScreen(
-              language: widget.language,
+              spec: spec,
               direction: MultipleChoiceDirection.targetToSource,
-              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -200,9 +200,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
             context,
             MaterialPageRoute(
               builder: (_) => MultipleChoiceReviewScreen(
-                language: widget.language,
+                spec: spec,
                 direction: MultipleChoiceDirection.romanization,
-                statusFilter: _statusFilter,
               ),
             ),
           ),
@@ -216,9 +215,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => ClozeReviewScreen(
-              language: widget.language,
+              spec: spec,
               mode: ClozeMode.easy,
-              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -232,9 +230,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => ClozeReviewScreen(
-              language: widget.language,
+              spec: spec,
               mode: ClozeMode.advanced,
-              statusFilter: _statusFilter,
             ),
           ),
         ),
@@ -249,8 +246,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             context,
             MaterialPageRoute(
               builder: (_) => StrokeReviewScreen(
-                language: widget.language,
-                statusFilter: _statusFilter,
+                spec: spec,
               ),
             ),
           ),

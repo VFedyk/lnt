@@ -3133,6 +3133,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open in reader after import'**
   String get openInReader;
+
+  /// No description provided for @reviewTextWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Review this text\'s words'**
+  String get reviewTextWords;
+
+  /// No description provided for @scanningText.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning text…'**
+  String get scanningText;
+
+  /// No description provided for @textReviewDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due now ({count})'**
+  String textReviewDue(int count);
+
+  /// No description provided for @textReviewPracticeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice all ({count})'**
+  String textReviewPracticeAll(int count);
+
+  /// No description provided for @textReviewPracticeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Doesn\'t affect scheduling'**
+  String get textReviewPracticeNote;
+
+  /// No description provided for @textReviewNoWords.
+  ///
+  /// In en, this message translates to:
+  /// **'No vocabulary from this text yet'**
+  String get textReviewNoWords;
+
+  /// No description provided for @practiceModeBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice mode — results aren\'t saved'**
+  String get practiceModeBanner;
+
+  /// No description provided for @rereadSuggestionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} word you keep missing appears here} other{{count} words you keep missing appear here}}'**
+  String rereadSuggestionTitle(int count);
+
+  /// No description provided for @rereadSuggestionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reread “{title}” to meet them in context.'**
+  String rereadSuggestionBody(String title);
+
+  /// No description provided for @openText.
+  ///
+  /// In en, this message translates to:
+  /// **'Open text'**
+  String get openText;
+
+  /// No description provided for @rereadOtherTexts.
+  ///
+  /// In en, this message translates to:
+  /// **'Other texts'**
+  String get rereadOtherTexts;
 }
 
 class _AppLocalizationsDelegate

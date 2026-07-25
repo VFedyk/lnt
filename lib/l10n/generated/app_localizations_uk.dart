@@ -1723,4 +1723,54 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get openInReader => 'Відкрити в читачі після імпорту';
+
+  @override
+  String get reviewTextWords => 'Повторити слова тексту';
+
+  @override
+  String get scanningText => 'Сканування тексту…';
+
+  @override
+  String textReviewDue(int count) {
+    return 'На черзі ($count)';
+  }
+
+  @override
+  String textReviewPracticeAll(int count) {
+    return 'Практика всіх ($count)';
+  }
+
+  @override
+  String get textReviewPracticeNote => 'Не впливає на розклад';
+
+  @override
+  String get textReviewNoWords => 'Ще немає слів із цього тексту';
+
+  @override
+  String get practiceModeBanner =>
+      'Режим практики — результати не зберігаються';
+
+  @override
+  String rereadSuggestionTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count слова, які ви постійно забуваєте, є тут',
+      many: '$count слів, які ви постійно забуваєте, є тут',
+      few: '$count слова, які ви постійно забуваєте, є тут',
+      one: '$count слово, яке ви постійно забуваєте, є тут',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rereadSuggestionBody(String title) {
+    return 'Перечитайте «$title», щоб зустріти їх у контексті.';
+  }
+
+  @override
+  String get openText => 'Відкрити текст';
+
+  @override
+  String get rereadOtherTexts => 'Інші тексти';
 }

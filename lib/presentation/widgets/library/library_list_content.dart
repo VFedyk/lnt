@@ -30,6 +30,7 @@ class LibraryListContent extends StatelessWidget {
   final ValueChanged<Collection> onEditCollection;
   final ValueChanged<Collection> onDeleteCollection;
   final ValueChanged<TextDocument> onOpenText;
+  final ValueChanged<TextDocument> onReviewText;
   final ValueChanged<TextDocument> onSetCover;
   final ValueChanged<TextDocument> onEditText;
   final ValueChanged<TextDocument> onDeleteText;
@@ -48,6 +49,7 @@ class LibraryListContent extends StatelessWidget {
     required this.onEditCollection,
     required this.onDeleteCollection,
     required this.onOpenText,
+    required this.onReviewText,
     required this.onSetCover,
     required this.onEditText,
     required this.onDeleteText,
@@ -86,6 +88,7 @@ class LibraryListContent extends StatelessWidget {
             unknownLabel: unknownLabel,
             unknownCount: unknownCount,
             onOpen: () => onOpenText(text),
+            onReviewWords: () => onReviewText(text),
             onSetCover: () => onSetCover(text),
             onEdit: () => onEditText(text),
             onDelete: () => onDeleteText(text),
@@ -311,6 +314,7 @@ class _TextListItem extends StatefulWidget {
   final String unknownLabel;
   final int unknownCount;
   final VoidCallback onOpen;
+  final VoidCallback onReviewWords;
   final VoidCallback onSetCover;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -322,6 +326,7 @@ class _TextListItem extends StatefulWidget {
     required this.unknownLabel,
     required this.unknownCount,
     required this.onOpen,
+    required this.onReviewWords,
     required this.onSetCover,
     required this.onEdit,
     required this.onDelete,
@@ -386,6 +391,16 @@ class _TextListItemState extends State<_TextListItem> {
         trailing: PopupMenuButton(
           itemBuilder: (context) => [
             PopupMenuItem(
+              value: _ListAction.reviewWords,
+              child: Row(
+                children: [
+                  const Icon(Icons.school),
+                  const SizedBox(width: AppConstants.spacingS),
+                  Text(l10n.reviewTextWords),
+                ],
+              ),
+            ),
+            PopupMenuItem(
               value: _ListAction.cover,
               child: Row(
                 children: [
@@ -420,7 +435,9 @@ class _TextListItemState extends State<_TextListItem> {
             ),
           ],
           onSelected: (value) {
-            if (value == _ListAction.cover) {
+            if (value == _ListAction.reviewWords) {
+              widget.onReviewWords();
+            } else if (value == _ListAction.cover) {
               widget.onSetCover();
             } else if (value == _ListAction.edit) {
               widget.onEdit();
@@ -470,4 +487,4 @@ class _TextListItemState extends State<_TextListItem> {
   }
 }
 
-enum _ListAction { cover, edit, delete }
+enum _ListAction { reviewWords, cover, edit, delete }

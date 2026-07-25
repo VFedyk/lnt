@@ -1710,4 +1710,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openInReader => 'Open in reader after import';
+
+  @override
+  String get reviewTextWords => 'Review this text\'s words';
+
+  @override
+  String get scanningText => 'Scanning text…';
+
+  @override
+  String textReviewDue(int count) {
+    return 'Due now ($count)';
+  }
+
+  @override
+  String textReviewPracticeAll(int count) {
+    return 'Practice all ($count)';
+  }
+
+  @override
+  String get textReviewPracticeNote => 'Doesn\'t affect scheduling';
+
+  @override
+  String get textReviewNoWords => 'No vocabulary from this text yet';
+
+  @override
+  String get practiceModeBanner => 'Practice mode — results aren\'t saved';
+
+  @override
+  String rereadSuggestionTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count words you keep missing appear here',
+      one: '$count word you keep missing appears here',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rereadSuggestionBody(String title) {
+    return 'Reread “$title” to meet them in context.';
+  }
+
+  @override
+  String get openText => 'Open text';
+
+  @override
+  String get rereadOtherTexts => 'Other texts';
 }

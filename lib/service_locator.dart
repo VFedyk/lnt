@@ -17,16 +17,19 @@ import 'domain/repositories/term_sentence_repository.dart';
 import 'domain/repositories/term_status_log_repository.dart';
 import 'domain/repositories/text_foreign_word_repository.dart';
 import 'domain/repositories/text_repository.dart';
+import 'domain/repositories/text_word_repository.dart';
 import 'domain/repositories/translation_repository.dart';
 import 'application/use_cases/review/review_term.dart';
 import 'application/use_cases/terms/bulk_import_terms.dart';
 import 'application/use_cases/terms/save_term.dart';
+import 'application/use_cases/texts/resolve_text_terms.dart';
 import 'application/use_cases/translation/translate_term.dart';
 import 'services/settings_service.dart';
 import 'services/review_service.dart';
 import 'services/backup_service.dart';
 import 'services/sync_service.dart';
 import 'services/text_parser_service.dart';
+import 'services/text_word_index_service.dart';
 import 'services/import_export_service.dart';
 import 'services/epub_import_service.dart';
 import 'services/url_import_service.dart';
@@ -46,12 +49,14 @@ TtsService get ttsService => sl<TtsService>();
 DataChangeNotifier get dataChanges => sl<DataChangeNotifier>();
 ChineseSegmentationService get chineseSegService =>
     sl<ChineseSegmentationService>();
+TextWordIndexService get textWordIndex => sl<TextWordIndexService>();
 
 // Use case getters
 ReviewTerm get reviewTerm => sl<ReviewTerm>();
 SaveTerm get saveTerm => sl<SaveTerm>();
 BulkImportTerms get bulkImportTerms => sl<BulkImportTerms>();
 TranslateTerm get translateTerm => sl<TranslateTerm>();
+ResolveTextTerms get resolveTextTerms => sl<ResolveTextTerms>();
 
 void setupServiceLocator() {
   sl.registerLazySingleton<DataChangeNotifier>(() => DataChangeNotifier());
@@ -82,6 +87,13 @@ void setupServiceLocator() {
       deepL: sl<DeepLService>(),
       libreTranslate: sl<LibreTranslateService>(),
       settings: sl<SettingsService>(),
+    ),
+  );
+
+  sl.registerLazySingleton<ResolveTextTerms>(
+    () => ResolveTextTerms(
+      index: sl<TextWordIndexService>(),
+      terms: sl<TermRepository>(),
     ),
   );
 
@@ -119,6 +131,15 @@ void setupServiceLocator() {
   sl.registerLazySingleton<TermStatusLogRepository>(() => sl<DatabaseService>().termStatusLog);
   sl.registerLazySingleton<RadicalProgressRepository>(() => sl<DatabaseService>().radicalProgress);
   sl.registerLazySingleton<TermSentenceRepository>(() => sl<DatabaseService>().termSentences);
+  sl.registerLazySingleton<TextWordRepository>(() => sl<DatabaseService>().textWords);
+
+  // TextParserService is a factory — resolve it once here rather than per call.
+  sl.registerLazySingleton<TextWordIndexService>(
+    () => TextWordIndexService(
+      repo: sl<TextWordRepository>(),
+      parser: sl<TextParserService>(),
+    ),
+  );
 
   // Factories (new instance each time)
   sl.registerFactory<TextParserService>(

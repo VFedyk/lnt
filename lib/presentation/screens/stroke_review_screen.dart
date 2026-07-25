@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import 'package:provider/provider.dart';
 import '../controllers/flashcard_review_controller.dart';
+import '../models/review_session_spec.dart';
+import '../widgets/shared/review_session_app_bar.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../domain/entities/language.dart';
 import '../../domain/entities/term.dart';
 import '../../service_locator.dart';
 import '../../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
+import '../widgets/shared/reread_suggestion_card.dart';
 import '../widgets/shared/handwriting_canvas.dart';
 import '../widgets/shared/review_progress_indicator.dart';
 import '../widgets/shared/review_rating_buttons.dart';
@@ -24,16 +26,14 @@ abstract class _K {
 }
 
 class StrokeReviewScreen extends StatelessWidget {
-  final Language language;
-  final List<int>? statusFilter;
+  final ReviewSessionSpec spec;
 
-  const StrokeReviewScreen({super.key, required this.language, this.statusFilter});
+  const StrokeReviewScreen({super.key, required this.spec});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) =>
-          FlashcardReviewController(language: language, statusFilter: statusFilter),
+      create: (_) => FlashcardReviewController(spec: spec),
       child: const _StrokeReviewBody(),
     );
   }
@@ -115,7 +115,8 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
         }
 
         return Scaffold(
-          appBar: AppBar(title: Text(l10n.writingPractice)),
+          appBar: reviewSessionAppBar(
+              context, controller.spec, l10n.writingPractice),
           body: body,
         );
       },
@@ -146,6 +147,11 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
       completionMessage: l10n.reviewComplete,
       reviewedCountMessage: l10n.reviewedCount(controller.reviewedCount),
       doneLabel: l10n.done,
+      footer: RereadSuggestionCard(
+        language: controller.spec.language,
+        failedTermIds: controller.outcome.failedTermIds,
+        excludeTextId: controller.spec.sourceTextId,
+      ),
     );
   }
 

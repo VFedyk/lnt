@@ -7,6 +7,7 @@ import 'package:language_nerd_tools/data/datasources/database_migrations.dart'
 import 'package:language_nerd_tools/data/repositories/review_card_repository_impl.dart';
 import 'package:language_nerd_tools/domain/entities/review_card.dart';
 import 'package:language_nerd_tools/domain/events/term_event.dart';
+import 'package:language_nerd_tools/domain/value_objects/review_scope.dart';
 import 'package:language_nerd_tools/domain/value_objects/term_status.dart';
 import 'package:language_nerd_tools/services/settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -291,15 +292,18 @@ void main() {
     });
 
     test('filters cards and count to the requested statuses', () async {
-      final due = await repo.getDueCards('lang-1', statuses: [TermStatus.known]);
+      const scope = ReviewScope(statuses: [TermStatus.known]);
+      final due = await repo.getDueCards('lang-1', scope: scope);
       expect(due.map((c) => c.termId), ['k']);
-      expect(await repo.getDueCount('lang-1', statuses: [TermStatus.known]), 1);
+      expect(await repo.getDueCount('lang-1', scope: scope), 1);
     });
 
     test('supports multiple statuses', () async {
       final due = await repo.getDueCards(
         'lang-1',
-        statuses: [TermStatus.unknown, TermStatus.wellKnown],
+        scope: const ReviewScope(
+          statuses: [TermStatus.unknown, TermStatus.wellKnown],
+        ),
       );
       expect(due.map((c) => c.termId).toSet(), {'u', 'w'});
     });
@@ -307,9 +311,128 @@ void main() {
     test('ignored stays excluded even if its status is requested', () async {
       final due = await repo.getDueCards(
         'lang-1',
-        statuses: [TermStatus.ignored, TermStatus.known],
+        scope: const ReviewScope(
+          statuses: [TermStatus.ignored, TermStatus.known],
+        ),
       );
       expect(due.map((c) => c.termId), ['k']);
+    });
+  });
+
+  group('text scope', () {
+    late Database db;
+    late ReviewCardRepositoryImpl repo;
+
+    Future<void> indexWord(String textId, String lowerText) async {
+      await db.insert('text_words', {
+        'text_id': textId,
+        'lower_text': lowerText,
+        'occurrences': 1,
+        'first_position': 0,
+      });
+    }
+
+    setUp(() async {
+      db = await _openTestDb();
+      repo = ReviewCardRepositoryImpl(() async => db);
+      // 'in1'/'in2' occur in text x1, 'out' does not. 'phrase' is a multi-word
+      // term, which the word index cannot represent.
+      for (final id in ['in1', 'in2', 'out', 'phrase']) {
+        await _insertTerm(db, id: id);
+        await _insertDueCard(repo, termId: id);
+      }
+      await indexWord('x1', 'in1');
+      await indexWord('x1', 'in2');
+      await indexWord('x2', 'out');
+    });
+
+    tearDown(() async => db.close());
+
+    test('restricts to terms occurring in the text', () async {
+      const scope = ReviewScope(textId: 'x1');
+      final due = await repo.getDueCards('lang-1', scope: scope);
+      expect(due.map((c) => c.termId).toSet(), {'in1', 'in2'});
+      expect(await repo.getDueCount('lang-1', scope: scope), 2);
+    });
+
+    test('extraTermIds are OR-ed in alongside the text', () async {
+      const scope = ReviewScope(textId: 'x1', extraTermIds: ['phrase']);
+      final due = await repo.getDueCards('lang-1', scope: scope);
+      expect(due.map((c) => c.termId).toSet(), {'in1', 'in2', 'phrase'});
+      expect(await repo.getDueCount('lang-1', scope: scope), 3);
+    });
+
+    test('extraTermIds alone select exactly those terms', () async {
+      const scope = ReviewScope(extraTermIds: ['phrase', 'out']);
+      final due = await repo.getDueCards('lang-1', scope: scope);
+      expect(due.map((c) => c.termId).toSet(), {'phrase', 'out'});
+    });
+
+    test('composes with a status filter', () async {
+      await _insertTerm(db, id: 'in3', status: TermStatus.unknown);
+      await _insertDueCard(repo, termId: 'in3');
+      await indexWord('x1', 'in3');
+
+      const scope = ReviewScope(textId: 'x1', statuses: [TermStatus.unknown]);
+      final due = await repo.getDueCards('lang-1', scope: scope);
+      expect(due.map((c) => c.termId), ['in3']);
+    });
+
+    test('an unindexed text yields nothing', () async {
+      expect(
+        await repo.getDueCount('lang-1', scope: const ReviewScope(textId: 'x9')),
+        0,
+      );
+    });
+  });
+
+  group('includeNotDue', () {
+    late Database db;
+    late ReviewCardRepositoryImpl repo;
+
+    final past = DateTime.now().toUtc().subtract(const Duration(days: 1));
+    final future = DateTime.now().toUtc().add(const Duration(days: 30));
+
+    Future<void> insertCard(String termId, DateTime due) async {
+      await _insertTerm(db, id: termId);
+      await repo.create(ReviewCardRecord(
+        termId: termId,
+        cardData: fsrs.Card(cardId: 1, due: due).toMap(),
+        nextDue: due,
+        createdAt: past,
+        updatedAt: past,
+      ));
+    }
+
+    setUp(() async {
+      db = await _openTestDb();
+      SharedPreferences.setMockInitialValues({'new_cards_per_day': 1});
+      repo = ReviewCardRepositoryImpl(() async => db,
+          settings: SettingsService());
+    });
+
+    tearDown(() async => db.close());
+
+    test('returns future cards ordered after the due ones', () async {
+      await insertCard('later', future);
+      await insertCard('now', past);
+
+      final due =
+          await repo.getDueCards('lang-1', scope: const ReviewScope(includeNotDue: true));
+      expect(due.map((c) => c.termId), ['now', 'later']);
+    });
+
+    test('bypasses the daily new-card budget', () async {
+      for (final id in ['n1', 'n2', 'n3']) {
+        await insertCard(id, future);
+      }
+
+      // Budget of 1 would otherwise cap these never-reviewed cards.
+      const practice = ReviewScope(includeNotDue: true);
+      expect((await repo.getDueCards('lang-1', scope: practice)).length, 3);
+      expect(await repo.getDueCount('lang-1', scope: practice), 3);
+      // The graded path still enforces it.
+      expect(await repo.getDueCount('lang-1'), 0); // none are due yet
     });
   });
 }

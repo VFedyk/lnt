@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../utils/constants.dart';
 
-enum ReaderMoreAction { edit, fontSize, markAllKnown, openDrawer }
+enum ReaderMoreAction { edit, fontSize, reviewWords, markAllKnown, openDrawer }
 enum ReaderSelectionAiAction { meaning, grammar, wordForms }
 
 class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -21,6 +21,7 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onToggleLegend;
   final VoidCallback onToggleFinished;
   final ValueChanged<ReaderMoreAction> onMoreSelected;
+  final VoidCallback onReviewWords;
   final bool isEpubCollection;
   final bool hasPrev;
   final bool hasNext;
@@ -44,6 +45,7 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onToggleLegend,
     required this.onToggleFinished,
     required this.onMoreSelected,
+    required this.onReviewWords,
     required this.isEpubCollection,
     required this.hasPrev,
     required this.hasNext,
@@ -162,6 +164,14 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
             tooltip: l10n.chapters,
             onPressed: onShowContents,
           ),
+        // Deliberately a first-class action, not just a menu item: reviewing a
+        // chapter's words before reading the next one is meant to be a ritual.
+        if (!isSelectionMode)
+          IconButton(
+            icon: const Icon(Icons.school),
+            tooltip: l10n.reviewTextWords,
+            onPressed: onReviewWords,
+          ),
         if (!isSelectionMode)
           IconButton(
             icon: Icon(showLegend ? Icons.visibility_off : Icons.visibility),
@@ -202,6 +212,18 @@ class ReaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                     const SizedBox(width: AppConstants.spacingS),
                     Expanded(
                       child: Text(l10n.fontSize),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: ReaderMoreAction.reviewWords,
+                child: Row(
+                  children: [
+                    const Icon(Icons.school),
+                    const SizedBox(width: AppConstants.spacingS),
+                    Expanded(
+                      child: Text(l10n.reviewTextWords),
                     ),
                   ],
                 ),

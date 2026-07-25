@@ -77,6 +77,9 @@ class SyncPullService {
           cache: imageRefCache,
         );
         await _upsert(rawDb, 'texts', event.entityId, row);
+        // Content may have changed remotely — invalidate the derived word index.
+        await rawDb.delete('text_word_index',
+            where: 'text_id = ?', whereArgs: [event.entityId]);
       case 'term':
         if (!await _shouldApply(rawDb, event)) return;
         final translations = payload['translations'] as List<dynamic>?;

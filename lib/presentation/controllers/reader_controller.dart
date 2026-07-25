@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/entities/text_document.dart';
@@ -8,6 +10,7 @@ import '../../data/services/ai_explanation_service.dart';
 import '../../services/dictionary_service.dart';
 import '../../services/text_parser_service.dart';
 import '../../services/isolate_parser.dart';
+import '../../services/text_word_index_service.dart';
 import 'base_controller.dart';
 import '../../domain/value_objects/term_status.dart';
 
@@ -96,6 +99,7 @@ class ReaderController extends BaseController {
 
     await _parseTextAsync();
     if (isDisposed) return;
+    _warmWordIndex();
     await _loadForeignWords();
     _updateTextTermCounts();
 
@@ -103,6 +107,22 @@ class ReaderController extends BaseController {
     safeNotify();
     await loadCollectionTexts();
     _updateLastRead();
+  }
+
+  /// Keeps the text ↔ word index warm for any text the user actually reads, so
+  /// "review this text's words" never has to scan on tap. Fire-and-forget: it
+  /// must not delay first paint, and a failure is not worth surfacing.
+  void _warmWordIndex() {
+    if (text.id == null) return;
+    if (!sl.isRegistered<TextWordIndexService>()) return;
+    unawaited(
+      sl<TextWordIndexService>().ensureIndexed(text, language).catchError(
+        (Object e) {
+          debugPrint('ReaderController: word index failed: $e');
+          return false;
+        },
+      ),
+    );
   }
 
   Future<void> _parseTextAsync() async {

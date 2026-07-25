@@ -14,6 +14,7 @@ import '../repositories/term_sentence_repository_impl.dart';
 import '../repositories/term_status_log_repository_impl.dart';
 import '../repositories/text_foreign_word_repository_impl.dart';
 import '../repositories/text_repository_impl.dart';
+import '../repositories/text_word_repository_impl.dart';
 import '../repositories/translation_repository_impl.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/dictionary_repository.dart';
@@ -26,6 +27,7 @@ import '../../domain/repositories/term_sentence_repository.dart';
 import '../../domain/repositories/term_status_log_repository.dart';
 import '../../domain/repositories/text_foreign_word_repository.dart';
 import '../../domain/repositories/text_repository.dart';
+import '../../domain/repositories/text_word_repository.dart';
 import '../../domain/repositories/translation_repository.dart';
 
 class DatabaseService {
@@ -47,6 +49,7 @@ class DatabaseService {
   late final TermStatusLogRepository termStatusLog;
   late final RadicalProgressRepository radicalProgress;
   late final TermSentenceRepository termSentences;
+  late final TextWordRepository textWords;
 
   DatabaseService(this._settings, this._changes) {
     languages = LanguageRepositoryImpl(() => database, onChange: _changes.languages);
@@ -64,6 +67,8 @@ class DatabaseService {
     termStatusLog = TermStatusLogRepositoryImpl(() => database);
     radicalProgress = RadicalProgressRepositoryImpl(() => database, onChange: _changes.radicalProgress);
     termSentences = TermSentenceRepositoryImpl(() => database, onChange: _changes.termSentences);
+    // Derived cache, not user data — no change notifier.
+    textWords = TextWordRepositoryImpl(() => database);
   }
 
   Future<Database> get database async {

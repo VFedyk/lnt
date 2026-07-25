@@ -136,4 +136,79 @@ void main() {
       expect(await repo.getByTermId('t1'), isEmpty);
     });
   });
+
+  group('getLapseCounts', () {
+    late Database db;
+    late ReviewLogRepositoryImpl repo;
+
+    setUp(() async {
+      db = await _openTestDb();
+      repo = ReviewLogRepositoryImpl(() async => db);
+    });
+
+    tearDown(() async => db.close());
+
+    Future<void> log(String termId, int rating, DateTime at) async {
+      await repo.create(termId, jsonEncode({'rating': rating}), at);
+    }
+
+    test('counts only again ratings, per term', () async {
+      final now = DateTime.now().toUtc();
+      for (final id in ['t1', 't2', 't3']) {
+        await _insertTerm(db, id: id);
+      }
+      await log('t1', 1, now);
+      await log('t1', 1, now);
+      await log('t1', 3, now); // good — not a lapse
+      await log('t2', 1, now);
+      await log('t3', 4, now); // never lapsed → absent from the map
+
+      final counts = await repo.getLapseCounts(['t1', 't2', 't3']);
+      expect(counts['t1'], 2);
+      expect(counts['t2'], 1);
+      expect(counts.containsKey('t3'), isFalse);
+    });
+
+    test('ignores terms that were not asked about', () async {
+      final now = DateTime.now().toUtc();
+      await _insertTerm(db, id: 't1');
+      await _insertTerm(db, id: 't2');
+      await log('t1', 1, now);
+      await log('t2', 1, now);
+
+      expect(await repo.getLapseCounts(['t1']), {'t1': 1});
+    });
+
+    test('respects the days window', () async {
+      final now = DateTime.now().toUtc();
+      await _insertTerm(db, id: 't1');
+      await log('t1', 1, now.subtract(const Duration(days: 120)));
+      await log('t1', 1, now.subtract(const Duration(days: 10)));
+
+      expect(await repo.getLapseCounts(['t1']), {'t1': 1}); // default 90 days
+      expect(await repo.getLapseCounts(['t1'], days: 365), {'t1': 2});
+      expect(await repo.getLapseCounts(['t1'], days: 5), isEmpty);
+    });
+
+    test('chunks past the 500-id query limit', () async {
+      final now = DateTime.now().toUtc();
+      final ids = <String>[];
+      for (var i = 0; i < 1200; i++) {
+        final id = 't$i';
+        ids.add(id);
+        await _insertTerm(db, id: id);
+      }
+      // Only three of them actually lapsed, spread across all three chunks.
+      for (final id in ['t0', 't700', 't1100']) {
+        await log(id, 1, now);
+      }
+
+      final counts = await repo.getLapseCounts(ids);
+      expect(counts, {'t0': 1, 't700': 1, 't1100': 1});
+    });
+
+    test('returns empty for no ids', () async {
+      expect(await repo.getLapseCounts(const []), isEmpty);
+    });
+  });
 }

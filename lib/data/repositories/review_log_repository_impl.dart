@@ -93,6 +93,44 @@ class ReviewLogRepositoryImpl extends BaseRepository
   }
 
   @override
+  Future<Map<String, int>> getLapseCounts(
+    List<String> termIds, {
+    int days = 90,
+  }) async {
+    if (termIds.isEmpty) return {};
+    final db = await getDatabase();
+    final since = DateTime.now()
+        .toUtc()
+        .subtract(Duration(days: days))
+        .toIso8601String();
+
+    // Ratings are decoded in Dart rather than with json_extract: SQLite's JSON1
+    // extension is not guaranteed on every Android system SQLite we ship against.
+    const chunkSize = 500;
+    final counts = <String, int>{};
+    for (var i = 0; i < termIds.length; i += chunkSize) {
+      final chunk = termIds.skip(i).take(chunkSize).toList();
+      final placeholders = List.filled(chunk.length, '?').join(', ');
+      final rows = await db.rawQuery(
+        '''
+        SELECT term_id, log_data FROM review_logs
+        WHERE term_id IN ($placeholders) AND reviewed_at >= ?
+        ''',
+        [...chunk, since],
+      );
+      for (final row in rows) {
+        final data =
+            jsonDecode(row['log_data'] as String) as Map<String, dynamic>;
+        // FSRS Rating.again == 1 is the only rating that counts as a lapse.
+        if (data['rating'] != 1) continue;
+        final termId = row['term_id'] as String;
+        counts[termId] = (counts[termId] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  @override
   Future<List<({DateTime reviewedAt, int rating, int? durationMs})>> getByTermId(
     String termId,
   ) async {

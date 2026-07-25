@@ -6,6 +6,7 @@ import '../../domain/events/term_event.dart';
 import '../../domain/repositories/review_card_repository.dart';
 import '../../services/settings_service.dart';
 import '../../utils/constants.dart';
+import '../../domain/value_objects/review_scope.dart';
 import '../../domain/value_objects/term_status.dart';
 import 'base_repository.dart';
 
@@ -23,6 +24,14 @@ class ReviewCardRepositoryImpl extends BaseRepository
   /// SQL fragment that is 1 when a card has never been reviewed.
   static const String _isNewExpr =
       "CASE WHEN NOT EXISTS (SELECT 1 FROM review_logs rl WHERE rl.term_id = rc.term_id) THEN 1 ELSE 0 END";
+
+  /// The daily new-card budget, or null when it does not apply.
+  ///
+  /// A practice pass (`includeNotDue`) deliberately bypasses it: the user asked
+  /// for *every* word in a text, and the pass writes nothing, so there is no
+  /// scheduling budget to protect.
+  Future<int?> _budgetFor(String languageId, ReviewScope scope) =>
+      scope.includeNotDue ? Future.value(null) : _newCardBudget(languageId);
 
   /// Remaining new cards allowed today, or null when there is no limit.
   Future<int?> _newCardBudget(String languageId) async {
@@ -141,34 +150,83 @@ class ReviewCardRepositoryImpl extends BaseRepository
     return result;
   }
 
-  /// `AND t.status IN (?, ?, …)` fragment, or empty when no filter is applied.
-  static String _statusClause(List<int>? statuses) =>
-      (statuses != null && statuses.isNotEmpty)
-          ? 'AND t.status IN (${List.filled(statuses.length, '?').join(', ')})'
-          : '';
+  /// Builds the scope predicate and its bind arguments. The returned SQL is
+  /// appended inside the existing WHERE chain and always starts with AND
+  /// (or is empty).
+  ///
+  /// Text scoping is a correlated EXISTS rather than an `IN (…)` list of term
+  /// ids: a chapter can contain well over SQLite's 999 host-parameter limit.
+  static ({String sql, List<Object?> args}) _scopeClause(ReviewScope scope) {
+    final sql = StringBuffer();
+    final args = <Object?>[];
+
+    final statuses = scope.statuses;
+    if (statuses != null && statuses.isNotEmpty) {
+      sql.write(
+          ' AND t.status IN (${List.filled(statuses.length, '?').join(', ')})');
+      args.addAll(statuses);
+    }
+
+    final hasText = scope.textId != null;
+    final hasExtra = scope.extraTermIds.isNotEmpty;
+    if (hasText || hasExtra) {
+      final parts = <String>[];
+      if (hasText) {
+        parts.add(
+          'EXISTS (SELECT 1 FROM text_words tw '
+          'WHERE tw.text_id = ? AND tw.lower_text = t.lower_text)',
+        );
+        args.add(scope.textId);
+      }
+      if (hasExtra) {
+        final ids = scope.extraTermIds.take(400).toList();
+        parts.add('rc.term_id IN (${List.filled(ids.length, '?').join(', ')})');
+        args.addAll(ids);
+      }
+      sql.write(' AND (${parts.join(' OR ')})');
+    }
+
+    return (sql: sql.toString(), args: args);
+  }
+
+  /// `AND rc.next_due <= ?` unless the scope asks for not-yet-due cards too.
+  static String _dueClause(ReviewScope scope) =>
+      scope.includeNotDue ? '' : 'AND rc.next_due <= ?';
+
+  static List<Object?> _dueArgs(ReviewScope scope, DateTime now) =>
+      scope.includeNotDue ? const [] : [now.toIso8601String()];
 
   @override
   Future<List<ReviewCardRecord>> getDueCards(String languageId,
-      {DateTime? now, int? limit, List<int>? statuses}) async {
+      {DateTime? now,
+      int? limit,
+      ReviewScope scope = const ReviewScope()}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
     final effectiveLimit = limit ?? AppConstants.dueCardLimit;
-    final statusArgs = statuses ?? const <int>[];
+    final scopeClause = _scopeClause(scope);
+    // ORDER BY next_due already yields overdue → due → future, which is the
+    // right ordering for an includeNotDue session too.
     final maps = await db.rawQuery(
       '''
       SELECT rc.*, $_isNewExpr AS is_new FROM review_cards rc
       INNER JOIN terms t ON t.id = rc.term_id
       WHERE t.language_id = ?
         AND t.status != 0
-        AND rc.next_due <= ?
-        ${_statusClause(statuses)}
+        ${_dueClause(scope)}
+        ${scopeClause.sql}
       ORDER BY rc.next_due ASC
       LIMIT ?
       ''',
-      [languageId, now.toIso8601String(), ...statusArgs, effectiveLimit],
+      [
+        languageId,
+        ..._dueArgs(scope, now),
+        ...scopeClause.args,
+        effectiveLimit,
+      ],
     );
 
-    final budget = await _newCardBudget(languageId);
+    final budget = await _budgetFor(languageId, scope);
     if (budget == null) {
       return maps.map((m) => ReviewCardRecord.fromMap(m)).toList();
     }
@@ -196,10 +254,10 @@ class ReviewCardRepositoryImpl extends BaseRepository
 
   @override
   Future<int> getDueCount(String languageId,
-      {DateTime? now, List<int>? statuses}) async {
+      {DateTime? now, ReviewScope scope = const ReviewScope()}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
-    final statusArgs = statuses ?? const <int>[];
+    final scopeClause = _scopeClause(scope);
     final result = await db.rawQuery(
       '''
       SELECT COUNT(*) as total, COALESCE(SUM($_isNewExpr), 0) as new_cnt
@@ -207,22 +265,22 @@ class ReviewCardRepositoryImpl extends BaseRepository
       INNER JOIN terms t ON t.id = rc.term_id
       WHERE t.language_id = ?
         AND t.status != 0
-        AND rc.next_due <= ?
-        ${_statusClause(statuses)}
+        ${_dueClause(scope)}
+        ${scopeClause.sql}
       ''',
-      [languageId, now.toIso8601String(), ...statusArgs],
+      [languageId, ..._dueArgs(scope, now), ...scopeClause.args],
     );
     final total = result.first['total'] as int;
     final newCnt = result.first['new_cnt'] as int;
-    return _applyBudget(total, newCnt, await _newCardBudget(languageId));
+    return _applyBudget(total, newCnt, await _budgetFor(languageId, scope));
   }
 
   @override
   Future<int> getClozeDueCount(String languageId,
-      {DateTime? now, List<int>? statuses}) async {
+      {DateTime? now, ReviewScope scope = const ReviewScope()}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
-    final statusArgs = statuses ?? const <int>[];
+    final scopeClause = _scopeClause(scope);
     final result = await db.rawQuery(
       '''
       SELECT COUNT(*) as total, COALESCE(SUM($_isNewExpr), 0) as new_cnt
@@ -230,18 +288,18 @@ class ReviewCardRepositoryImpl extends BaseRepository
       INNER JOIN terms t ON t.id = rc.term_id
       WHERE t.language_id = ?
         AND t.status != 0
-        AND rc.next_due <= ?
-        ${_statusClause(statuses)}
+        ${_dueClause(scope)}
+        ${scopeClause.sql}
         AND (
           (t.sentence IS NOT NULL AND t.sentence != '')
           OR EXISTS (SELECT 1 FROM term_sentences ts WHERE ts.term_id = t.id)
         )
       ''',
-      [languageId, now.toIso8601String(), ...statusArgs],
+      [languageId, ..._dueArgs(scope, now), ...scopeClause.args],
     );
     final total = result.first['total'] as int;
     final newCnt = result.first['new_cnt'] as int;
-    return _applyBudget(total, newCnt, await _newCardBudget(languageId));
+    return _applyBudget(total, newCnt, await _budgetFor(languageId, scope));
   }
 
   @override

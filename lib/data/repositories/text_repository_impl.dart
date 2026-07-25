@@ -61,6 +61,13 @@ class TextRepositoryImpl extends BaseRepository implements TextRepository {
       where: 'id = ?',
       whereArgs: [text.id],
     );
+    // The word index is derived from content, and an update may have changed
+    // it. Dropping the meta row is cheap and forces one lazy rebuild.
+    await db.delete(
+      'text_word_index',
+      where: 'text_id = ?',
+      whereArgs: [text.id],
+    );
     notifyChange();
     return result;
   }

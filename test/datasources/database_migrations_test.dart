@@ -27,6 +27,8 @@ void main() {
           await db.execute('ALTER TABLE collections DROP COLUMN updated_at');
           await db.execute('ALTER TABLE languages DROP COLUMN updated_at');
           await db.execute('DROP TABLE sync_tombstones');
+          await db.execute('DROP TABLE text_words');
+          await db.execute('DROP TABLE text_word_index');
         },
       ),
     );
@@ -79,5 +81,192 @@ void main() {
 
     await upgraded.close();
     await dir.delete(recursive: true);
+  });
+
+  test('v22 -> v23 upgrade creates the text word index and it cascades', () async {
+    final dir = await Directory.systemTemp.createTemp('lnt_mig23');
+    final path = '${dir.path}/v22.db';
+    final db = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 22,
+        onCreate: (db, v) async {
+          await migrations.onCreate(db, v);
+          await db.execute('DROP TABLE text_words');
+          await db.execute('DROP TABLE text_word_index');
+        },
+      ),
+    );
+
+    await db.insert('languages', {'id': 'l1', 'name': 'English'});
+    await db.insert('texts', {
+      'id': 'x1', 'language_id': 'l1', 'title': 'T', 'content': 'hello world',
+      'created_at': '2024-01-01T00:00:00.000Z',
+      'last_read': '2024-01-01T00:00:00.000Z',
+    });
+    await db.close();
+
+    final upgraded = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 23,
+        onUpgrade: migrations.onUpgrade,
+        onOpen: (d) => d.execute('PRAGMA foreign_keys = ON'),
+      ),
+    );
+
+    // Both tables exist and no backfill happened — a fresh upgrade is unindexed.
+    expect((await upgraded.query('text_words')).length, 0);
+    expect((await upgraded.query('text_word_index')).length, 0);
+
+    final indexes = await upgraded.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?",
+      ['idx_text_words_lower'],
+    );
+    expect(indexes.length, 1);
+
+    await upgraded.insert('text_words', {
+      'text_id': 'x1', 'lower_text': 'hello', 'occurrences': 1,
+      'first_position': 0,
+    });
+    await upgraded.insert('text_word_index', {
+      'text_id': 'x1', 'content_hash': 'h', 'word_count': 1,
+      'indexed_at': '2024-01-01T00:00:00.000Z',
+    });
+
+    await upgraded.delete('texts', where: 'id = ?', whereArgs: ['x1']);
+    expect((await upgraded.query('text_words')).length, 0);
+    expect((await upgraded.query('text_word_index')).length, 0);
+
+    await upgraded.close();
+    await dir.delete(recursive: true);
+  });
+
+  // Reproduces the v18 fallout: `ALTER TABLE new_terms RENAME TO terms` ran with
+  // FK enforcement off, so children kept `REFERENCES new_terms`. Inert until v22
+  // turned enforcement on, after which every review write died with
+  // "no such table: main.new_terms".
+  test('v23 -> v24 repoints foreign keys left pointing at new_* tables',
+      () async {
+    final dir = await Directory.systemTemp.createTemp('lnt_mig24');
+    final path = '${dir.path}/v23.db';
+    final db = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 23,
+        onCreate: (db, v) async {
+          await db.execute('''
+            CREATE TABLE languages (id TEXT PRIMARY KEY, name TEXT NOT NULL)
+          ''');
+          // Exactly the shape v18 leaves behind: a self-reference and child
+          // references, all naming the vanished scratch table.
+          await db.execute('''
+            CREATE TABLE terms (
+              id TEXT PRIMARY KEY,
+              language_id TEXT NOT NULL,
+              lower_text TEXT NOT NULL,
+              base_term_id TEXT,
+              FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE,
+              FOREIGN KEY (base_term_id) REFERENCES new_terms (id) ON DELETE SET NULL
+            )
+          ''');
+          await db.execute('CREATE INDEX idx_terms_lower ON terms(lower_text)');
+          await db.execute('''
+            CREATE TABLE review_logs (
+              id TEXT PRIMARY KEY,
+              term_id TEXT NOT NULL,
+              reviewed_at TEXT NOT NULL,
+              FOREIGN KEY (term_id) REFERENCES new_terms (id) ON DELETE CASCADE
+            )
+          ''');
+          // A healthy table must be left completely alone.
+          await db.execute('''
+            CREATE TABLE review_cards (
+              id TEXT PRIMARY KEY,
+              term_id TEXT NOT NULL,
+              FOREIGN KEY (term_id) REFERENCES terms (id) ON DELETE CASCADE
+            )
+          ''');
+        },
+      ),
+    );
+
+    await db.insert('languages', {'id': 'l1', 'name': 'English'});
+    await db.insert('terms', {
+      'id': 't1', 'language_id': 'l1', 'lower_text': 'alpha',
+    });
+    await db.insert('review_logs', {
+      'id': 'r1', 'term_id': 't1', 'reviewed_at': '2026-01-01T00:00:00.000Z',
+    });
+    await db.close();
+
+    final upgraded = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 24,
+        onUpgrade: migrations.onUpgrade,
+        onOpen: (d) => d.execute('PRAGMA foreign_keys = ON'),
+      ),
+    );
+
+    // No schema anywhere still names a new_* table.
+    final schema = await upgraded.rawQuery(
+      "SELECT sql FROM sqlite_master WHERE type = 'table' AND sql IS NOT NULL",
+    );
+    expect(
+      schema.any((r) => (r['sql'] as String).contains('new_terms')),
+      isFalse,
+    );
+
+    // Existing rows survived the rebuild, and indexes came back with them.
+    expect((await upgraded.query('review_logs')).length, 1);
+    expect((await upgraded.query('terms')).length, 1);
+    final indexes = await upgraded.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?",
+      ['idx_terms_lower'],
+    );
+    expect(indexes.length, 1);
+
+    // The write that used to fail now succeeds under live FK enforcement.
+    await upgraded.insert('review_logs', {
+      'id': 'r2', 'term_id': 't1', 'reviewed_at': '2026-02-01T00:00:00.000Z',
+    });
+    expect((await upgraded.query('review_logs')).length, 2);
+
+    // And the repaired FKs really are enforced, in both directions.
+    await expectLater(
+      upgraded.insert('review_logs', {
+        'id': 'r3', 'term_id': 'ghost',
+        'reviewed_at': '2026-02-01T00:00:00.000Z',
+      }),
+      throwsA(isA<DatabaseException>()),
+    );
+    await upgraded.delete('terms', where: 'id = ?', whereArgs: ['t1']);
+    expect((await upgraded.query('review_logs')).length, 0);
+
+    await upgraded.close();
+    await dir.delete(recursive: true);
+  });
+
+  // The repair runs for every existing install, so it must be a strict no-op on
+  // a database that was never corrupted.
+  test('the FK repair leaves a healthy schema byte-identical', () async {
+    final db = await databaseFactoryFfi.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(
+        version: migrations.databaseVersion,
+        onCreate: migrations.onCreate,
+      ),
+    );
+
+    Future<List<String>> schema() async => (await db.rawQuery(
+          'SELECT name, sql FROM sqlite_master ORDER BY type, name',
+        )).map((r) => '${r['name']}|${r['sql']}').toList();
+
+    final before = await schema();
+    await migrations.repairStaleRenameForeignKeys(db);
+    expect(await schema(), before);
+
+    await db.close();
   });
 }

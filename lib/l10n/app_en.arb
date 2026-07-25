@@ -938,5 +938,44 @@
       }
     }
   },
-  "openInReader": "Open in reader after import"
+  "openInReader": "Open in reader after import",
+  "reviewTextWords": "Review this text's words",
+  "scanningText": "Scanning text\u2026",
+  "textReviewDue": "Due now ({count})",
+  "@textReviewDue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "textReviewPracticeAll": "Practice all ({count})",
+  "@textReviewPracticeAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "textReviewPracticeNote": "Doesn't affect scheduling",
+  "textReviewNoWords": "No vocabulary from this text yet",
+  "practiceModeBanner": "Practice mode \u2014 results aren't saved",
+  "rereadSuggestionTitle": "{count, plural, one{{count} word you keep missing appears here} other{{count} words you keep missing appear here}}",
+  "@rereadSuggestionTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rereadSuggestionBody": "Reread \u201c{title}\u201d to meet them in context.",
+  "@rereadSuggestionBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "openText": "Open text",
+  "rereadOtherTexts": "Other texts"
 }

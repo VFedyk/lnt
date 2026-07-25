@@ -2340,6 +2340,7 @@
 /Users/v/Projects/lnt/lib/application/use_cases/review/review_term.dart
 /Users/v/Projects/lnt/lib/application/use_cases/terms/bulk_import_terms.dart
 /Users/v/Projects/lnt/lib/application/use_cases/terms/save_term.dart
+/Users/v/Projects/lnt/lib/application/use_cases/texts/resolve_text_terms.dart
 /Users/v/Projects/lnt/lib/application/use_cases/translation/translate_term.dart
 /Users/v/Projects/lnt/lib/data/datasources/database_migrations.dart
 /Users/v/Projects/lnt/lib/data/datasources/database_service.dart
@@ -2356,6 +2357,7 @@
 /Users/v/Projects/lnt/lib/data/repositories/term_status_log_repository_impl.dart
 /Users/v/Projects/lnt/lib/data/repositories/text_foreign_word_repository_impl.dart
 /Users/v/Projects/lnt/lib/data/repositories/text_repository_impl.dart
+/Users/v/Projects/lnt/lib/data/repositories/text_word_repository_impl.dart
 /Users/v/Projects/lnt/lib/data/repositories/translation_repository_impl.dart
 /Users/v/Projects/lnt/lib/data/services/ai_explanation_service.dart
 /Users/v/Projects/lnt/lib/data/services/chinese_segmentation_service.dart
@@ -2388,8 +2390,10 @@
 /Users/v/Projects/lnt/lib/domain/repositories/term_status_log_repository.dart
 /Users/v/Projects/lnt/lib/domain/repositories/text_foreign_word_repository.dart
 /Users/v/Projects/lnt/lib/domain/repositories/text_repository.dart
+/Users/v/Projects/lnt/lib/domain/repositories/text_word_repository.dart
 /Users/v/Projects/lnt/lib/domain/repositories/translation_repository.dart
 /Users/v/Projects/lnt/lib/domain/value_objects/part_of_speech.dart
+/Users/v/Projects/lnt/lib/domain/value_objects/review_scope.dart
 /Users/v/Projects/lnt/lib/domain/value_objects/term_status.dart
 /Users/v/Projects/lnt/lib/domain/value_objects/translation_provider.dart
 /Users/v/Projects/lnt/lib/l10n/app_en.arb
@@ -2401,10 +2405,12 @@
 /Users/v/Projects/lnt/lib/presentation/controllers/flashcard_review_controller.dart
 /Users/v/Projects/lnt/lib/presentation/controllers/library_controller.dart
 /Users/v/Projects/lnt/lib/presentation/controllers/reader_controller.dart
+/Users/v/Projects/lnt/lib/presentation/controllers/review_session_outcome.dart
 /Users/v/Projects/lnt/lib/presentation/controllers/settings_controller.dart
 /Users/v/Projects/lnt/lib/presentation/controllers/term_dialog_controller.dart
 /Users/v/Projects/lnt/lib/presentation/controllers/vocabulary_controller.dart
 /Users/v/Projects/lnt/lib/presentation/models/chart_data.dart
+/Users/v/Projects/lnt/lib/presentation/models/review_session_spec.dart
 /Users/v/Projects/lnt/lib/presentation/screens/cloze_review_screen.dart
 /Users/v/Projects/lnt/lib/presentation/screens/dashboard_tab.dart
 /Users/v/Projects/lnt/lib/presentation/screens/dictionaries_screen.dart
@@ -2475,13 +2481,17 @@
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/base_term_search_dialog.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/handwriting_canvas.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/hanzi_writer_widget.dart
+/Users/v/Projects/lnt/lib/presentation/widgets/shared/practice_mode_banner.dart
+/Users/v/Projects/lnt/lib/presentation/widgets/shared/reread_suggestion_card.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/review_options_grid.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/review_progress_indicator.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/review_progress_ring.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/review_rating_buttons.dart
+/Users/v/Projects/lnt/lib/presentation/widgets/shared/review_session_app_bar.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/share_import_dialog.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/term_dialog.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/term_history_view.dart
+/Users/v/Projects/lnt/lib/presentation/widgets/shared/text_review_sheet.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/translation_mixin.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/statistics/due_forecast_chart.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/statistics/status_history_chart.dart
@@ -2499,6 +2509,7 @@
 /Users/v/Projects/lnt/lib/services/sync_push_service.dart
 /Users/v/Projects/lnt/lib/services/sync_service.dart
 /Users/v/Projects/lnt/lib/services/text_parser_service.dart
+/Users/v/Projects/lnt/lib/services/text_word_index_service.dart
 /Users/v/Projects/lnt/lib/services/url_import_service.dart
 /Users/v/Projects/lnt/lib/utils/async_helpers.dart
 /Users/v/Projects/lnt/lib/utils/chart_helpers.dart

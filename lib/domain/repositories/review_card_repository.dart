@@ -1,4 +1,5 @@
 import '../entities/review_card.dart';
+import '../value_objects/review_scope.dart';
 
 abstract class ReviewCardRepository {
   Future<String> create(ReviewCardRecord record);
@@ -6,10 +7,11 @@ abstract class ReviewCardRepository {
   Future<int> update(ReviewCardRecord record);
   Future<int> deleteByTermId(String termId);
   Future<List<ReviewCardRecord>> getDueCards(String languageId,
-      {DateTime? now, int? limit, List<int>? statuses});
-  Future<int> getDueCount(String languageId, {DateTime? now, List<int>? statuses});
+      {DateTime? now, int? limit, ReviewScope scope = const ReviewScope()});
+  Future<int> getDueCount(String languageId,
+      {DateTime? now, ReviewScope scope = const ReviewScope()});
   Future<int> getClozeDueCount(String languageId,
-      {DateTime? now, List<int>? statuses});
+      {DateTime? now, ReviewScope scope = const ReviewScope()});
   Future<DateTime?> getNextDueDate(String languageId);
   Future<ReviewCardRecord> getOrCreate(String termId);
   Future<void> ensureCardsExist(List<String> termIds);

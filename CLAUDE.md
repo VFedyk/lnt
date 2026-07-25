@@ -34,8 +34,9 @@ lib/
 │   └── use_cases/
 │       ├── review/        # ReviewTerm (FSRS scheduling + repo writes)
 │       ├── terms/         # SaveTerm (create/update term + translations), BulkImportTerms
+│       ├── texts/         # ResolveTextTerms (text → ReviewScope, incl. multi-word extras)
 │       └── translation/   # TranslateTerm (DeepL/LibreTranslate selection)
-├── services/              # Business logic: ReviewService, BackupService, ImportExportService, EpubImportService, UrlImportService, TextParserService, DictionaryService, SettingsService, LoggerService, IsolateParser
+├── services/              # Business logic: ReviewService, BackupService, ImportExportService, EpubImportService, UrlImportService, TextParserService, TextWordIndexService, DictionaryService, SettingsService, LoggerService, IsolateParser
 ├── presentation/          # All UI — thin screens, reusable widgets, controllers, theme
 │   ├── controllers/       # ChangeNotifier controllers (one per screen or complex dialog)
 │   │                      #   BaseController, LibraryController, VocabularyController,
@@ -46,7 +47,9 @@ lib/
 │   ├── widgets/           # UI components organized by screen
 │   │   ├── shared/        # Used by 2+ screens (app_empty_state, term_dialog, review_progress_*,
 │   │   │                  #   animated_counter, translation_mixin, base_term_search_dialog,
-│   │   │                  #   handwriting_canvas, hanzi_writer_widget, review_options_grid)
+│   │   │                  #   handwriting_canvas, hanzi_writer_widget, review_options_grid,
+│   │   │                  #   text_review_sheet, practice_mode_banner,
+│   │   │                  #   review_session_app_bar, reread_suggestion_card)
 │   │   ├── dashboard/     # dashboard_tab.dart only (activity_heatmap, dashboard_charts)
 │   │   ├── statistics/    # statistics_screen.dart only (status_history_chart)
 │   │   ├── dictionaries/  # dictionaries_screen.dart only
@@ -56,7 +59,7 @@ lib/
 │   │   ├── review/        # review_screen.dart only (exercise_card, review_stats_section)
 │   │   └── settings/      # settings_screen.dart only (section widgets)
 │   ├── theme/             # AppTheme, AppColors extension, TermStatusUI, PartOfSpeechUI
-│   └── models/            # chart_data.dart (view models for charts)
+│   └── models/            # chart_data.dart (view models for charts), review_session_spec.dart
 ├── utils/                 # Helpers, constants, CoverImageHelper, language_utils, radicals
 └── l10n/                  # Localization (ARB files + generated)
 ```
@@ -124,8 +127,11 @@ flutter build macos          # Build macOS
 ## Architecture notes
 
 - `PlatformHelper.isApple` / `PlatformHelper.isDesktop` guards platform-specific features
-- Database migrations in `lib/data/datasources/database_migrations.dart` with version numbering (current: **v22**)
+- Database migrations in `lib/data/datasources/database_migrations.dart` with version numbering (current: **v24**)
 - **Foreign keys are enforced**: `PRAGMA foreign_keys = ON` is set in `openDatabase(onOpen:)` — deliberately *not* `onConfigure`, because sqflite wraps `onCreate`/`onUpgrade` in a transaction where the pragma is a silent no-op, and the drop/recreate migrations (v18, v20) must run unenforced. Consequences: `ON DELETE CASCADE`/`SET NULL` now actually fire, and any new code must insert parents before children. v22 cleans pre-existing orphans first — mandatory, since SQLite validates child key columns on UPDATE, so a dangling reference makes its row permanently un-updatable.
+- **Stale `new_*` foreign keys** (repaired in v24, `repairStaleRenameForeignKeys`): the v18 UUID migration and v20's cover-image rebuild both did `CREATE TABLE new_x` → copy → `DROP TABLE x` → `ALTER TABLE new_x RENAME TO x`. SQLite only rewrites `REFERENCES` clauses in *other* tables during a rename when FK enforcement is on, and it is deliberately off during migrations — so every child kept `REFERENCES new_terms`, naming a table that no longer existed. Inert until v22 enabled `PRAGMA foreign_keys = ON`, after which **every insert/update on an affected table failed** with `no such table: main.new_terms` (reviewing was completely broken). v24 rebuilds each affected table from its own DDL with the reference corrected; rows are untouched. **When adding a rebuild-style migration, never rely on `ALTER TABLE ... RENAME` to fix up other tables' foreign keys** — write the child tables' DDL with the final name, or repair afterwards. The repair avoids `ALTER TABLE ... RENAME` itself, since outside legacy mode it re-resolves the whole schema and would fail on the very dangling names it is fixing.
+- **Text ↔ word index** (v23, `text_words` + `text_word_index`): a **local, derived cache** — never synced, never tombstoned, rebuildable from `texts.content`, and carried inside the backup zip without special-casing. `text_words(text_id, lower_text, occurrences, first_position)` is keyed on the *normalized word form*, not term id, so it survives term CRUD untouched; the term↔text relation is derived at query time by joining `text_words.lower_text = terms.lower_text AND terms.language_id = texts.language_id`. `text_word_index(text_id, content_hash, …)` records what was indexed so a rebuild only happens when the content actually changes. Both cascade on text delete. **Multi-word terms are not in the index** (the tokenization is deliberately term-independent) — they are resolved separately by `ResolveTextTerms`. Invalidated by `TextRepositoryImpl.update` and by the `text` branch of `SyncPullService.applyEvent`; populated lazily by `TextWordIndexService.ensureIndexed`, which `ReaderController` fires and forgets after parsing so any text the user reads is already warm.
+- **TextWordIndexService** (`textWordIndex`): builds the index. Tokenizes via `compute(parseInIsolate, …)` with an **empty** `termsMapData` (that is what keeps it term-independent); jieba languages (`splitByCharacter && useWordSegmentation`) run on the main isolate instead, since jieba needs `rootBundle`. Staleness is detected with a sha1 `contentHash`, not a timestamp.
 - EPUB parsing via `epub_pro` package (camelCase API)
 - **Screen controllers** (`lib/presentation/controllers/`): `SettingsController`, `LibraryController`, `VocabularyController`, `DashboardController`, `ReaderController`, `FlashcardReviewController`, plus `TermDialogController` and `BaseTermSearchDialogController` for complex dialogs. Each extends `BaseController` (which extends `ChangeNotifier`), provided via `ChangeNotifierProvider`. Controllers own all state and db access; screens/widgets are thin UI layers. `BaseController.safeNotify()` prevents post-dispose notification errors. Controllers never hold `BuildContext` — dialog-showing and SnackBars stay in the widget layer.
 - **SettingsController backup state**: tracks `icloudRemoteDate` (date of file in iCloud), `icloudLocalDate` (last backup from this device), `lastRestoreDate`, `isCheckingBackup`. Call `recheckICloudBackup()` to refresh the remote date.
@@ -138,6 +144,10 @@ flutter build macos          # Build macOS
   - **Status filter**: `getDueCards`/`getDueCount`/`getClozeDueCount` take an optional `List<int>? statuses` that appends `AND t.status IN (…)` (composes with the `ignored` guard + new-card budget). The review screen (`widgets/review/review_status_filter_chips.dart`, `ReviewStatusGroup` enum grouping Unknown / Learning / Known / Well-known) holds a multi-select chip set and threads a flattened `statusFilter` into every exercise screen + the displayed due counts; all-or-none selected → `null` (no filter).
   - **Stats** (statistics screen): `reviewLogs.getRetention(languageId, {days=30})` returns `(total, recalled)` where recalled = ratings better than `again`; `reviewCards.getDueForecast(languageId, {days})` returns per-day due counts (overdue folded into today). Rendered by `widgets/statistics/due_forecast_chart.dart` + an inline retention card.
   - **Per-word history**: `reviewLogs.getByTermId(termId)` → `List<({DateTime reviewedAt, int rating, int? durationMs})>` and `termStatusLog.getByTermId(termId)` → `List<({DateTime changedAt, int status})>` (both oldest-first). `TermDialog` is a two-tab dialog (Edit / History via `DefaultTabController`); the History tab (`widgets/shared/term_history_view.dart`) shows a summary, a status-journey `fl_chart`, the status timeline (consecutive identical statuses collapsed in `TermDialogController`), and the review log. A status row is written on *every* review, so collapse to transitions before display.
+  - **Session scoping** (`ReviewScope`, `lib/domain/value_objects/review_scope.dart`): one value object replacing the old `List<int>? statuses` parameter on `getDueCards` / `getDueCount` / `getClozeDueCount`. Carries `statuses`, `textId`, `extraTermIds` and `includeNotDue`. Text filtering compiles to a correlated `EXISTS` against `text_words` — **not** an `IN (…)` list, since a chapter easily exceeds SQLite's 999 host-parameter limit; `extraTermIds` (multi-word terms, capped at 400) is OR-ed alongside it. `includeNotDue` drops the `next_due <= ?` predicate **and** bypasses the daily new-card budget.
+  - **`ReviewSessionSpec`** (`lib/presentation/models/`) is what the six exercise screens take instead of `language` + `statusFilter`: `language`, `scope`, `graded`, `sourceTextId`/`sourceTextTitle`. `graded: false` is a **practice pass** — ratings advance the deck but write nothing (no review log, no card update, no status log, no FSRS change), routed through `ReviewService.practiceTerm`. Never mix graded and ungraded cards in one session: grading a not-yet-due card shrinks elapsed-days and depresses FSRS stability gain. Practice sessions always show `PracticeModeBanner` (via `reviewSessionAppBar`) and skip the `dataChanges` notify on dispose.
+  - **Text-scoped review**: `ResolveTextTerms` (`resolveTextTerms`) turns a `TextDocument` into a `ReviewScope` — `ensureIndexed` for single-word forms, plus a multi-word scan of the content (the reader passes its already-bound terms via `knownMultiWordTerms` to skip it). Entry points: an `Icons.school` action + overflow item in `ReaderAppBar`, and menu entries in the library list/grid. All route through `showTextReviewSheet` (`widgets/shared/text_review_sheet.dart`), which offers **Due now (N)** (graded) or **Practice all (M)** (ungraded) and then an exercise picker.
+  - **Reread suggestion**: `ReviewSessionOutcome` (`controllers/review_session_outcome.dart`) collects `Rating.again` term ids during a session — in practice mode too, since a failure is still signal. `RereadSuggestionCard` (`widgets/shared/`) renders on the completion screen (as `ReviewCompletionState.footer`): it ranks failures by `reviewLogs.getLapseCounts` (≥2 lapses in 90 days, falling back to all failures), caps at 20, and asks `textWords.textsContainingTerms` for texts holding ≥2 of them, read-before-unread. Renders `SizedBox.shrink()` when there is no candidate. Multi-word terms are out of scope for this reverse lookup.
   - Review settings UI: `widgets/settings/review_settings_section.dart` (retention + new-cards-per-day sliders), driven by `SettingsController` (`desiredRetention`, `newCardsPerDay`). SharedPreferences keys: `desired_retention`, `new_cards_per_day`.
 - **TtsService** (`ttsService`): text-to-speech via `flutter_tts`; access via `ttsService` getter.
 - **ChineseSegmentationService** (`chineseSegService`): word tokenization via `jieba_flutter` for Chinese texts.
@@ -154,6 +164,8 @@ Sync with `lnt-server` (sibling project at `../lnt-server`) is split across four
 | `sync_image_service.dart` | Image upload (push) and download/register (pull); `prefetchImageRefs`, `syncCoverImages`, `resolveCoverImageId` |
 | `sync_push_service.dart` | Collects local DB rows into `EventInput` batches: `collect{Languages,Collections,Texts,Terms,ReviewLogs,StatusLogs}` |
 | `sync_pull_service.dart` | Applies remote events to local DB: `applyEvent`, `validatePayload` |
+
+`text_words` / `text_word_index` are local derived caches and are deliberately outside sync — not collected, not applied, not tombstoned. The only sync-side interaction is one `text_word_index` invalidation after the `text` upsert in `applyEvent`.
 
 ### SyncApi (`lib/data/services/sync_api.dart`)
 
@@ -209,19 +221,19 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 
 ## Testing
 
-- **Command**: `flutter test` — runs all 207 tests in ~5-7 seconds
+- **Command**: `flutter test` — runs all 252 tests in ~8-10 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
 - **Verification**: Use exit code pattern to avoid parsing verbose output:
   ```bash
   flutter test > /dev/null 2>&1 && echo "✅ All tests passed!" || echo "❌ Some tests failed"
   ```
 - **Test coverage**:
-  - `test/application/` — Use cases: ReviewTerm (FSRS + repo writes, rating semantics, retention `configure()`), SaveTerm, BulkImportTerms, TranslateTerm
-  - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier, Chinese segmentation)
-  - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping); `review_card_repository_test.dart` (term-event card lifecycle, due-card status filtering, status-filter queries, due forecast, daily new-card limit — in-memory DB); `review_log_repository_test.dart` (retention aggregation, per-term history); `term_status_log_repository_test.dart` (per-term status history)
-  - `test/controllers/` — Screen controllers (LibraryController listener lifecycle and CRUD delegation)
+  - `test/application/` — Use cases: ReviewTerm (FSRS + repo writes, rating semantics, retention `configure()`), SaveTerm, BulkImportTerms, TranslateTerm, ResolveTextTerms (multi-word detection per language config, 400-term cap, reader fast path)
+  - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier, Chinese segmentation, text word index service)
+  - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping); `review_card_repository_test.dart` (term-event card lifecycle, due-card status filtering, status-filter queries, `ReviewScope` text/extraTermIds/includeNotDue scoping, due forecast, daily new-card limit — in-memory DB); `review_log_repository_test.dart` (retention aggregation, per-term history, `getLapseCounts` windowing + chunking); `term_status_log_repository_test.dart` (per-term status history); `text_word_repository_test.dart` (index replace/invalidate, same-language term matching, text ranking)
+  - `test/controllers/` — Screen controllers (LibraryController listener lifecycle and CRUD delegation); `flashcard_review_controller_test.dart` drives a text-scoped session end to end against a real DB (graded + practice, completion screen, and the guarantee that a failed write never strands the phase on `rating`)
   - `test/services/sync_service_test.dart` — Sync layer: `validatePayload` (all domains), `applyEvent` (LWW newer/older/equal-timestamp, tombstone delete + resurrect, ignore-duplicate, term atomicity), collectors with timestamp windowing (`collectLanguages`, `collectTerms` `updated_at` window, `collectTombstones`); uses `sqflite_common_ffi` in-memory DB with the full current schema
-  - `test/datasources/database_migrations_test.dart` — v21 → v22 upgrade on a real file DB: orphan cleanup, `updated_at` backfill, `sync_tombstones` creation, live FK cascade
+  - `test/datasources/database_migrations_test.dart` — v21 → v22, v22 → v23 and v23 → v24 upgrades on a real file DB: orphan cleanup, `updated_at` backfill, `sync_tombstones` creation, `text_words`/`text_word_index` creation with no backfill, stale `new_*` FK repair (data + indexes preserved, enforcement live afterwards, no-op on a healthy schema), live FK cascade
   - Widget tests are not yet comprehensive (default `widget_test.dart` is a leftover)
 - **Platform notes**: Tests use `sqflite_common_ffi` for in-memory SQLite on all platforms (no platform-specific setup required)
 - **Running specific tests**: `flutter test test/services/review_service_test.dart`

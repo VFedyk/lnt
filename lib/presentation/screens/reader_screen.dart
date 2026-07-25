@@ -24,6 +24,7 @@ import '../widgets/reader/reader_language_picker_dialog.dart';
 import '../widgets/reader/reader_mark_all_known_dialog.dart';
 import '../widgets/reader/reader_translation_dialog.dart';
 import '../widgets/shared/term_dialog.dart';
+import '../widgets/shared/text_review_sheet.dart';
 import '../widgets/reader/word_list_drawer.dart';
 import '../theme/app_theme.dart';
 import '../../utils/async_helpers.dart';
@@ -573,6 +574,26 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     );
   }
 
+  Future<void> _showTextReview() async {
+    final ctrl = context.read<ReaderController>();
+    await showTextReviewSheet(
+      context,
+      text: ctrl.text,
+      language: ctrl.language,
+      // Fast path: the reader already bound multi-word terms while parsing, so
+      // the sheet does not have to rescan the content for them.
+      multiWordTerms: ctrl.wordTokens
+          .where((t) => t.isWord && t.term != null)
+          .map((t) => t.term!)
+          .where((t) =>
+              t.lowerText.contains(' ') ||
+              (ctrl.language.splitByCharacter &&
+                  !ctrl.language.useWordSegmentation &&
+                  t.lowerText.length > 1))
+          .toSet(),
+    );
+  }
+
   void _markAllWordsKnown() {
     final ctrl = context.read<ReaderController>();
     final l10n = AppLocalizations.of(context);
@@ -767,12 +788,15 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
             if (next != null) _navigateToText(next);
           },
           onShowContents: _showContentsBottomSheet,
+          onReviewWords: _showTextReview,
           onMoreSelected: (action) {
             switch (action) {
               case ReaderMoreAction.edit:
                 _editText();
               case ReaderMoreAction.fontSize:
                 _showFontSizeDialog();
+              case ReaderMoreAction.reviewWords:
+                _showTextReview();
               case ReaderMoreAction.markAllKnown:
                 _markAllWordsKnown();
               case ReaderMoreAction.openDrawer:

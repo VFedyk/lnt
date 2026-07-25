@@ -35,6 +35,16 @@ class ReviewService {
     return result;
   }
 
+  /// Practice pass: persists nothing.
+  ///
+  /// Reviewing ahead of schedule shrinks elapsed-days and depresses FSRS's
+  /// stability gain, so a text-scoped "practice all" session must not grade.
+  /// Kept as an explicit call site rather than a bare `if` at each rating
+  /// handler so the "nothing is written" decision stays visible.
+  Future<void> practiceTerm(ReviewCardRecord record, fsrs.Rating rating) async {
+    // Intentionally empty.
+  }
+
   Map<fsrs.Rating, Duration> getNextIntervals(Map<String, dynamic> cardData) =>
       _reviewTerm.nextIntervals(cardData);
 

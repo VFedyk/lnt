@@ -4,7 +4,10 @@ import '../../domain/entities/language.dart';
 import '../../domain/entities/review_card.dart';
 import '../../domain/entities/term.dart';
 import '../../service_locator.dart';
+import '../../services/logger_service.dart';
+import '../models/review_session_spec.dart';
 import 'base_controller.dart';
+import 'review_session_outcome.dart';
 
 class ReviewItem {
   final ReviewCardRecord reviewCard;
@@ -49,8 +52,12 @@ enum ReviewPhase {
 }
 
 class FlashcardReviewController extends BaseController {
-  final Language language;
-  final List<int>? statusFilter;
+  final ReviewSessionSpec spec;
+
+  /// What went wrong this session; read by the completion screen.
+  final ReviewSessionOutcome outcome = ReviewSessionOutcome();
+
+  Language get language => spec.language;
 
   List<ReviewItem> _dueItems = [];
   int _currentIndex = 0;
@@ -71,13 +78,14 @@ class FlashcardReviewController extends BaseController {
   ReviewItem? get currentItem =>
       _currentIndex < _dueItems.length ? _dueItems[_currentIndex] : null;
 
-  FlashcardReviewController({required this.language, this.statusFilter}) {
+  FlashcardReviewController({required this.spec}) {
     loadDueCards();
   }
 
   @override
   void dispose() {
-    if (_hasReviewed) {
+    // A practice pass writes nothing, so there is nothing to invalidate.
+    if (_hasReviewed && spec.graded) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         dataChanges.reviewCards.notify();
         dataChanges.terms.notify();
@@ -102,7 +110,7 @@ class FlashcardReviewController extends BaseController {
     safeNotify();
 
     final dueCards =
-        await db.reviewCards.getDueCards(language.id!, statuses: statusFilter);
+        await db.reviewCards.getDueCards(language.id!, scope: spec.scope);
 
     // Batch load terms and translations (2 queries instead of 2N)
     final termIds = dueCards.map((rc) => rc.termId).toList();
@@ -141,7 +149,23 @@ class FlashcardReviewController extends BaseController {
     _phase = ReviewPhase.rating;
 
     final item = _dueItems[_currentIndex];
-    await reviewService.reviewTerm(item.reviewCard, rating, notify: false);
+    try {
+      if (spec.graded) {
+        await reviewService.reviewTerm(item.reviewCard, rating, notify: false);
+      } else {
+        await reviewService.practiceTerm(item.reviewCard, rating);
+      }
+    } catch (e, stackTrace) {
+      // Never strand the phase on `rating`: the UI is still showing the
+      // revealed card, and the re-entry guard above would silently swallow
+      // every further tap and keystroke for the rest of the session.
+      AppLogger.error('Rating a card failed', error: e, stackTrace: stackTrace);
+      _phase = ReviewPhase.revealed;
+      safeNotify();
+      return;
+    }
+    final termId = item.term.id;
+    if (termId != null) outcome.record(termId, rating);
 
     _hasReviewed = true;
     _reviewedCount++;

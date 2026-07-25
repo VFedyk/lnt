@@ -10,6 +10,7 @@ import '../../domain/entities/text_document.dart';
 import '../../domain/entities/collection.dart';
 import '../../services/import_export_service.dart';
 import '../../services/epub_import_service.dart';
+import '../widgets/shared/text_review_sheet.dart';
 import '../widgets/library/add_text_dialog.dart';
 import '../widgets/library/collection_dialog.dart';
 import '../widgets/library/library_empty_state.dart';
@@ -425,14 +426,33 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
   }
 
-  void _showTextOptions(LibraryController ctrl, TextDocument text) {
+  /// Starts a text-scoped review session. Unlike the reader entry point there
+  /// are no parsed tokens to reuse here, so the sheet resolves multi-word terms
+  /// with a content scan behind its own progress indicator.
+  Future<void> _showTextReview(TextDocument text) {
+    return showTextReviewSheet(
+      context,
+      text: text,
+      language: widget.language,
+    );
+  }
+
+  Future<void> _showTextOptions(LibraryController ctrl, TextDocument text) async {
     final l10n = AppLocalizations.of(context);
-    showModalBottomSheet(
+    // The review entry pops with a result rather than opening its sheet inline:
+    // showing a modal while another is still closing leaves the outgoing
+    // barrier over the new one.
+    final reviewRequested = await showModalBottomSheet<bool>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(Icons.school),
+              title: Text(l10n.reviewTextWords),
+              onTap: () => Navigator.pop(context, true),
+            ),
             ListTile(
               leading: const Icon(Icons.image),
               title: Text(l10n.setCover),
@@ -467,6 +487,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
         ),
       ),
     );
+
+    if (reviewRequested == true && mounted) await _showTextReview(text);
   }
 
   // ── Build ──
@@ -714,6 +736,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
         ).then((_) => ctrl.recalculateUnknownCountForText(text));
       },
+      onReviewText: _showTextReview,
       onSetCover: (text) => _setCoverImage(ctrl, text),
       onEditText: (text) => _editText(ctrl, text),
       onDeleteText: (text) => _deleteText(ctrl, text),

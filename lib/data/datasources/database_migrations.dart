@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 22;
+const int databaseVersion = 24;
 
 const _uuid = Uuid();
 
@@ -248,6 +248,105 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
   if (oldVersion < 22) {
     await _migrateForConcurrentSync(db);
   }
+  if (oldVersion < 23) {
+    await _createTextWordIndex(db);
+  }
+  if (oldVersion < 24) {
+    await repairStaleRenameForeignKeys(db);
+  }
+}
+
+/// Repoints foreign keys still referencing the `new_*` scratch tables used by
+/// the v18 UUID migration (and v20's cover-image rebuild).
+///
+/// Those migrations built `new_terms`, copied rows in, dropped `terms`, then
+/// `ALTER TABLE new_terms RENAME TO terms`. SQLite only rewrites `REFERENCES`
+/// clauses in *other* tables during a rename when foreign key enforcement is
+/// on — and it deliberately is not during a migration (see database_service.dart).
+/// So every child table kept `REFERENCES new_terms`, pointing at a table that
+/// no longer exists.
+///
+/// This was inert until v22 turned `PRAGMA foreign_keys = ON`: from then on
+/// every insert or update on an affected table failed with
+/// `no such table: main.new_terms`, which broke reviewing entirely.
+///
+/// Only the schema text is wrong — the rows are fine — so each affected table
+/// is rebuilt with a corrected DDL and its data copied straight back.
+/// `ALTER TABLE ... RENAME` is deliberately avoided here: outside legacy mode it
+/// re-resolves the whole schema and would itself fail on the dangling names.
+Future<void> repairStaleRenameForeignKeys(Database db) async {
+  final tables = await db.rawQuery(
+    "SELECT name, sql FROM sqlite_master WHERE type = 'table' AND sql IS NOT NULL",
+  );
+  final tableNames = tables.map((t) => t['name'] as String).toSet();
+  final reference = RegExp(r'REFERENCES\s+"?new_(\w+)"?', caseSensitive: false);
+
+  for (final table in tables) {
+    final name = table['name'] as String;
+    final sql = table['sql'] as String;
+
+    // Only rewrite a `new_x` target that is genuinely missing while `x` exists;
+    // a real table called `new_x` would resolve fine and must be left alone.
+    var rewrote = false;
+    final fixedSql = sql.replaceAllMapped(reference, (m) {
+      final target = m[1]!;
+      if (tableNames.contains('new_$target') || !tableNames.contains(target)) {
+        return m[0]!;
+      }
+      rewrote = true;
+      return 'REFERENCES $target';
+    });
+    if (!rewrote) continue;
+
+    final columns = (await db.rawQuery('PRAGMA table_info($name)'))
+        .map((c) => '"${c['name']}"')
+        .join(', ');
+    final indexes = await db.rawQuery(
+      "SELECT sql FROM sqlite_master WHERE type = 'index' AND tbl_name = ? "
+      'AND sql IS NOT NULL',
+      [name],
+    );
+
+    await db.execute('CREATE TABLE _repair_$name AS SELECT * FROM $name');
+    await db.execute('DROP TABLE $name');
+    await db.execute(fixedSql);
+    await db.execute(
+      'INSERT INTO $name ($columns) SELECT $columns FROM _repair_$name',
+    );
+    await db.execute('DROP TABLE _repair_$name');
+    for (final index in indexes) {
+      await db.execute(index['sql'] as String);
+    }
+  }
+}
+
+/// Local, derived word-occurrence index. Never synced; rebuildable from
+/// texts.content. Keyed on normalized word form rather than term id so it
+/// survives term CRUD untouched — only a content change invalidates it.
+Future<void> _createTextWordIndex(Database db) async {
+  await db.execute('''
+    CREATE TABLE text_words (
+      text_id        TEXT    NOT NULL,
+      lower_text     TEXT    NOT NULL,
+      occurrences    INTEGER NOT NULL DEFAULT 1,
+      first_position INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (text_id, lower_text),
+      FOREIGN KEY (text_id) REFERENCES texts (id) ON DELETE CASCADE
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX idx_text_words_lower ON text_words(lower_text)',
+  );
+
+  await db.execute('''
+    CREATE TABLE text_word_index (
+      text_id      TEXT PRIMARY KEY,
+      content_hash TEXT NOT NULL,
+      word_count   INTEGER NOT NULL DEFAULT 0,
+      indexed_at   TEXT NOT NULL,
+      FOREIGN KEY (text_id) REFERENCES texts (id) ON DELETE CASCADE
+    )
+  ''');
 }
 
 /// Prepare the schema for concurrent-edit-safe sync (v21 → v22).
@@ -1159,4 +1258,6 @@ Future<void> onCreate(Database db, int version) async {
       PRIMARY KEY (domain, entity_id)
     )
   ''');
+
+  await _createTextWordIndex(db);
 }

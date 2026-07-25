@@ -10,6 +10,11 @@ abstract class ReviewLogRepository {
     int days,
   });
 
+  /// Number of `again` ratings per term within the last [days]. Only the given
+  /// [termIds] are inspected, so the JSON decode stays bounded. Terms with no
+  /// lapses are absent from the result.
+  Future<Map<String, int>> getLapseCounts(List<String> termIds, {int days = 90});
+
   /// All reviews for a single term, oldest first. `rating` is the FSRS rating
   /// (1=again … 4=easy); `durationMs` is the review duration if recorded.
   Future<List<({DateTime reviewedAt, int rating, int? durationMs})>> getByTermId(

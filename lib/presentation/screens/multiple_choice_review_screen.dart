@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import '../controllers/flashcard_review_controller.dart';
+import '../controllers/review_session_outcome.dart';
+import '../models/review_session_spec.dart';
+import '../widgets/shared/review_session_app_bar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/entities/term.dart';
@@ -12,6 +15,7 @@ import '../../service_locator.dart';
 import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
 import '../widgets/shared/app_empty_state.dart';
+import '../widgets/shared/reread_suggestion_card.dart';
 import '../widgets/shared/review_options_grid.dart';
 import '../widgets/shared/review_progress_indicator.dart';
 import '../../domain/value_objects/term_status.dart';
@@ -26,16 +30,16 @@ abstract class _Constants {
 }
 
 class MultipleChoiceReviewScreen extends StatefulWidget {
-  final Language language;
+  final ReviewSessionSpec spec;
   final MultipleChoiceDirection direction;
-  final List<int>? statusFilter;
 
   const MultipleChoiceReviewScreen({
     super.key,
-    required this.language,
+    required this.spec,
     required this.direction,
-    this.statusFilter,
   });
+
+  Language get language => spec.language;
 
   @override
   State<MultipleChoiceReviewScreen> createState() =>
@@ -51,6 +55,7 @@ class _MultipleChoiceReviewScreenState
   bool _isLoading = true;
   bool _isSeeding = false;
   bool _hasReviewed = false;
+  final _outcome = ReviewSessionOutcome();
 
   // Per-card state
   List<String> _options = [];
@@ -80,7 +85,8 @@ class _MultipleChoiceReviewScreenState
   @override
   void dispose() {
     _focusNode.dispose();
-    if (_hasReviewed) {
+    // A practice pass writes nothing, so there is nothing to invalidate.
+    if (_hasReviewed && widget.spec.graded) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         dataChanges.reviewCards.notify();
         dataChanges.terms.notify();
@@ -129,7 +135,7 @@ class _MultipleChoiceReviewScreenState
     await _ensureCardsSeeded();
 
     final dueCards = await db.reviewCards
-        .getDueCards(widget.language.id!, statuses: widget.statusFilter);
+        .getDueCards(widget.language.id!, scope: widget.spec.scope);
     final termIds = dueCards.map((rc) => rc.termId).toList();
     final termsMap = await db.terms.getByIds(termIds);
     final translationsMap = await db.translations.getByTermIds(termIds);
@@ -263,17 +269,24 @@ class _MultipleChoiceReviewScreenState
     return item.term.text;
   }
 
+  /// Applies [rating] to [item] — persisting it only in a graded session.
+  void _grade(ReviewItem item, fsrs.Rating rating) {
+    _hasReviewed = true;
+    if (widget.spec.graded) {
+      reviewService.reviewTerm(item.reviewCard, rating, notify: false);
+    } else {
+      reviewService.practiceTerm(item.reviewCard, rating);
+    }
+    final termId = item.term.id;
+    if (termId != null) _outcome.record(termId, rating);
+  }
+
   void _selectOption(int index) {
     if (_selectedOptionIndex != null) return;
 
     final isCorrect = index == _correctOptionIndex;
-    final rating = isCorrect ? fsrs.Rating.good : fsrs.Rating.again;
-    _hasReviewed = true;
-    reviewService.reviewTerm(
-      _dueItems[_currentIndex].reviewCard,
-      rating,
-      notify: false,
-    );
+    _grade(_dueItems[_currentIndex],
+        isCorrect ? fsrs.Rating.good : fsrs.Rating.again);
 
     setState(() => _selectedOptionIndex = index);
   }
@@ -315,9 +328,8 @@ class _MultipleChoiceReviewScreenState
       autofocus: true,
       onKeyEvent: _handleKeyEvent,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text('${l10n.multipleChoiceReview} — $dirLabel'),
-        ),
+        appBar: reviewSessionAppBar(
+          context, widget.spec, '${l10n.multipleChoiceReview} — $dirLabel'),
         body: body,
       ),
     );
@@ -344,6 +356,11 @@ class _MultipleChoiceReviewScreenState
       completionMessage: l10n.reviewComplete,
       reviewedCountMessage: l10n.reviewedCount(_reviewedCount),
       doneLabel: l10n.done,
+      footer: RereadSuggestionCard(
+        language: widget.spec.language,
+        failedTermIds: _outcome.failedTermIds,
+        excludeTextId: widget.spec.sourceTextId,
+      ),
     );
   }
 
