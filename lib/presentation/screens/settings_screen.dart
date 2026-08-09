@@ -201,6 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       busy: busy,
       isCheckingBackup: ctrl.isCheckingBackup,
       restoreProgress: ctrl.restoreProgress,
+      backupProgress: ctrl.backupProgress,
       iCloudDeviceBackupLabel: deviceLabel,
       iCloudRemoteBackupLabel: remoteLabel,
       lastRestoreLabel: restoreLabel,

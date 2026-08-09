@@ -21,6 +21,8 @@ class SettingsController extends BaseController {
   bool isBackingUp = false;
   bool isRestoring = false;
   double? restoreProgress;
+  /// Real iCloud upload progress, 0.0–1.0; null when no backup is in flight.
+  double? backupProgress;
   DateTime? lastRestoreDate;
 
   // Initial values for seeding TextEditingControllers in the screen.
@@ -113,18 +115,28 @@ class SettingsController extends BaseController {
   /// Returns true on success.
   Future<bool> backupToICloud() async {
     isBackingUp = true;
+    backupProgress = null;
     safeNotify();
     try {
-      await backupService.backupToICloud();
+      await backupService.backupToICloud(
+        onProgress: (p) {
+          backupProgress = p;
+          safeNotify();
+        },
+      );
+      // Only reached once iCloud confirms the file is uploaded, so both dates
+      // now describe something that really is in the cloud.
       final now = DateTime.now();
       icloudRemoteDate = now;
       icloudLocalDate = now;
       await settings.setICloudLastBackup(now);
       isBackingUp = false;
+      backupProgress = null;
       safeNotify();
       return true;
     } catch (_) {
       isBackingUp = false;
+      backupProgress = null;
       safeNotify();
       rethrow;
     }

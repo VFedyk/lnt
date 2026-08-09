@@ -9,6 +9,7 @@ import 'package:icloud_storage/icloud_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../service_locator.dart';
+import 'logger_service.dart';
 
 const _backupFileName = 'lnt_backup.zip';
 const _icloudContainerId = 'iCloud.lnt-db-backup';
@@ -279,24 +280,75 @@ class BackupService {
 
   // ── iCloud ──
 
-  Future<void> backupToICloud() async {
+  /// Uploads the archive and waits for iCloud to actually take it.
+  ///
+  /// `ICloudStorage.upload` only copies the file into the local ubiquity
+  /// container and returns straight away — the transfer to iCloud is done by the
+  /// system afterwards. Without waiting, the app reported "backed up" while
+  /// hundreds of megabytes were still sitting on the device, so a second device
+  /// never saw the backup. [onProgress] reports the real transfer, 0.0 → 1.0.
+  Future<void> backupToICloud({void Function(double)? onProgress}) async {
     final archive = await _createBackupArchive();
+
+    final uploaded = Completer<void>();
     await ICloudStorage.upload(
       containerId: _icloudContainerId,
       filePath: archive.path,
       destinationRelativePath: _backupFileName,
+      onProgress: (stream) {
+        stream.listen(
+          (progress) {
+            onProgress?.call((progress / 100).clamp(0.0, 1.0));
+            if (progress >= 100 && !uploaded.isCompleted) uploaded.complete();
+          },
+          onError: (Object e) {
+            if (!uploaded.isCompleted) uploaded.completeError(e);
+          },
+          onDone: () {
+            if (!uploaded.isCompleted) uploaded.complete();
+          },
+          cancelOnError: true,
+        );
+      },
     );
+    await uploaded.future;
+
+    // Belt and braces: only stamp the timestamp once iCloud reports the file as
+    // uploaded, so "last backup" can never describe a transfer that never left.
+    if (!await _isBackupUploaded()) {
+      throw Exception(
+        'Backup was written locally but iCloud has not finished uploading it '
+        'yet. Keep the app open and connected, then check again.',
+      );
+    }
     await settings.setICloudLastBackup(DateTime.now());
+  }
+
+  /// Whether iCloud reports the backup file as fully uploaded.
+  Future<bool> _isBackupUploaded() async {
+    try {
+      final files = await ICloudStorage.gather(containerId: _icloudContainerId);
+      final backup =
+          files.where((f) => f.relativePath == _backupFileName).firstOrNull;
+      if (backup == null) return false;
+      return backup.isUploaded && !backup.isUploading;
+    } catch (e, stackTrace) {
+      AppLogger.error('Could not confirm iCloud upload state',
+          error: e, stackTrace: stackTrace);
+      return false;
+    }
   }
 
   Future<void> restoreFromICloud({
     void Function(double)? onProgress,
   }) async {
     final files = await ICloudStorage.gather(containerId: _icloudContainerId);
-    final hasBackup = files.any((f) => f.relativePath == _backupFileName);
-    if (!hasBackup) {
+    final backup =
+        files.where((f) => f.relativePath == _backupFileName).firstOrNull;
+    if (backup == null) {
       throw Exception('No backup found on iCloud');
     }
+    final expectedSize = backup.sizeInBytes;
 
     final tempDir = await getTemporaryDirectory();
     if (!tempDir.existsSync()) {
@@ -336,46 +388,86 @@ class BackupService {
     await completer.future;
 
     // iCloud reports progress 1.0 before the native layer finishes copying the
-    // file to destinationFilePath. Poll until the file appears and its size
-    // has been stable for at least two consecutive checks (~1 s), so we know
-    // the write is complete and not still in progress.
-    final deadline = DateTime.now().add(const Duration(seconds: 30));
+    // file to destinationFilePath, so wait for the copy to actually land.
+    //
+    // The bound is an *idle* timeout, not a wall clock: a multi-hundred-megabyte
+    // archive takes far longer than any fixed deadline, and the previous 30 s
+    // limit simply expired mid-copy on large backups. We keep waiting as long as
+    // the file is still growing, and only give up when it stops making progress.
+    const idleLimit = Duration(seconds: 90);
     int lastSize = -1;
     int stableCount = 0;
-    while (DateTime.now().isBefore(deadline)) {
+    var lastProgress = DateTime.now();
+
+    while (true) {
       await Future.delayed(const Duration(milliseconds: 500));
-      if (!tempFile.existsSync()) {
-        lastSize = -1;
+      final size = tempFile.existsSync() ? tempFile.lengthSync() : -1;
+
+      if (size != lastSize) {
+        lastSize = size;
         stableCount = 0;
+        lastProgress = DateTime.now();
+        if (expectedSize > 0 && size > 0) {
+          // Remaining 10% of the bar covers this flush phase.
+          onProgress?.call((0.9 + 0.1 * (size / expectedSize)).clamp(0.9, 1.0));
+        }
         continue;
       }
-      final size = tempFile.lengthSync();
-      if (size > 0 && size == lastSize) {
+
+      // Size held steady — complete once it matches what iCloud advertised.
+      if (size > 0 && (expectedSize <= 0 || size >= expectedSize)) {
         stableCount++;
-        if (stableCount >= 2) break; // size stable for ≥1 s → write complete
-      } else {
-        stableCount = 0;
-        lastSize = size;
+        if (stableCount >= 2) break;
       }
+
+      if (DateTime.now().difference(lastProgress) > idleLimit) break;
     }
 
-    if (!tempFile.existsSync() || tempFile.lengthSync() == 0) {
-      throw Exception('Download from iCloud failed');
+    final actualSize = tempFile.existsSync() ? tempFile.lengthSync() : 0;
+    if (actualSize == 0) {
+      throw Exception('Download from iCloud failed: no data was written');
+    }
+    // A truncated archive must never reach _restoreFromArchive — ZipDecoder
+    // would either throw deep inside the restore or, worse, yield a partial
+    // archive that passes the entry check and overwrites good data.
+    if (expectedSize > 0 && actualSize < expectedSize) {
+      throw Exception(
+        'Download from iCloud incomplete: got $actualSize of $expectedSize '
+        'bytes. Check the network connection and try again.',
+      );
     }
 
     await _restoreFromArchive(tempFile);
   }
 
+  /// Date of the backup file sitting in iCloud, or null when there is none or
+  /// iCloud could not be reached.
+  ///
+  /// Deliberately does **not** fall back to `settings.getICloudLastBackup()`:
+  /// that is this device's local timestamp, and the settings screen already
+  /// shows it on its own line. Returning it here made "Latest in iCloud"
+  /// display a local date whenever iCloud was unreachable — the remote backup
+  /// looked present and current when it was neither.
   Future<DateTime?> getICloudBackupDate() async {
     try {
       final files = await ICloudStorage.gather(containerId: _icloudContainerId);
       final backup = files.where((f) => f.relativePath == _backupFileName);
-      if (backup.isNotEmpty) {
-        return backup.first.contentChangeDate;
+      if (backup.isEmpty) {
+        AppLogger.warning(
+          'iCloud reachable but no $_backupFileName in $_icloudContainerId '
+          '(${files.length} other file(s) present)',
+        );
+        return null;
       }
-    } catch (_) {
-      // Fall back to local timestamp
+      return backup.first.contentChangeDate;
+    } catch (e, stackTrace) {
+      // Swallowing this is what kept the real failure invisible.
+      AppLogger.error(
+        'iCloud gather failed for container $_icloudContainerId',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
     }
-    return settings.getICloudLastBackup();
   }
 }

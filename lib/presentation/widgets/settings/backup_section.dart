@@ -9,6 +9,8 @@ class BackupSection extends StatelessWidget {
   final bool busy;
   final bool isCheckingBackup;
   final double? restoreProgress;
+  /// iCloud upload progress while a backup is in flight.
+  final double? backupProgress;
   final String iCloudDeviceBackupLabel;
   final String iCloudRemoteBackupLabel;
   final String lastRestoreLabel;
@@ -29,6 +31,7 @@ class BackupSection extends StatelessWidget {
     required this.onRestoreFromICloud,
     required this.onRecheckICloudBackup,
     this.restoreProgress,
+    this.backupProgress,
   });
 
   @override
@@ -52,7 +55,7 @@ class BackupSection extends StatelessWidget {
                   l10n.backupRestore,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                if (busy && restoreProgress == null) ...[
+                if (busy && restoreProgress == null && backupProgress == null) ...[
                   const SizedBox(width: AppConstants.spacingM),
                   SizedBox(
                     width: AppConstants.progressIndicatorSizeS,
@@ -67,6 +70,13 @@ class BackupSection extends StatelessWidget {
             if (restoreProgress != null) ...[
               const SizedBox(height: AppConstants.spacingS),
               LinearProgressIndicator(value: restoreProgress),
+            ],
+            // Real upload progress: the copy into the container is instant, but
+            // the transfer to iCloud is what decides whether another device
+            // will ever see this backup.
+            if (backupProgress != null) ...[
+              const SizedBox(height: AppConstants.spacingS),
+              LinearProgressIndicator(value: backupProgress),
             ],
             if (isApplePlatform) ...[
               const SizedBox(height: AppConstants.spacingL),
