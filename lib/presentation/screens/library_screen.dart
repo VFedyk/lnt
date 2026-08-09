@@ -429,12 +429,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
   /// Starts a text-scoped review session. Unlike the reader entry point there
   /// are no parsed tokens to reuse here, so the sheet resolves multi-word terms
   /// with a content scan behind its own progress indicator.
-  Future<void> _showTextReview(TextDocument text) {
-    return showTextReviewSheet(
+  Future<void> _showTextReview(LibraryController ctrl, TextDocument text) async {
+    await showTextReviewSheet(
       context,
       text: text,
       language: widget.language,
     );
+    // The session moved term statuses, and this row shows an unknown-word count.
+    // LibraryController only listens on texts/collections, so ask it directly —
+    // same as the reader-return path does.
+    await ctrl.recalculateUnknownCountForText(text);
   }
 
   Future<void> _showTextOptions(LibraryController ctrl, TextDocument text) async {
@@ -488,7 +492,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     );
 
-    if (reviewRequested == true && mounted) await _showTextReview(text);
+    if (reviewRequested == true && mounted) await _showTextReview(ctrl, text);
   }
 
   // ── Build ──
@@ -736,7 +740,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
         ).then((_) => ctrl.recalculateUnknownCountForText(text));
       },
-      onReviewText: _showTextReview,
+      onReviewText: (text) => _showTextReview(ctrl, text),
       onSetCover: (text) => _setCoverImage(ctrl, text),
       onEditText: (text) => _editText(ctrl, text),
       onDeleteText: (text) => _deleteText(ctrl, text),

@@ -270,7 +270,13 @@ class ReaderController extends BaseController {
       }
 
       final mappedTerm = termsMap[lowerWord];
-      if (token.term?.id == mappedTerm?.id) return token;
+      // Status is part of the comparison, not just identity: after a review the
+      // term id is unchanged and only the status moved, and that is exactly
+      // what the reader paints.
+      if (token.term?.id == mappedTerm?.id &&
+          token.term?.status == mappedTerm?.status) {
+        return token;
+      }
       return WordToken(
         text: token.text,
         isWord: true,
@@ -389,6 +395,29 @@ class ReaderController extends BaseController {
     );
     await db.texts.update(updatedText);
     text = updatedText;
+  }
+
+  /// Re-reads term statuses and repaints the text without re-parsing it.
+  ///
+  /// Used when returning from a review session: FSRS has moved the statuses of
+  /// words in this text, so the highlighting and the legend counts are stale.
+  /// Deliberately not wired to a `dataChanges.terms` listener — the review
+  /// repositories notify on every single rating, and re-running this for each
+  /// one would remap the whole chapter dozens of times while the reader is not
+  /// even on screen.
+  Future<void> refreshTermStatuses() async {
+    if (isDisposed) return;
+
+    termsMap = await db.terms.getMapByLanguage(language.id!);
+    if (isDisposed) return;
+    termsById = {
+      for (final term in termsMap.values)
+        if (term.id != null) term.id!: term,
+    };
+
+    _rebindWordTokens();
+    _updateTextTermCounts();
+    safeNotify();
   }
 
   // ── Term update in-place ──

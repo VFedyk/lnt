@@ -592,6 +592,8 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
                   t.lowerText.length > 1))
           .toSet(),
     );
+    // The session just moved the statuses of words on this page — repaint them.
+    await ctrl.refreshTermStatuses();
   }
 
   void _markAllWordsKnown() {
