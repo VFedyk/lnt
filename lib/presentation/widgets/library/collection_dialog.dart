@@ -43,6 +43,7 @@ class _CollectionDialogState extends State<CollectionDialog> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   String? _coverImagePath;
+  bool _isContinuous = false;
 
   @override
   void initState() {
@@ -52,6 +53,7 @@ class _CollectionDialogState extends State<CollectionDialog> {
       _descriptionController.text = widget.existingCollection!.description;
       _coverImagePath = CoverImageHelper.resolve(widget.existingCollection!.coverImage);
     }
+    _isContinuous = widget.existingCollection?.isContinuous ?? false;
   }
 
   @override
@@ -239,6 +241,13 @@ class _CollectionDialogState extends State<CollectionDialog> {
                 ),
                 maxLines: _CollectionDialogConstants.descriptionMaxLines,
               ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _isContinuous,
+                onChanged: (v) => setState(() => _isContinuous = v),
+                title: Text(l10n.trackAsBook),
+                subtitle: Text(l10n.trackAsBookHint),
+              ),
             ],
           ),
         ),
@@ -262,6 +271,7 @@ class _CollectionDialogState extends State<CollectionDialog> {
                       clearCoverImage:
                           _coverImagePath == null &&
                           widget.existingCollection!.coverImage != null,
+                      isContinuous: _isContinuous,
                     )
                   : Collection(
                       languageId: widget.languageId,
@@ -269,6 +279,7 @@ class _CollectionDialogState extends State<CollectionDialog> {
                       name: _nameController.text,
                       description: _descriptionController.text,
                       coverImage: relativeCover,
+                      isContinuous: _isContinuous,
                     );
               Navigator.pop(context, collection);
             }

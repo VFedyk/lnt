@@ -65,6 +65,8 @@ void main() {
           languageId: any(named: 'languageId'),
           parentId: any(named: 'parentId'),
         )).thenAnswer((_) async => []);
+    when(() => mockCollections.getBookProgress(any()))
+        .thenAnswer((_) async => []);
     when(() => mockTexts.getAll(languageId: any(named: 'languageId')))
         .thenAnswer((_) async => []);
     when(() => mockTerms.getMapByLanguage(any()))

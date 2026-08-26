@@ -21,7 +21,7 @@ lib/
 ├── main.dart              # Entry point, AppState provider
 ├── service_locator.dart   # get_it registrations + convenience getters
 ├── domain/                # Pure Dart — no Flutter, no I/O
-│   ├── entities/          # Term, TextDocument, Language, ReviewCard, Collection, Dictionary, …
+│   ├── entities/          # Term, TextDocument, Language, ReviewCard, Collection, Dictionary, BookProgress, …
 │   ├── value_objects/     # TermStatus, PartOfSpeech (immutable, equality-by-value)
 │   ├── events/            # TermEvent (sealed class + subtypes)
 │   └── repositories/      # Abstract interfaces: TermRepository, TextRepository, … (12 interfaces)
@@ -50,7 +50,8 @@ lib/
 │   │   │                  #   handwriting_canvas, hanzi_writer_widget, review_options_grid,
 │   │   │                  #   text_review_sheet, practice_mode_banner,
 │   │   │                  #   review_session_app_bar, reread_suggestion_card)
-│   │   ├── dashboard/     # dashboard_tab.dart only (activity_heatmap, dashboard_charts)
+│   │   ├── dashboard/     # dashboard_tab.dart only (activity_heatmap, dashboard_charts,
+│   │   │                  #   book_progress_card, cover_thumbnail)
 │   │   ├── statistics/    # statistics_screen.dart only (status_history_chart)
 │   │   ├── dictionaries/  # dictionaries_screen.dart only
 │   │   ├── languages/     # languages_screen.dart only
@@ -92,6 +93,7 @@ flutter build macos          # Build macOS
 - **Service locator**: `setupServiceLocator()` in `main.dart` registers all services. Access via top-level getters: `db`, `settings`, `backupService`, `reviewService`, `deepLService`, `libreTranslateService`, `ttsService`, `chineseSegService`, `dataChanges`. Use case getters: `reviewTerm`, `saveTerm`, `bulkImportTerms`, `translateTerm`.
 - **Repository pattern**: `db.terms.getAll()` etc. `db` is a `DatabaseService` facade that exposes all repos typed to their domain interfaces. Each repo also registered individually: `sl<TermRepository>()`.
 - Repositories use lazy `() => database` callback — DB can be closed and reopened. Concrete impls are `XRepositoryImpl` in `lib/data/repositories/`; domain interfaces are in `lib/domain/repositories/`.
+- **Continuous collections ("books")** (v25, `collections.is_continuous`): a collection can be tracked as a book so reading progress is aggregated across its direct child texts, weighted by `LENGTH(content)` (not chapter count), with `finished` (`texts.status = 2`) as the only credit-bearing state. `CollectionRepository.getBookProgress(languageId, {limit, excludeCompleted})` returns `BookProgress` (`lib/domain/entities/book_progress.dart`) computed entirely in SQL; `getNextUnfinishedText(collectionId)` returns the first unfinished chapter in reading order, falling back to the first chapter when the book is fully read. EPUB import always sets `isContinuous: true` on the created collection; the collection dialog also exposes a manual "Track as book" toggle. The dashboard widget (`BookProgressCard`) shows the 5 most recently read, non-complete books and opens the next unfinished chapter on tap; the library list/grid show a progress bar/percentage for every continuous collection, complete or not.
 - **Dependency inversion**: `DatabaseService` accepts `SettingsService` and `DataChangeNotifier` via constructor — no `service_locator.dart` import inside `lib/data/`.
 - **Reactive data layer**: `DataChangeNotifier` (`lib/data/notifiers/`) holds per-domain `DomainNotifier` instances (`dataChanges.terms`, `.texts`, `.languages`, `.collections`, `.reviewCards`, `.dictionaries`, `.termSentences`, `.radicalProgress`, `.translations`). Repositories call `notifyChange()` after mutations; screens/controllers `addListener` on relevant domains and auto-reload. Use `dataChanges.notifyAll()` for bulk invalidation (e.g. backup restore).
 - **Localization**: Always add strings to both `app_en.arb` and `app_uk.arb`, then run `flutter gen-l10n`
@@ -127,7 +129,7 @@ flutter build macos          # Build macOS
 ## Architecture notes
 
 - `PlatformHelper.isApple` / `PlatformHelper.isDesktop` guards platform-specific features
-- Database migrations in `lib/data/datasources/database_migrations.dart` with version numbering (current: **v24**)
+- Database migrations in `lib/data/datasources/database_migrations.dart` with version numbering (current: **v25**)
 - **Foreign keys are enforced**: `PRAGMA foreign_keys = ON` is set in `openDatabase(onOpen:)` — deliberately *not* `onConfigure`, because sqflite wraps `onCreate`/`onUpgrade` in a transaction where the pragma is a silent no-op, and the drop/recreate migrations (v18, v20) must run unenforced. Consequences: `ON DELETE CASCADE`/`SET NULL` now actually fire, and any new code must insert parents before children. v22 cleans pre-existing orphans first — mandatory, since SQLite validates child key columns on UPDATE, so a dangling reference makes its row permanently un-updatable.
 - **Stale `new_*` foreign keys** (repaired in v24, `repairStaleRenameForeignKeys`): the v18 UUID migration and v20's cover-image rebuild both did `CREATE TABLE new_x` → copy → `DROP TABLE x` → `ALTER TABLE new_x RENAME TO x`. SQLite only rewrites `REFERENCES` clauses in *other* tables during a rename when FK enforcement is on, and it is deliberately off during migrations — so every child kept `REFERENCES new_terms`, naming a table that no longer existed. Inert until v22 enabled `PRAGMA foreign_keys = ON`, after which **every insert/update on an affected table failed** with `no such table: main.new_terms` (reviewing was completely broken). v24 rebuilds each affected table from its own DDL with the reference corrected; rows are untouched. **When adding a rebuild-style migration, never rely on `ALTER TABLE ... RENAME` to fix up other tables' foreign keys** — write the child tables' DDL with the final name, or repair afterwards. The repair avoids `ALTER TABLE ... RENAME` itself, since outside legacy mode it re-resolves the whole schema and would fail on the very dangling names it is fixing.
 - **Text ↔ word index** (v23, `text_words` + `text_word_index`): a **local, derived cache** — never synced, never tombstoned, rebuildable from `texts.content`, and carried inside the backup zip without special-casing. `text_words(text_id, lower_text, occurrences, first_position)` is keyed on the *normalized word form*, not term id, so it survives term CRUD untouched; the term↔text relation is derived at query time by joining `text_words.lower_text = terms.lower_text AND terms.language_id = texts.language_id`. `text_word_index(text_id, content_hash, …)` records what was indexed so a rebuild only happens when the content actually changes. Both cascade on text delete. **Multi-word terms are not in the index** (the tokenization is deliberately term-independent) — they are resolved separately by `ResolveTextTerms`. Invalidated by `TextRepositoryImpl.update` and by the `text` branch of `SyncPullService.applyEvent`; populated lazily by `TextWordIndexService.ensureIndexed`, which `ReaderController` fires and forgets after parsing so any text the user reads is already warm.
@@ -193,6 +195,7 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 - **Deletions** are `{'_deleted': true, 'deleted_at': …}` payloads under the entity's own domain/`entity_id`. Local table `sync_tombstones(domain, entity_id, deleted_at)` records both locally-initiated and remotely-applied deletes. Every user-initiated delete in a repository calls `BaseRepository.recordTombstone(db, domain, id)` when `result > 0`; `collectTombstones` pushes them.
 - A write **newer** than a tombstone resurrects the entity and clears the tombstone; a delete **older than or equal to** the local row's timestamp loses and records nothing. Children removed by FK cascade get **no tombstones of their own** — the parent's tombstone triggers the same cascade elsewhere.
 - Every mutation of a synced table must set `updated_at` (`terms`, `collections`, `languages`, `texts`, `review_cards`), otherwise the edit is invisible to push and loses every LWW comparison.
+- **`collections.is_continuous`** rides the existing `collection` domain payload with no collector/applier changes: `collectCollections` builds the payload from the whole row, and `applyEvent`'s `collection` branch upserts whatever keys the payload carries. A payload omitting the key (older client) leaves the local value untouched on UPDATE and defaults to `0` on INSERT.
 
 ### Push phase
 
@@ -222,7 +225,7 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 
 ## Testing
 
-- **Command**: `flutter test` — runs all 254 tests in ~8-10 seconds
+- **Command**: `flutter test` — runs all 273 tests in ~8-10 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
 - **Verification**: Use exit code pattern to avoid parsing verbose output:
   ```bash
@@ -231,10 +234,10 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 - **Test coverage**:
   - `test/application/` — Use cases: ReviewTerm (FSRS + repo writes, rating semantics, retention `configure()`), SaveTerm, BulkImportTerms, TranslateTerm, ResolveTextTerms (multi-word detection per language config, 400-term cap, reader fast path)
   - `test/services/` — Pure-logic services (text parser, review service, import/export, EPUB import, backup archive format, data change notifier, Chinese segmentation, text word index service)
-  - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping); `review_card_repository_test.dart` (term-event card lifecycle, due-card status filtering, status-filter queries, `ReviewScope` text/extraTermIds/includeNotDue scoping, due forecast, daily new-card limit — in-memory DB); `review_log_repository_test.dart` (retention aggregation, per-term history, `getLapseCounts` windowing + chunking); `term_status_log_repository_test.dart` (per-term status history); `text_word_repository_test.dart` (index replace/invalidate, same-language term matching, text ranking)
+  - `test/repositories/` — BaseRepository pattern (reactive notifications, LIKE escaping); `review_card_repository_test.dart` (term-event card lifecycle, due-card status filtering, status-filter queries, `ReviewScope` text/extraTermIds/includeNotDue scoping, due forecast, daily new-card limit — in-memory DB); `review_log_repository_test.dart` (retention aggregation, per-term history, `getLapseCounts` windowing + chunking); `term_status_log_repository_test.dart` (per-term status history); `text_word_repository_test.dart` (index replace/invalidate, same-language term matching, text ranking); `collection_repository_test.dart` (`isContinuous` persistence, `getBookProgress` length-weighting/exclusion/ordering/language-scoping, `getNextUnfinishedText` ordering and fallback)
   - `test/controllers/` — Screen controllers (LibraryController listener lifecycle and CRUD delegation); `flashcard_review_controller_test.dart` drives a text-scoped session end to end against a real DB (graded + practice, completion screen, and the guarantee that a failed write never strands the phase on `rating`); `reader_controller_test.dart` (`refreshTermStatuses` repaints changed statuses and legend counts without re-parsing)
   - `test/services/sync_service_test.dart` — Sync layer: `validatePayload` (all domains), `applyEvent` (LWW newer/older/equal-timestamp, tombstone delete + resurrect, ignore-duplicate, term atomicity), collectors with timestamp windowing (`collectLanguages`, `collectTerms` `updated_at` window, `collectTombstones`); uses `sqflite_common_ffi` in-memory DB with the full current schema
-  - `test/datasources/database_migrations_test.dart` — v21 → v22, v22 → v23 and v23 → v24 upgrades on a real file DB: orphan cleanup, `updated_at` backfill, `sync_tombstones` creation, `text_words`/`text_word_index` creation with no backfill, stale `new_*` FK repair (data + indexes preserved, enforcement live afterwards, no-op on a healthy schema), live FK cascade
+  - `test/datasources/database_migrations_test.dart` — v21 → v22, v22 → v23, v23 → v24 and v24 → v25 upgrades on a real file DB: orphan cleanup, `updated_at` backfill, `sync_tombstones` creation, `text_words`/`text_word_index` creation with no backfill, stale `new_*` FK repair (data + indexes preserved, enforcement live afterwards, no-op on a healthy schema), live FK cascade, `is_continuous` column add + EPUB-collection backfill (idempotent no-op when the column or the `collections` table is already up to date, since `onUpgrade` chains every branch unconditionally regardless of the target version)
   - Widget tests are not yet comprehensive (default `widget_test.dart` is a leftover)
 - **Platform notes**: Tests use `sqflite_common_ffi` for in-memory SQLite on all platforms (no platform-specific setup required)
 - **Running specific tests**: `flutter test test/services/review_service_test.dart`

@@ -1,17 +1,18 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../../domain/entities/book_progress.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/entities/text_document.dart';
 import '../../domain/value_objects/term_status.dart';
+import '../../service_locator.dart';
 import '../../utils/constants.dart';
-import '../../utils/cover_image_helper.dart';
 import '../../utils/helpers.dart';
 import '../controllers/dashboard_controller.dart';
 import '../widgets/dashboard/activity_heatmap.dart';
+import '../widgets/dashboard/book_progress_card.dart';
+import '../widgets/dashboard/cover_thumbnail.dart';
 import '../widgets/shared/animated_counter.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/dashboard/dashboard_charts.dart';
@@ -19,9 +20,6 @@ import '../widgets/shared/review_progress_ring.dart';
 import 'reader_screen.dart';
 
 abstract class _DashboardConstants {
-  static const double thumbnailWidth = 40.0;
-  static const double thumbnailHeight = 56.0;
-  static const double thumbnailBorderRadius = 4.0;
   static const double desktopHeatmapWidth = 795.0;
   static const double tabletBreakpoint = 600.0;
   static const int maxHeatmapWeeks = 52;
@@ -145,6 +143,11 @@ class _DashboardView extends StatelessWidget {
           const SizedBox(height: AppConstants.spacingL),
           _ChartsSection(controller: controller, useDesktopLayout: useDesktopStyleLayout),
           const SizedBox(height: AppConstants.spacingL),
+          BookProgressCard(
+            books: controller.bookProgress,
+            onOpenBook: (book) => _openBook(context, controller, book),
+          ),
+          const SizedBox(height: AppConstants.spacingL),
           if (useDesktopStyleLayout)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,6 +166,21 @@ class _DashboardView extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _openBook(
+  BuildContext context,
+  DashboardController controller,
+  BookProgress book,
+) async {
+  final next = await db.collections.getNextUnfinishedText(book.collectionId);
+  if (next == null || !context.mounted) return;
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ReaderScreen(text: next, language: controller.language),
+    ),
+  );
 }
 
 class _LanguageHeader extends StatelessWidget {
@@ -357,7 +375,7 @@ class _TextListTile extends StatelessWidget {
     ].join(' • ');
 
     return ListTile(
-      leading: _TextThumbnail(text: text, fallbackIcon: fallbackIcon),
+      leading: CoverThumbnail(coverImage: text.coverImage, fallbackIcon: fallbackIcon),
       title: Text(text.title, maxLines: 2, overflow: TextOverflow.ellipsis),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
@@ -369,33 +387,6 @@ class _TextListTile extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _TextThumbnail extends StatelessWidget {
-  final TextDocument text;
-  final IconData fallbackIcon;
-  const _TextThumbnail({required this.text, required this.fallbackIcon});
-
-  @override
-  Widget build(BuildContext context) {
-    final resolvedCover = CoverImageHelper.resolve(text.coverImage);
-    if (resolvedCover != null && File(resolvedCover).existsSync()) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(_DashboardConstants.thumbnailBorderRadius),
-        child: Image.file(
-          File(resolvedCover),
-          width: _DashboardConstants.thumbnailWidth,
-          height: _DashboardConstants.thumbnailHeight,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-    return SizedBox(
-      width: _DashboardConstants.thumbnailWidth,
-      height: _DashboardConstants.thumbnailHeight,
-      child: Icon(fallbackIcon, size: _DashboardConstants.thumbnailWidth),
     );
   }
 }

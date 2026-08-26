@@ -1,3 +1,4 @@
+import '../../domain/entities/book_progress.dart';
 import '../../domain/entities/day_activity.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/entities/term.dart';
@@ -34,6 +35,7 @@ class DashboardController extends BaseController {
   List<DailyActivityChartData> dailyActivityData = [];
   List<VocabularyGrowthChartData> vocabularyGrowthData = [];
   List<StatusDistributionData> statusDistributionData = [];
+  List<BookProgress> bookProgress = [];
 
   bool isLoading = true;
   String? error;
@@ -44,11 +46,13 @@ class DashboardController extends BaseController {
   static const int _recentTextsLimit = 5;
   static const int _maxHeatmapWeeks = 52;
   static const int _chartDays = 30;
+  static const int _bookProgressLimit = 5;
 
   DashboardController({required this.language}) {
     dataChanges.terms.addListener(_onDataChanged);
     dataChanges.texts.addListener(_onDataChanged);
     dataChanges.reviewCards.addListener(_onDataChanged);
+    dataChanges.collections.addListener(_onDataChanged);
     loadData();
   }
 
@@ -61,6 +65,7 @@ class DashboardController extends BaseController {
     dataChanges.terms.removeListener(_onDataChanged);
     dataChanges.texts.removeListener(_onDataChanged);
     dataChanges.reviewCards.removeListener(_onDataChanged);
+    dataChanges.collections.removeListener(_onDataChanged);
     super.dispose();
   }
 
@@ -152,6 +157,11 @@ class DashboardController extends BaseController {
         days: _chartDays,
       );
       final newStatusDist = ChartHelpers.buildStatusDistributionData(countsByStatus: counts);
+      final books = await db.collections.getBookProgress(
+        language.id!,
+        limit: _bookProgressLimit,
+        excludeCompleted: true,
+      );
 
       if (isDisposed) return;
       recentlyReadTexts = recentlyRead;
@@ -170,6 +180,7 @@ class DashboardController extends BaseController {
       dailyActivityData = newDailyActivity;
       vocabularyGrowthData = newVocabGrowth;
       statusDistributionData = newStatusDist;
+      bookProgress = books;
       isLoading = false;
       safeNotify();
     } catch (e, stackTrace) {

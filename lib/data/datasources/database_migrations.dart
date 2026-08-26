@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 24;
+const int databaseVersion = 25;
 
 const _uuid = Uuid();
 
@@ -254,6 +254,9 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
   if (oldVersion < 24) {
     await repairStaleRenameForeignKeys(db);
   }
+  if (oldVersion < 25) {
+    await _addContinuousCollections(db);
+  }
 }
 
 /// Repoints foreign keys still referencing the `new_*` scratch tables used by
@@ -318,6 +321,39 @@ Future<void> repairStaleRenameForeignKeys(Database db) async {
       await db.execute(index['sql'] as String);
     }
   }
+}
+
+/// v25: marks a collection as a "book" (continuous text) so reading progress
+/// can be aggregated across its chapters.
+///
+/// Backfills every collection that already holds EPUB-imported texts, so books
+/// imported before this feature show up in the dashboard widget. The backfill
+/// bumps `updated_at`, deliberately: without it the flag would never be pushed
+/// to sync and other devices would keep showing the book as untracked.
+Future<void> _addContinuousCollections(Database db) async {
+  // Guards against re-running: `onUpgrade` chains every `if (oldVersion < N)`
+  // branch unconditionally, so a schema whose `collections` table was already
+  // built with `is_continuous` (current `onCreate`, or a prior run of this
+  // migration) must be left untouched rather than fail on a duplicate column.
+  final tables = await db.rawQuery(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'collections'",
+  );
+  if (tables.isEmpty) return;
+  final columns = await db.rawQuery('PRAGMA table_info(collections)');
+  if (columns.any((c) => c['name'] == 'is_continuous')) return;
+
+  await db.execute(
+    'ALTER TABLE collections ADD COLUMN is_continuous INTEGER NOT NULL DEFAULT 0',
+  );
+  await db.execute('''
+    UPDATE collections
+    SET is_continuous = 1,
+        updated_at    = ?
+    WHERE id IN (
+      SELECT DISTINCT collection_id FROM texts
+      WHERE collection_id IS NOT NULL AND source_uri LIKE 'epub://%'
+    )
+  ''', [DateTime.now().toUtc().toIso8601String()]);
 }
 
 /// Local, derived word-occurrence index. Never synced; rebuildable from
@@ -1134,6 +1170,7 @@ Future<void> onCreate(Database db, int version) async {
       sort_order     INTEGER DEFAULT 0,
       cover_image_id TEXT,
       updated_at     TEXT,
+      is_continuous  INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY (language_id)    REFERENCES languages (id)    ON DELETE CASCADE,
       FOREIGN KEY (parent_id)      REFERENCES collections (id)  ON DELETE CASCADE,
       FOREIGN KEY (cover_image_id) REFERENCES cover_images (id) ON DELETE SET NULL

@@ -710,6 +710,36 @@ abstract class AppLocalizations {
   /// **'No texts yet. Add one to get started!'**
   String get noTextsYetAddOne;
 
+  /// No description provided for @trackAsBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Track as book'**
+  String get trackAsBook;
+
+  /// No description provided for @trackAsBookHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Show reading progress on the dashboard'**
+  String get trackAsBookHint;
+
+  /// No description provided for @readingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading progress'**
+  String get readingProgress;
+
+  /// No description provided for @noBooksInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'No books in progress. Import an EPUB or mark a collection as a book.'**
+  String get noBooksInProgress;
+
+  /// No description provided for @bookProgressChapters.
+  ///
+  /// In en, this message translates to:
+  /// **'{finished} of {total} chapters'**
+  String bookProgressChapters(int finished, int total);
+
   /// No description provided for @searchTexts.
   ///
   /// In en, this message translates to:

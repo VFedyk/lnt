@@ -76,6 +76,7 @@ class EpubImportService {
       name: title,
       description: author != null ? 'By $author' : '',
       parentId: parentCollectionId,
+      isContinuous: true, // an EPUB is always a book
     );
 
     final collectionId = await db.collections.create(collection);

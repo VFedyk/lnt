@@ -331,6 +331,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTextsYetAddOne => 'No texts yet. Add one to get started!';
 
   @override
+  String get trackAsBook => 'Track as book';
+
+  @override
+  String get trackAsBookHint => 'Show reading progress on the dashboard';
+
+  @override
+  String get readingProgress => 'Reading progress';
+
+  @override
+  String get noBooksInProgress =>
+      'No books in progress. Import an EPUB or mark a collection as a book.';
+
+  @override
+  String bookProgressChapters(int finished, int total) {
+    return '$finished of $total chapters';
+  }
+
+  @override
   String get searchTexts => 'Search texts...';
 
   @override

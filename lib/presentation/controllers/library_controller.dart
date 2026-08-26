@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/entities/text_document.dart';
+import '../../domain/entities/book_progress.dart';
 import '../../domain/entities/collection.dart';
 import '../../domain/entities/term.dart';
 import '../../service_locator.dart';
@@ -48,6 +49,7 @@ class LibraryController extends BaseController {
   List<Collection> collections = [];
   Collection? currentCollection;
   bool isLoading = true;
+  Map<String, BookProgress> bookProgress = {};
 
   // Sort/filter state
   TextSortOption sortOption = TextSortOption.lastRead;
@@ -182,8 +184,11 @@ class LibraryController extends BaseController {
               .where((t) => t.collectionId == currentCollection!.id)
               .toList();
 
+    final progress = await db.collections.getBookProgress(language.id!);
+
     collections = allCollections;
     texts = filteredTexts;
+    bookProgress = {for (final p in progress) p.collectionId: p};
     isLoading = false;
     safeNotify();
 

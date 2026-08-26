@@ -143,6 +143,17 @@
   "recentlyAdded": "Recently added",
   "noTextsReadYet": "No texts read yet.",
   "noTextsYetAddOne": "No texts yet. Add one to get started!",
+  "trackAsBook": "Track as book",
+  "trackAsBookHint": "Show reading progress on the dashboard",
+  "readingProgress": "Reading progress",
+  "noBooksInProgress": "No books in progress. Import an EPUB or mark a collection as a book.",
+  "bookProgressChapters": "{finished} of {total} chapters",
+  "@bookProgressChapters": {
+    "placeholders": {
+      "finished": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
   "searchTexts": "Search texts...",
   "searchTerms": "Search terms...",
   "noCollectionsOrTexts": "No collections or texts",

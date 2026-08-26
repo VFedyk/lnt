@@ -331,6 +331,24 @@ class AppLocalizationsUk extends AppLocalizations {
   String get noTextsYetAddOne => 'Текстів ще немає. Додайте один, щоб почати!';
 
   @override
+  String get trackAsBook => 'Відстежувати як книгу';
+
+  @override
+  String get trackAsBookHint => 'Показувати прогрес читання на головній';
+
+  @override
+  String get readingProgress => 'Прогрес читання';
+
+  @override
+  String get noBooksInProgress =>
+      'Немає книг у процесі читання. Імпортуйте EPUB або позначте збірку як книгу.';
+
+  @override
+  String bookProgressChapters(int finished, int total) {
+    return '$finished з $total розділів';
+  }
+
+  @override
   String get searchTexts => 'Пошук текстів...';
 
   @override

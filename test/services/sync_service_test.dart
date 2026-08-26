@@ -367,6 +367,82 @@ void main() {
     });
   });
 
+  group('SyncPushService.collectCollections — is_continuous', () {
+    late Database db;
+    final push = SyncPushService();
+
+    setUp(() async { db = await _openTestDb(); });
+    tearDown(() async { await db.close(); });
+
+    test('emits is_continuous in the payload for a continuous collection', () async {
+      await db.insert('languages', {'id': 'lang-1', 'name': 'English', 'language_code': 'en'});
+      await db.insert('collections', {'id': 'c1', 'language_id': 'lang-1', 'name': 'Book',
+          'created_at': '2024-01-01T00:00:00.000Z', 'is_continuous': 1});
+
+      final events = <EventInput>[];
+      await push.collectCollections(db, events, null, {});
+
+      expect(events.length, 1);
+      expect(events.first.payload['is_continuous'], 1);
+    });
+  });
+
+  group('SyncPullService.applyEvent — collection (is_continuous)', () {
+    late Database db;
+    late SyncPullService pull;
+
+    setUp(() async {
+      db = await _openTestDb();
+      pull = SyncPullService(const SyncImageService());
+      await db.insert('languages', {'id': 'lang-1', 'name': 'English', 'language_code': 'en'});
+    });
+    tearDown(() async { await db.close(); });
+
+    Future<Map<String, Object?>> collection() async =>
+        (await db.query('collections', where: 'id = ?', whereArgs: ['c1'])).first;
+
+    test('payload carrying is_continuous: 1 writes the flag', () async {
+      await pull.applyEvent(
+        db,
+        _makeEvent('collection', 'c1', {
+          'language_id': 'lang-1', 'name': 'Book', 'is_continuous': 1,
+          'created_at': '2024-01-01T00:00:00.000Z',
+          'updated_at': '2024-01-01T00:00:00.000Z',
+        }),
+        _noOpApi(), 'u', {},
+      );
+
+      expect((await collection())['is_continuous'], 1);
+    });
+
+    test('payload omitting is_continuous leaves an existing 1 intact', () async {
+      await pull.applyEvent(
+        db,
+        _makeEvent('collection', 'c1', {
+          'language_id': 'lang-1', 'name': 'Book', 'is_continuous': 1,
+          'created_at': '2024-01-01T00:00:00.000Z',
+          'updated_at': '2024-01-01T00:00:00.000Z',
+        }),
+        _noOpApi(), 'u', {},
+      );
+
+      // Older-client re-push of the same collection, no is_continuous key at all.
+      await pull.applyEvent(
+        db,
+        _makeEvent('collection', 'c1', {
+          'language_id': 'lang-1', 'name': 'Book Renamed',
+          'created_at': '2024-01-01T00:00:00.000Z',
+          'updated_at': '2024-02-01T00:00:00.000Z',
+        }),
+        _noOpApi(), 'u', {},
+      );
+
+      final row = await collection();
+      expect(row['name'], 'Book Renamed');
+      expect(row['is_continuous'], 1);
+    });
+  });
+
   group('SyncPushService.collectTombstones', () {
     late Database db;
     final push = SyncPushService();

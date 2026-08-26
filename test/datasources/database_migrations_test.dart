@@ -248,6 +248,76 @@ void main() {
     await dir.delete(recursive: true);
   });
 
+  test('v24 -> v25 adds is_continuous and backfills EPUB collections', () async {
+    final dir = await Directory.systemTemp.createTemp('lnt_mig25');
+    final path = '${dir.path}/v24.db';
+    final db = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 24,
+        onCreate: (db, v) async {
+          await migrations.onCreate(db, v);
+          await db.execute('ALTER TABLE collections DROP COLUMN is_continuous');
+        },
+      ),
+    );
+
+    await db.insert('languages', {'id': 'l1', 'name': 'English'});
+    // Plain collection: no texts at all.
+    await db.insert('collections', {
+      'id': 'c-plain', 'language_id': 'l1', 'name': 'Plain',
+      'created_at': '2024-01-01T00:00:00.000Z',
+    });
+    // Collection holding an EPUB-imported text.
+    await db.insert('collections', {
+      'id': 'c-epub', 'language_id': 'l1', 'name': 'Epub Book',
+      'created_at': '2024-01-01T00:00:00.000Z',
+    });
+    await db.insert('texts', {
+      'id': 'x-epub', 'language_id': 'l1', 'collection_id': 'c-epub',
+      'title': 'Chapter 1', 'content': 'c', 'source_uri': 'epub://Epub Book',
+      'created_at': '2024-01-01T00:00:00.000Z',
+      'last_read': '2024-01-01T00:00:00.000Z',
+    });
+    // Collection holding only a non-EPUB text.
+    await db.insert('collections', {
+      'id': 'c-other', 'language_id': 'l1', 'name': 'Other',
+      'created_at': '2024-01-01T00:00:00.000Z',
+    });
+    await db.insert('texts', {
+      'id': 'x-other', 'language_id': 'l1', 'collection_id': 'c-other',
+      'title': 'Text', 'content': 'c', 'source_uri': 'file:///x.txt',
+      'created_at': '2024-01-01T00:00:00.000Z',
+      'last_read': '2024-01-01T00:00:00.000Z',
+    });
+    await db.close();
+
+    final upgraded = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 25,
+        onUpgrade: migrations.onUpgrade,
+        onOpen: (d) => d.execute('PRAGMA foreign_keys = ON'),
+      ),
+    );
+
+    Future<Map<String, Object?>> collection(String id) async =>
+        (await upgraded.query('collections', where: 'id = ?', whereArgs: [id])).first;
+
+    final plain = await collection('c-plain');
+    expect(plain['is_continuous'], 0);
+
+    final epub = await collection('c-epub');
+    expect(epub['is_continuous'], 1);
+    expect(epub['updated_at'], isNotNull);
+
+    final other = await collection('c-other');
+    expect(other['is_continuous'], 0);
+
+    await upgraded.close();
+    await dir.delete(recursive: true);
+  });
+
   // The repair runs for every existing install, so it must be a strict no-op on
   // a database that was never corrupted.
   test('the FK repair leaves a healthy schema byte-identical', () async {

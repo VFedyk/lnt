@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../domain/entities/book_progress.dart';
 import '../../../domain/entities/collection.dart';
 import '../../../domain/entities/text_document.dart';
 import '../../../utils/constants.dart';
@@ -23,6 +24,7 @@ class LibraryGridContent extends StatelessWidget {
   final List<Collection> collections;
   final List<TextDocument> texts;
   final Map<String, int> unknownCounts;
+  final Map<String, BookProgress> bookProgress;
   final bool isInsideCollection;
   final ValueChanged<Collection> onOpenCollection;
   final ValueChanged<Collection> onShowCollectionOptions;
@@ -37,6 +39,7 @@ class LibraryGridContent extends StatelessWidget {
     required this.collections,
     required this.texts,
     required this.unknownCounts,
+    required this.bookProgress,
     required this.isInsideCollection,
     required this.onOpenCollection,
     required this.onShowCollectionOptions,
@@ -72,11 +75,14 @@ class LibraryGridContent extends StatelessWidget {
 
               if (item.collection != null) {
                 final collection = item.collection!;
+                final progress = bookProgress[collection.id];
                 final cover = BookCover(
                   title: collection.name,
-                  subtitle: collection.description.isNotEmpty
-                      ? collection.description
-                      : null,
+                  subtitle: progress != null
+                      ? '${progress.percent}%'
+                      : (collection.description.isNotEmpty
+                            ? collection.description
+                            : null),
                   imagePath: collection.coverImage,
                   isFolder: true,
                   onTap: () => onOpenCollection(collection),

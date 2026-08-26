@@ -10,6 +10,9 @@ class Collection {
   final String? coverImageId;
   /// Relative local path, populated via JOIN when reading. Not stored in collections table.
   final String? coverImage;
+  /// Whether this collection is tracked as a "book" (continuous text) so reading
+  /// progress can be aggregated across its chapters. See [BookProgress].
+  final bool isContinuous;
 
   Collection({
     this.id,
@@ -21,6 +24,7 @@ class Collection {
     this.sortOrder = 0,
     this.coverImageId,
     this.coverImage,
+    this.isContinuous = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
@@ -33,6 +37,7 @@ class Collection {
       'created_at': createdAt.toIso8601String(),
       'sort_order': sortOrder,
       'cover_image_id': coverImageId,
+      'is_continuous': isContinuous ? 1 : 0,
     };
   }
 
@@ -47,6 +52,7 @@ class Collection {
       sortOrder: map['sort_order'] ?? 0,
       coverImageId: map['cover_image_id'] as String?,
       coverImage: map['cover_image'] as String?, // from LEFT JOIN alias
+      isContinuous: (map['is_continuous'] as int? ?? 0) == 1,
     );
   }
 
@@ -62,6 +68,7 @@ class Collection {
     bool clearCoverImageId = false,
     String? coverImage,
     bool clearCoverImage = false,
+    bool? isContinuous,
   }) {
     return Collection(
       id: id ?? this.id,
@@ -73,6 +80,7 @@ class Collection {
       sortOrder: sortOrder ?? this.sortOrder,
       coverImageId: clearCoverImageId ? null : (coverImageId ?? this.coverImageId),
       coverImage: clearCoverImage ? null : (coverImage ?? this.coverImage),
+      isContinuous: isContinuous ?? this.isContinuous,
     );
   }
 

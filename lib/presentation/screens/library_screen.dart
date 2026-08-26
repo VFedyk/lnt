@@ -728,6 +728,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       collections: ctrl.collections,
       texts: sortedTexts,
       unknownCounts: ctrl.unknownCounts,
+      bookProgress: ctrl.bookProgress,
       isInsideCollection: ctrl.currentCollection != null,
       onOpenCollection: ctrl.openCollection,
       onEditCollection: (collection) => _editCollection(ctrl, collection),
@@ -761,6 +762,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       collections: ctrl.collections,
       texts: sortedTexts,
       unknownCounts: ctrl.unknownCounts,
+      bookProgress: ctrl.bookProgress,
       isInsideCollection: ctrl.currentCollection != null,
       onOpenCollection: ctrl.openCollection,
       onShowCollectionOptions: (collection) =>

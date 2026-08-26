@@ -1,5 +1,7 @@
 import 'package:uuid/uuid.dart';
+import '../../domain/entities/book_progress.dart';
 import '../../domain/entities/collection.dart';
+import '../../domain/entities/text_document.dart';
 import '../../domain/repositories/collection_repository.dart';
 import 'base_repository.dart';
 
@@ -98,5 +100,50 @@ class CollectionRepositoryImpl extends BaseRepository
     if (result > 0) await BaseRepository.recordTombstone(db, 'collection', id);
     notifyChange();
     return result;
+  }
+
+  @override
+  Future<List<BookProgress>> getBookProgress(
+    String languageId, {
+    int? limit,
+    bool excludeCompleted = false,
+  }) async {
+    final db = await getDatabase();
+    final maps = await db.rawQuery('''
+      SELECT
+        c.id                                                          AS collection_id,
+        c.name                                                        AS name,
+        ci.local_path                                                 AS cover_image,
+        SUM(LENGTH(t.content))                                        AS total_length,
+        SUM(CASE WHEN t.status = 2 THEN LENGTH(t.content) ELSE 0 END) AS read_length,
+        COUNT(t.id)                                                   AS total_texts,
+        SUM(CASE WHEN t.status = 2 THEN 1 ELSE 0 END)                 AS finished_texts,
+        MAX(t.last_read)                                              AS last_read
+      FROM collections c
+      JOIN texts t              ON t.collection_id = c.id
+      LEFT JOIN cover_images ci ON ci.id = c.cover_image_id
+      WHERE c.language_id = ? AND c.is_continuous = 1
+      GROUP BY c.id
+      HAVING total_length > 0
+        ${excludeCompleted ? 'AND read_length < total_length' : ''}
+      ORDER BY last_read DESC
+      ${limit != null ? 'LIMIT ?' : ''}
+    ''', [languageId, ?limit]);
+    return maps.map(BookProgress.fromMap).toList();
+  }
+
+  @override
+  Future<TextDocument?> getNextUnfinishedText(String collectionId) async {
+    final db = await getDatabase();
+    final maps = await db.rawQuery('''
+      SELECT t.*, ci.local_path AS cover_image
+      FROM texts t
+      LEFT JOIN cover_images ci ON ci.id = t.cover_image_id
+      WHERE t.collection_id = ?
+      ORDER BY (t.status = 2) ASC, t.sort_order ASC, t.title ASC
+      LIMIT 1
+    ''', [collectionId]);
+    if (maps.isEmpty) return null;
+    return TextDocument.fromMap(maps.first);
   }
 }

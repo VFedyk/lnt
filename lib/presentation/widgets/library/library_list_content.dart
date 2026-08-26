@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../domain/entities/book_progress.dart';
 import '../../../domain/entities/collection.dart';
 import '../../../domain/entities/language.dart';
 import '../../../domain/entities/text_document.dart';
@@ -25,6 +26,7 @@ class LibraryListContent extends StatelessWidget {
   final List<Collection> collections;
   final List<TextDocument> texts;
   final Map<String, int> unknownCounts;
+  final Map<String, BookProgress> bookProgress;
   final bool isInsideCollection;
   final ValueChanged<Collection> onOpenCollection;
   final ValueChanged<Collection> onEditCollection;
@@ -44,6 +46,7 @@ class LibraryListContent extends StatelessWidget {
     required this.collections,
     required this.texts,
     required this.unknownCounts,
+    required this.bookProgress,
     required this.isInsideCollection,
     required this.onOpenCollection,
     required this.onEditCollection,
@@ -66,6 +69,7 @@ class LibraryListContent extends StatelessWidget {
           (collection) => _FolderListItem(
             collection: collection,
             l10n: l10n,
+            progress: bookProgress[collection.id],
             onOpen: () => onOpenCollection(collection),
             onEdit: () => onEditCollection(collection),
             onDelete: () => onDeleteCollection(collection),
@@ -170,6 +174,7 @@ class _ParentDropZone extends StatelessWidget {
 class _FolderListItem extends StatefulWidget {
   final Collection collection;
   final AppLocalizations l10n;
+  final BookProgress? progress;
   final VoidCallback onOpen;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -178,6 +183,7 @@ class _FolderListItem extends StatefulWidget {
   const _FolderListItem({
     required this.collection,
     required this.l10n,
+    this.progress,
     required this.onOpen,
     required this.onEdit,
     required this.onDelete,
@@ -196,6 +202,7 @@ class _FolderListItemState extends State<_FolderListItem> {
     final colorScheme = Theme.of(context).colorScheme;
     final collection = widget.collection;
     final l10n = widget.l10n;
+    final progress = widget.progress;
 
     final card = Card(
       elevation: _isHovered
@@ -206,12 +213,34 @@ class _FolderListItemState extends State<_FolderListItem> {
         vertical: AppConstants.spacingXS,
       ),
       child: ListTile(
-        leading: const CircleAvatar(child: Icon(Icons.folder)),
+        leading: CircleAvatar(
+          child: Icon(collection.isContinuous ? Icons.menu_book : Icons.folder),
+        ),
         title: Tooltip(
           message: collection.name,
           child: Text(collection.name, overflow: TextOverflow.ellipsis),
         ),
-        subtitle: collection.description.isNotEmpty
+        subtitle: progress != null
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (collection.description.isNotEmpty) Text(collection.description),
+                  const SizedBox(height: AppConstants.spacingXS),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress.fraction,
+                      minHeight: 6,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                      valueColor: AlwaysStoppedAnimation(colorScheme.primary),
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.spacingXS),
+                  Text('${progress.percent}%'),
+                ],
+              )
+            : collection.description.isNotEmpty
             ? Text(collection.description)
             : null,
         trailing: PopupMenuButton(
