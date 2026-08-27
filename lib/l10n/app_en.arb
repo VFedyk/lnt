@@ -54,6 +54,8 @@
   "targetRetentionDescription": "Higher retention schedules reviews more often for stronger recall; lower retention means fewer reviews.",
   "newCardsPerDay": "New cards per day",
   "newCardsPerDayDescription": "Caps how many new words enter review each day. Set to 0 for no limit.",
+  "sessionCardLimit": "Cards per session",
+  "sessionCardLimitDescription": "Caps how many cards a single review session serves. Due counts elsewhere still show everything that is due. Set to 0 for no limit.",
   "unlimited": "Unlimited",
   "dashboardSettings": "Home screen",
   "readingProgressItems": "Books in Reading progress",

@@ -11,6 +11,8 @@ class ReviewSettingsSection extends StatelessWidget {
   final ValueChanged<double> onChanged;
   final int newCardsPerDay;
   final ValueChanged<int> onNewCardsPerDayChanged;
+  final int sessionCardLimit;
+  final ValueChanged<int> onSessionCardLimitChanged;
 
   const ReviewSettingsSection({
     super.key,
@@ -19,7 +21,19 @@ class ReviewSettingsSection extends StatelessWidget {
     required this.onChanged,
     required this.newCardsPerDay,
     required this.onNewCardsPerDayChanged,
+    required this.sessionCardLimit,
+    required this.onSessionCardLimitChanged,
   });
+
+  /// Slider positions are 0 (unlimited) then multiples of 10; anything landing
+  /// between 0 and the real minimum snaps up to the minimum.
+  static int _snap(double v) {
+    final rounded = v.round();
+    if (rounded <= 0) return 0;
+    return rounded < SettingsService.minSessionCardLimit
+        ? SettingsService.minSessionCardLimit
+        : rounded;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +108,35 @@ class ReviewSettingsSection extends StatelessWidget {
             ),
             Text(
               l10n.newCardsPerDayDescription,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: AppConstants.fontSizeCaption,
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacingL),
+            Row(
+              children: [
+                Expanded(child: Text(l10n.sessionCardLimit)),
+                Text(
+                  sessionCardLimit == 0
+                      ? l10n.unlimited
+                      : sessionCardLimit.toString(),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            Slider(
+              value: sessionCardLimit.toDouble(),
+              min: 0,
+              max: SettingsService.maxSessionCardLimit.toDouble(),
+              divisions: SettingsService.maxSessionCardLimit ~/ 10,
+              label: sessionCardLimit == 0
+                  ? l10n.unlimited
+                  : sessionCardLimit.toString(),
+              onChanged: (v) => onSessionCardLimitChanged(_snap(v)),
+            ),
+            Text(
+              l10n.sessionCardLimitDescription,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: AppConstants.fontSizeCaption,

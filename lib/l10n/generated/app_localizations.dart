@@ -404,6 +404,18 @@ abstract class AppLocalizations {
   /// **'Caps how many new words enter review each day. Set to 0 for no limit.'**
   String get newCardsPerDayDescription;
 
+  /// No description provided for @sessionCardLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards per session'**
+  String get sessionCardLimit;
+
+  /// No description provided for @sessionCardLimitDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Caps how many cards a single review session serves. Due counts elsewhere still show everything that is due. Set to 0 for no limit.'**
+  String get sessionCardLimitDescription;
+
   /// No description provided for @unlimited.
   ///
   /// In en, this message translates to:

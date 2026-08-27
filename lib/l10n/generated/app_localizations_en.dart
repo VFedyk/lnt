@@ -164,6 +164,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Caps how many new words enter review each day. Set to 0 for no limit.';
 
   @override
+  String get sessionCardLimit => 'Cards per session';
+
+  @override
+  String get sessionCardLimitDescription =>
+      'Caps how many cards a single review session serves. Due counts elsewhere still show everything that is due. Set to 0 for no limit.';
+
+  @override
   String get unlimited => 'Unlimited';
 
   @override

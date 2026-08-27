@@ -164,6 +164,13 @@ class AppLocalizationsUk extends AppLocalizations {
       'Обмежує кількість нових слів, що потрапляють у повторення щодня. 0 — без обмежень.';
 
   @override
+  String get sessionCardLimit => 'Карток за сесію';
+
+  @override
+  String get sessionCardLimitDescription =>
+      'Обмежує кількість карток в одній сесії повторення. Лічильники до повторення в інших місцях і далі показують усе, що на черзі. 0 — без обмеження.';
+
+  @override
   String get unlimited => 'Без обмежень';
 
   @override

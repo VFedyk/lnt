@@ -44,6 +44,31 @@ class ReviewCardRepositoryImpl extends BaseRepository
     return budget < 0 ? 0 : budget;
   }
 
+  /// Resolves the SQL fetch ceiling and the final trim cap for [getDueCards].
+  ///
+  /// - An explicit [limit] always wins and is used verbatim.
+  /// - Otherwise the user's session card limit applies: its value is the trim
+  ///   cap and the SQL fetches `2×` slack so the daily new-card budget filter
+  ///   (which drops rows *after* the SQL LIMIT) cannot shrink the session
+  ///   below the chosen size.
+  /// - `0` (unlimited) with a [SettingsService] injected fetches everything
+  ///   (SQLite treats a negative LIMIT as no limit).
+  /// - No [SettingsService] injected falls back to the historical
+  ///   [AppConstants.dueCardLimit], so tests and non-UI callers are unaffected.
+  Future<({int fetchLimit, int? sessionLimit})> _resolveLimits(int? limit) async {
+    if (limit != null) return (fetchLimit: limit, sessionLimit: limit);
+    final settings = _settings;
+    if (settings == null) {
+      return (fetchLimit: AppConstants.dueCardLimit, sessionLimit: null);
+    }
+    final value = await settings.getSessionCardLimit();
+    if (value <= 0) return (fetchLimit: -1, sessionLimit: null);
+    return (
+      fetchLimit: (value * 2).clamp(0, AppConstants.dueCardLimit * 2),
+      sessionLimit: value,
+    );
+  }
+
   /// Number of terms whose first-ever review happened today.
   Future<int> _countNewCardsIntroducedToday(String languageId) async {
     final db = await getDatabase();
@@ -203,7 +228,8 @@ class ReviewCardRepositoryImpl extends BaseRepository
       ReviewScope scope = const ReviewScope()}) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
-    final effectiveLimit = limit ?? AppConstants.dueCardLimit;
+    final limits = await _resolveLimits(limit);
+    final sessionLimit = limits.sessionLimit;
     final scopeClause = _scopeClause(scope);
     // ORDER BY next_due already yields overdue → due → future, which is the
     // right ordering for an includeNotDue session too.
@@ -222,16 +248,19 @@ class ReviewCardRepositoryImpl extends BaseRepository
         languageId,
         ..._dueArgs(scope, now),
         ...scopeClause.args,
-        effectiveLimit,
+        limits.fetchLimit,
       ],
     );
 
     final budget = await _budgetFor(languageId, scope);
     if (budget == null) {
-      return maps.map((m) => ReviewCardRecord.fromMap(m)).toList();
+      final all = maps.map((m) => ReviewCardRecord.fromMap(m)).toList();
+      return sessionLimit == null ? all : all.take(sessionLimit).toList();
     }
 
     // Review cards are always shown; new cards are capped by the daily budget.
+    // The session card limit trims the tail (ORDER BY next_due ASC keeps the
+    // most-overdue cards).
     final result = <ReviewCardRecord>[];
     var newUsed = 0;
     for (final m in maps) {
@@ -240,6 +269,7 @@ class ReviewCardRepositoryImpl extends BaseRepository
         newUsed++;
       }
       result.add(ReviewCardRecord.fromMap(m));
+      if (sessionLimit != null && result.length >= sessionLimit) break;
     }
     return result;
   }

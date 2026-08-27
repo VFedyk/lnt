@@ -250,6 +250,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onChanged: ctrl.setDesiredRetention,
                         newCardsPerDay: ctrl.newCardsPerDay,
                         onNewCardsPerDayChanged: ctrl.setNewCardsPerDay,
+                        sessionCardLimit: ctrl.sessionCardLimit,
+                        onSessionCardLimitChanged: ctrl.setSessionCardLimit,
                       ),
                       const SizedBox(height: AppConstants.spacingL),
                       DashboardSettingsSection(

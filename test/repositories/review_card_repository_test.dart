@@ -263,6 +263,126 @@ void main() {
     });
   });
 
+  group('session card limit', () {
+    late Database db;
+
+    setUp(() async {
+      db = await _openTestDb();
+    });
+
+    tearDown(() async => db.close());
+
+    ReviewCardRepositoryImpl makeRepo({int? sessionLimit, int? perDay}) {
+      SharedPreferences.setMockInitialValues({
+        'session_card_limit': ?sessionLimit,
+        'new_cards_per_day': ?perDay,
+      });
+      return ReviewCardRepositoryImpl(() async => db,
+          settings: SettingsService());
+    }
+
+    final base = DateTime.now().toUtc().subtract(const Duration(days: 5));
+
+    // [dueOffset] shifts next_due so ordering is controllable; [reviewed] adds a
+    // prior review so the card counts as "review" rather than "new".
+    Future<void> insertCard(
+      ReviewCardRepositoryImpl repo,
+      String termId, {
+      Duration dueOffset = Duration.zero,
+      bool reviewed = false,
+    }) async {
+      await _insertTerm(db, id: termId);
+      final due = base.add(dueOffset);
+      await repo.create(ReviewCardRecord(
+        termId: termId,
+        cardData: fsrs.Card(cardId: 1, due: due).toMap(),
+        nextDue: due,
+        createdAt: due,
+        updatedAt: due,
+      ));
+      if (reviewed) {
+        await db.insert('review_logs', {
+          'id': '$termId-log',
+          'term_id': termId,
+          'log_data': '{}',
+          'reviewed_at': base.toIso8601String(),
+        });
+      }
+    }
+
+    Future<void> insertDueCards(
+      ReviewCardRepositoryImpl repo,
+      int count, {
+      String prefix = 'c',
+    }) async {
+      for (var i = 0; i < count; i++) {
+        await insertCard(repo, '$prefix$i',
+            dueOffset: Duration(minutes: i), reviewed: true);
+      }
+    }
+
+    test('caps the session', () async {
+      final repo = makeRepo(sessionLimit: 10);
+      await insertDueCards(repo, 30);
+      expect((await repo.getDueCards('lang-1')).length, 10);
+    });
+
+    test('returns everything below the cap', () async {
+      final repo = makeRepo(sessionLimit: 50);
+      await insertDueCards(repo, 5);
+      expect((await repo.getDueCards('lang-1')).length, 5);
+    });
+
+    test('0 means unlimited', () async {
+      final repo = makeRepo(sessionLimit: 0);
+      await insertDueCards(repo, 30);
+      expect((await repo.getDueCards('lang-1')).length, 30);
+    });
+
+    test('no SettingsService injected keeps historical behaviour', () async {
+      final repo = ReviewCardRepositoryImpl(() async => db);
+      await insertDueCards(repo, 30);
+      expect((await repo.getDueCards('lang-1')).length, 30);
+    });
+
+    test('an explicit limit argument overrides the setting', () async {
+      final repo = makeRepo(sessionLimit: 100);
+      await insertDueCards(repo, 30);
+      expect((await repo.getDueCards('lang-1', limit: 3)).length, 3);
+    });
+
+    test('over-fetches so the new-card budget filter cannot shrink the session',
+        () async {
+      final repo = makeRepo(sessionLimit: 10, perDay: 5);
+      // 10 new cards ordered ahead of 10 review cards by next_due.
+      for (var i = 0; i < 10; i++) {
+        await insertCard(repo, 'new$i', dueOffset: Duration(minutes: i));
+      }
+      for (var i = 0; i < 10; i++) {
+        await insertCard(repo, 'rev$i',
+            dueOffset: Duration(minutes: 100 + i), reviewed: true);
+      }
+      final due = await repo.getDueCards('lang-1');
+      expect(due.length, 10); // 5 new (budget) + 5 review
+      expect(due.where((c) => c.termId.startsWith('new')).length, 5);
+      expect(due.where((c) => c.termId.startsWith('rev')).length, 5);
+    });
+
+    test('practice scope is capped too', () async {
+      final repo = makeRepo(sessionLimit: 10);
+      await insertDueCards(repo, 30);
+      final due = await repo.getDueCards('lang-1',
+          scope: const ReviewScope(includeNotDue: true));
+      expect(due.length, 10);
+    });
+
+    test('getDueCount is unaffected', () async {
+      final repo = makeRepo(sessionLimit: 10);
+      await insertDueCards(repo, 30);
+      expect(await repo.getDueCount('lang-1'), 30);
+    });
+  });
+
   group('status filter', () {
     late Database db;
     late ReviewCardRepositoryImpl repo;

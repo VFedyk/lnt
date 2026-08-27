@@ -10,6 +10,7 @@ class SettingsController extends BaseController {
   String targetLang = SettingsService.defaultTargetLang;
   double desiredRetention = SettingsService.defaultDesiredRetention;
   int newCardsPerDay = SettingsService.defaultNewCardsPerDay;
+  int sessionCardLimit = SettingsService.defaultSessionCardLimit;
   int bookProgressLimit = SettingsService.defaultBookProgressLimit;
   int _savedBookProgressLimit = SettingsService.defaultBookProgressLimit;
   DeepLUsage? usage;
@@ -48,6 +49,7 @@ class SettingsController extends BaseController {
     final aiProvider = await settings.getAiProvider();
     final retention = await settings.getDesiredRetention();
     final newCards = await settings.getNewCardsPerDay();
+    final sessionLimit = await settings.getSessionCardLimit();
     final bookLimit = await settings.getBookProgressLimit();
 
     String? path;
@@ -71,6 +73,7 @@ class SettingsController extends BaseController {
     targetLang = tgtLang;
     desiredRetention = retention;
     newCardsPerDay = newCards;
+    sessionCardLimit = sessionLimit;
     bookProgressLimit = bookLimit;
     _savedBookProgressLimit = bookLimit;
     dbPath = path;
@@ -114,6 +117,7 @@ class SettingsController extends BaseController {
     await settings.setAiProvider(aiProvider.trim());
     await settings.setDesiredRetention(desiredRetention);
     await settings.setNewCardsPerDay(newCardsPerDay);
+    await settings.setSessionCardLimit(sessionCardLimit);
     reviewService.configure(desiredRetention: desiredRetention);
 
     final bookLimitChanged = bookProgressLimit != _savedBookProgressLimit;
@@ -211,6 +215,11 @@ class SettingsController extends BaseController {
 
   void setNewCardsPerDay(int value) {
     newCardsPerDay = value;
+    safeNotify();
+  }
+
+  void setSessionCardLimit(int value) {
+    sessionCardLimit = value;
     safeNotify();
   }
 

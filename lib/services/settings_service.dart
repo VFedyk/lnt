@@ -29,6 +29,10 @@ class SettingsService {
   static const String _newCardsPerDayKey = 'new_cards_per_day';
   static const int defaultNewCardsPerDay = 20;
   static const int maxNewCardsPerDay = 50;
+  static const String _sessionCardLimitKey = 'session_card_limit';
+  static const int defaultSessionCardLimit = 50;
+  static const int minSessionCardLimit = 10;
+  static const int maxSessionCardLimit = 200;
 
   // Dashboard settings
   static const String _bookProgressLimitKey = 'dashboard_book_progress_limit';
@@ -141,6 +145,23 @@ class SettingsService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_newCardsPerDayKey, value.clamp(0, maxNewCardsPerDay));
   }
+
+  /// Maximum number of cards served in a single review session.
+  /// `0` means no limit.
+  Future<int> getSessionCardLimit() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getInt(_sessionCardLimitKey) ?? defaultSessionCardLimit;
+    return _clampSessionCardLimit(value);
+  }
+
+  Future<void> setSessionCardLimit(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_sessionCardLimitKey, _clampSessionCardLimit(value));
+  }
+
+  /// `0` (unlimited) is preserved; every other value is pulled into range.
+  static int _clampSessionCardLimit(int value) =>
+      value <= 0 ? 0 : value.clamp(minSessionCardLimit, maxSessionCardLimit);
 
   /// Number of books shown by the dashboard's Reading progress widget.
   Future<int> getBookProgressLimit() async {
