@@ -17,6 +17,7 @@ import '../../utils/snackbar_helpers.dart';
 import '../widgets/settings/ai_settings_section.dart';
 import '../widgets/settings/app_language_section.dart';
 import '../widgets/settings/backup_section.dart';
+import '../widgets/settings/dashboard_settings_section.dart';
 import '../widgets/settings/database_section.dart';
 import '../widgets/settings/deepl_settings_section.dart';
 import '../widgets/settings/deepl_usage_section.dart';
@@ -249,6 +250,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onChanged: ctrl.setDesiredRetention,
                         newCardsPerDay: ctrl.newCardsPerDay,
                         onNewCardsPerDayChanged: ctrl.setNewCardsPerDay,
+                      ),
+                      const SizedBox(height: AppConstants.spacingL),
+                      DashboardSettingsSection(
+                        l10n: AppLocalizations.of(context),
+                        bookProgressLimit: ctrl.bookProgressLimit,
+                        onBookProgressLimitChanged: ctrl.setBookProgressLimit,
                       ),
                       if (PlatformHelper.isDesktop) ...[
                         const SizedBox(height: AppConstants.spacingL),

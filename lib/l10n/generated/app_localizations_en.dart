@@ -167,6 +167,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unlimited => 'Unlimited';
 
   @override
+  String get dashboardSettings => 'Home screen';
+
+  @override
+  String get readingProgressItems => 'Books in Reading progress';
+
+  @override
+  String get readingProgressItemsDescription =>
+      'How many books the Reading progress widget shows on the home screen.';
+
+  @override
   String get libreTranslate => 'LibreTranslate';
 
   @override

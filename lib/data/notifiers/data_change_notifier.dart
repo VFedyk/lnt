@@ -30,6 +30,11 @@ class DataChangeNotifier {
   final radicalProgress = DomainNotifier();
   final translations = DomainNotifier();
 
+  /// Notifies when user preferences that affect displayed data change
+  /// (e.g. dashboard widget limits). Not a DB domain — deliberately
+  /// excluded from notifyAll(), which is about DB-level invalidation.
+  final settings = DomainNotifier();
+
   final termEvents = EventStream<TermEvent>();
 
   /// Notify all domains at once (e.g. after backup restore).

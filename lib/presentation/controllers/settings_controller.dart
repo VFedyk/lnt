@@ -10,6 +10,8 @@ class SettingsController extends BaseController {
   String targetLang = SettingsService.defaultTargetLang;
   double desiredRetention = SettingsService.defaultDesiredRetention;
   int newCardsPerDay = SettingsService.defaultNewCardsPerDay;
+  int bookProgressLimit = SettingsService.defaultBookProgressLimit;
+  int _savedBookProgressLimit = SettingsService.defaultBookProgressLimit;
   DeepLUsage? usage;
   bool isLoadingUsage = false;
   String? dbPath;
@@ -46,6 +48,7 @@ class SettingsController extends BaseController {
     final aiProvider = await settings.getAiProvider();
     final retention = await settings.getDesiredRetention();
     final newCards = await settings.getNewCardsPerDay();
+    final bookLimit = await settings.getBookProgressLimit();
 
     String? path;
     if (PlatformHelper.isDesktop) {
@@ -68,6 +71,8 @@ class SettingsController extends BaseController {
     targetLang = tgtLang;
     desiredRetention = retention;
     newCardsPerDay = newCards;
+    bookProgressLimit = bookLimit;
+    _savedBookProgressLimit = bookLimit;
     dbPath = path;
     icloudRemoteDate = icloudRemote;
     icloudLocalDate = icloudLocal;
@@ -110,6 +115,11 @@ class SettingsController extends BaseController {
     await settings.setDesiredRetention(desiredRetention);
     await settings.setNewCardsPerDay(newCardsPerDay);
     reviewService.configure(desiredRetention: desiredRetention);
+
+    final bookLimitChanged = bookProgressLimit != _savedBookProgressLimit;
+    await settings.setBookProgressLimit(bookProgressLimit);
+    _savedBookProgressLimit = bookProgressLimit;
+    if (bookLimitChanged) dataChanges.settings.notify();
   }
 
   /// Returns true on success.
@@ -201,6 +211,11 @@ class SettingsController extends BaseController {
 
   void setNewCardsPerDay(int value) {
     newCardsPerDay = value;
+    safeNotify();
+  }
+
+  void setBookProgressLimit(int value) {
+    bookProgressLimit = value;
     safeNotify();
   }
 

@@ -167,6 +167,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get unlimited => 'Без обмежень';
 
   @override
+  String get dashboardSettings => 'Головна';
+
+  @override
+  String get readingProgressItems => 'Книг у «Прогресі читання»';
+
+  @override
+  String get readingProgressItemsDescription =>
+      'Скільки книг показувати у віджеті «Прогрес читання» на головній.';
+
+  @override
   String get libreTranslate => 'LibreTranslate';
 
   @override

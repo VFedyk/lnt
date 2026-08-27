@@ -410,6 +410,24 @@ abstract class AppLocalizations {
   /// **'Unlimited'**
   String get unlimited;
 
+  /// No description provided for @dashboardSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Home screen'**
+  String get dashboardSettings;
+
+  /// No description provided for @readingProgressItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Books in Reading progress'**
+  String get readingProgressItems;
+
+  /// No description provided for @readingProgressItemsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'How many books the Reading progress widget shows on the home screen.'**
+  String get readingProgressItemsDescription;
+
   /// No description provided for @libreTranslate.
   ///
   /// In en, this message translates to:

@@ -46,13 +46,13 @@ class DashboardController extends BaseController {
   static const int _recentTextsLimit = 5;
   static const int _maxHeatmapWeeks = 52;
   static const int _chartDays = 30;
-  static const int _bookProgressLimit = 5;
 
   DashboardController({required this.language}) {
     dataChanges.terms.addListener(_onDataChanged);
     dataChanges.texts.addListener(_onDataChanged);
     dataChanges.reviewCards.addListener(_onDataChanged);
     dataChanges.collections.addListener(_onDataChanged);
+    dataChanges.settings.addListener(_onDataChanged);
     loadData();
   }
 
@@ -66,6 +66,7 @@ class DashboardController extends BaseController {
     dataChanges.texts.removeListener(_onDataChanged);
     dataChanges.reviewCards.removeListener(_onDataChanged);
     dataChanges.collections.removeListener(_onDataChanged);
+    dataChanges.settings.removeListener(_onDataChanged);
     super.dispose();
   }
 
@@ -157,9 +158,10 @@ class DashboardController extends BaseController {
         days: _chartDays,
       );
       final newStatusDist = ChartHelpers.buildStatusDistributionData(countsByStatus: counts);
+      final bookLimit = await settings.getBookProgressLimit();
       final books = await db.collections.getBookProgress(
         language.id!,
-        limit: _bookProgressLimit,
+        limit: bookLimit,
         excludeCompleted: true,
       );
 

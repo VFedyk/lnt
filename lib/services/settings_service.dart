@@ -30,6 +30,12 @@ class SettingsService {
   static const int defaultNewCardsPerDay = 20;
   static const int maxNewCardsPerDay = 50;
 
+  // Dashboard settings
+  static const String _bookProgressLimitKey = 'dashboard_book_progress_limit';
+  static const int defaultBookProgressLimit = 5;
+  static const int minBookProgressLimit = 3;
+  static const int maxBookProgressLimit = 15;
+
   // LibreTranslate settings
   static const String _libreTranslateUrlKey = 'libretranslate_url';
   static const String _libreTranslateApiKeyKey = 'libretranslate_api_key';
@@ -134,6 +140,21 @@ class SettingsService {
   Future<void> setNewCardsPerDay(int value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_newCardsPerDayKey, value.clamp(0, maxNewCardsPerDay));
+  }
+
+  /// Number of books shown by the dashboard's Reading progress widget.
+  Future<int> getBookProgressLimit() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getInt(_bookProgressLimitKey) ?? defaultBookProgressLimit;
+    return value.clamp(minBookProgressLimit, maxBookProgressLimit);
+  }
+
+  Future<void> setBookProgressLimit(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      _bookProgressLimitKey,
+      value.clamp(minBookProgressLimit, maxBookProgressLimit),
+    );
   }
 
   // Window size persistence
