@@ -941,6 +941,7 @@
   "noSentencesToReviewHint": "Right-click a word in the reader and choose \"Mine sentence\" to add context sentences for cloze training.",
   "mineSentence": "Mine sentence",
   "sentenceMined": "Sentence saved for cloze training",
+  "sentenceAlreadyMined": "This sentence is already saved for that word",
   "noSentenceFound": "No sentence found at this position",
   "importFromLink": "Import from link",
   "importingEllipsis": "Importing…",

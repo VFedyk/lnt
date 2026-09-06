@@ -555,4 +555,79 @@ void main() {
       expect(await repo.getDueCount('lang-1'), 0); // none are due yet
     });
   });
+
+  group('getClozeDueCandidates', () {
+    late Database db;
+
+    setUp(() async {
+      db = await _openTestDb();
+    });
+
+    tearDown(() async => db.close());
+
+    Future<void> addSentence(String termId, String text) async {
+      final now = DateTime.now().toUtc().toIso8601String();
+      await db.insert('term_sentences', {
+        'id': '$termId-${text.hashCode}',
+        'term_id': termId,
+        'sentence': text,
+        'created_at': now,
+        'updated_at': now,
+      });
+    }
+
+    test('returns only carded terms that have a stored sentence', () async {
+      final repo = ReviewCardRepositoryImpl(() async => db);
+      await _insertTerm(db, id: 'with');
+      await _insertTerm(db, id: 'without');
+      await _insertDueCard(repo, termId: 'with');
+      await _insertDueCard(repo, termId: 'without');
+      await addSentence('with', 'A sentence.');
+
+      final ids = (await repo.getClozeDueCandidates('lang-1'))
+          .map((c) => c.termId)
+          .toList();
+      expect(ids, ['with']);
+    });
+
+    test('honours the status scope', () async {
+      final repo = ReviewCardRepositoryImpl(() async => db);
+      await _insertTerm(db, id: 'k', status: TermStatus.known);
+      await _insertTerm(db, id: 'u', status: TermStatus.unknown);
+      await _insertDueCard(repo, termId: 'k');
+      await _insertDueCard(repo, termId: 'u');
+      await addSentence('k', 'K sentence.');
+      await addSentence('u', 'U sentence.');
+
+      final ids = (await repo.getClozeDueCandidates('lang-1',
+              scope: const ReviewScope(statuses: [TermStatus.known])))
+          .map((c) => c.termId)
+          .toList();
+      expect(ids, ['k']);
+    });
+
+    test('is not trimmed by the session card limit', () async {
+      SharedPreferences.setMockInitialValues({'session_card_limit': 2});
+      final repo = ReviewCardRepositoryImpl(() async => db,
+          settings: SettingsService());
+      for (var i = 0; i < 6; i++) {
+        await _insertTerm(db, id: 't$i');
+        await _insertDueCard(repo, termId: 't$i');
+        await addSentence('t$i', 'Sentence $i.');
+      }
+      expect((await repo.getClozeDueCandidates('lang-1')).length, 6);
+    });
+
+    test('honours the daily new-card budget', () async {
+      SharedPreferences.setMockInitialValues({'new_cards_per_day': 1});
+      final repo = ReviewCardRepositoryImpl(() async => db,
+          settings: SettingsService());
+      for (var i = 0; i < 4; i++) {
+        await _insertTerm(db, id: 'n$i');
+        await _insertDueCard(repo, termId: 'n$i'); // never reviewed → new
+        await addSentence('n$i', 'Sentence $i.');
+      }
+      expect((await repo.getClozeDueCandidates('lang-1')).length, 1);
+    });
+  });
 }

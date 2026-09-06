@@ -25,6 +25,11 @@ export '../controllers/term_edit_controller.dart' show TermEditResult;
 class TermEditScreen extends StatefulWidget {
   final Term term;
   final String sentence;
+
+  /// Id of the text [sentence] was taken from (reader entry points only), so a
+  /// sentence stored from it keeps its provenance. Null elsewhere.
+  final String? sourceTextId;
+
   final List<Dictionary> dictionaries;
   final Function(BuildContext, Dictionary) onLookup;
   final String languageId;
@@ -35,6 +40,7 @@ class TermEditScreen extends StatefulWidget {
     super.key,
     required this.term,
     required this.sentence,
+    this.sourceTextId,
     required this.dictionaries,
     required this.onLookup,
     required this.languageId,
@@ -46,6 +52,7 @@ class TermEditScreen extends StatefulWidget {
     BuildContext context, {
     required Term term,
     required String sentence,
+    String? sourceTextId,
     required List<Dictionary> dictionaries,
     required Function(BuildContext, Dictionary) onLookup,
     required String languageId,
@@ -58,6 +65,7 @@ class TermEditScreen extends StatefulWidget {
         builder: (_) => TermEditScreen(
           term: term,
           sentence: sentence,
+          sourceTextId: sourceTextId,
           dictionaries: dictionaries,
           onLookup: onLookup,
           languageId: languageId,
@@ -81,6 +89,7 @@ class _TermEditScreenState extends State<TermEditScreen> {
     _controller = TermEditController(
       term: widget.term,
       sentence: widget.sentence,
+      sourceTextId: widget.sourceTextId,
       languageId: widget.languageId,
       languageName: widget.languageName,
       languageCode: widget.languageCode,

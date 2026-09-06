@@ -39,10 +39,12 @@ void main() {
     );
 
     when(() => mockTranslations.replaceForTerm(any(), any())).thenAnswer((_) async {});
-    when(() => mockSentences.create(any(), any())).thenAnswer(
+    when(() => mockSentences.create(any(), any(),
+        sourceTextId: any(named: 'sourceTextId'))).thenAnswer(
       (i) async => TermSentence(
         termId: i.positionalArguments[0] as String,
         sentence: i.positionalArguments[1] as String,
+        sourceTextId: i.namedArguments[#sourceTextId] as String?,
         createdAt: DateTime.now(),
       ),
     );
@@ -117,10 +119,13 @@ void main() {
         _makeTerm(),
         [],
         isNew: true,
-        sentences: const TermSentenceEdits(added: ['A new sentence.']),
+        sentences: const TermSentenceEdits(
+          added: [(text: 'A new sentence.', sourceTextId: 'text-9')],
+        ),
       );
 
-      verify(() => mockSentences.create(newId, 'A new sentence.')).called(1);
+      verify(() => mockSentences.create(newId, 'A new sentence.',
+          sourceTextId: 'text-9')).called(1);
     });
 
     test('applied against the existing id, in delete/edit/add order', () async {
@@ -132,7 +137,7 @@ void main() {
         [],
         isNew: false,
         sentences: const TermSentenceEdits(
-          added: ['added'],
+          added: [(text: 'added', sourceTextId: null)],
           edited: {'s-edit': 'changed'},
           deleted: ['s-del'],
         ),
@@ -140,7 +145,8 @@ void main() {
 
       verify(() => mockSentences.delete('s-del')).called(1);
       verify(() => mockSentences.update('s-edit', 'changed')).called(1);
-      verify(() => mockSentences.create(id, 'added')).called(1);
+      verify(() => mockSentences.create(id, 'added', sourceTextId: null))
+          .called(1);
     });
 
     test('TermSentenceEdits.empty writes nothing', () async {
@@ -148,7 +154,8 @@ void main() {
 
       await useCase(_makeTerm(), [], isNew: true);
 
-      verifyNever(() => mockSentences.create(any(), any()));
+      verifyNever(() => mockSentences.create(any(), any(),
+          sourceTextId: any(named: 'sourceTextId')));
       verifyNever(() => mockSentences.update(any(), any()));
       verifyNever(() => mockSentences.delete(any()));
     });

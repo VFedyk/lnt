@@ -10,7 +10,12 @@ abstract class ReviewCardRepository {
       {DateTime? now, int? limit, ReviewScope scope = const ReviewScope()});
   Future<int> getDueCount(String languageId,
       {DateTime? now, ReviewScope scope = const ReviewScope()});
-  Future<int> getClozeDueCount(String languageId,
+
+  /// Due cards that have at least one stored sentence. Honours the ignored
+  /// guard, the scope and the daily new-card budget, but deliberately NOT the
+  /// session card limit: the caller must first drop the cards whose sentence
+  /// has no usable occurrence, and only then trim to the session size.
+  Future<List<ReviewCardRecord>> getClozeDueCandidates(String languageId,
       {DateTime? now, ReviewScope scope = const ReviewScope()});
   Future<DateTime?> getNextDueDate(String languageId);
   Future<ReviewCardRecord> getOrCreate(String termId);

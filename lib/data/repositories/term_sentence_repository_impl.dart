@@ -79,6 +79,17 @@ class TermSentenceRepositoryImpl extends BaseRepository
   }
 
   @override
+  Future<bool> existsForTerm(String termId, String sentence) async {
+    final db = await getDatabase();
+    final rows = await db.rawQuery(
+      'SELECT 1 FROM term_sentences '
+      'WHERE term_id = ? AND TRIM(LOWER(sentence)) = ? LIMIT 1',
+      [termId, sentence.trim().toLowerCase()],
+    );
+    return rows.isNotEmpty;
+  }
+
+  @override
   Future<void> delete(String id) async {
     final db = await getDatabase();
     final count = await db.delete(

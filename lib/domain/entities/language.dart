@@ -1,3 +1,5 @@
+import '../value_objects/text_parsing_defaults.dart';
+
 class Language {
   final String? id;
   final String name;
@@ -22,8 +24,8 @@ class Language {
     this.splitByCharacter = false,
     this.useWordSegmentation = false,
     this.characterSubstitutions = '',
-    this.regexpWordCharacters = r"[\p{L}\p{M}]+(?:['''][\p{L}\p{M}]+)*",
-    this.regexpSplitSentences = r'[.!?]+',
+    this.regexpWordCharacters = TextParsingDefaults.wordPattern,
+    this.regexpSplitSentences = TextParsingDefaults.sentencePattern,
     this.exceptionsSplitSentences = '',
   });
 
@@ -54,9 +56,9 @@ class Language {
       useWordSegmentation: map['use_word_segmentation'] == 1,
       characterSubstitutions: map['character_substitutions'] ?? '',
       regexpWordCharacters:
-          map['regexp_word_characters'] ??
-          r"[\p{L}\p{M}]+(?:['''][\p{L}\p{M}]+)*",
-      regexpSplitSentences: map['regexp_split_sentences'] ?? r'[.!?]+',
+          map['regexp_word_characters'] ?? TextParsingDefaults.wordPattern,
+      regexpSplitSentences:
+          map['regexp_split_sentences'] ?? TextParsingDefaults.sentencePattern,
       exceptionsSplitSentences: map['exceptions_split_sentences'] ?? '',
     );
   }

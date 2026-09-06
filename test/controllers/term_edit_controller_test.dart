@@ -41,6 +41,7 @@ void main() {
   Future<TermEditController> makeController({
     String? termId = 't1',
     String sentence = '',
+    String? sourceTextId,
   }) async {
     final term = termId != null
         ? (await db.terms.getById(termId))!
@@ -48,6 +49,7 @@ void main() {
     final ctrl = TermEditController(
       term: term,
       sentence: sentence,
+      sourceTextId: sourceTextId,
       languageId: 'l1',
       languageName: 'English',
       languageCode: 'en',
@@ -94,7 +96,7 @@ void main() {
     ctrl.removeSentence(s2.id!);
 
     final edits = ctrl.buildSentenceEdits();
-    expect(edits.added, ['Added.']);
+    expect(edits.added.map((e) => e.text), ['Added.']);
     expect(edits.edited, {s1.id!: 'One edited.'});
     expect(edits.deleted, [s2.id!]);
     ctrl.dispose();
@@ -103,7 +105,29 @@ void main() {
   test('a new term seeds the context sentence as a pending add', () async {
     final ctrl = await makeController(termId: null, sentence: 'Seed sentence.');
     expect(ctrl.visibleSentences.map((s) => s.text), ['Seed sentence.']);
-    expect(ctrl.buildSentenceEdits().added, ['Seed sentence.']);
+    expect(
+        ctrl.buildSentenceEdits().added.map((e) => e.text), ['Seed sentence.']);
+    ctrl.dispose();
+  });
+
+  test('a new term seeds the context sentence with its source text id',
+      () async {
+    final database = await db.database;
+    await database.insert('texts', {
+      'id': 'txt-1', 'language_id': 'l1', 'title': 'Chapter One',
+      'content': 'Seed sentence.', 'status': 0,
+      'created_at': '2026-01-01T00:00:00.000Z',
+      'last_read': '2026-01-01T00:00:00.000Z',
+    });
+
+    final ctrl = await makeController(
+      termId: null,
+      sentence: 'Seed sentence.',
+      sourceTextId: 'txt-1',
+    );
+
+    expect(ctrl.buildSentenceEdits().added.single.sourceTextId, 'txt-1');
+    expect(ctrl.visibleSentences.single.sourceTitle, 'Chapter One');
     ctrl.dispose();
   });
 

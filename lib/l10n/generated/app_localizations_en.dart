@@ -1724,6 +1724,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sentenceMined => 'Sentence saved for cloze training';
 
   @override
+  String get sentenceAlreadyMined =>
+      'This sentence is already saved for that word';
+
+  @override
   String get noSentenceFound => 'No sentence found at this position';
 
   @override

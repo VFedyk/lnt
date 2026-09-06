@@ -87,6 +87,16 @@ void main() {
     expect(grouped['t2'], ['Three.']);
   });
 
+  test('existsForTerm is case- and whitespace-insensitive, scoped to term',
+      () async {
+    await repo.create('t1', 'A Cat Sat.');
+
+    expect(await repo.existsForTerm('t1', '  a cat sat.  '), isTrue);
+    expect(await repo.existsForTerm('t1', 'A CAT SAT.'), isTrue);
+    expect(await repo.existsForTerm('t1', 'A dog sat.'), isFalse);
+    expect(await repo.existsForTerm('t2', 'A Cat Sat.'), isFalse);
+  });
+
   test('getByTermId returns full entities oldest-first', () async {
     await repo.create('t1', 'One.');
     await repo.create('t1', 'Two.');

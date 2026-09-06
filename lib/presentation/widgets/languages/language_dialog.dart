@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../domain/entities/language.dart';
+import '../../../domain/value_objects/text_parsing_defaults.dart';
 import '../../../utils/constants.dart';
 import '../../../utils/language_utils.dart';
 
@@ -256,8 +257,9 @@ class _LanguageDialogState extends State<LanguageDialog> {
                 useWordSegmentation: _useWordSegmentation,
                 characterSubstitutions: existing?.characterSubstitutions ?? '',
                 regexpWordCharacters: existing?.regexpWordCharacters ??
-                    r"[\p{L}\p{M}]+(?:['''][\p{L}\p{M}]+)*",
-                regexpSplitSentences: existing?.regexpSplitSentences ?? r'[.!?]+',
+                    TextParsingDefaults.wordPattern,
+                regexpSplitSentences: existing?.regexpSplitSentences ??
+                    TextParsingDefaults.sentencePattern,
                 exceptionsSplitSentences: existing?.exceptionsSplitSentences ?? '',
               );
               Navigator.pop(context, lang);

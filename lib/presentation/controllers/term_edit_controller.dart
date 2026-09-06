@@ -32,6 +32,12 @@ class TermEditController extends BaseController {
   /// entry points). Seeded as a pending sentence for a brand-new term; offered
   /// as a one-tap suggestion on the Sentences tab for an existing term.
   final String sentence;
+
+  /// Id of the text the reader context [sentence] came from, propagated to any
+  /// sentence stored from it (seed or one-tap suggestion) so its provenance
+  /// survives. Null from non-reader entry points.
+  final String? sourceTextId;
+
   final String languageId;
   final String languageName;
   final String languageCode;
@@ -57,7 +63,7 @@ class TermEditController extends BaseController {
 
   // ── Sentences tab ──
   List<TermSentence> sentences = [];
-  final List<String> pendingAdded = [];
+  final List<({String text, String? sourceTextId})> pendingAdded = [];
   final Map<String, String> pendingEdited = {};
   final Set<String> pendingDeleted = {};
   Map<String, String> sentenceSourceTitles = {};
@@ -113,6 +119,7 @@ class TermEditController extends BaseController {
     required this.languageId,
     required this.languageName,
     required this.languageCode,
+    this.sourceTextId,
   }) {
     status = term.status;
     historyLoading = term.id != null;
@@ -127,9 +134,10 @@ class TermEditController extends BaseController {
     _initialStatus = status;
     _initialLanguageId = selectedLanguageId;
 
-    // A brand-new term seeds the reader's context sentence as a pending add.
+    // A brand-new term seeds the reader's context sentence as a pending add,
+    // carrying the source text so provenance survives the Save.
     if (term.id == null && sentence.trim().isNotEmpty) {
-      pendingAdded.add(sentence.trim());
+      pendingAdded.add((text: sentence.trim(), sourceTextId: sourceTextId));
     }
 
     _initialize();
@@ -150,20 +158,16 @@ class TermEditController extends BaseController {
   // ── Sentences ──
 
   Future<void> loadSentences() async {
-    if (term.id == null) {
-      sentencesLoading = false;
-      safeNotify();
-      return;
-    }
-    final loaded = await db.termSentences.getByTermId(term.id!);
+    final loaded = term.id != null
+        ? await db.termSentences.getByTermId(term.id!)
+        : <TermSentence>[];
     if (isDisposed) return;
     sentences = loaded;
 
-    final textIds = loaded
-        .map((s) => s.sourceTextId)
-        .whereType<String>()
-        .toSet()
-        .toList();
+    final textIds = <String>{
+      ...loaded.map((s) => s.sourceTextId).whereType<String>(),
+      ...pendingAdded.map((e) => e.sourceTextId).whereType<String>(),
+    }.toList();
     final titles = <String, String>{};
     for (final id in textIds) {
       final doc = await db.texts.getById(id);
@@ -191,8 +195,15 @@ class TermEditController extends BaseController {
         createdAt: s.createdAt,
       ));
     }
-    for (final text in pendingAdded) {
-      out.add((id: null, text: text, sourceTitle: null, createdAt: null));
+    for (final entry in pendingAdded) {
+      out.add((
+        id: null,
+        text: entry.text,
+        sourceTitle: entry.sourceTextId != null
+            ? sentenceSourceTitles[entry.sourceTextId]
+            : null,
+        createdAt: null,
+      ));
     }
     return out;
   }
@@ -202,10 +213,21 @@ class TermEditController extends BaseController {
     return visibleSentences.any((s) => s.text.trim().toLowerCase() == needle);
   }
 
-  void addSentence(String text) {
+  void addSentence(String text, {String? sourceTextId}) {
     final trimmed = text.trim();
     if (trimmed.isEmpty || hasSentence(trimmed)) return;
-    pendingAdded.add(trimmed);
+    pendingAdded.add((text: trimmed, sourceTextId: sourceTextId));
+    if (sourceTextId != null &&
+        !sentenceSourceTitles.containsKey(sourceTextId)) {
+      _resolveSourceTitle(sourceTextId);
+    }
+    safeNotify();
+  }
+
+  Future<void> _resolveSourceTitle(String textId) async {
+    final doc = await db.texts.getById(textId);
+    if (isDisposed || doc == null) return;
+    sentenceSourceTitles = {...sentenceSourceTitles, textId: doc.title};
     safeNotify();
   }
 
@@ -224,7 +246,10 @@ class TermEditController extends BaseController {
   void editPending(int index, String text) {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
-    pendingAdded[index] = trimmed;
+    pendingAdded[index] = (
+      text: trimmed,
+      sourceTextId: pendingAdded[index].sourceTextId,
+    );
     safeNotify();
   }
 

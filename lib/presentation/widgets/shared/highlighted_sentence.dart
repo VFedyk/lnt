@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../domain/entities/language.dart';
+import '../../../services/text_parser_service.dart';
 import '../../theme/term_status_ui.dart';
 
 /// Renders [sentence] with the first case-insensitive occurrence of [termText]
@@ -17,6 +19,10 @@ class HighlightedSentence extends StatelessWidget {
   final int? maxLines;
   final bool italic;
 
+  /// When supplied, the term is located with the language's word pattern
+  /// instead of a bare substring search, so `on` cannot match inside `London`.
+  final Language? language;
+
   const HighlightedSentence({
     super.key,
     required this.sentence,
@@ -26,6 +32,7 @@ class HighlightedSentence extends StatelessWidget {
     this.textAlign = TextAlign.center,
     this.maxLines = 3,
     this.italic = true,
+    this.language,
   });
 
   @override
@@ -36,11 +43,13 @@ class HighlightedSentence extends StatelessWidget {
       fontStyle: italic ? FontStyle.italic : FontStyle.normal,
     );
 
-    final lowerSentence = sentence.toLowerCase();
-    final lowerTerm = termText.toLowerCase();
-    final index = lowerTerm.isEmpty ? -1 : lowerSentence.indexOf(lowerTerm);
+    final range = TextParserService.findOccurrence(
+      sentence,
+      termText.toLowerCase(),
+      language: language,
+    );
 
-    if (index == -1) {
+    if (range == null) {
       return Text(
         sentence,
         style: baseStyle,
@@ -50,9 +59,9 @@ class HighlightedSentence extends StatelessWidget {
       );
     }
 
-    final before = sentence.substring(0, index);
-    final match = sentence.substring(index, index + termText.length);
-    final after = sentence.substring(index + termText.length);
+    final before = sentence.substring(0, range.start);
+    final match = sentence.substring(range.start, range.end);
+    final after = sentence.substring(range.end);
 
     return RichText(
       text: TextSpan(

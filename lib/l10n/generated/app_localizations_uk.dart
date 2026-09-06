@@ -1737,6 +1737,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get sentenceMined => 'Речення збережено для клоуз-тренування';
 
   @override
+  String get sentenceAlreadyMined => 'Це речення вже збережено для цього слова';
+
+  @override
   String get noSentenceFound => 'Речення в цій позиції не знайдено';
 
   @override

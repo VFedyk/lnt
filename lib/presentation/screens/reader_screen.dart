@@ -202,6 +202,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         context,
         term: existingTerm,
         sentence: sentence,
+        sourceTextId: ctrl.text.id,
         dictionaries: dictionaries,
         onLookup: (ctx, dict) => openDictionaryLookup(ctx, word, dict),
         languageId: ctrl.language.id!,
@@ -229,13 +230,13 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         text: word,
         lowerText: lowerWord,
         status: TermStatus.unknown,
-        sentence: sentence,
       );
 
       dialogResult = await TermEditScreen.open(
         context,
         term: newTerm,
         sentence: sentence,
+        sourceTextId: ctrl.text.id,
         dictionaries: dictionaries,
         onLookup: (ctx, dict) => openDictionaryLookup(ctx, word, dict),
         languageId: ctrl.language.id!,
@@ -331,6 +332,13 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     if (sentence.isEmpty) {
       SnackbarHelpers.showInfo(context, l10n.noSentenceFound);
+      return;
+    }
+
+    if (await db.termSentences.existsForTerm(term.id!, sentence)) {
+      if (mounted) {
+        SnackbarHelpers.showInfo(context, l10n.sentenceAlreadyMined);
+      }
       return;
     }
 
@@ -501,6 +509,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         context,
         term: existingTerm,
         sentence: sentence,
+        sourceTextId: ctrl.text.id,
         dictionaries: dictionaries,
         onLookup: (ctx, dict) =>
             openDictionaryLookup(ctx, selectedWords, dict),
@@ -514,13 +523,13 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         text: selectedWords,
         lowerText: lowerWords,
         status: TermStatus.unknown,
-        sentence: sentence,
       );
 
       dialogResult = await TermEditScreen.open(
         context,
         term: newTerm,
         sentence: sentence,
+        sourceTextId: ctrl.text.id,
         dictionaries: dictionaries,
         onLookup: (ctx, dict) =>
             openDictionaryLookup(ctx, selectedWords, dict),

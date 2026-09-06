@@ -223,14 +223,44 @@ class ReviewCardRepositoryImpl extends BaseRepository
 
   @override
   Future<List<ReviewCardRecord>> getDueCards(String languageId,
-      {DateTime? now,
-      int? limit,
-      ReviewScope scope = const ReviewScope()}) async {
+          {DateTime? now,
+          int? limit,
+          ReviewScope scope = const ReviewScope()}) =>
+      _dueCards(languageId, now: now, limit: limit, scope: scope);
+
+  @override
+  Future<List<ReviewCardRecord>> getClozeDueCandidates(String languageId,
+          {DateTime? now, ReviewScope scope = const ReviewScope()}) =>
+      _dueCards(languageId,
+          now: now,
+          scope: scope,
+          requireSentence: true,
+          applySessionLimit: false);
+
+  /// Shared body of [getDueCards] / [getClozeDueCandidates].
+  ///
+  /// - [requireSentence] appends the `term_sentences` EXISTS guard.
+  /// - [applySessionLimit] false skips the user's session card limit entirely
+  ///   (fetch everything, trim nothing) — the cloze caller trims after it has
+  ///   dropped the cards whose sentence has no usable occurrence.
+  Future<List<ReviewCardRecord>> _dueCards(
+    String languageId, {
+    DateTime? now,
+    int? limit,
+    ReviewScope scope = const ReviewScope(),
+    bool requireSentence = false,
+    bool applySessionLimit = true,
+  }) async {
     final db = await getDatabase();
     now ??= DateTime.now().toUtc();
-    final limits = await _resolveLimits(limit);
+    final limits = applySessionLimit
+        ? await _resolveLimits(limit)
+        : (fetchLimit: limit ?? -1, sessionLimit: null);
     final sessionLimit = limits.sessionLimit;
     final scopeClause = _scopeClause(scope);
+    final sentenceClause = requireSentence
+        ? 'AND EXISTS (SELECT 1 FROM term_sentences ts WHERE ts.term_id = t.id)'
+        : '';
     // ORDER BY next_due already yields overdue → due → future, which is the
     // right ordering for an includeNotDue session too.
     final maps = await db.rawQuery(
@@ -241,6 +271,7 @@ class ReviewCardRepositoryImpl extends BaseRepository
         AND t.status != 0
         ${_dueClause(scope)}
         ${scopeClause.sql}
+        $sentenceClause
       ORDER BY rc.next_due ASC
       LIMIT ?
       ''',
@@ -297,30 +328,6 @@ class ReviewCardRepositoryImpl extends BaseRepository
         AND t.status != 0
         ${_dueClause(scope)}
         ${scopeClause.sql}
-      ''',
-      [languageId, ..._dueArgs(scope, now), ...scopeClause.args],
-    );
-    final total = result.first['total'] as int;
-    final newCnt = result.first['new_cnt'] as int;
-    return _applyBudget(total, newCnt, await _budgetFor(languageId, scope));
-  }
-
-  @override
-  Future<int> getClozeDueCount(String languageId,
-      {DateTime? now, ReviewScope scope = const ReviewScope()}) async {
-    final db = await getDatabase();
-    now ??= DateTime.now().toUtc();
-    final scopeClause = _scopeClause(scope);
-    final result = await db.rawQuery(
-      '''
-      SELECT COUNT(*) as total, COALESCE(SUM($_isNewExpr), 0) as new_cnt
-      FROM review_cards rc
-      INNER JOIN terms t ON t.id = rc.term_id
-      WHERE t.language_id = ?
-        AND t.status != 0
-        ${_dueClause(scope)}
-        ${scopeClause.sql}
-        AND EXISTS (SELECT 1 FROM term_sentences ts WHERE ts.term_id = t.id)
       ''',
       [languageId, ..._dueArgs(scope, now), ...scopeClause.args],
     );

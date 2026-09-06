@@ -109,7 +109,10 @@ class TermSentencesView extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               trailing: TextButton(
-                onPressed: () => controller.addSentence(suggestion),
+                onPressed: () => controller.addSentence(
+                  suggestion,
+                  sourceTextId: controller.sourceTextId,
+                ),
                 child: Text(l10n.useThisSentence),
               ),
             ),

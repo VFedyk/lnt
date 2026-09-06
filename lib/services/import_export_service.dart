@@ -71,7 +71,16 @@ class ImportExportService {
     return terms;
   }
 
-  // Export to Anki format (semicolon-separated with HTML)
+  /// Escapes HTML-significant characters and folds any newline to `<br>` so a
+  /// mined sentence cannot corrupt an Anki card or split it across lines.
+  static String _ankiEscape(String s) => s
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll(RegExp(r'\r\n|\r|\n'), '<br>');
+
+  // Export to Anki format (tab-separated with HTML). Tab is Anki's default
+  // import delimiter and the only separator that cannot collide with prose.
   Future<String> exportToAnki(
     List<Term> terms, {
     Map<String, String> sentencesByTermId = const {},
@@ -79,22 +88,22 @@ class ImportExportService {
     final buffer = StringBuffer();
 
     for (final term in terms) {
-      final front = term.text;
+      final front = _ankiEscape(term.text);
       final backParts = <String>[];
 
       if (term.translation.isNotEmpty) {
-        backParts.add(term.translation);
+        backParts.add(_ankiEscape(term.translation));
       }
       if (term.romanization.isNotEmpty) {
-        backParts.add('[${term.romanization}]');
+        backParts.add('[${_ankiEscape(term.romanization)}]');
       }
       final sentence = sentencesByTermId[term.id] ?? '';
       if (sentence.isNotEmpty) {
-        backParts.add('<br><i>$sentence</i>');
+        backParts.add('<br><i>${_ankiEscape(sentence)}</i>');
       }
 
       final back = backParts.join('<br>');
-      buffer.writeln('$front;$back');
+      buffer.writeln('$front\t$back');
     }
 
     return buffer.toString();

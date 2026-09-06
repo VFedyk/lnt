@@ -3152,6 +3152,12 @@ abstract class AppLocalizations {
   /// **'Sentence saved for cloze training'**
   String get sentenceMined;
 
+  /// No description provided for @sentenceAlreadyMined.
+  ///
+  /// In en, this message translates to:
+  /// **'This sentence is already saved for that word'**
+  String get sentenceAlreadyMined;
+
   /// No description provided for @noSentenceFound.
   ///
   /// In en, this message translates to:

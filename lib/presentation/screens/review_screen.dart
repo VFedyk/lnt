@@ -66,10 +66,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       final scope = ReviewScope(statuses: _statusFilter);
       final dueCount =
           await db.reviewCards.getDueCount(widget.language.id!, scope: scope);
-      final clozeDueCount = await db.reviewCards.getClozeDueCount(
-        widget.language.id!,
-        scope: scope,
-      );
+      final clozeDueCount = await countClozeDue(widget.language, scope: scope);
       final reviewedToday = await db.reviewLogs.getReviewCountToday(
         widget.language.id!,
       );

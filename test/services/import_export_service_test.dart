@@ -109,13 +109,22 @@ void main() {
   });
 
   group('exportToAnki', () {
-    test('produces semicolon-separated format', () async {
+    test('produces tab-separated format', () async {
       final anki = await service.exportToAnki(sampleTerms());
       final lines =
           anki.split('\n').where((l) => l.trim().isNotEmpty).toList();
 
-      expect(lines[0], contains('hola;'));
+      expect(lines[0], contains('hola\t'));
       expect(lines[0], contains('hello'));
+    });
+
+    test('escapes HTML and folds newlines in the sentence', () async {
+      final anki = await service.exportToAnki(
+        sampleTerms(),
+        sentencesByTermId: const {'hola-id': 'a <b> & c\nsecond line'},
+      );
+      expect(anki, contains('a &lt;b&gt; &amp; c<br>second line'));
+      expect(anki, isNot(contains('<b>')));
     });
 
     test('includes romanization in brackets', () async {

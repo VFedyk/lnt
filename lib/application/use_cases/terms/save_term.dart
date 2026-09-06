@@ -40,8 +40,9 @@ class SaveTerm {
       for (final entry in sentences.edited.entries) {
         await _sentences.update(entry.key, entry.value);
       }
-      for (final text in sentences.added) {
-        await _sentences.create(id, text);
+      for (final entry in sentences.added) {
+        await _sentences.create(id, entry.text,
+            sourceTextId: entry.sourceTextId);
       }
     }
 

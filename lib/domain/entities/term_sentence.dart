@@ -40,7 +40,9 @@ class TermSentence {
 /// the new-term case (no `term_id` yet) uses the same code path as an existing
 /// term — the ids in [edited] / [deleted] refer to already-persisted rows.
 class TermSentenceEdits {
-  final List<String> added; // new sentence texts
+  /// New sentences to create, each with the id of the text it was mined from
+  /// (null when the user typed it by hand).
+  final List<({String text, String? sourceTextId})> added;
   final Map<String, String> edited; // existing id -> new text
   final List<String> deleted; // existing ids
 

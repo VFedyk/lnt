@@ -2336,6 +2336,7 @@
 /Users/v/Projects/lnt/assets/icon.png
 /Users/v/Projects/lnt/assets/icon.svg
 /Users/v/Projects/lnt/l10n.yaml
+/Users/v/Projects/lnt/lib/application/use_cases/review/count_cloze_due.dart
 /Users/v/Projects/lnt/lib/application/use_cases/review/review_term.dart
 /Users/v/Projects/lnt/lib/application/use_cases/terms/bulk_import_terms.dart
 /Users/v/Projects/lnt/lib/application/use_cases/terms/save_term.dart
@@ -2395,6 +2396,7 @@
 /Users/v/Projects/lnt/lib/domain/value_objects/part_of_speech.dart
 /Users/v/Projects/lnt/lib/domain/value_objects/review_scope.dart
 /Users/v/Projects/lnt/lib/domain/value_objects/term_status.dart
+/Users/v/Projects/lnt/lib/domain/value_objects/text_parsing_defaults.dart
 /Users/v/Projects/lnt/lib/domain/value_objects/translation_provider.dart
 /Users/v/Projects/lnt/lib/l10n/app_en.arb
 /Users/v/Projects/lnt/lib/l10n/app_uk.arb

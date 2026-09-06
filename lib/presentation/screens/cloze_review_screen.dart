@@ -8,6 +8,7 @@ import '../../domain/entities/language.dart';
 import '../../domain/entities/review_card.dart';
 import '../../domain/entities/term.dart';
 import '../../service_locator.dart';
+import '../../services/text_parser_service.dart';
 import '../controllers/review_session_outcome.dart';
 import '../models/review_session_spec.dart';
 import '../widgets/shared/review_session_app_bar.dart';
@@ -151,19 +152,39 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
     await _ensureCardsSeeded();
 
     final dueCards = await db.reviewCards
-        .getDueCards(widget.language.id!, scope: widget.spec.scope);
+        .getClozeDueCandidates(widget.language.id!, scope: widget.spec.scope);
     final termIds = dueCards.map((rc) => rc.termId).toList();
     final termsMap = await db.terms.getByIds(termIds);
     final translationsMap = await db.translations.getByTermIds(termIds);
     final minedSentencesMap = await db.termSentences.getByTermIds(termIds);
 
-    final dueItems = <_ReviewItem>[];
+    var dueItems = <_ReviewItem>[];
     for (final rc in dueCards) {
       final term = termsMap[rc.termId];
       if (term == null) continue;
 
-      final sentences = minedSentencesMap[term.id] ?? const [];
+      final sentences = [...(minedSentencesMap[term.id] ?? const <String>[])]
+        ..shuffle(_random);
       if (sentences.isEmpty) continue;
+
+      // Use the first sentence that actually contains the term at a word
+      // boundary — a card we cannot blank is silently dropped (and was already
+      // excluded from the cloze due count).
+      String? chosen;
+      ({int start, int end})? range;
+      for (final s in sentences) {
+        final r = TextParserService.findOccurrence(
+          s,
+          term.lowerText,
+          language: widget.language,
+        );
+        if (r != null) {
+          chosen = s;
+          range = r;
+          break;
+        }
+      }
+      if (chosen == null || range == null) continue;
 
       var translations = translationsMap[term.id] ?? [];
       if (translations.isEmpty && term.translation.isNotEmpty) {
@@ -172,16 +193,22 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
         ];
       }
 
-      // Pick a random sentence for this review session
-      final sentence = sentences[_random.nextInt(sentences.length)];
       dueItems.add(
         _ReviewItem(
           reviewCard: rc,
           term: term,
           translations: translations,
-          sentence: sentence,
+          sentence: chosen,
+          range: range,
         ),
       );
+    }
+
+    // The repository skipped the session card limit so the drops above could
+    // not shrink the session below its configured size — apply it now.
+    final cap = await settings.getSessionCardLimit();
+    if (cap > 0 && dueItems.length > cap) {
+      dueItems = dueItems.take(cap).toList();
     }
 
     // For easy mode: build distractor pool from all terms
@@ -422,9 +449,7 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
 
   Widget _buildClozeSentence(_ReviewItem item) {
     final sentence = item.sentence;
-    final lowerSentence = sentence.toLowerCase();
-    final lowerTerm = item.term.lowerText;
-    final idx = lowerSentence.indexOf(lowerTerm);
+    final range = item.range;
 
     final blankLength = item.term.text.length.clamp(4, 12);
     final blank = '_' * blankLength;
@@ -438,25 +463,15 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
     );
     final sentenceStyle = TextStyle(fontSize: _Constants.sentenceFontSize);
 
-    final List<InlineSpan> spans;
-    if (idx == -1) {
-      spans = [
-        TextSpan(text: sentence, style: sentenceStyle),
-        const TextSpan(text: ' '),
-        TextSpan(text: blank, style: blankStyle),
-      ];
-    } else {
-      final before = sentence.substring(0, idx);
-      final after = sentence.substring(idx + item.term.text.length);
-      spans = [
+    final before = sentence.substring(0, range.start);
+    final after = sentence.substring(range.end);
+
+    return RichText(
+      text: TextSpan(children: [
         TextSpan(text: before, style: sentenceStyle),
         TextSpan(text: blank, style: blankStyle),
         TextSpan(text: after, style: sentenceStyle),
-      ];
-    }
-
-    return RichText(
-      text: TextSpan(children: spans),
+      ]),
       textAlign: TextAlign.center,
     );
   }
@@ -536,10 +551,14 @@ class _ReviewItem {
   final List<Translation> translations;
   final String sentence;
 
+  /// Word-boundary range of the term inside [sentence], resolved once at load.
+  final ({int start, int end}) range;
+
   const _ReviewItem({
     required this.reviewCard,
     required this.term,
     required this.translations,
     required this.sentence,
+    required this.range,
   });
 }
