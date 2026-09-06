@@ -2407,7 +2407,7 @@
 /Users/v/Projects/lnt/lib/presentation/controllers/reader_controller.dart
 /Users/v/Projects/lnt/lib/presentation/controllers/review_session_outcome.dart
 /Users/v/Projects/lnt/lib/presentation/controllers/settings_controller.dart
-/Users/v/Projects/lnt/lib/presentation/controllers/term_dialog_controller.dart
+/Users/v/Projects/lnt/lib/presentation/controllers/term_edit_controller.dart
 /Users/v/Projects/lnt/lib/presentation/controllers/vocabulary_controller.dart
 /Users/v/Projects/lnt/lib/presentation/models/chart_data.dart
 /Users/v/Projects/lnt/lib/presentation/models/review_session_spec.dart
@@ -2427,6 +2427,7 @@
 /Users/v/Projects/lnt/lib/presentation/screens/settings_screen.dart
 /Users/v/Projects/lnt/lib/presentation/screens/statistics_screen.dart
 /Users/v/Projects/lnt/lib/presentation/screens/stroke_review_screen.dart
+/Users/v/Projects/lnt/lib/presentation/screens/term_edit_screen.dart
 /Users/v/Projects/lnt/lib/presentation/screens/typing_review_screen.dart
 /Users/v/Projects/lnt/lib/presentation/screens/vocabulary_screen.dart
 /Users/v/Projects/lnt/lib/presentation/theme/app_theme.dart
@@ -2484,6 +2485,7 @@
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/base_term_search_dialog.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/handwriting_canvas.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/hanzi_writer_widget.dart
+/Users/v/Projects/lnt/lib/presentation/widgets/shared/highlighted_sentence.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/practice_mode_banner.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/reread_suggestion_card.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/review_options_grid.dart
@@ -2492,12 +2494,14 @@
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/review_rating_buttons.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/review_session_app_bar.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/share_import_dialog.dart
-/Users/v/Projects/lnt/lib/presentation/widgets/shared/term_dialog.dart
-/Users/v/Projects/lnt/lib/presentation/widgets/shared/term_history_view.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/text_review_sheet.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/shared/translation_mixin.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/statistics/due_forecast_chart.dart
 /Users/v/Projects/lnt/lib/presentation/widgets/statistics/status_history_chart.dart
+/Users/v/Projects/lnt/lib/presentation/widgets/term_edit/term_form_section.dart
+/Users/v/Projects/lnt/lib/presentation/widgets/term_edit/term_history_view.dart
+/Users/v/Projects/lnt/lib/presentation/widgets/term_edit/term_sentences_view.dart
+/Users/v/Projects/lnt/lib/presentation/widgets/term_edit/term_translation_list.dart
 /Users/v/Projects/lnt/lib/service_locator.dart
 /Users/v/Projects/lnt/lib/services/backup_service.dart
 /Users/v/Projects/lnt/lib/services/dictionary_service.dart

@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../domain/entities/term.dart';
-import '../../controllers/term_dialog_controller.dart';
+import '../../controllers/term_edit_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/term_status_ui.dart';
 import '../../../utils/constants.dart';
@@ -11,7 +11,7 @@ import '../../../utils/helpers.dart';
 /// "History" tab of the term dialog: a summary, a status-journey chart, the
 /// status-change timeline, and the full review log for a single term.
 class TermHistoryView extends StatelessWidget {
-  final TermDialogController controller;
+  final TermEditController controller;
   final Term term;
 
   const TermHistoryView({

@@ -89,6 +89,23 @@ void main() {
           isTrue);
     });
 
+    test('accepts valid term_sentence payload', () {
+      expect(
+          pullService.validatePayload(
+              'term_sentence', {'term_id': 't1', 'sentence': 'A cat sat.'}),
+          isTrue);
+    });
+
+    test('rejects term_sentence payload missing sentence', () {
+      expect(pullService.validatePayload('term_sentence', {'term_id': 't1'}), isFalse);
+    });
+
+    test('rejects term_sentence payload missing term_id', () {
+      expect(
+          pullService.validatePayload('term_sentence', {'sentence': 'A cat sat.'}),
+          isFalse);
+    });
+
     test('unknown domain passes through', () {
       expect(pullService.validatePayload('future_domain', {}), isTrue);
     });
@@ -463,6 +480,131 @@ void main() {
       expect(events.first.domain, 'term');
       expect(events.first.entityId, 'term-new');
       expect(events.first.payload['_deleted'], isTrue);
+      expect(events.first.clientTs, DateTime.utc(2025));
+    });
+  });
+
+  group('SyncPullService.applyEvent — term_sentence (LWW)', () {
+    late Database db;
+    late SyncPullService pull;
+
+    setUp(() async {
+      db = await _openTestDb();
+      pull = SyncPullService(const SyncImageService());
+      await db.insert('languages', {'id': 'lang-1', 'name': 'English'});
+      await db.insert('terms', {
+        'id': 'term-1', 'language_id': 'lang-1', 'text': 'a', 'lower_text': 'a',
+        'status': 1, 'created_at': '2024-01-01T00:00:00.000Z',
+        'last_accessed': '2024-01-01T00:00:00.000Z',
+      });
+    });
+    tearDown(() async { await db.close(); });
+
+    Future<void> apply(String sentence, String updatedAt) => pull.applyEvent(
+          db,
+          _makeEvent('term_sentence', 's1', {
+            'term_id': 'term-1', 'sentence': sentence,
+            'created_at': '2024-01-01T00:00:00.000Z', 'updated_at': updatedAt,
+          }),
+          _noOpApi(), 'u', {},
+        );
+
+    Future<String?> current() async {
+      final rows = await db.query('term_sentences', where: 'id = ?', whereArgs: ['s1']);
+      return rows.isEmpty ? null : rows.first['sentence'] as String?;
+    }
+
+    test('inserts the row', () async {
+      await apply('One.', '2024-01-01T00:00:00.000Z');
+      expect(await current(), 'One.');
+    });
+
+    test('newer event wins, older is skipped, equal is a no-op', () async {
+      await apply('Old.', '2024-01-01T00:00:00.000Z');
+      await apply('New.', '2024-02-01T00:00:00.000Z');
+      expect(await current(), 'New.');
+      await apply('Stale.', '2024-01-15T00:00:00.000Z');
+      expect(await current(), 'New.');
+      await apply('Echo.', '2024-02-01T00:00:00.000Z');
+      expect(await current(), 'New.');
+    });
+
+    test('event with no local parent term is skipped', () async {
+      await pull.applyEvent(
+        db,
+        _makeEvent('term_sentence', 's2', {
+          'term_id': 'ghost', 'sentence': 'Orphan.',
+          'created_at': '2024-01-01T00:00:00.000Z',
+          'updated_at': '2024-01-01T00:00:00.000Z',
+        }),
+        _noOpApi(), 'u', {},
+      );
+      expect(
+          (await db.query('term_sentences', where: 'id = ?', whereArgs: ['s2'])).length,
+          0);
+    });
+
+    test('delete removes the row and records a tombstone; newer write resurrects',
+        () async {
+      await apply('One.', '2024-01-01T00:00:00.000Z');
+      await pull.applyEvent(
+        db,
+        _makeEvent('term_sentence', 's1',
+            {'_deleted': true, 'deleted_at': '2024-02-01T00:00:00.000Z'}),
+        _noOpApi(), 'u', {},
+      );
+      expect(await current(), isNull);
+      expect(
+          (await db.query('sync_tombstones',
+                  where: 'domain = ? AND entity_id = ?',
+                  whereArgs: ['term_sentence', 's1']))
+              .length,
+          1);
+
+      await apply('Reborn.', '2024-03-01T00:00:00.000Z');
+      expect(await current(), 'Reborn.');
+      expect(
+          (await db.query('sync_tombstones',
+                  where: 'domain = ? AND entity_id = ?',
+                  whereArgs: ['term_sentence', 's1']))
+              .length,
+          0);
+    });
+  });
+
+  group('SyncPushService.collectTermSentences', () {
+    late Database db;
+    final push = SyncPushService();
+
+    setUp(() async {
+      db = await _openTestDb();
+      await db.insert('languages', {'id': 'lang-1', 'name': 'English'});
+      await db.insert('terms', {
+        'id': 'term-1', 'language_id': 'lang-1', 'text': 'a', 'lower_text': 'a',
+        'status': 1, 'created_at': '2024-01-01T00:00:00.000Z',
+        'last_accessed': '2024-01-01T00:00:00.000Z',
+      });
+    });
+    tearDown(() async { await db.close(); });
+
+    test('collects only sentences updated after sinceStr', () async {
+      await db.insert('term_sentences', {
+        'id': 's-old', 'term_id': 'term-1', 'sentence': 'Old.',
+        'created_at': '2023-01-01T00:00:00.000Z',
+        'updated_at': '2023-01-01T00:00:00.000Z',
+      });
+      await db.insert('term_sentences', {
+        'id': 's-new', 'term_id': 'term-1', 'sentence': 'New.',
+        'created_at': '2023-01-01T00:00:00.000Z',
+        'updated_at': '2025-01-01T00:00:00.000Z',
+      });
+
+      final events = <EventInput>[];
+      await push.collectTermSentences(db, events, '2024-01-01T00:00:00.000Z');
+
+      expect(events.length, 1);
+      expect(events.first.domain, 'term_sentence');
+      expect(events.first.entityId, 's-new');
       expect(events.first.clientTs, DateTime.utc(2025));
     });
   });

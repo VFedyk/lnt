@@ -162,11 +162,7 @@ class _ClozeReviewScreenState extends State<ClozeReviewScreen> {
       final term = termsMap[rc.termId];
       if (term == null) continue;
 
-      // Collect all available sentences: mined sentences + term.sentence fallback
-      final sentences = [
-        ...?minedSentencesMap[term.id],
-        if (term.sentence.trim().isNotEmpty) term.sentence.trim(),
-      ];
+      final sentences = minedSentencesMap[term.id] ?? const [];
       if (sentences.isEmpty) continue;
 
       var translations = translationsMap[term.id] ?? [];

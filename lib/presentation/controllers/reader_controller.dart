@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/entities/text_document.dart';
 import '../../domain/entities/term.dart';
+import '../../domain/entities/term_sentence.dart';
 import '../../domain/entities/word_token.dart';
 import '../../service_locator.dart';
 import '../../data/services/ai_explanation_service.dart';
@@ -480,9 +481,11 @@ class ReaderController extends BaseController {
     Term term,
     List<Translation> translations, {
     required bool isNew,
+    TermSentenceEdits sentences = TermSentenceEdits.empty,
   }) async {
     if (isNew) {
-      final termId = await saveTerm(term, translations, isNew: true);
+      final termId =
+          await saveTerm(term, translations, isNew: true, sentences: sentences);
       final termWithId = term.copyWith(id: termId);
       final newTranslations = await db.translations.getByTermId(termId);
       translationsMap[termId] = newTranslations;
@@ -497,7 +500,7 @@ class ReaderController extends BaseController {
         otherLanguageTerms.remove(termWithId.lowerText);
       }
     } else {
-      await saveTerm(term, translations, isNew: false);
+      await saveTerm(term, translations, isNew: false, sentences: sentences);
       final newTranslations = await db.translations.getByTermId(term.id!);
       translationsMap[term.id!] = newTranslations;
       for (final t in newTranslations) {
@@ -516,9 +519,10 @@ class ReaderController extends BaseController {
     Term term,
     List<Translation> translations, {
     required bool isNew,
+    TermSentenceEdits sentences = TermSentenceEdits.empty,
   }) async {
     cancelSelection();
-    await saveTerm(term, translations, isNew: isNew);
+    await saveTerm(term, translations, isNew: isNew, sentences: sentences);
     final lowerWords = _textParser.normalizeWord(term.text);
     if (otherLanguageTerms.containsKey(lowerWords)) {
       await db.textForeignWords.deleteWord(text.id!, lowerWords);

@@ -164,6 +164,10 @@ class SyncService {
     await _pushService.collectCollections(rawDb, events, sinceStr, coverRefs);
     await _pushService.collectTexts(rawDb, events, sinceStr, coverRefs);
     await _pushService.collectTerms(rawDb, events, sinceStr);
+    // Immediately after collectTerms so the parent term precedes its sentences
+    // within a push batch — the pull side applies events in order and a
+    // sentence ahead of its term would fail the FK.
+    await _pushService.collectTermSentences(rawDb, events, sinceStr);
     await _pushService.collectReviewCards(rawDb, events, sinceStr);
     await _pushService.collectReviewLogs(rawDb, events, sinceStr);
     await _pushService.collectStatusLogs(rawDb, events, sinceStr);

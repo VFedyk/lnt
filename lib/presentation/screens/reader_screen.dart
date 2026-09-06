@@ -23,7 +23,7 @@ import '../widgets/reader/reader_foreign_word_dialog.dart';
 import '../widgets/reader/reader_language_picker_dialog.dart';
 import '../widgets/reader/reader_mark_all_known_dialog.dart';
 import '../widgets/reader/reader_translation_dialog.dart';
-import '../widgets/shared/term_dialog.dart';
+import 'term_edit_screen.dart';
 import '../widgets/shared/text_review_sheet.dart';
 import '../widgets/reader/word_list_drawer.dart';
 import '../theme/app_theme.dart';
@@ -196,9 +196,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     );
     if (!mounted) return;
 
-    TermDialogResult? dialogResult;
+    TermEditResult? dialogResult;
     if (existingTerm != null) {
-      dialogResult = await TermDialog.show(
+      dialogResult = await TermEditScreen.open(
         context,
         term: existingTerm,
         sentence: sentence,
@@ -219,6 +219,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
             dialogResult.term,
             dialogResult.translations,
             isNew: false,
+            sentences: dialogResult.sentenceEdits,
           );
         }
       }
@@ -231,7 +232,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         sentence: sentence,
       );
 
-      dialogResult = await TermDialog.show(
+      dialogResult = await TermEditScreen.open(
         context,
         term: newTerm,
         sentence: sentence,
@@ -248,6 +249,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
           dialogResult.term,
           dialogResult.translations,
           isNew: true,
+          sentences: dialogResult.sentenceEdits,
         );
       }
     }
@@ -493,9 +495,9 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         await ctrl.dictService.getActiveDictionaries(ctrl.language.id!);
     if (!mounted) return;
 
-    TermDialogResult? dialogResult;
+    TermEditResult? dialogResult;
     if (existingTerm != null) {
-      dialogResult = await TermDialog.show(
+      dialogResult = await TermEditScreen.open(
         context,
         term: existingTerm,
         sentence: sentence,
@@ -515,7 +517,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         sentence: sentence,
       );
 
-      dialogResult = await TermDialog.show(
+      dialogResult = await TermEditScreen.open(
         context,
         term: newTerm,
         sentence: sentence,
@@ -538,6 +540,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         dialogResult.term,
         dialogResult.translations,
         isNew: existingTerm == null,
+        sentences: dialogResult.sentenceEdits,
       );
     } else {
       ctrl.cancelSelection();

@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 25;
+const int databaseVersion = 26;
 
 const _uuid = Uuid();
 
@@ -257,6 +257,63 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
   if (oldVersion < 25) {
     await _addContinuousCollections(db);
   }
+  if (oldVersion < 26) {
+    await _syncableTermSentences(db);
+  }
+}
+
+/// v26: brings `term_sentences` into the sync layer and makes it the single
+/// source of truth for example sentences.
+///
+/// 1. Adds `updated_at` (needed for last-write-wins) and backfills it from
+///    `created_at`.
+/// 2. Copies every legacy `terms.sentence` into a `term_sentences` row. The
+///    `terms.sentence` column is deliberately left populated: clearing it would
+///    require bumping `terms.updated_at` on every affected row (re-pushing the
+///    whole term table) and would destroy the sentence for any device still on
+///    an older build that doesn't sync `term_sentences`. Nothing reads the
+///    column after this migration.
+///
+/// Idempotent: `onUpgrade` chains every branch unconditionally, so this must be
+/// safe to re-run against a schema that already has the column / the rows.
+Future<void> _syncableTermSentences(Database db) async {
+  final tables = await db.rawQuery(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'term_sentences'",
+  );
+  if (tables.isEmpty) return;
+
+  final columns = await db.rawQuery('PRAGMA table_info(term_sentences)');
+  if (!columns.any((c) => c['name'] == 'updated_at')) {
+    await db.execute('ALTER TABLE term_sentences ADD COLUMN updated_at TEXT');
+    await db.execute('UPDATE term_sentences SET updated_at = created_at');
+  }
+
+  // Backfill legacy sentences. The NOT EXISTS guard keeps a re-run from
+  // inserting duplicates.
+  final legacy = await db.rawQuery('''
+    SELECT id, sentence, created_at FROM terms
+    WHERE sentence IS NOT NULL AND TRIM(sentence) != ''
+      AND NOT EXISTS (
+        SELECT 1 FROM term_sentences ts
+        WHERE ts.term_id = terms.id AND ts.sentence = terms.sentence
+      )
+  ''');
+  if (legacy.isEmpty) return;
+
+  final now = DateTime.now().toUtc().toIso8601String();
+  final batch = db.batch();
+  for (final row in legacy) {
+    final createdAt = (row['created_at'] as String?) ?? now;
+    batch.insert('term_sentences', {
+      'id': _uuid.v4(),
+      'term_id': row['id'],
+      'sentence': row['sentence'],
+      'source_text_id': null,
+      'created_at': createdAt,
+      'updated_at': createdAt,
+    });
+  }
+  await batch.commit(noResult: true);
 }
 
 /// Repoints foreign keys still referencing the `new_*` scratch tables used by
@@ -1279,6 +1336,7 @@ Future<void> onCreate(Database db, int version) async {
       sentence TEXT NOT NULL,
       source_text_id TEXT,
       created_at TEXT NOT NULL,
+      updated_at TEXT,
       FOREIGN KEY (term_id) REFERENCES terms(id) ON DELETE CASCADE
     )
   ''');

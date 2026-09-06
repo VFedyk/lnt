@@ -15,7 +15,7 @@ import '../widgets/shared/reread_suggestion_card.dart';
 import '../widgets/shared/handwriting_canvas.dart';
 import '../widgets/shared/review_progress_indicator.dart';
 import '../widgets/shared/review_rating_buttons.dart';
-import '../widgets/shared/term_dialog.dart';
+import 'term_edit_screen.dart';
 import '../../domain/value_objects/term_status.dart';
 
 abstract class _K {
@@ -74,10 +74,10 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
     );
     if (!mounted) return;
 
-    final result = await TermDialog.show(
+    final result = await TermEditScreen.open(
       context,
       term: term,
-      sentence: term.sentence,
+      sentence: '',
       dictionaries: dictionaries,
       onLookup: (ctx, dict) =>
           openDictionaryLookup(ctx, term.text, dict),
@@ -91,7 +91,8 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
     if (result.deleted) {
       await db.terms.delete(term.id!);
     } else {
-      await saveTerm(result.term, result.translations, isNew: false);
+      await saveTerm(result.term, result.translations,
+          isNew: false, sentences: result.sentenceEdits);
     }
     await controller.reloadCurrentItem();
   }

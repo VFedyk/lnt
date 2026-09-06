@@ -1792,4 +1792,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rereadOtherTexts => 'Other texts';
+
+  @override
+  String get sentences => 'Sentences';
+
+  @override
+  String get addSentence => 'Add sentence';
+
+  @override
+  String get editSentence => 'Edit sentence';
+
+  @override
+  String get deleteSentenceConfirm => 'Delete this sentence?';
+
+  @override
+  String get noSentencesYet => 'No sentences yet';
+
+  @override
+  String get noSentencesYetHint =>
+      'Add an example sentence to see this word in context.';
+
+  @override
+  String sentenceFromText(String title) {
+    return 'From “$title”';
+  }
+
+  @override
+  String get sentenceAddedManually => 'Added manually';
+
+  @override
+  String get useThisSentence => 'Use this sentence';
+
+  @override
+  String get sentenceCannotBeEmpty => 'Sentence cannot be empty';
+
+  @override
+  String get newTermSentencesHint =>
+      'Sentences are saved together with the term.';
+
+  @override
+  String get discardChanges => 'Discard changes?';
+
+  @override
+  String get discardChangesBody =>
+      'You have unsaved changes. Leave without saving?';
 }

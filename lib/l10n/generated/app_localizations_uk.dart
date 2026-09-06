@@ -1808,4 +1808,46 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get rereadOtherTexts => 'Інші тексти';
+
+  @override
+  String get sentences => 'Речення';
+
+  @override
+  String get addSentence => 'Додати речення';
+
+  @override
+  String get editSentence => 'Редагувати речення';
+
+  @override
+  String get deleteSentenceConfirm => 'Видалити це речення?';
+
+  @override
+  String get noSentencesYet => 'Ще немає речень';
+
+  @override
+  String get noSentencesYetHint =>
+      'Додайте приклад речення, щоб бачити це слово в контексті.';
+
+  @override
+  String sentenceFromText(String title) {
+    return 'З «$title»';
+  }
+
+  @override
+  String get sentenceAddedManually => 'Додано вручну';
+
+  @override
+  String get useThisSentence => 'Використати це речення';
+
+  @override
+  String get sentenceCannotBeEmpty => 'Речення не може бути порожнім';
+
+  @override
+  String get newTermSentencesHint => 'Речення зберігаються разом зі словом.';
+
+  @override
+  String get discardChanges => 'Скасувати зміни?';
+
+  @override
+  String get discardChangesBody => 'Є незбережені зміни. Вийти без збереження?';
 }

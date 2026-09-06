@@ -23,6 +23,7 @@ class SyncPullService {
     'collection': 'collections',
     'text': 'texts',
     'term': 'terms',
+    'term_sentence': 'term_sentences',
     'review_card': 'review_cards',
   };
 
@@ -101,6 +102,22 @@ class SyncPullService {
             }
           }
         });
+      case 'term_sentence':
+        if (!await _shouldApply(rawDb, event)) return;
+        // A sentence arriving before its parent term fails the FK and is
+        // dropped for good (applyEvent catches per-event, cursor still
+        // advances). Collector ordering makes this unlikely; skip-and-log
+        // rather than let it throw and abort nothing more than this event.
+        final termId = payload['term_id'];
+        final parent = await rawDb.query('terms',
+            columns: ['id'], where: 'id = ?', whereArgs: [termId], limit: 1);
+        if (parent.isEmpty) {
+          debugPrint('SyncPullService: term_sentence ${event.entityId} '
+              'has no local parent term $termId — skipped');
+          return;
+        }
+        await _upsert(rawDb, 'term_sentences', event.entityId,
+            withId(payload, event.entityId));
       case 'review_card':
         if (!await _shouldApply(rawDb, event)) return;
         // review_cards has UNIQUE(term_id), so a local card for the same term
@@ -216,6 +233,8 @@ class SyncPullService {
       // legally have collection_id NULL (schema: ON DELETE SET NULL).
       case 'text': return payload['language_id'] != null;
       case 'term': return payload['language_id'] != null && payload['text'] != null;
+      case 'term_sentence':
+        return payload['term_id'] != null && payload['sentence'] != null;
       case 'review_card': return payload['term_id'] != null && payload['card_data'] != null;
       case 'review_log': return payload['term_id'] != null && payload['reviewed_at'] != null;
       case 'term_status_log':

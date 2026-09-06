@@ -5,25 +5,32 @@ import '../../data/services/ai_explanation_service.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/entities/review_card.dart';
 import '../../domain/entities/term.dart';
+import '../../domain/entities/term_sentence.dart';
 import '../../domain/entities/translation_result.dart';
 import '../../domain/value_objects/translation_provider.dart';
 import '../../service_locator.dart';
 import 'base_controller.dart';
 
-class TermDialogResult {
+class TermEditResult {
   final Term term;
   final List<Translation> translations;
+  final TermSentenceEdits sentenceEdits;
   final bool deleted;
 
-  TermDialogResult({
+  TermEditResult({
     required this.term,
     required this.translations,
+    this.sentenceEdits = TermSentenceEdits.empty,
     this.deleted = false,
   });
 }
 
-class TermDialogController extends BaseController {
+class TermEditController extends BaseController {
   final Term term;
+
+  /// Context sentence at the tapped position in the reader (empty from other
+  /// entry points). Seeded as a pending sentence for a brand-new term; offered
+  /// as a one-tap suggestion on the Sentences tab for an existing term.
   final String sentence;
   final String languageId;
   final String languageName;
@@ -31,7 +38,6 @@ class TermDialogController extends BaseController {
 
   late final TextEditingController termController;
   late final TextEditingController romanizationController;
-  late final TextEditingController sentenceController;
   final _translationOutputController = TextEditingController();
 
   late int status;
@@ -49,11 +55,26 @@ class TermDialogController extends BaseController {
   bool hasAi = false;
   bool isAiTranslating = false;
 
+  // ── Sentences tab ──
+  List<TermSentence> sentences = [];
+  final List<String> pendingAdded = [];
+  final Map<String, String> pendingEdited = {};
+  final Set<String> pendingDeleted = {};
+  Map<String, String> sentenceSourceTitles = {};
+  bool sentencesLoading = false;
+
   // Per-word history (loaded when term.id != null).
   bool historyLoading = false;
   List<({DateTime reviewedAt, int rating, int? durationMs})> reviewHistory = [];
   List<({DateTime changedAt, int status})> statusTransitions = [];
   ReviewCardRecord? reviewCard;
+
+  // ── Dirty tracking (captured after _initialize) ──
+  late String _initialTerm;
+  late String _initialRomanization;
+  late int _initialStatus;
+  late String _initialLanguageId;
+  List<String> _initialTranslationSig = const [];
 
   int get totalReviews => reviewHistory.length;
   int get recalledCount => reviewHistory.where((r) => r.rating != 1).length;
@@ -86,7 +107,7 @@ class TermDialogController extends BaseController {
     return name.contains('chinese') || name.contains('mandarin');
   }
 
-  TermDialogController({
+  TermEditController({
     required this.term,
     required this.sentence,
     required this.languageId,
@@ -95,13 +116,22 @@ class TermDialogController extends BaseController {
   }) {
     status = term.status;
     historyLoading = term.id != null;
+    sentencesLoading = term.id != null;
     selectedLanguageId = languageId;
     selectedLanguageName = languageName;
     termController = TextEditingController(text: term.lowerText);
     romanizationController = TextEditingController(text: term.romanization);
-    sentenceController = TextEditingController(
-      text: term.sentence.isEmpty ? sentence : term.sentence,
-    );
+
+    _initialTerm = termController.text;
+    _initialRomanization = romanizationController.text;
+    _initialStatus = status;
+    _initialLanguageId = selectedLanguageId;
+
+    // A brand-new term seeds the reader's context sentence as a pending add.
+    if (term.id == null && sentence.trim().isNotEmpty) {
+      pendingAdded.add(sentence.trim());
+    }
+
     _initialize();
   }
 
@@ -112,7 +142,133 @@ class TermDialogController extends BaseController {
       _loadLanguages(),
       _checkAiProvider(),
       _loadHistory(),
+      loadSentences(),
     ]);
+    _initialTranslationSig = _translationSignature();
+  }
+
+  // ── Sentences ──
+
+  Future<void> loadSentences() async {
+    if (term.id == null) {
+      sentencesLoading = false;
+      safeNotify();
+      return;
+    }
+    final loaded = await db.termSentences.getByTermId(term.id!);
+    if (isDisposed) return;
+    sentences = loaded;
+
+    final textIds = loaded
+        .map((s) => s.sourceTextId)
+        .whereType<String>()
+        .toSet()
+        .toList();
+    final titles = <String, String>{};
+    for (final id in textIds) {
+      final doc = await db.texts.getById(id);
+      if (doc != null) titles[id] = doc.title;
+    }
+    if (isDisposed) return;
+    sentenceSourceTitles = titles;
+    sentencesLoading = false;
+    safeNotify();
+  }
+
+  /// Persisted (minus deletions, with edits applied) merged with pending adds —
+  /// so the list renders identically for a new and an existing term.
+  List<({String? id, String text, String? sourceTitle, DateTime? createdAt})>
+      get visibleSentences {
+    final out = <({String? id, String text, String? sourceTitle, DateTime? createdAt})>[];
+    for (final s in sentences) {
+      if (pendingDeleted.contains(s.id)) continue;
+      out.add((
+        id: s.id,
+        text: pendingEdited[s.id] ?? s.sentence,
+        sourceTitle: s.sourceTextId != null
+            ? sentenceSourceTitles[s.sourceTextId]
+            : null,
+        createdAt: s.createdAt,
+      ));
+    }
+    for (final text in pendingAdded) {
+      out.add((id: null, text: text, sourceTitle: null, createdAt: null));
+    }
+    return out;
+  }
+
+  bool hasSentence(String text) {
+    final needle = text.trim().toLowerCase();
+    return visibleSentences.any((s) => s.text.trim().toLowerCase() == needle);
+  }
+
+  void addSentence(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty || hasSentence(trimmed)) return;
+    pendingAdded.add(trimmed);
+    safeNotify();
+  }
+
+  void editSentence(String id, String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    final original = sentences.firstWhere((s) => s.id == id).sentence;
+    if (trimmed == original) {
+      pendingEdited.remove(id);
+    } else {
+      pendingEdited[id] = trimmed;
+    }
+    safeNotify();
+  }
+
+  void editPending(int index, String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    pendingAdded[index] = trimmed;
+    safeNotify();
+  }
+
+  void removeSentence(String id) {
+    pendingEdited.remove(id);
+    pendingDeleted.add(id);
+    safeNotify();
+  }
+
+  void removePending(int index) {
+    pendingAdded.removeAt(index);
+    safeNotify();
+  }
+
+  TermSentenceEdits buildSentenceEdits() => TermSentenceEdits(
+        added: List.of(pendingAdded),
+        edited: Map.of(pendingEdited),
+        deleted: List.of(pendingDeleted),
+      );
+
+  bool get _sentencesDirty =>
+      pendingAdded.isNotEmpty ||
+      pendingEdited.isNotEmpty ||
+      pendingDeleted.isNotEmpty;
+
+  // ── Dirty ──
+
+  List<String> _translationSignature() => [
+        for (final t in translations)
+          '${t.meaning}|${t.partOfSpeech ?? ''}|${t.baseTranslationId ?? ''}',
+      ];
+
+  bool get isDirty {
+    if (termController.text != _initialTerm) return true;
+    if (romanizationController.text != _initialRomanization) return true;
+    if (status != _initialStatus) return true;
+    if (selectedLanguageId != _initialLanguageId) return true;
+    if (_sentencesDirty) return true;
+    final sig = _translationSignature();
+    if (sig.length != _initialTranslationSig.length) return true;
+    for (var i = 0; i < sig.length; i++) {
+      if (sig[i] != _initialTranslationSig[i]) return true;
+    }
+    return false;
   }
 
   Future<void> _loadHistory() async {
@@ -318,7 +474,7 @@ class TermDialogController extends BaseController {
     try {
       final meanings = await AiExplanationService(settings: settings).translateWord(
         word: termController.text.trim(),
-        contextSentence: sentenceController.text.trim(),
+        contextSentence: sentence.trim(),
         languageName: selectedLanguageName,
         languageCode: selectedLanguageCode,
       );
@@ -342,7 +498,7 @@ class TermDialogController extends BaseController {
     }
   }
 
-  TermDialogResult buildSaveResult() {
+  TermEditResult buildSaveResult() {
     final editedTerm = termController.text.trim().toLowerCase();
     final romanization = romanizationController.text.trim().isNotEmpty
         ? romanizationController.text.trim()
@@ -358,20 +514,22 @@ class TermDialogController extends BaseController {
       status: status,
       translation: legacyTranslation,
       romanization: romanization,
-      sentence: sentenceController.text,
       lastAccessed: DateTime.now(),
     );
-    return TermDialogResult(term: updatedTerm, translations: translations);
+    return TermEditResult(
+      term: updatedTerm,
+      translations: translations,
+      sentenceEdits: buildSentenceEdits(),
+    );
   }
 
-  TermDialogResult buildDeleteResult() =>
-      TermDialogResult(term: term, translations: const [], deleted: true);
+  TermEditResult buildDeleteResult() =>
+      TermEditResult(term: term, translations: const [], deleted: true);
 
   @override
   void dispose() {
     termController.dispose();
     romanizationController.dispose();
-    sentenceController.dispose();
     _translationOutputController.dispose();
     super.dispose();
   }

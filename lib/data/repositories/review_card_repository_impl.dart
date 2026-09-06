@@ -320,10 +320,7 @@ class ReviewCardRepositoryImpl extends BaseRepository
         AND t.status != 0
         ${_dueClause(scope)}
         ${scopeClause.sql}
-        AND (
-          (t.sentence IS NOT NULL AND t.sentence != '')
-          OR EXISTS (SELECT 1 FROM term_sentences ts WHERE ts.term_id = t.id)
-        )
+        AND EXISTS (SELECT 1 FROM term_sentences ts WHERE ts.term_id = t.id)
       ''',
       [languageId, ..._dueArgs(scope, now), ...scopeClause.args],
     );

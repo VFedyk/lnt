@@ -105,6 +105,24 @@ class SyncPushService {
     }
   }
 
+  Future<void> collectTermSentences(
+      Database rawDb, List<EventInput> events, String? sinceStr) async {
+    final rows = sinceStr != null
+        ? await rawDb.query('term_sentences',
+            where: 'COALESCE(updated_at, created_at) > ?', whereArgs: [sinceStr])
+        : await rawDb.query('term_sentences');
+    for (final row in rows) {
+      final id = row['id'] as String?;
+      if (id == null) continue;
+      events.add(EventInput(
+        domain: 'term_sentence',
+        entityId: id,
+        payload: Map<String, dynamic>.from(row),
+        clientTs: _rowTs(row) ?? DateTime.now().toUtc(),
+      ));
+    }
+  }
+
   Future<void> collectReviewLogs(
       Database rawDb, List<EventInput> events, String? sinceStr) async {
     final rows = sinceStr != null

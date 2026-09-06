@@ -24,10 +24,26 @@ class TermSentenceRepositoryImpl extends BaseRepository
       sentence: sentence,
       sourceTextId: sourceTextId,
       createdAt: now,
+      updatedAt: now,
     );
     await db.insert('term_sentences', row.toMap());
     notifyChange();
     return row;
+  }
+
+  @override
+  Future<void> update(String id, String sentence) async {
+    final db = await getDatabase();
+    await db.update(
+      'term_sentences',
+      {
+        'sentence': sentence,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    notifyChange();
   }
 
   @override
@@ -65,7 +81,14 @@ class TermSentenceRepositoryImpl extends BaseRepository
   @override
   Future<void> delete(String id) async {
     final db = await getDatabase();
-    await db.delete('term_sentences', where: 'id = ?', whereArgs: [id]);
-    notifyChange();
+    final count = await db.delete(
+      'term_sentences',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (count > 0) {
+      await BaseRepository.recordTombstone(db, 'term_sentence', id);
+      notifyChange();
+    }
   }
 }

@@ -993,5 +993,25 @@
     }
   },
   "openText": "Open text",
-  "rereadOtherTexts": "Other texts"
+  "rereadOtherTexts": "Other texts",
+  "sentences": "Sentences",
+  "addSentence": "Add sentence",
+  "editSentence": "Edit sentence",
+  "deleteSentenceConfirm": "Delete this sentence?",
+  "noSentencesYet": "No sentences yet",
+  "noSentencesYetHint": "Add an example sentence to see this word in context.",
+  "sentenceFromText": "From “{title}”",
+  "@sentenceFromText": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "sentenceAddedManually": "Added manually",
+  "useThisSentence": "Use this sentence",
+  "sentenceCannotBeEmpty": "Sentence cannot be empty",
+  "newTermSentencesHint": "Sentences are saved together with the term.",
+  "discardChanges": "Discard changes?",
+  "discardChangesBody": "You have unsaved changes. Leave without saving?"
 }

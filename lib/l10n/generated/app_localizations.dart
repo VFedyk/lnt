@@ -3259,6 +3259,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other texts'**
   String get rereadOtherTexts;
+
+  /// No description provided for @sentences.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentences'**
+  String get sentences;
+
+  /// No description provided for @addSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'Add sentence'**
+  String get addSentence;
+
+  /// No description provided for @editSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit sentence'**
+  String get editSentence;
+
+  /// No description provided for @deleteSentenceConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this sentence?'**
+  String get deleteSentenceConfirm;
+
+  /// No description provided for @noSentencesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No sentences yet'**
+  String get noSentencesYet;
+
+  /// No description provided for @noSentencesYetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an example sentence to see this word in context.'**
+  String get noSentencesYetHint;
+
+  /// No description provided for @sentenceFromText.
+  ///
+  /// In en, this message translates to:
+  /// **'From “{title}”'**
+  String sentenceFromText(String title);
+
+  /// No description provided for @sentenceAddedManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Added manually'**
+  String get sentenceAddedManually;
+
+  /// No description provided for @useThisSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this sentence'**
+  String get useThisSentence;
+
+  /// No description provided for @sentenceCannotBeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence cannot be empty'**
+  String get sentenceCannotBeEmpty;
+
+  /// No description provided for @newTermSentencesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentences are saved together with the term.'**
+  String get newTermSentencesHint;
+
+  /// No description provided for @discardChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get discardChanges;
+
+  /// No description provided for @discardChangesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes. Leave without saving?'**
+  String get discardChangesBody;
 }
 
 class _AppLocalizationsDelegate

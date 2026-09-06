@@ -11,33 +11,37 @@ void main() {
 
   List<Term> sampleTerms() => [
         Term(
+          id: 'hola-id',
           languageId: 'lang-1',
           text: 'hola',
           lowerText: 'hola',
           status: 1,
           translation: 'hello',
           romanization: '',
-          sentence: 'Hola, mundo!',
         ),
         Term(
+          id: 'mundo-id',
           languageId: 'lang-1',
           text: 'mundo',
           lowerText: 'mundo',
           status: 3,
           translation: 'world',
           romanization: '',
-          sentence: '',
         ),
       ];
 
+  const sampleSentences = {'hola-id': 'Hola, mundo!'};
+
   group('exportTermsToCSV', () {
     test('produces correct header and rows', () async {
-      final csv = await service.exportTermsToCSV(sampleTerms());
+      final csv = await service.exportTermsToCSV(sampleTerms(),
+          sentencesByTermId: sampleSentences);
       final lines = csv.split('\r\n');
 
       expect(lines[0], 'Term,Status,Translation,Romanization,Sentence');
       expect(lines[1], contains('hola'));
       expect(lines[1], contains('hello'));
+      expect(lines[1], contains('Hola, mundo!'));
       expect(lines[2], contains('mundo'));
     });
 
@@ -130,7 +134,8 @@ void main() {
     });
 
     test('includes sentence in italics', () async {
-      final anki = await service.exportToAnki(sampleTerms());
+      final anki = await service.exportToAnki(sampleTerms(),
+          sentencesByTermId: sampleSentences);
       expect(anki, contains('<i>Hola, mundo!</i>'));
     });
   });

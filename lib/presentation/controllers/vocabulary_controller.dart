@@ -191,6 +191,16 @@ class VocabularyController extends BaseController {
   }
 
   Future<void> exportTerms(String format) async {
-    await _importService.exportAndShare(terms, format);
+    final termIds = terms.map((t) => t.id).whereType<String>().toList();
+    final grouped = await db.termSentences.getByTermIds(termIds);
+    final firstByTermId = {
+      for (final entry in grouped.entries)
+        if (entry.value.isNotEmpty) entry.key: entry.value.first,
+    };
+    await _importService.exportAndShare(
+      terms,
+      format,
+      sentencesByTermId: firstByTermId,
+    );
   }
 }

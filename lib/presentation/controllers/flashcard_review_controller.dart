@@ -60,6 +60,7 @@ class FlashcardReviewController extends BaseController {
   Language get language => spec.language;
 
   List<ReviewItem> _dueItems = [];
+  Map<String, List<String>> _sentencesByTerm = {};
   int _currentIndex = 0;
   int _reviewedCount = 0;
   ReviewPhase _phase = ReviewPhase.loading;
@@ -77,6 +78,13 @@ class FlashcardReviewController extends BaseController {
 
   ReviewItem? get currentItem =>
       _currentIndex < _dueItems.length ? _dueItems[_currentIndex] : null;
+
+  /// First saved example sentence for [termId], or null. Sentences live in
+  /// `term_sentences` (the legacy `terms.sentence` field is no longer read).
+  String? sentenceFor(String termId) {
+    final list = _sentencesByTerm[termId];
+    return (list == null || list.isEmpty) ? null : list.first;
+  }
 
   FlashcardReviewController({required this.spec}) {
     loadDueCards();
@@ -116,6 +124,7 @@ class FlashcardReviewController extends BaseController {
     final termIds = dueCards.map((rc) => rc.termId).toList();
     final termsMap = await db.terms.getByIds(termIds);
     final translationsMap = await db.translations.getByTermIds(termIds);
+    _sentencesByTerm = await db.termSentences.getByTermIds(termIds);
 
     final items = <ReviewItem>[];
     for (final rc in dueCards) {
@@ -197,6 +206,8 @@ class FlashcardReviewController extends BaseController {
     if (updatedTerm == null) return;
 
     final translations = await db.translations.getByTermId(termId);
+    final sentences = await db.termSentences.getByTermId(termId);
+    _sentencesByTerm[termId] = sentences.map((s) => s.sentence).toList();
 
     _dueItems[_currentIndex] = ReviewItem(
       term: updatedTerm,

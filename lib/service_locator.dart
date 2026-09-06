@@ -77,10 +77,14 @@ void setupServiceLocator() {
     () => SaveTerm(
       terms: sl<TermRepository>(),
       translations: sl<TranslationRepository>(),
+      sentences: sl<TermSentenceRepository>(),
     ),
   );
   sl.registerLazySingleton<BulkImportTerms>(
-    () => BulkImportTerms(terms: sl<TermRepository>()),
+    () => BulkImportTerms(
+      terms: sl<TermRepository>(),
+      sentences: sl<TermSentenceRepository>(),
+    ),
   );
   sl.registerLazySingleton<TranslateTerm>(
     () => TranslateTerm(

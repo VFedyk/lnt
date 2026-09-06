@@ -16,7 +16,7 @@ import '../../utils/snackbar_helpers.dart';
 import '../theme/term_status_ui.dart';
 import '../controllers/vocabulary_controller.dart';
 import '../widgets/shared/app_empty_state.dart';
-import '../widgets/shared/term_dialog.dart';
+import 'term_edit_screen.dart';
 
 abstract class _TermsConstants {
   static const double filterChipAvatarRadius = 8.0;
@@ -108,7 +108,7 @@ class _VocabularyViewState extends State<_VocabularyView> {
       text: '',
       lowerText: '',
     );
-    final dialogResult = await TermDialog.show(
+    final dialogResult = await TermEditScreen.open(
       context,
       term: newTerm,
       sentence: '',
@@ -121,7 +121,8 @@ class _VocabularyViewState extends State<_VocabularyView> {
 
     if (!context.mounted) return;
     if (dialogResult != null && !dialogResult.deleted) {
-      await saveTerm(dialogResult.term, dialogResult.translations, isNew: true);
+      await saveTerm(dialogResult.term, dialogResult.translations,
+          isNew: true, sentences: dialogResult.sentenceEdits);
     }
   }
 
@@ -131,10 +132,10 @@ class _VocabularyViewState extends State<_VocabularyView> {
     Term term,
   ) async {
     final language = controller.language;
-    final dialogResult = await TermDialog.show(
+    final dialogResult = await TermEditScreen.open(
       context,
       term: term,
-      sentence: term.sentence,
+      sentence: '',
       onLookup: (ctx, dict) => openDictionaryLookup(ctx, term.text, dict),
       dictionaries: controller.dictionaries,
       languageId: language.id!,
@@ -147,7 +148,8 @@ class _VocabularyViewState extends State<_VocabularyView> {
     if (dialogResult.deleted) {
       await controller.deleteTerm(term);
     } else {
-      await saveTerm(dialogResult.term, dialogResult.translations, isNew: false);
+      await saveTerm(dialogResult.term, dialogResult.translations,
+          isNew: false, sentences: dialogResult.sentenceEdits);
     }
   }
 

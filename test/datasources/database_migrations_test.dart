@@ -318,6 +318,109 @@ void main() {
     await dir.delete(recursive: true);
   });
 
+  test('v25 -> v26 adds updated_at and backfills legacy sentences', () async {
+    final dir = await Directory.systemTemp.createTemp('lnt_mig26');
+    final path = '${dir.path}/v25.db';
+    final db = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 25,
+        onCreate: (db, v) async {
+          await migrations.onCreate(db, v);
+          await db.execute('ALTER TABLE term_sentences DROP COLUMN updated_at');
+        },
+      ),
+    );
+
+    await db.insert('languages', {'id': 'l1', 'name': 'English'});
+    await db.insert('terms', {
+      'id': 't1', 'language_id': 'l1', 'text': 'a', 'lower_text': 'a', 'status': 1,
+      'sentence': 'A cat sat.',
+      'created_at': '2024-01-01T00:00:00.000Z',
+      'last_accessed': '2024-01-01T00:00:00.000Z',
+    });
+    // Term with no legacy sentence.
+    await db.insert('terms', {
+      'id': 't2', 'language_id': 'l1', 'text': 'b', 'lower_text': 'b', 'status': 1,
+      'created_at': '2024-01-01T00:00:00.000Z',
+      'last_accessed': '2024-01-01T00:00:00.000Z',
+    });
+    // Pre-existing term_sentences row (no updated_at column yet).
+    await db.insert('term_sentences', {
+      'id': 's-existing', 'term_id': 't2', 'sentence': 'Existing.',
+      'created_at': '2024-02-01T00:00:00.000Z',
+    });
+    await db.close();
+
+    final upgraded = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 26,
+        onUpgrade: migrations.onUpgrade,
+        onOpen: (d) => d.execute('PRAGMA foreign_keys = ON'),
+      ),
+    );
+
+    final cols = await upgraded.rawQuery('PRAGMA table_info(term_sentences)');
+    expect(cols.any((c) => c['name'] == 'updated_at'), isTrue);
+
+    final existing = (await upgraded.query('term_sentences',
+            where: 'id = ?', whereArgs: ['s-existing']))
+        .first;
+    expect(existing['updated_at'], '2024-02-01T00:00:00.000Z');
+
+    final backfilled = await upgraded.query('term_sentences',
+        where: 'term_id = ?', whereArgs: ['t1']);
+    expect(backfilled.length, 1);
+    expect(backfilled.first['sentence'], 'A cat sat.');
+    expect(backfilled.first['source_text_id'], isNull);
+    expect(backfilled.first['created_at'], '2024-01-01T00:00:00.000Z');
+    expect(backfilled.first['updated_at'], '2024-01-01T00:00:00.000Z');
+
+    // Re-running the migration inserts nothing more.
+    await migrations.onUpgrade(upgraded, 25, 26);
+    expect(
+      (await upgraded.query('term_sentences', where: 'term_id = ?', whereArgs: ['t1']))
+          .length,
+      1,
+    );
+
+    await upgraded.close();
+    await dir.delete(recursive: true);
+  });
+
+  test('v25 -> v26 is a no-op when updated_at already exists', () async {
+    final dir = await Directory.systemTemp.createTemp('lnt_mig26b');
+    final path = '${dir.path}/v25b.db';
+    final db = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 26,
+        onCreate: migrations.onCreate,
+      ),
+    );
+    await db.insert('languages', {'id': 'l1', 'name': 'English'});
+    await db.insert('terms', {
+      'id': 't1', 'language_id': 'l1', 'text': 'a', 'lower_text': 'a', 'status': 1,
+      'sentence': 'A cat sat.',
+      'created_at': '2024-01-01T00:00:00.000Z',
+      'last_accessed': '2024-01-01T00:00:00.000Z',
+    });
+    // Migration already backfilled this on the v26 onCreate? No — onCreate does
+    // not backfill. Simulate the row already present.
+    await db.insert('term_sentences', {
+      'id': 's1', 'term_id': 't1', 'sentence': 'A cat sat.',
+      'created_at': '2024-01-01T00:00:00.000Z',
+      'updated_at': '2024-01-01T00:00:00.000Z',
+    });
+
+    await migrations.onUpgrade(db, 25, 26);
+    expect((await db.query('term_sentences')).length, 1);
+
+    await db.close();
+    await dir.delete(recursive: true);
+  });
+
   // The repair runs for every existing install, so it must be a strict no-op on
   // a database that was never corrupted.
   test('the FK repair leaves a healthy schema byte-identical', () async {

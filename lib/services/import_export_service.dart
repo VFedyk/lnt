@@ -10,8 +10,13 @@ import '../utils/constants.dart';
 import '../utils/helpers.dart';
 
 class ImportExportService {
-  // Export terms to CSV format
-  Future<String> exportTermsToCSV(List<Term> terms) async {
+  // Export terms to CSV format. [sentencesByTermId] supplies the example
+  // sentence (first of the term's saved sentences); the legacy `terms.sentence`
+  // field is no longer read.
+  Future<String> exportTermsToCSV(
+    List<Term> terms, {
+    Map<String, String> sentencesByTermId = const {},
+  }) async {
     final rows = <List<String>>[];
 
     // Header
@@ -24,7 +29,7 @@ class ImportExportService {
         term.status.toString(),
         term.translation,
         term.romanization,
-        term.sentence,
+        sentencesByTermId[term.id] ?? '',
       ]);
     }
 
@@ -67,7 +72,10 @@ class ImportExportService {
   }
 
   // Export to Anki format (semicolon-separated with HTML)
-  Future<String> exportToAnki(List<Term> terms) async {
+  Future<String> exportToAnki(
+    List<Term> terms, {
+    Map<String, String> sentencesByTermId = const {},
+  }) async {
     final buffer = StringBuffer();
 
     for (final term in terms) {
@@ -80,8 +88,9 @@ class ImportExportService {
       if (term.romanization.isNotEmpty) {
         backParts.add('[${term.romanization}]');
       }
-      if (term.sentence.isNotEmpty) {
-        backParts.add('<br><i>${term.sentence}</i>');
+      final sentence = sentencesByTermId[term.id] ?? '';
+      if (sentence.isNotEmpty) {
+        backParts.add('<br><i>$sentence</i>');
       }
 
       final back = backParts.join('<br>');
@@ -131,21 +140,26 @@ class ImportExportService {
   }
 
   // Export with share dialog
-  Future<void> exportAndShare(List<Term> terms, String format) async {
+  Future<void> exportAndShare(
+    List<Term> terms,
+    String format, {
+    Map<String, String> sentencesByTermId = const {},
+  }) async {
     String content;
     String fileName;
     String mimeType;
 
     switch (format.toLowerCase()) {
       case 'anki':
-        content = await exportToAnki(terms);
+        content = await exportToAnki(terms, sentencesByTermId: sentencesByTermId);
         fileName =
             'lnt_export_anki_${DateTime.now().millisecondsSinceEpoch}.txt';
         mimeType = 'text/plain';
         break;
       case 'csv':
       default:
-        content = await exportTermsToCSV(terms);
+        content =
+            await exportTermsToCSV(terms, sentencesByTermId: sentencesByTermId);
         fileName = 'lnt_export_${DateTime.now().millisecondsSinceEpoch}.csv';
         mimeType = 'text/csv';
     }

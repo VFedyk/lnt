@@ -14,10 +14,11 @@ import '../../domain/entities/term.dart';
 import '../../service_locator.dart';
 import '../../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
+import '../widgets/shared/highlighted_sentence.dart';
+import 'term_edit_screen.dart';
 import '../widgets/shared/reread_suggestion_card.dart';
 import '../widgets/shared/review_progress_indicator.dart';
 import '../widgets/shared/review_rating_buttons.dart';
-import '../widgets/shared/term_dialog.dart';
 import '../../domain/value_objects/term_status.dart';
 
 abstract class _FlashcardReviewConstants {
@@ -163,10 +164,10 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
 
     if (!mounted) return;
 
-    final result = await TermDialog.show(
+    final result = await TermEditScreen.open(
       context,
       term: term,
-      sentence: term.sentence,
+      sentence: '',
       dictionaries: dictionaries,
       onLookup: (ctx, dict) =>
           openDictionaryLookup(ctx, term.text, dict),
@@ -180,66 +181,11 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
     if (result.deleted) {
       await db.terms.delete(term.id!);
     } else {
-      await saveTerm(result.term, result.translations, isNew: false);
+      await saveTerm(result.term, result.translations,
+          isNew: false, sentences: result.sentenceEdits);
     }
     // Reload the current item's data to reflect changes
     await controller.reloadCurrentItem();
-  }
-
-  Widget _buildHighlightedSentence(
-    String sentence,
-    String termText,
-    int status,
-  ) {
-    // Try to find the term in the sentence (case-insensitive)
-    final lowerSentence = sentence.toLowerCase();
-    final lowerTerm = termText.toLowerCase();
-    final index = lowerSentence.indexOf(lowerTerm);
-
-    if (index == -1) {
-      // Term not found in sentence, return plain text
-      return Text(
-        sentence,
-        style: TextStyle(
-          fontSize: _FlashcardReviewConstants.sentenceFontSize,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          fontStyle: FontStyle.italic,
-        ),
-        textAlign: TextAlign.center,
-        maxLines: 3,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
-
-    // Split sentence into parts: before, term, after
-    final before = sentence.substring(0, index);
-    final term = sentence.substring(index, index + termText.length);
-    final after = sentence.substring(index + termText.length);
-
-    return RichText(
-      text: TextSpan(
-        style: TextStyle(
-          fontSize: _FlashcardReviewConstants.sentenceFontSize,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          fontStyle: FontStyle.italic,
-        ),
-        children: [
-          TextSpan(text: before),
-          TextSpan(
-            text: term,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: TermStatusUI.colorFor(status),
-              fontStyle: FontStyle.normal,
-            ),
-          ),
-          TextSpan(text: after),
-        ],
-      ),
-      textAlign: TextAlign.center,
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
-    );
   }
 
   @override
@@ -428,16 +374,17 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
               textAlign: TextAlign.center,
             ),
           ],
-          if (term.sentence.isNotEmpty) ...[
+          if (controller.sentenceFor(term.id ?? '') case final s?) ...[
             const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppConstants.spacingL,
               ),
-              child: _buildHighlightedSentence(
-                term.sentence,
-                term.text,
-                term.status,
+              child: HighlightedSentence(
+                sentence: s,
+                termText: term.text,
+                status: term.status,
+                fontSize: _FlashcardReviewConstants.sentenceFontSize,
               ),
             ),
           ],
@@ -497,7 +444,7 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
                   textAlign: TextAlign.center,
                 ),
               ],
-              if (term.sentence.isNotEmpty) ...[
+              if (controller.sentenceFor(term.id ?? '') case final s?) ...[
                 const SizedBox(
                   height: _FlashcardReviewConstants.contentSpacing,
                 ),
@@ -505,10 +452,11 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppConstants.spacingL,
                   ),
-                  child: _buildHighlightedSentence(
-                    term.sentence,
-                    term.text,
-                    term.status,
+                  child: HighlightedSentence(
+                    sentence: s,
+                    termText: term.text,
+                    status: term.status,
+                    fontSize: _FlashcardReviewConstants.sentenceFontSize,
                   ),
                 ),
               ],
