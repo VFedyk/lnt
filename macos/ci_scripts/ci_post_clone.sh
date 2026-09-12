@@ -13,10 +13,12 @@ export PATH="$PATH:$HOME/flutter/bin"
 # Install Flutter artifacts for macOS platform.
 flutter precache --macos
 
-# Disable Swift Package Manager: device_info_plus 11.x ships Package.swift, which
-# causes Flutter on macOS to skip it as a CocoaPods pod while GeneratedPluginRegistrant.m
-# still imports it — resulting in "Module not found" at compile time.
-flutter config --no-enable-swift-package-manager
+# Swift Package Manager must stay ENABLED. Plugins that ship a Package.swift are
+# skipped as CocoaPods pods, and some (receive_sharing_intent 1.9+) no longer ship a
+# podspec at all — disabling SPM leaves GeneratedPluginRegistrant.m importing a module
+# nothing provides ("Module not found"). The SPM integration is committed in the
+# Xcode project, so the plugins resolve from there.
+flutter config --enable-swift-package-manager
 
 # Install Flutter dependencies.
 flutter pub get
