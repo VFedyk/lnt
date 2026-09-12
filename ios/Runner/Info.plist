@@ -28,6 +28,10 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>LNT uses the camera so you can take a photo to use as the cover image for a text or collection.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>The photo picker's built-in camera can tag a photo you take with the place it was taken. LNT does not collect or use your location for anything else.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>This app needs access to save files to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
