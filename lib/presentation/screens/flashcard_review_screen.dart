@@ -374,6 +374,17 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
               textAlign: TextAlign.center,
             ),
           ],
+          if (term.ipa.isNotEmpty) ...[
+            const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
+            Text(
+              term.ipa,
+              style: TextStyle(
+                fontSize: _FlashcardReviewConstants.romanizationFontSize,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
           if (controller.sentenceFor(term.id ?? '') case final s?) ...[
             const SizedBox(height: _FlashcardReviewConstants.contentSpacing),
             Padding(
@@ -438,6 +449,19 @@ class _FlashcardReviewScreenBodyState extends State<_FlashcardReviewScreenBody>
                 ),
                 Text(
                   term.romanization,
+                  style: TextStyle(
+                    fontSize: _FlashcardReviewConstants.romanizationFontSize,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              if (term.ipa.isNotEmpty) ...[
+                const SizedBox(
+                  height: _FlashcardReviewConstants.contentSpacing,
+                ),
+                Text(
+                  term.ipa,
                   style: TextStyle(
                     fontSize: _FlashcardReviewConstants.romanizationFontSize,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,

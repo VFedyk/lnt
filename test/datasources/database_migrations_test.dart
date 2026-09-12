@@ -421,6 +421,71 @@ void main() {
     await dir.delete(recursive: true);
   });
 
+  test('v26 -> v27 adds the ipa column', () async {
+    final dir = await Directory.systemTemp.createTemp('lnt_mig27');
+    final path = '${dir.path}/v26.db';
+    final db = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 26,
+        onCreate: (db, v) async {
+          await migrations.onCreate(db, v);
+          await db.execute('ALTER TABLE terms DROP COLUMN ipa');
+        },
+      ),
+    );
+
+    await db.insert('languages', {'id': 'l1', 'name': 'English'});
+    await db.insert('terms', {
+      'id': 't1', 'language_id': 'l1', 'text': 'a', 'lower_text': 'a', 'status': 1,
+      'created_at': '2024-01-01T00:00:00.000Z',
+      'last_accessed': '2024-01-01T00:00:00.000Z',
+    });
+    await db.close();
+
+    final upgraded = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 27,
+        onUpgrade: migrations.onUpgrade,
+        onOpen: (d) => d.execute('PRAGMA foreign_keys = ON'),
+      ),
+    );
+
+    final cols = await upgraded.rawQuery('PRAGMA table_info(terms)');
+    expect(cols.any((c) => c['name'] == 'ipa'), isTrue);
+
+    final t1 = (await upgraded.query('terms', where: 'id = ?', whereArgs: ['t1'])).first;
+    expect(t1['ipa'], isNull);
+
+    await upgraded.close();
+    await dir.delete(recursive: true);
+  });
+
+  test('v26 -> v27 is a no-op when ipa already exists', () async {
+    final db = await databaseFactoryFfi.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(
+        version: 27,
+        onCreate: migrations.onCreate,
+      ),
+    );
+    await db.insert('languages', {'id': 'l1', 'name': 'English'});
+    await db.insert('terms', {
+      'id': 't1', 'language_id': 'l1', 'text': 'a', 'lower_text': 'a', 'status': 1,
+      'ipa': '/eɪ/',
+      'created_at': '2024-01-01T00:00:00.000Z',
+      'last_accessed': '2024-01-01T00:00:00.000Z',
+    });
+
+    await migrations.onUpgrade(db, 26, 27);
+
+    final t1 = (await db.query('terms', where: 'id = ?', whereArgs: ['t1'])).first;
+    expect(t1['ipa'], '/eɪ/');
+
+    await db.close();
+  });
+
   // The repair runs for every existing install, so it must be a strict no-op on
   // a database that was never corrupted.
   test('the FK repair leaves a healthy schema byte-identical', () async {

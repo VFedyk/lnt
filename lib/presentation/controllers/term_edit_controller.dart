@@ -44,6 +44,7 @@ class TermEditController extends BaseController {
 
   late final TextEditingController termController;
   late final TextEditingController romanizationController;
+  late final TextEditingController ipaController;
   final _translationOutputController = TextEditingController();
 
   late int status;
@@ -60,6 +61,7 @@ class TermEditController extends BaseController {
   bool isTranslating = false;
   bool hasAi = false;
   bool isAiTranslating = false;
+  bool isIpaLoading = false;
 
   // ── Sentences tab ──
   List<TermSentence> sentences = [];
@@ -78,6 +80,7 @@ class TermEditController extends BaseController {
   // ── Dirty tracking (captured after _initialize) ──
   late String _initialTerm;
   late String _initialRomanization;
+  late String _initialIpa;
   late int _initialStatus;
   late String _initialLanguageId;
   List<String> _initialTranslationSig = const [];
@@ -128,9 +131,11 @@ class TermEditController extends BaseController {
     selectedLanguageName = languageName;
     termController = TextEditingController(text: term.lowerText);
     romanizationController = TextEditingController(text: term.romanization);
+    ipaController = TextEditingController(text: term.ipa);
 
     _initialTerm = termController.text;
     _initialRomanization = romanizationController.text;
+    _initialIpa = ipaController.text;
     _initialStatus = status;
     _initialLanguageId = selectedLanguageId;
 
@@ -285,6 +290,7 @@ class TermEditController extends BaseController {
   bool get isDirty {
     if (termController.text != _initialTerm) return true;
     if (romanizationController.text != _initialRomanization) return true;
+    if (ipaController.text != _initialIpa) return true;
     if (status != _initialStatus) return true;
     if (selectedLanguageId != _initialLanguageId) return true;
     if (_sentencesDirty) return true;
@@ -523,6 +529,31 @@ class TermEditController extends BaseController {
     }
   }
 
+  /// Fetches the IPA transcription and replaces the field content.
+  /// Throws on AI service failure — caller shows the SnackBar.
+  Future<void> fetchIpa() async {
+    final word = termController.text.trim();
+    if (word.isEmpty) return;
+    isIpaLoading = true;
+    safeNotify();
+    try {
+      final ipa = await AiExplanationService(settings: settings).transcribeIpa(
+        word: word,
+        contextSentence: sentence.trim(),
+        languageName: selectedLanguageName,
+        languageCode: selectedLanguageCode,
+      );
+      if (isDisposed) return;
+      if (ipa.isEmpty) throw Exception('Empty IPA response');
+      ipaController.text = ipa; // silent overwrite, by design
+    } finally {
+      if (!isDisposed) {
+        isIpaLoading = false;
+        safeNotify();
+      }
+    }
+  }
+
   TermEditResult buildSaveResult() {
     final editedTerm = termController.text.trim().toLowerCase();
     final romanization = romanizationController.text.trim().isNotEmpty
@@ -539,6 +570,7 @@ class TermEditController extends BaseController {
       status: status,
       translation: legacyTranslation,
       romanization: romanization,
+      ipa: ipaController.text.trim(),
       lastAccessed: DateTime.now(),
     );
     return TermEditResult(
@@ -555,6 +587,7 @@ class TermEditController extends BaseController {
   void dispose() {
     termController.dispose();
     romanizationController.dispose();
+    ipaController.dispose();
     _translationOutputController.dispose();
     super.dispose();
   }

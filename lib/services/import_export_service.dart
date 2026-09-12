@@ -20,7 +20,14 @@ class ImportExportService {
     final rows = <List<String>>[];
 
     // Header
-    rows.add(['Term', 'Status', 'Translation', 'Romanization', 'Sentence']);
+    rows.add([
+      'Term',
+      'Status',
+      'Translation',
+      'Romanization',
+      'Sentence',
+      'IPA',
+    ]);
 
     // Data rows
     for (final term in terms) {
@@ -30,6 +37,7 @@ class ImportExportService {
         term.translation,
         term.romanization,
         sentencesByTermId[term.id] ?? '',
+        term.ipa,
       ]);
     }
 
@@ -61,6 +69,7 @@ class ImportExportService {
             translation: row.length > 2 ? row[2].toString() : '',
             romanization: row.length > 3 ? row[3].toString() : '',
             sentence: row.length > 4 ? row[4].toString() : '',
+            ipa: row.length > 5 ? row[5].toString() : '',
           ),
         );
       }
@@ -96,6 +105,11 @@ class ImportExportService {
       }
       if (term.romanization.isNotEmpty) {
         backParts.add('[${_ankiEscape(term.romanization)}]');
+      }
+      if (term.ipa.isNotEmpty) {
+        // Stored already wrapped in slashes/brackets (see
+        // AiExplanationService.normalizeIpa), so no extra wrapping here.
+        backParts.add(_ankiEscape(term.ipa));
       }
       final sentence = sentencesByTermId[term.id] ?? '';
       if (sentence.isNotEmpty) {

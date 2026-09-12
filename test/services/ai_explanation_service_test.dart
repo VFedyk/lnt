@@ -108,4 +108,51 @@ void main() {
       expect(result.partOfSpeech, 'noun');
     });
   });
+
+  group('normalizeIpa', () {
+    test('wraps a bare transcription in slashes', () {
+      expect(AiExplanationService.normalizeIpa('ˈwɔːtər'), '/ˈwɔːtər/');
+    });
+
+    test('keeps an already-slashed transcription as-is', () {
+      expect(AiExplanationService.normalizeIpa('/ˈwɔːtər/'), '/ˈwɔːtər/');
+    });
+
+    test('keeps an already-bracketed transcription as-is', () {
+      expect(AiExplanationService.normalizeIpa('[ˈwɔːɾɚ]'), '[ˈwɔːɾɚ]');
+    });
+
+    test('unwraps a bulleted, bold line', () {
+      expect(AiExplanationService.normalizeIpa('- **/ˈwɔːtər/**'), '/ˈwɔːtər/');
+    });
+
+    test('drops an IPA: label', () {
+      expect(AiExplanationService.normalizeIpa('IPA: /ˈwɔːtər/'), '/ˈwɔːtər/');
+    });
+
+    test('drops a Transcription: label case-insensitively', () {
+      expect(
+        AiExplanationService.normalizeIpa('transcription: ˈwɔːtər'),
+        '/ˈwɔːtər/',
+      );
+    });
+
+    test('keeps only the first usable line of a multi-line answer', () {
+      const raw = '/ˈwɔːtər/\nAlternative: /ˈwɔːɾɚ/';
+      expect(AiExplanationService.normalizeIpa(raw), '/ˈwɔːtər/');
+    });
+
+    test('skips a leading code fence to find the first usable line', () {
+      const raw = '```\n/ˈwɔːtər/\n```';
+      expect(AiExplanationService.normalizeIpa(raw), '/ˈwɔːtər/');
+    });
+
+    test('returns empty string for an empty answer', () {
+      expect(AiExplanationService.normalizeIpa(''), '');
+    });
+
+    test('returns empty string for a fence-only answer', () {
+      expect(AiExplanationService.normalizeIpa('```\n```'), '');
+    });
+  });
 }

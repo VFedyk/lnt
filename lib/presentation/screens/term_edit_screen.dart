@@ -134,6 +134,18 @@ class _TermEditScreenState extends State<TermEditScreen> {
     }
   }
 
+  Future<void> _handleFetchIpa() async {
+    try {
+      await _controller.fetchIpa();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).aiIpaFailed)),
+        );
+      }
+    }
+  }
+
   Future<void> _handleSelectBaseTranslation(int index) async {
     final selectedTerm = await showDialog<Term?>(
       context: context,
@@ -361,7 +373,11 @@ class _TermEditScreenState extends State<TermEditScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TermFormSection(controller: _controller, originalTerm: widget.term),
+          TermFormSection(
+            controller: _controller,
+            originalTerm: widget.term,
+            onFetchIpa: _handleFetchIpa,
+          ),
           const SizedBox(height: AppConstants.spacingL),
           TermTranslationList(
             controller: _controller,

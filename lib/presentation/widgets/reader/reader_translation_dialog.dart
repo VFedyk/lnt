@@ -74,6 +74,16 @@ class ReaderTranslationDialog extends StatelessWidget {
                   ),
                 ),
               ],
+              if (term.ipa.isNotEmpty) ...[
+                const SizedBox(height: AppConstants.spacingXS),
+                Text(
+                  term.ipa,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppConstants.spacingS),
               ...translations.map(
                 (t) => Padding(

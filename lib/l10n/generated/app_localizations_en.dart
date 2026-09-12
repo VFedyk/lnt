@@ -960,6 +960,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiTranslateFailed => 'Could not translate with AI';
 
   @override
+  String get ipa => 'IPA';
+
+  @override
+  String get getIpaWithAi => 'Get IPA with AI';
+
+  @override
+  String get aiIpaFailed => 'Could not get IPA transcription';
+
+  @override
   String get pronounce => 'Pronounce';
 
   @override

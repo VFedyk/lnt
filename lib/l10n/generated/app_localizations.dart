@@ -1850,6 +1850,24 @@ abstract class AppLocalizations {
   /// **'Could not translate with AI'**
   String get aiTranslateFailed;
 
+  /// No description provided for @ipa.
+  ///
+  /// In en, this message translates to:
+  /// **'IPA'**
+  String get ipa;
+
+  /// No description provided for @getIpaWithAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Get IPA with AI'**
+  String get getIpaWithAi;
+
+  /// No description provided for @aiIpaFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not get IPA transcription'**
+  String get aiIpaFailed;
+
   /// No description provided for @pronounce.
   ///
   /// In en, this message translates to:

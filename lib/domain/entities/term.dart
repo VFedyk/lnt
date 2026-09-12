@@ -73,6 +73,7 @@ class Term {
   final int status;
   final String translation;
   final String romanization;
+  final String ipa;
   final String sentence;
   final DateTime createdAt;
   final DateTime lastAccessed;
@@ -87,6 +88,7 @@ class Term {
     this.status = 1,
     this.translation = '',
     this.romanization = '',
+    this.ipa = '',
     this.sentence = '',
     DateTime? createdAt,
     DateTime? lastAccessed,
@@ -104,6 +106,7 @@ class Term {
       'status': status,
       'translation': translation,
       'romanization': romanization,
+      'ipa': ipa,
       'sentence': sentence,
       'created_at': createdAt.toIso8601String(),
       'last_accessed': lastAccessed.toIso8601String(),
@@ -124,6 +127,7 @@ class Term {
       status: map['status'] as int,
       translation: map['translation'] ?? '',
       romanization: map['romanization'] ?? '',
+      ipa: map['ipa'] ?? '',
       sentence: map['sentence'] ?? '',
       createdAt: DateTime.parse(map['created_at'] as String),
       lastAccessed: DateTime.parse(map['last_accessed'] as String),
@@ -139,6 +143,7 @@ class Term {
     int? status,
     String? translation,
     String? romanization,
+    String? ipa,
     String? sentence,
     DateTime? createdAt,
     DateTime? lastAccessed,
@@ -153,6 +158,7 @@ class Term {
       status: status ?? this.status,
       translation: translation ?? this.translation,
       romanization: romanization ?? this.romanization,
+      ipa: ipa ?? this.ipa,
       sentence: sentence ?? this.sentence,
       createdAt: createdAt ?? this.createdAt,
       lastAccessed: lastAccessed ?? this.lastAccessed,

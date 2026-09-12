@@ -38,7 +38,7 @@ void main() {
           sentencesByTermId: sampleSentences);
       final lines = csv.split('\r\n');
 
-      expect(lines[0], 'Term,Status,Translation,Romanization,Sentence');
+      expect(lines[0], 'Term,Status,Translation,Romanization,Sentence,IPA');
       expect(lines[1], contains('hola'));
       expect(lines[1], contains('hello'));
       expect(lines[1], contains('Hola, mundo!'));
@@ -104,6 +104,7 @@ void main() {
         expect(imported[i].translation, original[i].translation);
         expect(imported[i].romanization, original[i].romanization);
         expect(imported[i].sentence, original[i].sentence);
+        expect(imported[i].ipa, original[i].ipa);
       }
     });
   });
@@ -146,6 +147,21 @@ void main() {
       final anki = await service.exportToAnki(sampleTerms(),
           sentencesByTermId: sampleSentences);
       expect(anki, contains('<i>Hola, mundo!</i>'));
+    });
+
+    test('includes IPA on the back', () async {
+      final terms = [
+        Term(
+          languageId: 'lang-1',
+          text: 'water',
+          lowerText: 'water',
+          translation: 'water',
+          ipa: '/ˈwɔːtər/',
+        ),
+      ];
+
+      final anki = await service.exportToAnki(terms);
+      expect(anki, contains('/ˈwɔːtər/'));
     });
   });
 

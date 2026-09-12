@@ -11,11 +11,13 @@ import '../../theme/term_status_ui.dart';
 class TermFormSection extends StatelessWidget {
   final TermEditController controller;
   final Term originalTerm;
+  final Future<void> Function() onFetchIpa;
 
   const TermFormSection({
     super.key,
     required this.controller,
     required this.originalTerm,
+    required this.onFetchIpa,
   });
 
   Widget _buildTermField(AppLocalizations l10n) {
@@ -89,6 +91,35 @@ class TermFormSection extends StatelessWidget {
           decoration: InputDecoration(
             labelText: l10n.romanizationPronunciation,
             border: const OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: AppConstants.spacingM),
+        TextField(
+          controller: controller.ipaController,
+          decoration: InputDecoration(
+            labelText: l10n.ipa,
+            border: const OutlineInputBorder(),
+            suffixIcon: controller.hasAi
+                ? (controller.isIpaLoading
+                    ? Padding(
+                        padding: const EdgeInsets.all(AppConstants.spacingM),
+                        child: SizedBox(
+                          width: AppConstants.progressIndicatorSizeS,
+                          height: AppConstants.progressIndicatorSizeS,
+                          child: CircularProgressIndicator(
+                            strokeWidth: AppConstants.progressStrokeWidth,
+                          ),
+                        ),
+                      )
+                    : IconButton(
+                        icon: const Icon(
+                          Icons.auto_awesome,
+                          size: AppConstants.iconSizeS,
+                        ),
+                        tooltip: l10n.getIpaWithAi,
+                        onPressed: onFetchIpa,
+                      ))
+                : null,
           ),
         ),
       ],

@@ -144,4 +144,22 @@ void main() {
   test('TermSentenceEdits.empty is empty', () {
     expect(TermSentenceEdits.empty.isEmpty, isTrue);
   });
+
+  test('editing ipaController flips isDirty', () async {
+    final ctrl = await makeController();
+    expect(ctrl.isDirty, isFalse);
+
+    ctrl.ipaController.text = '/kæt/';
+    expect(ctrl.isDirty, isTrue);
+    ctrl.dispose();
+  });
+
+  test('buildSaveResult carries the trimmed ipa', () async {
+    final ctrl = await makeController();
+    ctrl.ipaController.text = '  /kæt/  ';
+
+    final result = ctrl.buildSaveResult();
+    expect(result.term.ipa, '/kæt/');
+    ctrl.dispose();
+  });
 }

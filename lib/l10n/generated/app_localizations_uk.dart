@@ -964,6 +964,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get aiTranslateFailed => 'Не вдалося перекласти за допомогою AI';
 
   @override
+  String get ipa => 'МФА';
+
+  @override
+  String get getIpaWithAi => 'Отримати МФА за допомогою AI';
+
+  @override
+  String get aiIpaFailed => 'Не вдалося отримати транскрипцію МФА';
+
+  @override
   String get pronounce => 'Вимовити';
 
   @override

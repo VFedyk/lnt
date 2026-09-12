@@ -56,6 +56,16 @@ class ReaderForeignWordDialog extends StatelessWidget {
                   ),
                 ),
               ],
+              if (info.term != null && info.term!.ipa.isNotEmpty) ...[
+                const SizedBox(height: AppConstants.spacingXS),
+                Text(
+                  info.term!.ipa,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
               if (info.translations.isNotEmpty) ...[
                 const SizedBox(height: AppConstants.spacingS),
                 ...info.translations.map(

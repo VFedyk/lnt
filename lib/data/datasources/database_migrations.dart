@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 /// Database version - increment when adding new migrations
-const int databaseVersion = 26;
+const int databaseVersion = 27;
 
 const _uuid = Uuid();
 
@@ -260,6 +260,20 @@ Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
   if (oldVersion < 26) {
     await _syncableTermSentences(db);
   }
+  if (oldVersion < 27) {
+    await _addIpaColumn(db);
+  }
+}
+
+/// v27: adds `terms.ipa` (AI-generated IPA transcription). No backfill — the
+/// column is populated on demand from the term edit screen.
+///
+/// Idempotent: `onUpgrade` chains every branch unconditionally, so this must be
+/// safe to re-run against a schema that already has the column.
+Future<void> _addIpaColumn(Database db) async {
+  final columns = await db.rawQuery('PRAGMA table_info(terms)');
+  if (columns.any((c) => c['name'] == 'ipa')) return;
+  await db.execute('ALTER TABLE terms ADD COLUMN ipa TEXT');
 }
 
 /// v26: brings `term_sentences` into the sync layer and makes it the single
@@ -1179,6 +1193,7 @@ Future<void> onCreate(Database db, int version) async {
       status INTEGER DEFAULT 1,
       translation TEXT,
       romanization TEXT,
+      ipa TEXT,
       sentence TEXT,
       created_at TEXT NOT NULL,
       last_accessed TEXT NOT NULL,
