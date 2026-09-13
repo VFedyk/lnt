@@ -107,8 +107,13 @@ class ReaderController extends BaseController {
     isLoading = false;
     safeNotify();
     await loadCollectionTexts();
-    _updateLastRead();
+    await _updateLastRead();
   }
+
+  /// The in-flight [_warmWordIndex] future, so tests can wait for the warm to
+  /// land before tearing the database down. Production code never reads it.
+  @visibleForTesting
+  Future<void>? indexWarmup;
 
   /// Keeps the text ↔ word index warm for any text the user actually reads, so
   /// "review this text's words" never has to scan on tap. Fire-and-forget: it
@@ -116,14 +121,14 @@ class ReaderController extends BaseController {
   void _warmWordIndex() {
     if (text.id == null) return;
     if (!sl.isRegistered<TextWordIndexService>()) return;
-    unawaited(
-      sl<TextWordIndexService>().ensureIndexed(text, language).catchError(
-        (Object e) {
-          debugPrint('ReaderController: word index failed: $e');
-          return false;
-        },
-      ),
-    );
+    final warming = sl<TextWordIndexService>()
+        .ensureIndexed(text, language)
+        .catchError((Object e) {
+      debugPrint('ReaderController: word index failed: $e');
+      return false;
+    });
+    indexWarmup = warming;
+    unawaited(warming);
   }
 
   Future<void> _parseTextAsync() async {

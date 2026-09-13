@@ -15,6 +15,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late Directory dir;
+  ReaderController? controller;
   final language = Language(id: 'lang-1', name: 'English', languageCode: 'en');
 
   setUp(() async {
@@ -54,7 +55,8 @@ void main() {
   tearDown(() async {
     // loadTermsAndParse warms the word index fire-and-forget; let it land before
     // the database goes away, or it reopens under the next test's settings.
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+    await controller?.indexWarmup;
+    controller = null;
     await db.closeDatabase();
     await sl.reset();
     await dir.delete(recursive: true);
@@ -75,6 +77,7 @@ void main() {
       ),
       language: language,
     );
+    controller = ctrl;
     await ctrl.loadTermsAndParse();
 
     expect(statusOf(ctrl, 'alpha'), TermStatus.unknown);
@@ -113,6 +116,7 @@ void main() {
       ),
       language: language,
     );
+    controller = ctrl;
     await ctrl.loadTermsAndParse();
 
     final tokenCount = ctrl.wordTokens.length;
