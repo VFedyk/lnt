@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LNT — Language Nerd Tools</title>
+<meta name="description" content="LNT is a free, open-source app for learning languages by reading. Import texts and books, track every word you meet, and review with spaced repetition.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f7fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14181f" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="LNT — Language Nerd Tools">
+<meta property="og:description" content="Learn languages by reading what you like.">
+<meta property="og:image" content="screenshots/reader.webp">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --ink: #1a2130;
+  --muted: #5b6577;
+  --line: #dde2ea;
+  --accent: #1f6fd1;
+  --accent-ink: #ffffff;
+  --frame: #1b2029;
+
+  /* word status colours, taken from the reader */
+  --st-unknown-bg: #fbe1e1;  --st-unknown-bd: #d9534f;
+  --st-learning-bg: #fdefd6; --st-learning-bd: #e59a1c;
+  --st-known-bg: #dff1e2;    --st-known-bd: #3f9d52;
+  --st-well-bg: #dcebfb;     --st-well-bd: #3b8fe0;
+
+  --serif: "Literata", Georgia, "Times New Roman", serif;
+  --sans: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius-lg: 18px;
+  --radius-sm: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14181f;
+    --surface: #1b2029;
+    --ink: #e7ebf1;
+    --muted: #9aa4b4;
+    --line: #2b323e;
+    --accent: #6fb2f5;
+    --accent-ink: #0d1b2c;
+    --frame: #2a303b;
+
+    --st-unknown-bg: #4a2224;  --st-unknown-bd: #b14a4a;
+    --st-learning-bg: #4a3616; --st-learning-bd: #d08b1e;
+    --st-known-bg: #1f3d26;    --st-known-bd: #3e8a4f;
+    --st-well-bg: #1b3350;     --st-well-bd: #4a90d9;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 1.0625rem/1.6 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--accent); text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+.wrap { width: min(100% - 2.5rem, 68rem); margin-inline: auto; }
+
+/* ---------- header ---------- */
+.site-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-block: 1.1rem;
+}
+.logo {
+  font: 700 1.35rem/1 var(--serif);
+  color: var(--ink); text-decoration: none; letter-spacing: -0.01em;
+}
+.site-header nav { display: flex; gap: 1.25rem; font-weight: 500; font-size: .95rem; }
+.site-header nav a { color: var(--muted); text-decoration: none; }
+.site-header nav a:hover { color: var(--ink); }
+
+/* ---------- hero ---------- */
+.hero { padding-block: 2.5rem 3.5rem; }
+.hero h1 {
+  font: 600 clamp(2.1rem, 8vw, 4.1rem)/1.28 var(--serif);
+  letter-spacing: -0.02em;
+  margin: 0 0 1.5rem;
+  max-width: 16ch;
+}
+.w {
+  font: inherit; color: inherit; letter-spacing: inherit;
+  padding: 0 .16em; margin: 0 -.04em;
+  border: 2px solid transparent; border-radius: var(--radius-sm);
+  background: none; cursor: pointer;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  transition: background-color .25s, border-color .25s;
+}
+.w[data-s="0"] { background: var(--st-unknown-bg);  border-color: var(--st-unknown-bd); }
+.w[data-s="1"] { background: var(--st-learning-bg); border-color: var(--st-learning-bd); }
+.w[data-s="2"] { background: var(--st-known-bg);    border-color: var(--st-known-bd); }
+.w[data-s="3"] { background: transparent; border-color: transparent; }
+.lede { font-size: 1.15rem; color: var(--muted); max-width: 36rem; margin: 0 0 2rem; }
+.hint { font-size: .9rem; color: var(--muted); margin: -1rem 0 2rem; }
+
+.actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.btn {
+  display: inline-flex; align-items: center; gap: .55rem;
+  padding: .85rem 1.35rem; border-radius: 999px;
+  font: 600 1rem/1 var(--sans); text-decoration: none;
+  border: 1.5px solid var(--line);
+  color: var(--ink); background: var(--surface);
+}
+.btn svg { width: 1.15em; height: 1.15em; flex: none; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn:hover { border-color: var(--accent); }
+.btn-primary:hover { filter: brightness(1.08); }
+
+.platforms { margin: 1.5rem 0 0; font-size: .92rem; color: var(--muted); }
+
+.hero-shot { margin-top: 3rem; }
+
+/* ---------- screenshot frame ---------- */
+.shot {
+  margin: 0;
+  background: var(--frame);
+  padding: clamp(6px, 1.4vw, 12px);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 20px 50px -25px rgba(10, 20, 40, .45);
+}
+.shot img { border-radius: calc(var(--radius-lg) - 8px); width: 100%; }
+
+/* ---------- tour ---------- */
+.tour { padding-block: 2rem 1rem; }
+.section-title {
+  font: 600 clamp(1.7rem, 5vw, 2.4rem)/1.2 var(--serif);
+  letter-spacing: -0.015em; margin: 0 0 .5rem;
+}
+.section-intro { color: var(--muted); margin: 0 0 2.5rem; max-width: 36rem; }
+
+.step {
+  display: grid; gap: 1.25rem;
+  padding-block: 2.25rem;
+  border-top: 1px solid var(--line);
+}
+.step-text h3 {
+  font: 600 1.45rem/1.25 var(--serif);
+  margin: 0 0 .6rem;
+  display: flex; align-items: baseline; gap: .7rem;
+}
+.step-text h3 .n {
+  font: 600 .85rem/1 var(--sans);
+  color: var(--muted);
+  min-width: 1.6rem;
+}
+.step-text p { margin: 0 0 .75rem; max-width: 34rem; }
+.step-text ul { margin: 0; padding-left: 1.1rem; color: var(--muted); }
+.step-text li { margin-block: .2rem; }
+
+.legend { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .9rem; padding: 0; list-style: none; }
+.legend li {
+  font-size: .85rem; padding: .15rem .55rem; border-radius: var(--radius-sm);
+  border: 1.5px solid; color: var(--ink); margin: 0;
+}
+.legend .u { background: var(--st-unknown-bg);  border-color: var(--st-unknown-bd); }
+.legend .l { background: var(--st-learning-bg); border-color: var(--st-learning-bd); }
+.legend .k { background: var(--st-known-bg);    border-color: var(--st-known-bd); }
+.legend .wk { background: var(--st-well-bg);    border-color: var(--st-well-bd); }
+
+/* ---------- extras ---------- */
+.extras { padding-block: 3rem; border-top: 1px solid var(--line); }
+.extras dl { display: grid; gap: 1.5rem; margin: 2rem 0 0; }
+.extras dt { font-weight: 600; margin-bottom: .2rem; }
+.extras dd { margin: 0; color: var(--muted); }
+
+/* ---------- cta ---------- */
+.cta {
+  margin-block: 1rem 3rem;
+  padding: clamp(1.75rem, 5vw, 3rem);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.cta p { color: var(--muted); margin: 0 0 1.5rem; max-width: 34rem; }
+
+footer {
+  padding-block: 2rem 3rem; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: .9rem;
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem;
+}
+footer a { color: var(--muted); }
+
+/* ---------- larger screens ---------- */
+@media (min-width: 52rem) {
+  .hero { padding-block: 4.5rem 4rem; }
+  .step {
+    grid-template-columns: minmax(16rem, 1fr) 1.6fr;
+    align-items: center; gap: 3rem;
+    padding-block: 3.5rem;
+  }
+  .step:nth-of-type(even) { grid-template-columns: 1.6fr minmax(16rem, 1fr); }
+  .step:nth-of-type(even) .step-text { order: 2; }
+  .extras dl { grid-template-columns: repeat(3, 1fr); gap: 2.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .w { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="site-header">
+    <a class="logo" href="#top">LNT</a>
+    <nav aria-label="Main">
+      <a href="#tour">Tour</a>
+      <a href="https://github.com/VFedyk/lnt">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <h1>
+        Learn a <button class="w" data-s="0" type="button">language</button>
+        by <button class="w" data-s="1" type="button">reading</button>
+        what you <button class="w" data-s="2" type="button">actually</button> enjoy.
+      </h1>
+      <p class="hint" aria-live="polite">Tap a highlighted word: that's how you mark words in LNT.</p>
+      <p class="lede">
+        LNT (Language Nerd Tools) is a free, open-source app for learning through real texts.
+        Import articles and books, see at a glance which words you know, and keep new ones
+        with spaced-repetition review.
+      </p>
+      <div class="actions">
+        <a class="btn btn-primary" href="https://github.com/VFedyk/lnt/releases">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>
+          Download a release
+        </a>
+        <a class="btn" href="https://github.com/VFedyk/lnt/issues">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+          Report an issue
+        </a>
+      </div>
+      <p class="platforms">For iOS, iPadOS, macOS, Android, Windows, Linux and the web.</p>
+
+      <figure class="shot hero-shot">
+        <img src="screenshots/reader.webp" width="1280" height="928"
+             alt="LNT reader showing an Alice in Wonderland chapter with words highlighted by learning status and a translation popup">
+      </figure>
+    </section>
+
+    <section class="tour" id="tour" aria-labelledby="tour-title">
+      <h2 class="section-title" id="tour-title">From text to vocabulary</h2>
+      <p class="section-intro">The app follows the way you learn: pick something to read, meet new words, practise them, and watch your vocabulary grow.</p>
+
+      <article class="step">
+        <div class="step-text">
+          <h3><span class="n">1</span>Library</h3>
+          <p>Keep your texts organised by language in collections and folders, with book covers and progress on each one.</p>
+          <ul>
+            <li>Import from a web page, plain text or EPUB</li>
+            <li>Grid or list view, search, sorting</li>
+            <li>See how many unknown words a text has before you start</li>
+          </ul>
+        </div>
+        <figure class="shot">
+          <img src="screenshots/library.webp" width="1280" height="928" loading="lazy"
+               alt="Library screen with book covers for Alice in Wonderland, Frankenstein, Meditations and Pride and Prejudice">
+        </figure>
+      </article>
+
+      <article class="step">
+        <div class="step-text">
+          <h3><span class="n">2</span>Reader</h3>
+          <p>Every word is coloured by how well you know it. Tap a word to translate it, set its status or add it to your vocabulary.</p>
+          <ul>
+            <li>Select several words to save phrases like “get out”</li>
+            <li>Translation with DeepL or LibreTranslate</li>
+            <li>Text-to-speech and optional AI explanations</li>
+          </ul>
+          <ul class="legend" aria-label="Word statuses">
+            <li class="u">Unknown</li><li class="l">Learning</li><li class="k">Known</li><li class="wk">Well known</li>
+          </ul>
+        </div>
+        <figure class="shot">
+          <img src="screenshots/reader.webp" width="1280" height="928" loading="lazy"
+               alt="Reader screen with colour-coded words">
+        </figure>
+      </article>
+
+      <article class="step">
+        <div class="step-text">
+          <h3><span class="n">3</span>Vocabulary</h3>
+          <p>All your words in one place, with translations and the date you added them. Filter by status or search for anything.</p>
+          <ul>
+            <li>Edit terms, translations and example sentences</li>
+            <li>Export to CSV or Anki</li>
+          </ul>
+        </div>
+        <figure class="shot">
+          <img src="screenshots/vocabulary.webp" width="1280" height="928" loading="lazy"
+               alt="Vocabulary list of English terms with Ukrainian translations and status filters">
+        </figure>
+      </article>
+
+      <article class="step">
+        <div class="step-text">
+          <h3><span class="n">4</span>Review</h3>
+          <p>Choose how you want to practise today. Filter by status and pick an exercise; each one shows how many cards are due.</p>
+          <ul>
+            <li>Flashcards</li>
+            <li>Typing in both directions</li>
+            <li>Multiple choice in both directions</li>
+            <li>Cloze: pick or type the missing word</li>
+            <li>Handwriting practice for Chinese characters and radicals</li>
+          </ul>
+        </div>
+        <figure class="shot">
+          <img src="screenshots/review.webp" width="1280" height="928" loading="lazy"
+               alt="Review screen with exercise types and due card counts">
+        </figure>
+      </article>
+
+      <article class="step">
+        <div class="step-text">
+          <h3><span class="n">5</span>Flashcards</h3>
+          <p>See the word in the sentence where you found it, then rate how well you remembered it. The FSRS algorithm schedules the next review.</p>
+          <ul>
+            <li>Again, Hard, Good or Easy, with the next interval on each button</li>
+            <li>Listen to the pronunciation</li>
+          </ul>
+        </div>
+        <figure class="shot">
+          <img src="screenshots/flashcards.webp" width="1280" height="928" loading="lazy"
+               alt="Flashcard for the word dipped with an example sentence and Ukrainian translations">
+        </figure>
+      </article>
+
+      <article class="step">
+        <div class="step-text">
+          <h3><span class="n">6</span>Dashboard</h3>
+          <p>Track your progress: total and known words, your daily streak, activity over the year, and how far you are in each book.</p>
+          <ul>
+            <li>Activity heatmap and streaks</li>
+            <li>Vocabulary growth and words by status</li>
+            <li>Detailed statistics screen</li>
+          </ul>
+        </div>
+        <figure class="shot">
+          <img src="screenshots/dashboard.webp" width="1280" height="928" loading="lazy"
+               alt="Dashboard with vocabulary totals, activity heatmap, charts and reading progress">
+        </figure>
+      </article>
+    </section>
+
+    <section class="extras" aria-labelledby="extras-title">
+      <h2 class="section-title" id="extras-title">Your data stays yours</h2>
+      <dl>
+        <div>
+          <dt>Local first</dt>
+          <dd>Everything is stored on your device. No account needed.</dd>
+        </div>
+        <div>
+          <dt>Backups</dt>
+          <dd>Back up and restore through iCloud or Google Drive.</dd>
+        </div>
+        <div>
+          <dt>Open source</dt>
+          <dd>The code is on GitHub. Read it, build it, or help improve it.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="cta" aria-labelledby="cta-title">
+      <h2 class="section-title" id="cta-title">Start reading</h2>
+      <p>Get the latest build from GitHub. Found a bug or have an idea? Open an issue.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="https://github.com/VFedyk/lnt/releases">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>
+          Download a release
+        </a>
+        <a class="btn" href="https://github.com/VFedyk/lnt/issues">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+          Report an issue
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>LNT is open source. Thanks to FLTR, LingQ, Anki and Memrise for the inspiration.</span>
+    <a href="https://github.com/VFedyk/lnt">github.com/VFedyk/lnt</a>
+  </footer>
+</div>
+
+<script>
+  // Tap a highlighted word to move it along: unknown → learning → known → well known → unknown
+  const labels = ["unknown", "learning", "known", "well known"];
+  const hint = document.querySelector(".hint");
+  document.querySelectorAll(".w").forEach((el) => {
+    const update = () => el.setAttribute("aria-label", `${el.textContent.trim()}, ${labels[el.dataset.s]}`);
+    update();
+    el.addEventListener("click", () => {
+      el.dataset.s = (Number(el.dataset.s) + 1) % 4;
+      update();
+      hint.textContent = `“${el.textContent.trim()}” is now ${labels[el.dataset.s]}.`;
+    });
+  });
+</script>
+</body>
+</html>
