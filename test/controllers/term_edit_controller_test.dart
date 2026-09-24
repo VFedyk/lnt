@@ -1,12 +1,57 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:language_nerd_tools/data/services/ai_explanation_service.dart';
 import 'package:language_nerd_tools/domain/entities/term.dart';
 import 'package:language_nerd_tools/domain/entities/term_sentence.dart';
 import 'package:language_nerd_tools/presentation/controllers/term_edit_controller.dart';
 import 'package:language_nerd_tools/service_locator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+class _FakeAiService extends AiExplanationService {
+  _FakeAiService({this.configured = true});
+
+  bool configured;
+  int translateCalls = 0;
+  int ipaCalls = 0;
+  Object? translateError;
+  Object? ipaError;
+  List<({String meaning, String? partOfSpeech})> translateResult = [
+    (meaning: 'cat (animal)', partOfSpeech: 'noun'),
+  ];
+  String ipaResult = '/kæt/';
+  Completer<String>? ipaCompleter;
+
+  @override
+  Future<bool> isConfigured() async => configured;
+
+  @override
+  Future<List<({String meaning, String? partOfSpeech})>> translateWord({
+    required String word,
+    required String contextSentence,
+    required String languageName,
+    String? languageCode,
+  }) async {
+    translateCalls++;
+    if (translateError != null) throw translateError!;
+    return translateResult;
+  }
+
+  @override
+  Future<String> transcribeIpa({
+    required String word,
+    required String contextSentence,
+    required String languageName,
+    String? languageCode,
+  }) async {
+    ipaCalls++;
+    if (ipaCompleter != null) return ipaCompleter!.future;
+    if (ipaError != null) throw ipaError!;
+    return ipaResult;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +87,7 @@ void main() {
     String? termId = 't1',
     String sentence = '',
     String? sourceTextId,
+    AiExplanationService? aiService,
   }) async {
     final term = termId != null
         ? (await db.terms.getById(termId))!
@@ -53,9 +99,9 @@ void main() {
       languageId: 'l1',
       languageName: 'English',
       languageCode: 'en',
+      aiService: aiService,
     );
-    // Let _initialize() settle.
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+    await ctrl.ready;
     return ctrl;
   }
 
@@ -161,5 +207,169 @@ void main() {
     final result = ctrl.buildSaveResult();
     expect(result.term.ipa, '/kæt/');
     ctrl.dispose();
+  });
+
+  group('AI auto-fill', () {
+    test('both settings off (default): claimAutoFill returns all-false',
+        () async {
+      final ctrl = await makeController(aiService: _FakeAiService());
+      final todo = ctrl.claimAutoFill();
+      expect(todo.ipa, isFalse);
+      expect(todo.translations, isFalse);
+      ctrl.dispose();
+    });
+
+    test('IPA auto-fetch: on for a term without IPA, off for one with IPA',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        'ai_auto_fetch_ipa': true,
+      });
+      final ctrl = await makeController(aiService: _FakeAiService());
+      expect(ctrl.claimAutoFill().ipa, isTrue);
+      ctrl.dispose();
+
+      final database = await db.database;
+      await database.insert('terms', {
+        'id': 't2', 'language_id': 'l1', 'text': 'dog', 'lower_text': 'dog',
+        'status': 1, 'ipa': '/dɒg/',
+        'created_at': '2026-01-01T00:00:00.000Z',
+        'last_accessed': '2026-01-01T00:00:00.000Z',
+      });
+      SharedPreferences.setMockInitialValues({
+        'ai_auto_fetch_ipa': true,
+      });
+      final ctrl2 =
+          await makeController(termId: 't2', aiService: _FakeAiService());
+      expect(ctrl2.claimAutoFill().ipa, isFalse);
+      ctrl2.dispose();
+    });
+
+    test(
+        'AI auto-translate: on for a term without translations, off with a '
+        'translations row or a legacy translation', () async {
+      SharedPreferences.setMockInitialValues({
+        'ai_auto_translate': true,
+      });
+      final ctrl = await makeController(aiService: _FakeAiService());
+      expect(ctrl.claimAutoFill().translations, isTrue);
+      ctrl.dispose();
+
+      await db.translations.replaceForTerm(
+        't1',
+        [Translation(termId: 't1', meaning: 'a cat')],
+      );
+      SharedPreferences.setMockInitialValues({
+        'ai_auto_translate': true,
+      });
+      final ctrl2 = await makeController(aiService: _FakeAiService());
+      expect(ctrl2.claimAutoFill().translations, isFalse);
+      ctrl2.dispose();
+
+      final database = await db.database;
+      await database.insert('terms', {
+        'id': 't3', 'language_id': 'l1', 'text': 'bird', 'lower_text': 'bird',
+        'status': 1, 'translation': 'a bird',
+        'created_at': '2026-01-01T00:00:00.000Z',
+        'last_accessed': '2026-01-01T00:00:00.000Z',
+      });
+      SharedPreferences.setMockInitialValues({
+        'ai_auto_translate': true,
+      });
+      final ctrl3 =
+          await makeController(termId: 't3', aiService: _FakeAiService());
+      expect(ctrl3.claimAutoFill().translations, isFalse);
+      ctrl3.dispose();
+    });
+
+    test('AI not configured: both false even with both settings on',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        'ai_auto_fetch_ipa': true,
+        'ai_auto_translate': true,
+      });
+      final ctrl =
+          await makeController(aiService: _FakeAiService(configured: false));
+      final todo = ctrl.claimAutoFill();
+      expect(todo.ipa, isFalse);
+      expect(todo.translations, isFalse);
+      ctrl.dispose();
+    });
+
+    test('claimAutoFill returns all-false on its second call', () async {
+      SharedPreferences.setMockInitialValues({
+        'ai_auto_fetch_ipa': true,
+        'ai_auto_translate': true,
+      });
+      final ctrl = await makeController(aiService: _FakeAiService());
+      final first = ctrl.claimAutoFill();
+      expect(first.ipa, isTrue);
+      expect(first.translations, isTrue);
+
+      final second = ctrl.claimAutoFill();
+      expect(second.ipa, isFalse);
+      expect(second.translations, isFalse);
+      ctrl.dispose();
+    });
+
+    test('aiTranslateWord and fetchIpa results count as unsaved changes',
+        () async {
+      final ctrl = await makeController(aiService: _FakeAiService());
+      expect(ctrl.isDirty, isFalse);
+
+      await ctrl.aiTranslateWord();
+      expect(ctrl.isDirty, isTrue);
+      ctrl.dispose();
+
+      final ctrl2 = await makeController(aiService: _FakeAiService());
+      await ctrl2.fetchIpa();
+      expect(ctrl2.isDirty, isTrue);
+      ctrl2.dispose();
+    });
+
+    test(
+        'fetchIpa(onlyIfEmpty: true) does not clobber user input typed while '
+        'the request is in flight', () async {
+      final completer = Completer<String>();
+      final fake = _FakeAiService()..ipaCompleter = completer;
+      final ctrl = await makeController(aiService: fake);
+
+      final future = ctrl.fetchIpa(onlyIfEmpty: true);
+      ctrl.ipaController.text = '/user-typed/';
+      completer.complete('/from-ai/');
+      await future;
+
+      expect(ctrl.ipaController.text, '/user-typed/');
+      ctrl.dispose();
+    });
+
+    test('fetchIpa() without onlyIfEmpty still overwrites', () async {
+      final completer = Completer<String>();
+      final fake = _FakeAiService()..ipaCompleter = completer;
+      final ctrl = await makeController(aiService: fake);
+
+      final future = ctrl.fetchIpa();
+      ctrl.ipaController.text = '/user-typed/';
+      completer.complete('/from-ai/');
+      await future;
+
+      expect(ctrl.ipaController.text, '/from-ai/');
+      ctrl.dispose();
+    });
+
+    test('a new term with both settings on gets both auto-fill requests',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        'ai_auto_fetch_ipa': true,
+        'ai_auto_translate': true,
+      });
+      final ctrl = await makeController(
+        termId: null,
+        aiService: _FakeAiService(),
+      );
+      final todo = ctrl.claimAutoFill();
+      expect(todo.ipa, isTrue);
+      expect(todo.translations, isTrue);
+      ctrl.dispose();
+    });
   });
 }

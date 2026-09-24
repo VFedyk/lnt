@@ -49,4 +49,25 @@ void main() {
       );
     });
   });
+
+  group('AI auto-fill settings', () {
+    test('default to false when nothing is stored', () async {
+      expect(await settings.getAiAutoFetchIpa(), isFalse);
+      expect(await settings.getAiAutoTranslate(), isFalse);
+    });
+
+    test('aiAutoFetchIpa round-trips', () async {
+      await settings.setAiAutoFetchIpa(true);
+      expect(await settings.getAiAutoFetchIpa(), isTrue);
+      await settings.setAiAutoFetchIpa(false);
+      expect(await settings.getAiAutoFetchIpa(), isFalse);
+    });
+
+    test('aiAutoTranslate round-trips', () async {
+      await settings.setAiAutoTranslate(true);
+      expect(await settings.getAiAutoTranslate(), isTrue);
+      await settings.setAiAutoTranslate(false);
+      expect(await settings.getAiAutoTranslate(), isFalse);
+    });
+  });
 }

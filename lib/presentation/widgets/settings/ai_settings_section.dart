@@ -16,6 +16,10 @@ class AiSettingsSection extends StatefulWidget {
   final TextEditingController apiUrlController;
   final bool obscureApiKey;
   final VoidCallback onToggleObscureApiKey;
+  final bool autoFetchIpa;
+  final ValueChanged<bool> onAutoFetchIpaChanged;
+  final bool autoTranslate;
+  final ValueChanged<bool> onAutoTranslateChanged;
 
   const AiSettingsSection({
     super.key,
@@ -27,6 +31,10 @@ class AiSettingsSection extends StatefulWidget {
     required this.apiUrlController,
     required this.obscureApiKey,
     required this.onToggleObscureApiKey,
+    required this.autoFetchIpa,
+    required this.onAutoFetchIpaChanged,
+    required this.autoTranslate,
+    required this.onAutoTranslateChanged,
   });
 
   @override
@@ -303,6 +311,21 @@ class _AiSettingsSectionState extends State<AiSettingsSection> {
                 border: const OutlineInputBorder(),
                 hintText: SettingsService.defaultAiApiUrl,
               ),
+            ),
+            const SizedBox(height: AppConstants.spacingL),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.aiAutoFetchIpa),
+              subtitle: Text(l10n.aiAutoFetchIpaHint),
+              value: widget.autoFetchIpa,
+              onChanged: widget.onAutoFetchIpaChanged,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.aiAutoTranslate),
+              subtitle: Text(l10n.aiAutoTranslateHint),
+              value: widget.autoTranslate,
+              onChanged: widget.onAutoTranslateChanged,
             ),
           ],
         ),

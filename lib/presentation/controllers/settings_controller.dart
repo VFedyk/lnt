@@ -13,6 +13,8 @@ class SettingsController extends BaseController {
   int sessionCardLimit = SettingsService.defaultSessionCardLimit;
   int bookProgressLimit = SettingsService.defaultBookProgressLimit;
   int _savedBookProgressLimit = SettingsService.defaultBookProgressLimit;
+  bool aiAutoFetchIpa = false;
+  bool aiAutoTranslate = false;
   DeepLUsage? usage;
   bool isLoadingUsage = false;
   String? dbPath;
@@ -47,6 +49,8 @@ class SettingsController extends BaseController {
     final aiModel = await settings.getAiModel();
     final aiApiUrl = await settings.getAiApiUrl();
     final aiProvider = await settings.getAiProvider();
+    final autoFetchIpa = await settings.getAiAutoFetchIpa();
+    final autoTranslate = await settings.getAiAutoTranslate();
     final retention = await settings.getDesiredRetention();
     final newCards = await settings.getNewCardsPerDay();
     final sessionLimit = await settings.getSessionCardLimit();
@@ -69,6 +73,8 @@ class SettingsController extends BaseController {
     initialAiModel = aiModel;
     initialAiApiUrl = aiApiUrl;
     initialAiProvider = aiProvider;
+    aiAutoFetchIpa = autoFetchIpa;
+    aiAutoTranslate = autoTranslate;
     isApiFree = isFree;
     targetLang = tgtLang;
     desiredRetention = retention;
@@ -115,6 +121,8 @@ class SettingsController extends BaseController {
     await settings.setAiModel(aiModel.trim());
     await settings.setAiApiUrl(aiApiUrl.trim());
     await settings.setAiProvider(aiProvider.trim());
+    await settings.setAiAutoFetchIpa(aiAutoFetchIpa);
+    await settings.setAiAutoTranslate(aiAutoTranslate);
     await settings.setDesiredRetention(desiredRetention);
     await settings.setNewCardsPerDay(newCardsPerDay);
     await settings.setSessionCardLimit(sessionCardLimit);
@@ -225,6 +233,16 @@ class SettingsController extends BaseController {
 
   void setBookProgressLimit(int value) {
     bookProgressLimit = value;
+    safeNotify();
+  }
+
+  void setAiAutoFetchIpa(bool value) {
+    aiAutoFetchIpa = value;
+    safeNotify();
+  }
+
+  void setAiAutoTranslate(bool value) {
+    aiAutoTranslate = value;
     safeNotify();
   }
 

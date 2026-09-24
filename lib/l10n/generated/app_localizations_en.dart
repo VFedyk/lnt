@@ -239,6 +239,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiRefreshModels => 'Refresh model list';
 
   @override
+  String get aiAutoFetchIpa => 'Fetch IPA automatically';
+
+  @override
+  String get aiAutoFetchIpaHint =>
+      'When opening a term that has no IPA transcription';
+
+  @override
+  String get aiAutoTranslate => 'Translate with AI automatically';
+
+  @override
+  String get aiAutoTranslateHint =>
+      'When opening a term that has no translations';
+
+  @override
   String get saveSettings => 'Save Settings';
 
   @override

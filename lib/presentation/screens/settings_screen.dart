@@ -303,6 +303,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onToggleObscureApiKey: () {
                           setState(() => _obscureAiApiKey = !_obscureAiApiKey);
                         },
+                        autoFetchIpa: ctrl.aiAutoFetchIpa,
+                        onAutoFetchIpaChanged: ctrl.setAiAutoFetchIpa,
+                        autoTranslate: ctrl.aiAutoTranslate,
+                        onAutoTranslateChanged: ctrl.setAiAutoTranslate,
                       ),
                       const SizedBox(height: AppConstants.spacingL),
                       const SyncSettingsSection(),

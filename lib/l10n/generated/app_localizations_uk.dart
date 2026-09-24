@@ -239,6 +239,19 @@ class AppLocalizationsUk extends AppLocalizations {
   String get aiRefreshModels => 'Оновити список моделей';
 
   @override
+  String get aiAutoFetchIpa => 'Автоматично отримувати МФА';
+
+  @override
+  String get aiAutoFetchIpaHint =>
+      'Під час відкриття слова без транскрипції МФА';
+
+  @override
+  String get aiAutoTranslate => 'Автоматично перекладати за допомогою AI';
+
+  @override
+  String get aiAutoTranslateHint => 'Під час відкриття слова без перекладів';
+
+  @override
   String get saveSettings => 'Зберегти налаштування';
 
   @override

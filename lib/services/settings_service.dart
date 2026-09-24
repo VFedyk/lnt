@@ -58,6 +58,8 @@ class SettingsService {
   static const String defaultAiModel = 'gpt-4.1-mini';
   static const String defaultAiApiUrl =
       'https://api.openai.com/v1/chat/completions';
+  static const String _aiAutoFetchIpaKey = 'ai_auto_fetch_ipa';
+  static const String _aiAutoTranslateKey = 'ai_auto_translate';
 
   // Custom database path
   static const String _customDbPathKey = 'custom_db_path';
@@ -286,6 +288,26 @@ class SettingsService {
     } else {
       await prefs.setString(_aiProviderKey, provider);
     }
+  }
+
+  Future<bool> getAiAutoFetchIpa() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_aiAutoFetchIpaKey) ?? false;
+  }
+
+  Future<void> setAiAutoFetchIpa(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_aiAutoFetchIpaKey, value);
+  }
+
+  Future<bool> getAiAutoTranslate() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_aiAutoTranslateKey) ?? false;
+  }
+
+  Future<void> setAiAutoTranslate(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_aiAutoTranslateKey, value);
   }
 
   // Custom database path

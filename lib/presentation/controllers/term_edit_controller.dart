@@ -63,6 +63,11 @@ class TermEditController extends BaseController {
   bool isAiTranslating = false;
   bool isIpaLoading = false;
 
+  final AiExplanationService aiService;
+  bool _autoFetchIpaEnabled = false;
+  bool _autoTranslateEnabled = false;
+  bool _autoFillStarted = false;
+
   // ── Sentences tab ──
   List<TermSentence> sentences = [];
   final List<({String text, String? sourceTextId})> pendingAdded = [];
@@ -116,6 +121,8 @@ class TermEditController extends BaseController {
     return name.contains('chinese') || name.contains('mandarin');
   }
 
+  late final Future<void> ready;
+
   TermEditController({
     required this.term,
     required this.sentence,
@@ -123,7 +130,8 @@ class TermEditController extends BaseController {
     required this.languageName,
     required this.languageCode,
     this.sourceTextId,
-  }) {
+    AiExplanationService? aiService,
+  }) : aiService = aiService ?? AiExplanationService(settings: settings) {
     status = term.status;
     historyLoading = term.id != null;
     sentencesLoading = term.id != null;
@@ -145,7 +153,7 @@ class TermEditController extends BaseController {
       pendingAdded.add((text: sentence.trim(), sourceTextId: sourceTextId));
     }
 
-    _initialize();
+    ready = _initialize();
   }
 
   Future<void> _initialize() async {
@@ -154,10 +162,39 @@ class TermEditController extends BaseController {
       _checkTranslationProviders(),
       _loadLanguages(),
       _checkAiProvider(),
+      _loadAutoFillSettings(),
       _loadHistory(),
       loadSentences(),
     ]);
     _initialTranslationSig = _translationSignature();
+  }
+
+  Future<void> _loadAutoFillSettings() async {
+    final autoFetchIpa = await settings.getAiAutoFetchIpa();
+    final autoTranslate = await settings.getAiAutoTranslate();
+    if (!isDisposed) {
+      _autoFetchIpaEnabled = autoFetchIpa;
+      _autoTranslateEnabled = autoTranslate;
+    }
+  }
+
+  bool get shouldAutoFetchIpa =>
+      _autoFetchIpaEnabled &&
+      hasAi &&
+      termController.text.trim().isNotEmpty &&
+      ipaController.text.trim().isEmpty;
+
+  bool get shouldAutoTranslate =>
+      _autoTranslateEnabled &&
+      hasAi &&
+      termController.text.trim().isNotEmpty &&
+      !translations.any((t) => t.meaning.trim().isNotEmpty);
+
+  /// Returns which auto requests to run, at most once per controller.
+  ({bool ipa, bool translations}) claimAutoFill() {
+    if (_autoFillStarted) return (ipa: false, translations: false);
+    _autoFillStarted = true;
+    return (ipa: shouldAutoFetchIpa, translations: shouldAutoTranslate);
   }
 
   // ── Sentences ──
@@ -338,7 +375,7 @@ class TermEditController extends BaseController {
   }
 
   Future<void> _checkAiProvider() async {
-    final configured = await AiExplanationService(settings: settings).isConfigured();
+    final configured = await aiService.isConfigured();
     if (!isDisposed) {
       hasAi = configured;
       safeNotify();
@@ -503,7 +540,7 @@ class TermEditController extends BaseController {
     isAiTranslating = true;
     safeNotify();
     try {
-      final meanings = await AiExplanationService(settings: settings).translateWord(
+      final meanings = await aiService.translateWord(
         word: termController.text.trim(),
         contextSentence: sentence.trim(),
         languageName: selectedLanguageName,
@@ -531,13 +568,17 @@ class TermEditController extends BaseController {
 
   /// Fetches the IPA transcription and replaces the field content.
   /// Throws on AI service failure — caller shows the SnackBar.
-  Future<void> fetchIpa() async {
+  ///
+  /// When [onlyIfEmpty] is true, a result arriving after the user has typed
+  /// into [ipaController] is dropped instead of overwriting it. The manual
+  /// CTA calls this with the default `false` and always overwrites silently.
+  Future<void> fetchIpa({bool onlyIfEmpty = false}) async {
     final word = termController.text.trim();
     if (word.isEmpty) return;
     isIpaLoading = true;
     safeNotify();
     try {
-      final ipa = await AiExplanationService(settings: settings).transcribeIpa(
+      final ipa = await aiService.transcribeIpa(
         word: word,
         contextSentence: sentence.trim(),
         languageName: selectedLanguageName,
@@ -545,6 +586,7 @@ class TermEditController extends BaseController {
       );
       if (isDisposed) return;
       if (ipa.isEmpty) throw Exception('Empty IPA response');
+      if (onlyIfEmpty && ipaController.text.trim().isNotEmpty) return;
       ipaController.text = ipa; // silent overwrite, by design
     } finally {
       if (!isDisposed) {

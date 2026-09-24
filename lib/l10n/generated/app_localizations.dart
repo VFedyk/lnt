@@ -542,6 +542,30 @@ abstract class AppLocalizations {
   /// **'Refresh model list'**
   String get aiRefreshModels;
 
+  /// No description provided for @aiAutoFetchIpa.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch IPA automatically'**
+  String get aiAutoFetchIpa;
+
+  /// No description provided for @aiAutoFetchIpaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When opening a term that has no IPA transcription'**
+  String get aiAutoFetchIpaHint;
+
+  /// No description provided for @aiAutoTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate with AI automatically'**
+  String get aiAutoTranslate;
+
+  /// No description provided for @aiAutoTranslateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When opening a term that has no translations'**
+  String get aiAutoTranslateHint;
+
   /// No description provided for @saveSettings.
   ///
   /// In en, this message translates to:

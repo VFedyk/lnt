@@ -95,6 +95,16 @@ class _TermEditScreenState extends State<TermEditScreen> {
       languageCode: widget.languageCode,
     );
     _controller.addListener(_onControllerChanged);
+    _controller.ready.then((_) => _runAutoFill());
+  }
+
+  Future<void> _runAutoFill() async {
+    if (!mounted) return;
+    final todo = _controller.claimAutoFill();
+    await Future.wait([
+      if (todo.ipa) _handleFetchIpa(onlyIfEmpty: true),
+      if (todo.translations) _handleAiTranslate(),
+    ]);
   }
 
   void _onControllerChanged() {
@@ -134,9 +144,9 @@ class _TermEditScreenState extends State<TermEditScreen> {
     }
   }
 
-  Future<void> _handleFetchIpa() async {
+  Future<void> _handleFetchIpa({bool onlyIfEmpty = false}) async {
     try {
-      await _controller.fetchIpa();
+      await _controller.fetchIpa(onlyIfEmpty: onlyIfEmpty);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
