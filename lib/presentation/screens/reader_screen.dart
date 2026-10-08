@@ -328,28 +328,15 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     int position,
   ) async {
     final l10n = AppLocalizations.of(context);
-    final sentence = ctrl.getSentenceForPosition(position);
-
-    if (sentence.isEmpty) {
-      SnackbarHelpers.showInfo(context, l10n.noSentenceFound);
-      return;
-    }
-
-    if (await db.termSentences.existsForTerm(term.id!, sentence)) {
-      if (mounted) {
+    final result = await ctrl.mineSentenceForTerm(term, position);
+    if (!mounted) return;
+    switch (result) {
+      case MineSentenceResult.noSentence:
+        SnackbarHelpers.showInfo(context, l10n.noSentenceFound);
+      case MineSentenceResult.duplicate:
         SnackbarHelpers.showInfo(context, l10n.sentenceAlreadyMined);
-      }
-      return;
-    }
-
-    await db.termSentences.create(
-      term.id!,
-      sentence,
-      sourceTextId: ctrl.text.id,
-    );
-
-    if (mounted) {
-      SnackbarHelpers.showSuccess(context, l10n.sentenceMined);
+      case MineSentenceResult.mined:
+        SnackbarHelpers.showSuccess(context, l10n.sentenceMined);
     }
   }
 
@@ -835,6 +822,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
                   otherLanguageTerms: ctrl.otherLanguageTerms,
                   translationsMap: ctrl.translationsMap,
                   translationsById: ctrl.translationsById,
+                  sentenceCounts: ctrl.sentenceCounts,
                   termsById: ctrl.termsById,
                   onWordTap: _handleWordTap,
                   onWordLongPress: _handleWordLongPress,

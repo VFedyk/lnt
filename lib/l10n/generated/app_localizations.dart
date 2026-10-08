@@ -2066,6 +2066,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 card} other{{count} cards}}'**
   String cardsDueCount(int count);
 
+  /// No description provided for @tooltipExampleCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 example} other{{count} examples}}'**
+  String tooltipExampleCount(int count);
+
   /// No description provided for @percentKnown.
   ///
   /// In en, this message translates to:

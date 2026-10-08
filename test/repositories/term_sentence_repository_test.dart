@@ -104,4 +104,40 @@ void main() {
     expect(rows.map((r) => r.sentence), ['One.', 'Two.']);
     expect(rows.first.updatedAt, isNotNull);
   });
+
+  group('getCountsByTermIds', () {
+    test('counts per term and omits terms without sentences', () async {
+      await repo.create('t1', 'One.');
+      await repo.create('t1', 'Two.');
+      await repo.create('t1', 'Three.');
+      final counts = await repo.getCountsByTermIds(['t1', 't2']);
+      expect(counts, {'t1': 3});
+    });
+
+    test('empty input returns an empty map', () async {
+      expect(await repo.getCountsByTermIds([]), isEmpty);
+    });
+
+    test('handles more ids than SQLite host parameters (chunking)', () async {
+      final ids = <String>[];
+      final batch = db.batch();
+      for (var i = 0; i < 600; i++) {
+        final id = 'bulk$i';
+        ids.add(id);
+        batch.insert('terms', {
+          'id': id, 'language_id': 'l1', 'text': id, 'lower_text': id,
+          'status': 1,
+          'created_at': '2024-01-01T00:00:00.000Z',
+          'last_accessed': '2024-01-01T00:00:00.000Z',
+        });
+      }
+      await batch.commit(noResult: true);
+      await repo.create('bulk0', 'First.');
+      await repo.create('bulk599', 'Last A.');
+      await repo.create('bulk599', 'Last B.');
+
+      final counts = await repo.getCountsByTermIds(ids);
+      expect(counts, {'bulk0': 1, 'bulk599': 2});
+    });
+  });
 }

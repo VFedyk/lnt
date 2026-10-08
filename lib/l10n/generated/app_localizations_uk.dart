@@ -1099,6 +1099,19 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
+  String tooltipExampleCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count прикладу',
+      many: '$count прикладів',
+      few: '$count приклади',
+      one: '1 приклад',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String percentKnown(String percent) {
     return '$percent% відомо';
   }

@@ -21,14 +21,18 @@ class ForeignTermInfo {
   final List<Translation> translations;
   final String languageName;
   final String languageId;
+  final int sentenceCount;
 
   const ForeignTermInfo({
     this.term,
     this.translations = const [],
     required this.languageName,
     required this.languageId,
+    this.sentenceCount = 0,
   });
 }
+
+enum MineSentenceResult { noSentence, duplicate, mined }
 
 class ReaderController extends BaseController {
   final Language language;
@@ -41,6 +45,11 @@ class ReaderController extends BaseController {
   Map<String, Term> termsById = {};
   Map<String, List<Translation>> translationsMap = {};
   Map<String, Translation> translationsById = {};
+
+  /// Usage-example count per term id; terms without examples are absent.
+  /// Kept fresh explicitly (not via a `dataChanges` listener) — see
+  /// [handleTermSaved] and [mineSentenceForTerm].
+  Map<String, int> sentenceCounts = {};
   Map<String, ForeignTermInfo> otherLanguageTerms = {};
   List<WordToken> wordTokens = [];
   List<List<WordToken>> paragraphs = [];
@@ -97,6 +106,7 @@ class ReaderController extends BaseController {
         for (final t in translations)
           if (t.id != null) t.id!: t,
     };
+    sentenceCounts = await db.termSentences.getCountsByTermIds(termIds);
 
     await _parseTextAsync();
     if (isDisposed) return;
@@ -229,6 +239,9 @@ class ReaderController extends BaseController {
     final foreignTranslations = termIds.isNotEmpty
         ? await db.translations.getByTermIds(termIds)
         : <String, List<Translation>>{};
+    final foreignSentenceCounts = termIds.isNotEmpty
+        ? await db.termSentences.getCountsByTermIds(termIds)
+        : <String, int>{};
 
     final foreignTerms = <String, Term>{};
     for (final id in termIds) {
@@ -253,6 +266,7 @@ class ReaderController extends BaseController {
         translations: translations,
         languageName: languageNames[record.languageId] ?? '',
         languageId: record.languageId,
+        sentenceCount: foreignSentenceCounts[record.termId] ?? 0,
       );
     }
 
@@ -436,11 +450,16 @@ class ReaderController extends BaseController {
       final termTranslations = term.id != null
           ? (await db.translations.getByTermIds([term.id!]))[term.id!] ?? []
           : <Translation>[];
+      final termSentenceCount = term.id != null
+          ? (await db.termSentences.getCountsByTermIds([term.id!]))[term.id!] ??
+              0
+          : 0;
       otherLanguageTerms[lowerText] = ForeignTermInfo(
         term: term,
         translations: termTranslations,
         languageName: lang?.name ?? '',
         languageId: term.languageId,
+        sentenceCount: termSentenceCount,
       );
       termsMap.remove(lowerText);
 
@@ -498,6 +517,7 @@ class ReaderController extends BaseController {
         if (t.id != null) translationsById[t.id!] = t;
       }
       termsById[termId] = termWithId;
+      await _refreshSentenceCount(termId);
       await updateTermInPlace(termWithId);
       if (termWithId.languageId == language.id &&
           otherLanguageTerms.containsKey(termWithId.lowerText)) {
@@ -511,6 +531,7 @@ class ReaderController extends BaseController {
       for (final t in newTranslations) {
         if (t.id != null) translationsById[t.id!] = t;
       }
+      await _refreshSentenceCount(term.id!);
       await updateTermInPlace(term);
       if (term.languageId == language.id &&
           otherLanguageTerms.containsKey(term.lowerText)) {
@@ -518,6 +539,48 @@ class ReaderController extends BaseController {
         otherLanguageTerms.remove(term.lowerText);
       }
     }
+  }
+
+  Future<void> _refreshSentenceCount(String termId) async {
+    final count = (await db.termSentences.getCountsByTermIds([termId]))[termId];
+    if (count == null || count == 0) {
+      sentenceCounts.remove(termId);
+    } else {
+      sentenceCounts[termId] = count;
+    }
+  }
+
+  /// Stores the sentence around [position] as a usage example for [term].
+  Future<MineSentenceResult> mineSentenceForTerm(
+    Term term,
+    int position,
+  ) async {
+    final sentence = getSentenceForPosition(position);
+    if (sentence.isEmpty) return MineSentenceResult.noSentence;
+
+    if (await db.termSentences.existsForTerm(term.id!, sentence)) {
+      return MineSentenceResult.duplicate;
+    }
+
+    await db.termSentences.create(term.id!, sentence, sourceTextId: text.id);
+
+    final entry = otherLanguageTerms.entries
+        .where((e) => e.value.term?.id == term.id)
+        .firstOrNull;
+    if (entry != null) {
+      final info = entry.value;
+      otherLanguageTerms[entry.key] = ForeignTermInfo(
+        term: info.term,
+        translations: info.translations,
+        languageName: info.languageName,
+        languageId: info.languageId,
+        sentenceCount: info.sentenceCount + 1,
+      );
+    } else {
+      sentenceCounts[term.id!] = (sentenceCounts[term.id!] ?? 0) + 1;
+    }
+    safeNotify();
+    return MineSentenceResult.mined;
   }
 
   Future<void> handleSelectionTermSaved(

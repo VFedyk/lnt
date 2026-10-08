@@ -342,6 +342,14 @@
       }
     }
   },
+  "tooltipExampleCount": "{count, plural, =1{1 приклад} few{{count} приклади} many{{count} прикладів} other{{count} прикладу}}",
+  "@tooltipExampleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "percentKnown": "{percent}% відомо",
   "noTermsYet": "Ще немає термінів",
   "learning": "Вивчення",

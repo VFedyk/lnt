@@ -79,6 +79,33 @@ class TermSentenceRepositoryImpl extends BaseRepository
   }
 
   @override
+  Future<Map<String, int>> getCountsByTermIds(List<String> termIds) async {
+    if (termIds.isEmpty) return {};
+
+    final db = await getDatabase();
+    final result = <String, int>{};
+    // Chunked: callers pass every term of a language, which can exceed
+    // SQLite's 999 host-parameter limit.
+    const chunkSize = 500;
+    for (var i = 0; i < termIds.length; i += chunkSize) {
+      final chunk = termIds.sublist(
+        i,
+        i + chunkSize > termIds.length ? termIds.length : i + chunkSize,
+      );
+      final placeholders = List.filled(chunk.length, '?').join(',');
+      final rows = await db.rawQuery(
+        'SELECT term_id, COUNT(*) AS cnt FROM term_sentences '
+        'WHERE term_id IN ($placeholders) GROUP BY term_id',
+        chunk,
+      );
+      for (final row in rows) {
+        result[row['term_id'] as String] = row['cnt'] as int;
+      }
+    }
+    return result;
+  }
+
+  @override
   Future<bool> existsForTerm(String termId, String sentence) async {
     final db = await getDatabase();
     final rows = await db.rawQuery(

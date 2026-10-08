@@ -1092,6 +1092,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String tooltipExampleCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count examples',
+      one: '1 example',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String percentKnown(String percent) {
     return '$percent% Known';
   }

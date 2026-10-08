@@ -546,6 +546,14 @@
       }
     }
   },
+  "tooltipExampleCount": "{count, plural, =1{1 example} other{{count} examples}}",
+  "@tooltipExampleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "percentKnown": "{percent}% Known",
   "@percentKnown": {
     "placeholders": {

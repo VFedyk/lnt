@@ -18,6 +18,7 @@ class ReaderContent extends StatelessWidget {
   final Map<String, ForeignTermInfo> otherLanguageTerms;
   final Map<String, List<Translation>> translationsMap;
   final Map<String, Translation> translationsById;
+  final Map<String, int> sentenceCounts;
   final Map<String, Term> termsById;
   final void Function(String word, int position, int globalIndex) onWordTap;
   final void Function(int globalIndex) onWordLongPress;
@@ -37,6 +38,7 @@ class ReaderContent extends StatelessWidget {
     required this.otherLanguageTerms,
     required this.translationsMap,
     required this.translationsById,
+    required this.sentenceCounts,
     required this.termsById,
     required this.onWordTap,
     required this.onWordLongPress,
@@ -75,6 +77,7 @@ class ReaderContent extends StatelessWidget {
                   otherLanguageTerms: otherLanguageTerms,
                   translationsMap: translationsMap,
                   translationsById: translationsById,
+                  sentenceCounts: sentenceCounts,
                   termsById: termsById,
                   onWordTap: onWordTap,
                   onWordLongPress: onWordLongPress,

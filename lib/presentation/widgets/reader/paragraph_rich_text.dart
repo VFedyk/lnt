@@ -7,6 +7,7 @@ import '../../../domain/entities/term.dart';
 import '../../../domain/entities/word_token.dart';
 import '../../theme/app_theme.dart';
 import '../../../domain/value_objects/term_status.dart';
+import 'word_tooltip.dart';
 
 class ParagraphRichText extends StatelessWidget {
   final List<WordToken> tokens;
@@ -15,6 +16,7 @@ class ParagraphRichText extends StatelessWidget {
   final Map<String, ForeignTermInfo> otherLanguageTerms;
   final Map<String, List<Translation>> translationsMap;
   final Map<String, Translation> translationsById;
+  final Map<String, int> sentenceCounts;
   final Map<String, Term> termsById;
   final void Function(String word, int position, int globalIndex) onWordTap;
   final void Function(int globalIndex) onWordLongPress;
@@ -45,6 +47,7 @@ class ParagraphRichText extends StatelessWidget {
     required this.otherLanguageTerms,
     required this.translationsMap,
     required this.translationsById,
+    required this.sentenceCounts,
     required this.termsById,
     required this.onWordTap,
     required this.onWordLongPress,
@@ -135,61 +138,22 @@ class ParagraphRichText extends StatelessWidget {
         textColor = otherLanguageColor;
       }
 
-      String? tooltipMessage;
+      WordTooltipData? tooltipData;
       if (term != null) {
-        // Get translations from map, fall back to legacy field
-        final translations = term.id != null ? translationsMap[term.id!] : null;
-        String translationText;
-        if (translations != null && translations.isNotEmpty) {
-          translationText = translations.map((t) {
-            final parts = <String>[t.meaning];
-            if (t.partOfSpeech != null) {
-              parts.add('(${PartOfSpeechUI.localizedNameFor(t.partOfSpeech!, l10n)})');
-            }
-            if (t.baseTranslationId != null) {
-              final baseTranslation = translationsById[t.baseTranslationId!];
-              if (baseTranslation != null) {
-                final baseTerm = termsById[baseTranslation.termId];
-                if (baseTerm != null) {
-                  parts.add('← ${baseTerm.lowerText} (${baseTranslation.meaning})');
-                }
-              }
-            }
-            return parts.join(' ');
-          }).join('\n');
-        } else {
-          translationText = term.translation;
-        }
-        if (translationText.isNotEmpty) {
-          tooltipMessage = translationText;
-          if (term.romanization.isNotEmpty) {
-            tooltipMessage = '${term.romanization}\n$tooltipMessage';
-          }
-        }
+        tooltipData = WordTooltipData.forTerm(
+          term: term,
+          translations: term.id != null ? translationsMap[term.id!] : null,
+          translationsById: translationsById,
+          termsById: termsById,
+          sentenceCount: term.id != null ? (sentenceCounts[term.id!] ?? 0) : 0,
+          l10n: l10n,
+        );
       } else if (isOtherLanguage) {
-        final otherInfo = otherLanguageTerms[lowerWord]!;
-        final otherTerm = otherInfo.term;
-        final parts = <String>[];
-        if (otherTerm != null && otherTerm.romanization.isNotEmpty) {
-          parts.add(otherTerm.romanization);
-        }
-        if (otherInfo.translations.isNotEmpty) {
-          for (final t in otherInfo.translations) {
-            final line = t.partOfSpeech != null
-                ? '${t.meaning} (${PartOfSpeechUI.localizedNameFor(t.partOfSpeech!, l10n)})'
-                : t.meaning;
-            parts.add(line);
-          }
-        } else if (otherTerm != null && otherTerm.translation.isNotEmpty) {
-          parts.add(otherTerm.translation);
-        }
-        if (otherInfo.languageName.isNotEmpty) {
-          parts.add('(${otherInfo.languageName})');
-        }
-        if (parts.isNotEmpty) {
-          tooltipMessage = parts.join('\n');
-        }
+        tooltipData =
+            WordTooltipData.forForeign(otherLanguageTerms[lowerWord]!, l10n);
       }
+      final tooltipSpan =
+          tooltipData == null ? null : buildWordTooltipSpan(tooltipData, l10n);
 
       Widget wordContainer = GestureDetector(
         onTap: () => onWordTap(token.text, token.position, globalIndex),
@@ -224,9 +188,9 @@ class ParagraphRichText extends StatelessWidget {
         ),
       );
 
-      if (tooltipMessage != null) {
+      if (tooltipSpan != null) {
         wordContainer = Tooltip(
-          message: tooltipMessage,
+          richMessage: tooltipSpan,
           waitDuration: _tooltipWait,
           child: wordContainer,
         );

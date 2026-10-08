@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:language_nerd_tools/domain/entities/language.dart';
+import 'package:language_nerd_tools/domain/entities/term_sentence.dart';
 import 'package:language_nerd_tools/domain/entities/text_document.dart';
 import 'package:language_nerd_tools/domain/value_objects/term_status.dart';
 import 'package:language_nerd_tools/presentation/controllers/reader_controller.dart';
@@ -128,5 +129,102 @@ void main() {
     expect(ctrl.paragraphs.length, paragraphCount);
 
     ctrl.dispose();
+  });
+
+  group('sentence counts', () {
+    ReaderController build(String content) {
+      final ctrl = ReaderController(
+        text: TextDocument(
+          id: 'x1',
+          languageId: 'lang-1',
+          title: 'Chapter 1',
+          content: content,
+        ),
+        language: language,
+      );
+      controller = ctrl;
+      return ctrl;
+    }
+
+    test('loadTermsAndParse populates sentenceCounts', () async {
+      await db.termSentences.create('alpha', 'One.');
+      await db.termSentences.create('alpha', 'Two.');
+      final ctrl = build('alpha beta');
+      await ctrl.loadTermsAndParse();
+
+      expect(ctrl.sentenceCounts, {'alpha': 2});
+      ctrl.dispose();
+    });
+
+    test('handleTermSaved tracks added and deleted sentences', () async {
+      final ctrl = build('alpha beta');
+      await ctrl.loadTermsAndParse();
+      final alpha = ctrl.termsMap['alpha']!;
+
+      await ctrl.handleTermSaved(
+        alpha,
+        const [],
+        isNew: false,
+        sentences: const TermSentenceEdits(
+          added: [(text: 'Alpha one.', sourceTextId: null)],
+        ),
+      );
+      expect(ctrl.sentenceCounts['alpha'], 1);
+
+      final saved = await db.termSentences.getByTermId('alpha');
+      await ctrl.handleTermSaved(
+        alpha,
+        const [],
+        isNew: false,
+        sentences: TermSentenceEdits(deleted: [saved.single.id!]),
+      );
+      expect(ctrl.sentenceCounts.containsKey('alpha'), isFalse);
+      ctrl.dispose();
+    });
+
+    test('mineSentenceForTerm: mined, duplicate, noSentence', () async {
+      final ctrl = build('alpha beta. Gamma delta.');
+      await ctrl.loadTermsAndParse();
+      final alpha = ctrl.termsMap['alpha']!;
+
+      expect(await ctrl.mineSentenceForTerm(alpha, 0), MineSentenceResult.mined);
+      expect(ctrl.sentenceCounts['alpha'], 1);
+
+      expect(
+        await ctrl.mineSentenceForTerm(alpha, 0),
+        MineSentenceResult.duplicate,
+      );
+      expect(ctrl.sentenceCounts['alpha'], 1);
+
+      expect(
+        await ctrl.mineSentenceForTerm(alpha, 9999),
+        MineSentenceResult.noSentence,
+      );
+      expect(ctrl.sentenceCounts['alpha'], 1);
+      ctrl.dispose();
+    });
+
+    test('foreign word carries sentenceCount', () async {
+      final database = await db.database;
+      await database.insert('languages', {'id': 'lang-2', 'name': 'German'});
+      await database.insert('terms', {
+        'id': 'gamma',
+        'language_id': 'lang-2',
+        'text': 'gamma',
+        'lower_text': 'gamma',
+        'status': TermStatus.unknown,
+        'created_at': '2026-01-01T00:00:00.000Z',
+        'last_accessed': '2026-01-01T00:00:00.000Z',
+      });
+      await db.termSentences.create('gamma', 'Gamma ist hier.');
+      await db.termSentences.create('gamma', 'Noch ein Gamma.');
+      await db.textForeignWords.saveWords('x1', 'lang-2', {'gamma': 'gamma'});
+
+      final ctrl = build('alpha gamma');
+      await ctrl.loadTermsAndParse();
+
+      expect(ctrl.otherLanguageTerms['gamma']?.sentenceCount, 2);
+      ctrl.dispose();
+    });
   });
 }
