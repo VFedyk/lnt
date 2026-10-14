@@ -1888,4 +1888,51 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get discardChangesBody => 'Є незбережені зміни. Вийти без збереження?';
+
+  @override
+  String get languageTabGeneral => 'Загальні';
+
+  @override
+  String get languageTabAdvanced => 'Додатково';
+
+  @override
+  String get wordPatternLabel => 'Шаблон слова (regex)';
+
+  @override
+  String get wordPatternHint =>
+      'Відповідає одному слову. Залиште порожнім для типового.';
+
+  @override
+  String get sentencePatternLabel => 'Шаблон кінця речення (regex)';
+
+  @override
+  String get sentencePatternHint =>
+      'Відповідає розділовим знакам, що завершують речення. Залиште порожнім для типового.';
+
+  @override
+  String get resetToDefault => 'Скинути до типового';
+
+  @override
+  String invalidRegex(String message) {
+    return 'Недійсний шаблон: $message';
+  }
+
+  @override
+  String get regexMatchesEmpty =>
+      'Шаблон не повинен збігатися з порожнім рядком';
+
+  @override
+  String get wordPatternIgnoredForCharSplit =>
+      'Ігнорується, поки ввімкнено «Розділяти за символами».';
+
+  @override
+  String get advancedPatternsWarning =>
+      'Зміна цих шаблонів впливає на те, як розбиваються всі тексти цією мовою. Індекси слів перебудовуються автоматично.';
+
+  @override
+  String get wordSegmentation => 'Сегментація слів (китайська)';
+
+  @override
+  String get wordSegmentationHint =>
+      'Використовувати jieba для поділу тексту на слова замість окремих ієрогліфів. Рекомендовано для мандаринської.';
 }

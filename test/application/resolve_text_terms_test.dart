@@ -135,7 +135,7 @@ void main() {
     final text = _text('你好世界');
     // jieba cannot run in a unit test, so pre-warm the index the way the reader
     // would; ensureIndexed then short-circuits on the matching hash.
-    deps.index.hashes[text.id!] = TextWordIndexService.contentHash(text.content);
+    deps.index.hashes[text.id!] = TextWordIndexService.indexHash(text.content, segmented);
 
     // With segmentation on, 你好 is a single index token — no extra needed.
     final scope = await deps.resolve(text, segmented);

@@ -3391,6 +3391,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You have unsaved changes. Leave without saving?'**
   String get discardChangesBody;
+
+  /// No description provided for @languageTabGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get languageTabGeneral;
+
+  /// No description provided for @languageTabAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get languageTabAdvanced;
+
+  /// No description provided for @wordPatternLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Word pattern (regex)'**
+  String get wordPatternLabel;
+
+  /// No description provided for @wordPatternHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches one word. Leave empty for the default.'**
+  String get wordPatternHint;
+
+  /// No description provided for @sentencePatternLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence ending pattern (regex)'**
+  String get sentencePatternLabel;
+
+  /// No description provided for @sentencePatternHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches the punctuation that ends a sentence. Leave empty for the default.'**
+  String get sentencePatternHint;
+
+  /// No description provided for @resetToDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to default'**
+  String get resetToDefault;
+
+  /// No description provided for @invalidRegex.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid pattern: {message}'**
+  String invalidRegex(String message);
+
+  /// No description provided for @regexMatchesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The pattern must not match an empty string'**
+  String get regexMatchesEmpty;
+
+  /// No description provided for @wordPatternIgnoredForCharSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignored while \"Split by character\" is on.'**
+  String get wordPatternIgnoredForCharSplit;
+
+  /// No description provided for @advancedPatternsWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing these patterns affects how every text in this language is split. Word indexes rebuild automatically.'**
+  String get advancedPatternsWarning;
+
+  /// No description provided for @wordSegmentation.
+  ///
+  /// In en, this message translates to:
+  /// **'Word segmentation (Chinese)'**
+  String get wordSegmentation;
+
+  /// No description provided for @wordSegmentationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use jieba to split text into words instead of individual characters. Recommended for Mandarin Chinese.'**
+  String get wordSegmentationHint;
 }
 
 class _AppLocalizationsDelegate

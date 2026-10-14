@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../domain/entities/language.dart';
 import '../domain/entities/text_document.dart';
 import '../domain/repositories/text_word_repository.dart';
+import '../domain/value_objects/text_parsing_defaults.dart';
 import 'isolate_parser.dart';
 import 'text_parser_service.dart';
 
@@ -13,8 +14,9 @@ import 'text_parser_service.dart';
 ///
 /// The tokenization is deliberately **term-independent** — no terms map is fed
 /// to the parser — so the index stays valid across term creation and deletion.
-/// Only a change to the text's content invalidates it, which is detected via a
-/// content hash rather than a timestamp.
+/// A change to the text's content *or* to the language's tokenizer
+/// configuration (word pattern, character splitting, segmentation,
+/// substitutions) invalidates it, detected via a hash rather than a timestamp.
 class TextWordIndexService {
   TextWordIndexService({
     required TextWordRepository repo,
@@ -28,29 +30,30 @@ class TextWordIndexService {
   static String contentHash(String content) =>
       sha1.convert(utf8.encode(content)).toString();
 
-  /// Indexes [text] unless its content hash already matches. Returns true when
+  /// Hash of everything that determines the tokens: the content plus the
+  /// language's tokenizer configuration.
+  static String indexHash(String content, Language language) {
+    final config = [
+      language.splitByCharacter,
+      language.useWordSegmentation,
+      language.characterSubstitutions,
+      TextParsingDefaults.effectiveWordPattern(language.regexpWordCharacters),
+    ].join('\u0001');
+    return contentHash('$content\u0000$config');
+  }
+
+  /// Indexes [text] unless its index hash already matches. Returns true when
   /// an index exists afterwards.
   Future<bool> ensureIndexed(TextDocument text, Language language) async {
     final textId = text.id;
     if (textId == null) return false;
 
-    final hash = contentHash(text.content);
+    final hash = indexHash(text.content, language);
     if (await _repo.indexedHash(textId) == hash) return true;
 
     final words = await _tokenize(text.content, language);
     await _repo.replaceIndex(textId, hash, _aggregate(words));
     return true;
-  }
-
-  /// Fast path: index from tokens the caller has already computed.
-  /// [words] must be the plain tokenization — raw word strings with their
-  /// positions, never term-bound tokens.
-  Future<void> indexFromWords(
-    String textId,
-    String content,
-    List<({String word, int position})> words,
-  ) async {
-    await _repo.replaceIndex(textId, contentHash(content), _aggregate(words));
   }
 
   Future<List<({String word, int position})>> _tokenize(

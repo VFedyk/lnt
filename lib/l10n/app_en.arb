@@ -1029,5 +1029,25 @@
   "sentenceCannotBeEmpty": "Sentence cannot be empty",
   "newTermSentencesHint": "Sentences are saved together with the term.",
   "discardChanges": "Discard changes?",
-  "discardChangesBody": "You have unsaved changes. Leave without saving?"
+  "discardChangesBody": "You have unsaved changes. Leave without saving?",
+  "languageTabGeneral": "General",
+  "languageTabAdvanced": "Advanced",
+  "wordPatternLabel": "Word pattern (regex)",
+  "wordPatternHint": "Matches one word. Leave empty for the default.",
+  "sentencePatternLabel": "Sentence ending pattern (regex)",
+  "sentencePatternHint": "Matches the punctuation that ends a sentence. Leave empty for the default.",
+  "resetToDefault": "Reset to default",
+  "invalidRegex": "Invalid pattern: {message}",
+  "@invalidRegex": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "regexMatchesEmpty": "The pattern must not match an empty string",
+  "wordPatternIgnoredForCharSplit": "Ignored while \"Split by character\" is on.",
+  "advancedPatternsWarning": "Changing these patterns affects how every text in this language is split. Word indexes rebuild automatically.",
+  "wordSegmentation": "Word segmentation (Chinese)",
+  "wordSegmentationHint": "Use jieba to split text into words instead of individual characters. Recommended for Mandarin Chinese."
 }

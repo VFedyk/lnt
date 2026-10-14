@@ -245,19 +245,12 @@ class TextParserService {
 
   String _wordPattern(Language language) => _staticWordPattern(language);
 
-  static String _staticWordPattern(Language? language) {
-    if (language == null) return TextParsingDefaults.wordPattern;
-    return TextParsingDefaults.legacyWordPatterns
-            .contains(language.regexpWordCharacters)
-        ? TextParsingDefaults.wordPattern
-        : language.regexpWordCharacters;
-  }
+  static String _staticWordPattern(Language? language) => language == null
+      ? TextParsingDefaults.wordPattern
+      : TextParsingDefaults.effectiveWordPattern(language.regexpWordCharacters);
 
   String _sentencePattern(Language language) =>
-      TextParsingDefaults.legacySentencePatterns
-              .contains(language.regexpSplitSentences)
-          ? TextParsingDefaults.sentencePattern
-          : language.regexpSplitSentences;
+      TextParsingDefaults.effectiveSentencePattern(language.regexpSplitSentences);
 
   String _applySubstitutionsIfNeeded(String text, Language language) {
     if (language.characterSubstitutions.isEmpty) return text;

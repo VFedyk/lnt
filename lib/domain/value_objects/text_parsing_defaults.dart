@@ -27,4 +27,12 @@ class TextParsingDefaults {
   };
 
   static const legacySentencePatterns = <String>{'', r'[.!?]+'};
+
+  /// The word pattern the parser actually uses for a stored value.
+  static String effectiveWordPattern(String stored) =>
+      legacyWordPatterns.contains(stored) ? wordPattern : stored;
+
+  /// The sentence pattern the parser actually uses for a stored value.
+  static String effectiveSentencePattern(String stored) =>
+      legacySentencePatterns.contains(stored) ? sentencePattern : stored;
 }

@@ -1874,4 +1874,50 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get discardChangesBody =>
       'You have unsaved changes. Leave without saving?';
+
+  @override
+  String get languageTabGeneral => 'General';
+
+  @override
+  String get languageTabAdvanced => 'Advanced';
+
+  @override
+  String get wordPatternLabel => 'Word pattern (regex)';
+
+  @override
+  String get wordPatternHint =>
+      'Matches one word. Leave empty for the default.';
+
+  @override
+  String get sentencePatternLabel => 'Sentence ending pattern (regex)';
+
+  @override
+  String get sentencePatternHint =>
+      'Matches the punctuation that ends a sentence. Leave empty for the default.';
+
+  @override
+  String get resetToDefault => 'Reset to default';
+
+  @override
+  String invalidRegex(String message) {
+    return 'Invalid pattern: $message';
+  }
+
+  @override
+  String get regexMatchesEmpty => 'The pattern must not match an empty string';
+
+  @override
+  String get wordPatternIgnoredForCharSplit =>
+      'Ignored while \"Split by character\" is on.';
+
+  @override
+  String get advancedPatternsWarning =>
+      'Changing these patterns affects how every text in this language is split. Word indexes rebuild automatically.';
+
+  @override
+  String get wordSegmentation => 'Word segmentation (Chinese)';
+
+  @override
+  String get wordSegmentationHint =>
+      'Use jieba to split text into words instead of individual characters. Recommended for Mandarin Chinese.';
 }

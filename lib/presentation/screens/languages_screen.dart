@@ -6,8 +6,8 @@ import '../../service_locator.dart';
 import '../../utils/constants.dart';
 import '../../utils/dialog_helpers.dart';
 import '../widgets/shared/app_empty_state.dart';
-import '../widgets/languages/language_dialog.dart';
 import 'dictionaries_screen.dart';
+import 'language_edit_screen.dart';
 
 class LanguagesScreen extends StatefulWidget {
   const LanguagesScreen({super.key});
@@ -38,9 +38,9 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
   }
 
   Future<void> _addOrEditLanguage([Language? language]) async {
-    final result = await showDialog<Language>(
-      context: context,
-      builder: (context) => LanguageDialog(language: language),
+    final result = await Navigator.push<Language>(
+      context,
+      MaterialPageRoute(builder: (_) => LanguageEditScreen(language: language)),
     );
 
     if (result != null) {

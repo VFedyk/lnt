@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:language_nerd_tools/domain/entities/language.dart';
 import 'package:language_nerd_tools/domain/entities/text_document.dart';
 import 'package:language_nerd_tools/domain/repositories/text_word_repository.dart';
+import 'package:language_nerd_tools/domain/value_objects/text_parsing_defaults.dart';
 import 'package:language_nerd_tools/services/text_word_index_service.dart';
 
 /// Records what the service asked it to do so tests can assert on writes
@@ -135,20 +136,32 @@ void main() {
   test('empty content still records the hash with no words', () async {
     await service.ensureIndexed(_text(''), _english);
     expect(repo.indexes['x1'], isEmpty);
-    expect(repo.hashes['x1'], TextWordIndexService.contentHash(''));
+    expect(repo.hashes['x1'], TextWordIndexService.indexHash('', _english));
   });
 
-  test('indexFromWords aggregates caller-supplied tokens', () async {
-    await service.indexFromWords('x1', 'a a b', [
-      (word: 'A', position: 0),
-      (word: 'a', position: 2),
-      (word: 'b', position: 4),
-    ]);
+  test('reindexes when the word pattern changes, not when it is unchanged',
+      () async {
+    final text = _text('alpha-beta gamma');
+    await service.ensureIndexed(text, _english);
+    expect(repo.indexes['x1']!.keys.toSet(), {'alpha', 'beta', 'gamma'});
 
-    final index = repo.indexes['x1']!;
-    expect(index['a']!.occurrences, 2);
-    expect(index['a']!.firstPosition, 0);
-    expect(index['b']!.occurrences, 1);
-    expect(repo.hashes['x1'], TextWordIndexService.contentHash('a a b'));
+    await service.ensureIndexed(text, _english);
+    expect(repo.replaceCalls, 1);
+
+    final custom = _english.copyWith(regexpWordCharacters: r'[\p{L}\-]+');
+    await service.ensureIndexed(text, custom);
+    expect(repo.replaceCalls, 2);
+    expect(repo.indexes['x1']!.keys.toSet(), {'alpha-beta', 'gamma'});
+  });
+
+  test('a legacy stored pattern hashes the same as the default', () {
+    final legacy = _english.copyWith(regexpWordCharacters: r'[\p{L}\p{M}]+');
+    final current = _english.copyWith(
+      regexpWordCharacters: TextParsingDefaults.wordPattern,
+    );
+    expect(
+      TextWordIndexService.indexHash('x', legacy),
+      TextWordIndexService.indexHash('x', current),
+    );
   });
 }

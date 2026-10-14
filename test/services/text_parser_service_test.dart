@@ -60,6 +60,24 @@ void main() {
     });
   });
 
+  group('effective patterns', () {
+    test('every legacy value maps to the current default', () {
+      for (final p in TextParsingDefaults.legacyWordPatterns) {
+        expect(TextParsingDefaults.effectiveWordPattern(p),
+            TextParsingDefaults.wordPattern);
+      }
+      for (final p in TextParsingDefaults.legacySentencePatterns) {
+        expect(TextParsingDefaults.effectiveSentencePattern(p),
+            TextParsingDefaults.sentencePattern);
+      }
+    });
+
+    test('a custom value passes through', () {
+      expect(TextParsingDefaults.effectiveWordPattern(r'[a-z]+'), r'[a-z]+');
+      expect(TextParsingDefaults.effectiveSentencePattern(r'[.]'), r'[.]');
+    });
+  });
+
   group('splitIntoWords', () {
     test('splits English text into words', () {
       final words = parser.splitIntoWords('Hello world', english());
