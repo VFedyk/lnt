@@ -11,7 +11,7 @@ import '../../domain/entities/dictionary.dart';
 import '../../service_locator.dart';
 import '../../data/services/ai_explanation_service.dart';
 import '../widgets/reader/ai_thinking_dialog.dart';
-import '../widgets/reader/edit_text_dialog.dart';
+import 'text_edit_screen.dart';
 import '../widgets/reader/reader_ai_explanation_dialog.dart';
 import '../widgets/reader/reader_app_bar.dart';
 import '../widgets/reader/reader_content.dart';
@@ -95,6 +95,7 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
   Future<void> _loadData() async {
     final l10n = AppLocalizations.of(context);
+    context.read<ReaderController>().loadFontSize();
     await AsyncHelpers.run(
       context,
       operation: () => context.read<ReaderController>().loadTermsAndParse(),
@@ -547,9 +548,15 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
   Future<void> _editText() async {
     final ctrl = context.read<ReaderController>();
-    final result = await showDialog<TextDocument>(
-      context: context,
-      builder: (context) => EditTextDialog(text: ctrl.text),
+    final result = await Navigator.push<TextDocument>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TextEditScreen(
+          text: ctrl.text,
+          language: ctrl.language,
+          fontSize: ctrl.fontSize,
+        ),
+      ),
     );
 
     if (result != null) {
@@ -557,10 +564,10 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     }
   }
 
-  void _showFontSizeDialog() {
+  Future<void> _showFontSizeDialog() async {
     final ctrl = context.read<ReaderController>();
     final l10n = AppLocalizations.of(context);
-    showDialog(
+    await showDialog(
       context: context,
       builder: (context) => ReaderFontSizeDialog(
         l10n: l10n,
@@ -571,6 +578,8 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
         onChanged: ctrl.setFontSize,
       ),
     );
+    // Covers both Done and a barrier-tap dismissal.
+    await ctrl.persistFontSize();
   }
 
   Future<void> _showTextReview() async {

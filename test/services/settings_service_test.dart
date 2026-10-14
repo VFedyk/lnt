@@ -70,4 +70,34 @@ void main() {
       expect(await settings.getAiAutoTranslate(), isFalse);
     });
   });
+
+  group('readerFontSize', () {
+    test('returns default when nothing is stored', () async {
+      expect(
+        await settings.getReaderFontSize(),
+        SettingsService.defaultReaderFontSize,
+      );
+    });
+
+    test('round-trips a valid value', () async {
+      await settings.setReaderFontSize(24);
+      expect(await settings.getReaderFontSize(), 24);
+    });
+
+    test('clamps on write above the max', () async {
+      await settings.setReaderFontSize(100);
+      expect(
+        await settings.getReaderFontSize(),
+        SettingsService.maxReaderFontSize,
+      );
+    });
+
+    test('clamps on write below the min', () async {
+      await settings.setReaderFontSize(1);
+      expect(
+        await settings.getReaderFontSize(),
+        SettingsService.minReaderFontSize,
+      );
+    });
+  });
 }

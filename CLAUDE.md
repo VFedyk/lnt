@@ -41,7 +41,7 @@ lib/
 │   ├── controllers/       # ChangeNotifier controllers (one per screen or complex dialog)
 │   │                      #   BaseController, LibraryController, VocabularyController,
 │   │                      #   DashboardController, ReaderController, SettingsController,
-│   │                      #   FlashcardReviewController, TermEditController,
+│   │                      #   FlashcardReviewController, TermEditController, TextEditController,
 │   │                      #   BaseTermSearchDialogController
 │   ├── screens/           # Full-page UI screens (thin UI layer) — incl. term_edit_screen.dart
 │   ├── widgets/           # UI components organized by screen
@@ -71,6 +71,7 @@ lib/
 
 - **home_screen.dart** — shell with 5 tabs via `HomeTab` enum: dashboard, texts (library), terms (vocabulary), review, languages
 - **vocabulary_screen.dart** — browse and manage all terms
+- **text_edit_screen.dart** — full-screen text editor (title, cover, content) replacing the old edit dialogs; pushed from the library and the reader, pops the updated `TextDocument` (callers write it)
 - **language_edit_screen.dart** — full-screen language editor (General / Advanced tabs); the Advanced tab edits the word and sentence regexes, shown as their effective values
 - **statistics_screen.dart** — learning analytics with status history charts
 - **review_screen.dart** — entry point for review; links to exercise-specific screens:
@@ -143,7 +144,8 @@ flutter build macos          # Build macOS
 - **Text ↔ word index** (v23, `text_words` + `text_word_index`): a **local, derived cache** — never synced, never tombstoned, rebuildable from `texts.content`, and carried inside the backup zip without special-casing. `text_words(text_id, lower_text, occurrences, first_position)` is keyed on the *normalized word form*, not term id, so it survives term CRUD untouched; the term↔text relation is derived at query time by joining `text_words.lower_text = terms.lower_text AND terms.language_id = texts.language_id`. `text_word_index(text_id, content_hash, …)` records what was indexed so a rebuild only happens when the content actually changes. Both cascade on text delete. **Multi-word terms are not in the index** (the tokenization is deliberately term-independent) — they are resolved separately by `ResolveTextTerms`. Invalidated by `TextRepositoryImpl.update` and by the `text` branch of `SyncPullService.applyEvent`; populated lazily by `TextWordIndexService.ensureIndexed`, which `ReaderController` fires and forgets after parsing so any text the user reads is already warm.
 - **TextWordIndexService** (`textWordIndex`): builds the index. Tokenizes via `compute(parseInIsolate, …)` with an **empty** `termsMapData` (that is what keeps it term-independent); jieba languages (`splitByCharacter && useWordSegmentation`) run on the main isolate instead, since jieba needs `rootBundle`. Staleness is detected with a sha1 `indexHash` (content + tokenizer config: split-by-character, segmentation, substitutions, effective word pattern), not a timestamp, so editing a language's word regex rebuilds its texts' indexes lazily.
 - EPUB parsing via `epub_pro` package (camelCase API)
-- **Screen controllers** (`lib/presentation/controllers/`): `SettingsController`, `LibraryController`, `VocabularyController`, `DashboardController`, `ReaderController`, `FlashcardReviewController`, `TermEditController` (drives `term_edit_screen.dart`), plus `BaseTermSearchDialogController` for a complex dialog. Each extends `BaseController` (which extends `ChangeNotifier`), provided via `ChangeNotifierProvider`. Controllers own all state and db access; screens/widgets are thin UI layers. `BaseController.safeNotify()` prevents post-dispose notification errors. Controllers never hold `BuildContext` — dialog-showing and SnackBars stay in the widget layer.
+- **Reader font size** is persisted (`settings.getReaderFontSize()`, key `reader_font_size`, 12–32, default 18). `ReaderController` loads it once on open and persists it when the font-size dialog closes; `TextEditScreen` renders its content field with the same size, the shared reader line height (`ReaderScreenConstants.lineHeight`), and the language's text direction.
+- **Screen controllers** (`lib/presentation/controllers/`): `SettingsController`, `LibraryController`, `VocabularyController`, `DashboardController`, `ReaderController`, `FlashcardReviewController`, `TermEditController` (drives `term_edit_screen.dart`), `TextEditController` (drives `text_edit_screen.dart`), `TextEditController` (drives `text_edit_screen.dart`), plus `BaseTermSearchDialogController` for a complex dialog. Each extends `BaseController` (which extends `ChangeNotifier`), provided via `ChangeNotifierProvider`. Controllers own all state and db access; screens/widgets are thin UI layers. `BaseController.safeNotify()` prevents post-dispose notification errors. Controllers never hold `BuildContext` — dialog-showing and SnackBars stay in the widget layer.
 - **SettingsController backup state**: tracks `icloudRemoteDate` (date of file in iCloud), `icloudLocalDate` (last backup from this device), `lastRestoreDate`, `isCheckingBackup`. Call `recheckICloudBackup()` to refresh the remote date.
 - **Use cases** (`lib/application/use_cases/`): `ReviewTerm` (owns FSRS scheduler, writes review log + card + term status), `SaveTerm` (create/update term + replaceForTerm in one call), `BulkImportTerms`, `TranslateTerm` (provider selection + language-code mapping), `CountClozeDue` (due cards whose stored sentence yields a word-boundary `findOccurrence` — the honest cloze badge count; the old `getClozeDueCount` SQL `EXISTS` over-reported). `ReviewService` delegates to `ReviewTerm` and is injected via constructor. Use case getters in `service_locator.dart`: `reviewTerm`, `saveTerm`, `bulkImportTerms`, `translateTerm`, `resolveTextTerms`, `countClozeDue`.
 - **FSRS / spaced repetition**:
@@ -235,7 +237,7 @@ All calls except `pushEvents` retry up to 3× on transient network errors with e
 
 ## Testing
 
-- **Command**: `flutter test` — runs all 383 tests in ~8-10 seconds
+- **Command**: `flutter test` — runs all 404 tests in ~8-10 seconds
 - **Expected output**: `All tests passed!` with no failures or errors
 - **Verification**: Use exit code pattern to avoid parsing verbose output:
   ```bash

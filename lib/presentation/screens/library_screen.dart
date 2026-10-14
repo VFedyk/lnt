@@ -19,7 +19,7 @@ import '../widgets/library/library_import_menu.dart';
 import '../widgets/library/library_list_content.dart';
 import '../widgets/library/library_search_bar.dart';
 import '../widgets/library/library_status_bar.dart';
-import '../widgets/library/text_edit_dialog.dart';
+import 'text_edit_screen.dart';
 import '../widgets/library/url_import_dialog.dart';
 import '../../utils/constants.dart';
 import '../../utils/dialog_helpers.dart';
@@ -101,9 +101,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _editText(LibraryController ctrl, TextDocument text) async {
-    final result = await showDialog<TextDocument>(
-      context: context,
-      builder: (context) => TextEditDialog(text: text),
+    final result = await Navigator.push<TextDocument>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TextEditScreen(text: text, language: widget.language),
+      ),
     );
     if (result != null) await ctrl.updateText(result);
   }

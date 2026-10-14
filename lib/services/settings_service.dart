@@ -40,6 +40,12 @@ class SettingsService {
   static const int minBookProgressLimit = 3;
   static const int maxBookProgressLimit = 15;
 
+  // Reader settings
+  static const String _readerFontSizeKey = 'reader_font_size';
+  static const double defaultReaderFontSize = 18.0;
+  static const double minReaderFontSize = 12.0;
+  static const double maxReaderFontSize = 32.0;
+
   // LibreTranslate settings
   static const String _libreTranslateUrlKey = 'libretranslate_url';
   static const String _libreTranslateApiKeyKey = 'libretranslate_api_key';
@@ -177,6 +183,21 @@ class SettingsService {
     await prefs.setInt(
       _bookProgressLimitKey,
       value.clamp(minBookProgressLimit, maxBookProgressLimit),
+    );
+  }
+
+  /// Font size shared by the reader and the text editor.
+  Future<double> getReaderFontSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getDouble(_readerFontSizeKey) ?? defaultReaderFontSize;
+    return value.clamp(minReaderFontSize, maxReaderFontSize);
+  }
+
+  Future<void> setReaderFontSize(double value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(
+      _readerFontSizeKey,
+      value.clamp(minReaderFontSize, maxReaderFontSize),
     );
   }
 

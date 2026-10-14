@@ -160,6 +160,16 @@ void main() {
     expect(await db.reviewLogs.getByTermId('alpha'), isEmpty);
   });
 
+  // Real sqflite I/O completes on its own clock, so poll instead of sleeping a
+  // fixed time (which flaked under load).
+  Future<void> waitUntil(WidgetTester tester, bool Function() done) async {
+    for (var i = 0; i < 200 && !done(); i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+    }
+  }
+
   testWidgets('the rating buttons advance a text-scoped flashcard session',
       (tester) async {
     final spec = ReviewSessionSpec(
@@ -179,9 +189,8 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: FlashcardReviewScreen(spec: spec),
       ));
-      await Future<void>.delayed(const Duration(milliseconds: 500));
     });
-    await tester.pump();
+    await waitUntil(tester, () => find.text("alpha").evaluate().isNotEmpty);
 
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
@@ -194,11 +203,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text(l10n.rateGood), findsOneWidget);
 
-    await tester.runAsync(() async {
-      await tester.tap(find.text(l10n.rateGood));
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-    });
-    await tester.pump();
+    await tester.tap(find.text(l10n.rateGood));
+    await waitUntil(tester, () => find.text("2 of 3").evaluate().isNotEmpty);
     await tester.pump(const Duration(milliseconds: 500));
 
     // Card 2 of 3 must now be showing: the reveal buttons are gone again.
@@ -210,17 +216,11 @@ void main() {
       await tester.tap(find.text(l10n.showAnswer));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
-      await tester.runAsync(() async {
-        await tester.tap(find.text(l10n.rateGood));
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-      });
-      await tester.pump();
+      await tester.tap(find.text(l10n.rateGood));
+      final next = i == 0 ? "3 of 3" : l10n.reviewComplete;
+      await waitUntil(tester, () => find.text(next).evaluate().isNotEmpty);
       await tester.pump(const Duration(milliseconds: 500));
     }
-
-    await tester.runAsync(
-        () async => Future<void>.delayed(const Duration(milliseconds: 500)));
-    await tester.pump();
 
     expect(find.text(l10n.reviewComplete), findsOneWidget);
   });

@@ -9,6 +9,7 @@ import '../../domain/entities/word_token.dart';
 import '../../service_locator.dart';
 import '../../data/services/ai_explanation_service.dart';
 import '../../services/dictionary_service.dart';
+import '../../services/settings_service.dart';
 import '../../services/text_parser_service.dart';
 import '../../services/isolate_parser.dart';
 import '../../services/text_word_index_service.dart';
@@ -55,7 +56,7 @@ class ReaderController extends BaseController {
   List<List<WordToken>> paragraphs = [];
   bool isLoading = true;
   bool showLegend = false;
-  double fontSize = 18.0;
+  double fontSize = SettingsService.defaultReaderFontSize;
   final Set<int> selectedWordIndices = {};
   bool isSelectionMode = false;
   Map<int, int> termCounts = {};
@@ -826,8 +827,16 @@ class ReaderController extends BaseController {
     safeNotify();
   }
 
+  /// In-memory only: fires on every slider tick. See [persistFontSize].
   void setFontSize(double size) {
     fontSize = size;
     safeNotify();
   }
+
+  Future<void> loadFontSize() async {
+    fontSize = await settings.getReaderFontSize();
+    safeNotify();
+  }
+
+  Future<void> persistFontSize() => settings.setReaderFontSize(fontSize);
 }

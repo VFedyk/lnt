@@ -131,6 +131,30 @@ void main() {
     ctrl.dispose();
   });
 
+  test('persistFontSize writes the setting and loadFontSize reads it back',
+      () async {
+    final ctrl = ReaderController(
+      text: TextDocument(
+        id: 'x1',
+        languageId: 'lang-1',
+        title: 'Chapter 1',
+        content: 'alpha beta',
+      ),
+      language: language,
+    );
+    controller = ctrl;
+
+    ctrl.setFontSize(26);
+    await ctrl.persistFontSize();
+    expect(await settings.getReaderFontSize(), 26);
+
+    ctrl.setFontSize(14);
+    await ctrl.loadFontSize();
+    expect(ctrl.fontSize, 26);
+
+    ctrl.dispose();
+  });
+
   group('sentence counts', () {
     ReaderController build(String content) {
       final ctrl = ReaderController(

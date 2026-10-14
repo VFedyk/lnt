@@ -7,6 +7,7 @@ import '../../../domain/entities/term.dart';
 import '../../../domain/entities/word_token.dart';
 import '../../theme/app_theme.dart';
 import '../../../domain/value_objects/term_status.dart';
+import 'reader_context_menu.dart';
 import 'word_tooltip.dart';
 
 class ParagraphRichText extends StatelessWidget {
@@ -24,7 +25,6 @@ class ParagraphRichText extends StatelessWidget {
   final void Function(int globalIndex)? onWordDragStart;
   final void Function(int globalIndex)? onWordDragEnter;
 
-  static const double _lineHeight = 1.6;
   static const double _wordPaddingH = 3.0;
   static const double _wordPaddingV = 2.0;
   static const double _wordMarginH = 1.0;
@@ -67,7 +67,7 @@ class ParagraphRichText extends StatelessWidget {
         : Colors.black87;
     final otherLanguageColor = appColors.readerOtherLanguage;
     final spans = <InlineSpan>[];
-    final textStyle = TextStyle(fontSize: fontSize, height: _lineHeight);
+    final textStyle = TextStyle(fontSize: fontSize, height: ReaderScreenConstants.lineHeight);
 
     int skipChars = 0;
 
@@ -180,7 +180,7 @@ class ParagraphRichText extends StatelessWidget {
             token.text,
             style: TextStyle(
               fontSize: fontSize,
-              height: _lineHeight,
+              height: ReaderScreenConstants.lineHeight,
               color: textColor,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),

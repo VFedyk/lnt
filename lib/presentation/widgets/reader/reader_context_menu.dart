@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../services/settings_service.dart';
 import '../../../utils/constants.dart';
 
 enum ReaderContextMenuAction {
@@ -13,9 +14,11 @@ enum ReaderContextMenuAction {
 }
 
 abstract class ReaderScreenConstants {
-  static const double fontSizeMin = 12.0;
-  static const double fontSizeMax = 32.0;
+  static const double fontSizeMin = SettingsService.minReaderFontSize;
+  static const double fontSizeMax = SettingsService.maxReaderFontSize;
   static const int fontSizeSliderDivisions = 20;
+  /// Reader paragraph line height; the text editor uses the same value.
+  static const double lineHeight = 1.6;
   static const double editIconSize = 18.0;
 }
 
