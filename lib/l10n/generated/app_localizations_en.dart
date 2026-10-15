@@ -287,6 +287,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addLanguage => 'Add Language';
 
   @override
+  String get chooseLanguageToLearn => 'Choose a language to start learning';
+
+  @override
+  String get searchLanguages => 'Search languages';
+
+  @override
+  String get popularLanguages => 'Popular';
+
+  @override
+  String get allLanguages => 'All languages';
+
+  @override
+  String get noMatchingLanguages => 'No matching languages';
+
+  @override
+  String get customLanguageSettings => 'Custom settings…';
+
+  @override
+  String languageAdded(String name) {
+    return '$name added';
+  }
+
+  @override
+  String errorAddingLanguage(String error) {
+    return 'Could not add language: $error';
+  }
+
+  @override
   String get editLanguage => 'Edit Language';
 
   @override

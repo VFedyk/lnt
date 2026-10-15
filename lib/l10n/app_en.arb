@@ -108,6 +108,28 @@
   "noLanguagesYet": "No Languages Yet",
   "addLanguageToStart": "Add a language to get started",
   "addLanguage": "Add Language",
+  "chooseLanguageToLearn": "Choose a language to start learning",
+  "searchLanguages": "Search languages",
+  "popularLanguages": "Popular",
+  "allLanguages": "All languages",
+  "noMatchingLanguages": "No matching languages",
+  "customLanguageSettings": "Custom settings…",
+  "languageAdded": "{name} added",
+  "@languageAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errorAddingLanguage": "Could not add language: {error}",
+  "@errorAddingLanguage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "editLanguage": "Edit Language",
   "deleteLanguageQuestion": "Delete Language?",
   "deleteLanguageConfirm": "This will delete \"{name}\" and all associated texts, terms, and dictionaries. Continue?",

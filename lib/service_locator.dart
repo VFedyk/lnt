@@ -19,6 +19,7 @@ import 'domain/repositories/text_foreign_word_repository.dart';
 import 'domain/repositories/text_repository.dart';
 import 'domain/repositories/text_word_repository.dart';
 import 'domain/repositories/translation_repository.dart';
+import 'application/use_cases/languages/create_language.dart';
 import 'application/use_cases/review/count_cloze_due.dart';
 import 'application/use_cases/review/review_term.dart';
 import 'application/use_cases/terms/bulk_import_terms.dart';
@@ -59,6 +60,7 @@ BulkImportTerms get bulkImportTerms => sl<BulkImportTerms>();
 TranslateTerm get translateTerm => sl<TranslateTerm>();
 ResolveTextTerms get resolveTextTerms => sl<ResolveTextTerms>();
 CountClozeDue get countClozeDue => sl<CountClozeDue>();
+CreateLanguage get createLanguage => sl<CreateLanguage>();
 
 void setupServiceLocator() {
   sl.registerLazySingleton<DataChangeNotifier>(() => DataChangeNotifier());
@@ -108,6 +110,14 @@ void setupServiceLocator() {
       reviewCards: sl<ReviewCardRepository>(),
       terms: sl<TermRepository>(),
       sentences: sl<TermSentenceRepository>(),
+    ),
+  );
+
+  sl.registerLazySingleton<CreateLanguage>(
+    () => CreateLanguage(
+      languages: sl<LanguageRepository>(),
+      dictionaries: sl<DictionaryRepository>(),
+      settings: sl<SettingsService>(),
     ),
   );
 

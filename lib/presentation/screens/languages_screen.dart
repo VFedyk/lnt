@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../domain/entities/dictionary.dart';
 import '../../domain/entities/language.dart';
 import '../../service_locator.dart';
 import '../../utils/constants.dart';
 import '../../utils/dialog_helpers.dart';
+import '../widgets/shared/add_language_flow.dart';
 import '../widgets/shared/app_empty_state.dart';
 import 'dictionaries_screen.dart';
 import 'language_edit_screen.dart';
@@ -37,52 +37,22 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
     });
   }
 
-  Future<void> _addOrEditLanguage([Language? language]) async {
+  Future<void> _editLanguage(Language language) async {
     final result = await Navigator.push<Language>(
       context,
       MaterialPageRoute(builder: (_) => LanguageEditScreen(language: language)),
     );
+    if (result == null) return;
+    await db.languages.update(result);
+    _loadLanguages();
+  }
 
-    if (result != null) {
-      if (language == null) {
-        final langId = await db.languages.create(result);
-        // Auto-create a Google Translate dictionary for the new language.
-        final targetLang = await settings.getTargetLang();
-        final sl = result.languageCode.toLowerCase();
-        final tl = targetLang.toLowerCase();
-        await db.dictionaries.create(
-          Dictionary(
-            languageId: langId,
-            name: 'Google Translate ${sl.toUpperCase()}-${tl.toUpperCase()}',
-            url: 'https://translate.google.com/?sl=$sl&tl=$tl&text=###&op=translate',
-          ),
-        );
-        // After creating language, prompt to add more dictionaries
-        if (mounted) {
-          final l10n = AppLocalizations.of(context);
-          final shouldAddDict = await DialogHelpers.showConfirmationDialog(
-            context,
-            title: l10n.addDictionariesQuestion,
-            message: l10n.addDictionariesPrompt(result.name),
-            cancelText: l10n.later,
-            confirmText: l10n.addNow,
-          );
-
-          if (shouldAddDict == true && mounted) {
-            final newLang = result.copyWith(id: langId);
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => DictionariesScreen(language: newLang),
-              ),
-            );
-          }
-        }
-      } else {
-        await db.languages.update(result);
-      }
-      _loadLanguages();
-    }
+  Future<void> _addLanguage() async {
+    await showAddLanguageSheet(
+      context,
+      existingCodes: _languages.map((l) => l.languageCode).toSet(),
+    );
+    _loadLanguages();
   }
 
   Future<void> _manageDictionaries(Language language) async {
@@ -129,7 +99,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
               iconColor: Colors.grey[400],
               title: l10n.noLanguagesYet,
               action: ElevatedButton.icon(
-                onPressed: () => _addOrEditLanguage(),
+                onPressed: _addLanguage,
                 icon: const Icon(Icons.add),
                 label: Text(l10n.addLanguage),
               ),
@@ -168,7 +138,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.edit),
-                          onPressed: () => _addOrEditLanguage(lang),
+                          onPressed: () => _editLanguage(lang),
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete),
@@ -181,10 +151,12 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _addOrEditLanguage(),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _languages.isEmpty
+          ? null
+          : FloatingActionButton(
+              onPressed: _addLanguage,
+              child: const Icon(Icons.add),
+            ),
     );
   }
 }

@@ -286,6 +286,34 @@ class AppLocalizationsUk extends AppLocalizations {
   String get addLanguage => 'Додати мову';
 
   @override
+  String get chooseLanguageToLearn => 'Оберіть мову, щоб почати навчання';
+
+  @override
+  String get searchLanguages => 'Пошук мов';
+
+  @override
+  String get popularLanguages => 'Популярні';
+
+  @override
+  String get allLanguages => 'Усі мови';
+
+  @override
+  String get noMatchingLanguages => 'Мов не знайдено';
+
+  @override
+  String get customLanguageSettings => 'Власні налаштування…';
+
+  @override
+  String languageAdded(String name) {
+    return 'Мову «$name» додано';
+  }
+
+  @override
+  String errorAddingLanguage(String error) {
+    return 'Не вдалося додати мову: $error';
+  }
+
+  @override
   String get editLanguage => 'Редагувати мову';
 
   @override

@@ -626,6 +626,54 @@ abstract class AppLocalizations {
   /// **'Add Language'**
   String get addLanguage;
 
+  /// No description provided for @chooseLanguageToLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a language to start learning'**
+  String get chooseLanguageToLearn;
+
+  /// No description provided for @searchLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Search languages'**
+  String get searchLanguages;
+
+  /// No description provided for @popularLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular'**
+  String get popularLanguages;
+
+  /// No description provided for @allLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'All languages'**
+  String get allLanguages;
+
+  /// No description provided for @noMatchingLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching languages'**
+  String get noMatchingLanguages;
+
+  /// No description provided for @customLanguageSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom settings…'**
+  String get customLanguageSettings;
+
+  /// No description provided for @languageAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} added'**
+  String languageAdded(String name);
+
+  /// No description provided for @errorAddingLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add language: {error}'**
+  String errorAddingLanguage(String error);
+
   /// No description provided for @editLanguage.
   ///
   /// In en, this message translates to:

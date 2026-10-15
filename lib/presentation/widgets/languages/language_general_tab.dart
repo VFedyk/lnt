@@ -34,9 +34,7 @@ class LanguageGeneralTab extends StatelessWidget {
     final locale = Localizations.localeOf(context);
     final scheme = Theme.of(context).colorScheme;
     final isCJK = selectedPreset?.splitByCharacter ?? false;
-    final sortedPresets = [...kLangPresets]
-      ..sort((a, b) => langSortKey(localizedLangName(l10n, a.code), locale)
-          .compareTo(langSortKey(localizedLangName(l10n, b.code), locale)));
+    final sortedPresets = sortedLangPresets(l10n, locale);
 
     return ListView(
       padding: const EdgeInsets.all(AppConstants.spacingL),

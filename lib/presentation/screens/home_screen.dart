@@ -12,7 +12,9 @@ import '../../domain/entities/language.dart';
 import '../../service_locator.dart';
 import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
-import '../widgets/shared/app_empty_state.dart';
+import '../../utils/language_utils.dart';
+import '../widgets/shared/add_language_flow.dart';
+import '../widgets/shared/language_quick_picker.dart';
 import '../widgets/shared/share_import_dialog.dart';
 import 'dashboard_tab.dart';
 import 'reader_screen.dart';
@@ -110,15 +112,12 @@ class _DesktopSidebar extends StatelessWidget {
 /// Layout and sizing constants for the home screen
 abstract class _HomeScreenConstants {
   // Icon sizes
-  static const double emptyStateIconSize = 80.0;
+  static const double emptyStateIconSize = 56.0;
   static const double checkIconSize = 20.0;
   static const double flagEmojiFontSize = 20.0;
 
   // Data limits
   static const Duration appStatePollingInterval = Duration(milliseconds: 50);
-
-  // Empty state colors
-  static const Color emptyStateIconColor = Color(0xFFBDBDBD); // Colors.grey[400]
 }
 
 class HomeScreen extends StatefulWidget {
@@ -141,11 +140,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   StreamSubscription<List<SharedMediaFile>>? _sharingSubscription;
   bool _sharingDialogOpen = false;
 
+  late final AppState _appState;
+
   static const _navigationChannel = MethodChannel('lnt/navigation');
 
   @override
   void initState() {
     super.initState();
+    _appState = context.read<AppState>();
+    _appState.addListener(_onAppStateChanged);
     _sidebarController = AnimationController(
       duration: const Duration(milliseconds: 250),
       vsync: this,
@@ -171,6 +174,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _appState.removeListener(_onAppStateChanged);
     _sidebarController.dispose();
     dataChanges.languages.removeListener(_loadLanguages);
     dataChanges.reviewCards.removeListener(_refreshDueCount);
@@ -290,6 +294,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  /// Follows selection changes made elsewhere (e.g. a language created from
+  /// the Languages screen), which land after `dataChanges.languages` fires.
+  void _onAppStateChanged() {
+    final id = _appState.selectedLanguageId;
+    if (!mounted || id == _selectedLanguage?.id) return;
+    final match = _languages.where((l) => l.id == id).firstOrNull;
+    if (match != null) {
+      setState(() => _selectedLanguage = match);
+      _refreshDueCount();
+    } else {
+      _loadLanguages();
+    }
+  }
+
   Future<void> _refreshDueCount() async {
     if (_selectedLanguage == null) return;
     final dueCount = await db.reviewCards
@@ -326,25 +344,52 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildEmptyState() {
     final l10n = AppLocalizations.of(context);
-    return AppEmptyState(
-      icon: Icons.language,
-      iconSize: _HomeScreenConstants.emptyStateIconSize,
-      iconColor: _HomeScreenConstants.emptyStateIconColor,
-      title: l10n.noLanguagesYet,
-      titleStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-      subtitle: l10n.addLanguageToStart,
-      action: ElevatedButton.icon(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const LanguagesScreen()),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: Text(l10n.addLanguage),
-      ),
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(
+            top: AppConstants.spacingXL,
+            left: AppConstants.spacingL,
+            right: AppConstants.spacingL,
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.language,
+                size: _HomeScreenConstants.emptyStateIconSize,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: AppConstants.spacingM),
+              Text(
+                l10n.noLanguagesYet,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppConstants.spacingS),
+              Text(
+                l10n.chooseLanguageToLearn,
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: LanguageQuickPicker(
+            existingCodes: const {},
+            onPresetSelected: (p) => createAndSelectLanguage(
+              context,
+              p.toLanguage(localizedLangName(l10n, p.code)),
+              isFirstLanguage: true,
+            ),
+            onCustomSettings: () =>
+                openCustomLanguageForm(context, isFirstLanguage: true),
+          ),
+        ),
+      ],
     );
   }
 

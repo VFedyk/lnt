@@ -1,3 +1,9 @@
+import 'package:flutter/widgets.dart';
+
+import '../../../domain/entities/language.dart';
+import '../../../l10n/generated/app_localizations.dart';
+import '../../../utils/language_utils.dart';
+
 class LangPreset {
   final String name;
   final String code;
@@ -32,7 +38,32 @@ class LangPreset {
     final second = 0x1F1E6 + country.codeUnitAt(1) - 0x41;
     return String.fromCharCodes([first, second]);
   }
+
+  /// A new, unsaved [Language] with this preset's defaults.
+  /// [displayName] is the localized name (`localizedLangName(l10n, code)`).
+  Language toLanguage(String displayName) => Language(
+        name: displayName,
+        languageCode: code,
+        rightToLeft: rightToLeft,
+        splitByCharacter: splitByCharacter,
+        useWordSegmentation: useWordSegmentation,
+      );
 }
+
+/// Codes shown as "Popular" chips in the quick picker, in display order.
+const kPopularLangCodes = <String>[
+  'en', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'uk', 'zh', 'ja', 'ko',
+];
+
+/// [presets] (default: all) sorted by localized name for [locale].
+List<LangPreset> sortedLangPresets(
+  AppLocalizations l10n,
+  Locale locale, [
+  Iterable<LangPreset> presets = kLangPresets,
+]) =>
+    [...presets]..sort((a, b) =>
+        langSortKey(localizedLangName(l10n, a.code), locale)
+            .compareTo(langSortKey(localizedLangName(l10n, b.code), locale)));
 
 const kLangPresets = <LangPreset>[
   LangPreset('Arabic', 'ar', rightToLeft: true),
