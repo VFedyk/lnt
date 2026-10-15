@@ -911,6 +911,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get showRomanizationHint => 'Відображати вимову';
 
   @override
+  String get systemDictionary => 'Системний словник';
+
+  @override
+  String get systemDictionaryHint =>
+      'Шукати слова в словниках, встановлених на цьому пристрої';
+
+  @override
+  String get systemDictionaryFailed => 'Не вдалося відкрити системний словник';
+
+  @override
   String get splitByCharacter => 'Розділяти за символами';
 
   @override

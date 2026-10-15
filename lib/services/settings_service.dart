@@ -40,6 +40,10 @@ class SettingsService {
   static const int minBookProgressLimit = 3;
   static const int maxBookProgressLimit = 15;
 
+  // Dictionary settings
+  static const String _systemDictionaryEnabledPrefix =
+      'system_dictionary_enabled_';
+
   // Reader settings
   static const String _readerFontSizeKey = 'reader_font_size';
   static const double defaultReaderFontSize = 18.0;
@@ -184,6 +188,18 @@ class SettingsService {
       _bookProgressLimitKey,
       value.clamp(minBookProgressLimit, maxBookProgressLimit),
     );
+  }
+
+  /// Whether the virtual System Dictionary entry is offered for a language.
+  /// A missing key means on. Local only: not backed up, not synced.
+  Future<bool> getSystemDictionaryEnabled(String languageId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('$_systemDictionaryEnabledPrefix$languageId') ?? true;
+  }
+
+  Future<void> setSystemDictionaryEnabled(String languageId, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('$_systemDictionaryEnabledPrefix$languageId', value);
   }
 
   /// Font size shared by the reader and the text editor.

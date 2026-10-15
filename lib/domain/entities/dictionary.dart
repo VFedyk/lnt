@@ -61,6 +61,24 @@ class Dictionary {
     );
   }
 
+  /// Id and URL of the virtual OS dictionary entry. It is added to lookup
+  /// lists in memory and is never persisted.
+  static const String systemId = 'system';
+  static const String systemUrl = 'lnt-system-dictionary://###';
+
+  /// The virtual System Dictionary entry. [name] is an English fallback; the
+  /// UI shows the localized name.
+  factory Dictionary.system(String languageId) => Dictionary(
+        id: systemId,
+        languageId: languageId,
+        name: 'System Dictionary',
+        url: systemUrl,
+        sortOrder: -1,
+        isActive: true,
+      );
+
+  bool get isSystem => url == systemUrl;
+
   // Validate URL format
   bool get isValidUrl => url.isNotEmpty && url.contains('###');
 }

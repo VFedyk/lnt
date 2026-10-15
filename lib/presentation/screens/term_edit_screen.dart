@@ -11,6 +11,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../service_locator.dart';
 import '../../utils/constants.dart';
 import '../../utils/dialog_helpers.dart';
+import '../../utils/dictionary_navigation.dart';
 import '../controllers/term_edit_controller.dart';
 import '../widgets/shared/base_term_search_dialog.dart';
 import '../widgets/term_edit/term_form_section.dart';
@@ -339,7 +340,7 @@ class _TermEditScreenState extends State<TermEditScreen> {
             onSelected: (dict) => widget.onLookup(context, dict),
             itemBuilder: (context) => widget.dictionaries
                 .map((dict) =>
-                    PopupMenuItem(value: dict, child: Text(dict.name)))
+                    PopupMenuItem(value: dict, child: Text(dictionaryDisplayName(l10n, dict))))
                 .toList(),
           ),
         TextButton(

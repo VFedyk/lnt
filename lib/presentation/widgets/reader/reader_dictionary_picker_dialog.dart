@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../domain/entities/dictionary.dart';
+import '../../../utils/dictionary_navigation.dart';
 
 class ReaderDictionaryPickerDialog extends StatelessWidget {
   final AppLocalizations l10n;
@@ -24,8 +25,9 @@ class ReaderDictionaryPickerDialog extends StatelessWidget {
         children: dictionaries
             .map(
               (dict) => ListTile(
-                leading: const Icon(Icons.book),
-                title: Text(dict.name),
+                leading: Icon(
+                    dict.isSystem ? Icons.menu_book_outlined : Icons.book),
+                title: Text(dictionaryDisplayName(l10n, dict)),
                 onTap: () => Navigator.pop(context, dict),
               ),
             )

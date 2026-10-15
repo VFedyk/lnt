@@ -1754,6 +1754,24 @@ abstract class AppLocalizations {
   /// **'Display pronunciation guide'**
   String get showRomanizationHint;
 
+  /// Name of the operating system's built-in dictionary, shown in lookup lists on Apple devices
+  ///
+  /// In en, this message translates to:
+  /// **'System Dictionary'**
+  String get systemDictionary;
+
+  /// Subtitle of the per-language switch that enables the System Dictionary entry
+  ///
+  /// In en, this message translates to:
+  /// **'Look up words in the dictionaries installed on this device'**
+  String get systemDictionaryHint;
+
+  /// Error shown when the native system dictionary lookup fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the System Dictionary'**
+  String get systemDictionaryFailed;
+
   /// No description provided for @splitByCharacter.
   ///
   /// In en, this message translates to:

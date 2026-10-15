@@ -16,6 +16,10 @@ class LanguageGeneralTab extends StatelessWidget {
   final ValueChanged<bool> onSplitByCharacterChanged;
   final ValueChanged<bool> onWordSegmentationChanged;
 
+  /// Both null when the System Dictionary switch must not be shown.
+  final bool? systemDictionaryEnabled;
+  final ValueChanged<bool>? onSystemDictionaryChanged;
+
   const LanguageGeneralTab({
     super.key,
     required this.selectedPreset,
@@ -26,6 +30,8 @@ class LanguageGeneralTab extends StatelessWidget {
     required this.onRomanizationChanged,
     required this.onSplitByCharacterChanged,
     required this.onWordSegmentationChanged,
+    this.systemDictionaryEnabled,
+    this.onSystemDictionaryChanged,
   });
 
   @override
@@ -79,6 +85,15 @@ class LanguageGeneralTab extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
             ),
         ],
+        if (systemDictionaryEnabled != null &&
+            onSystemDictionaryChanged != null)
+          SwitchListTile(
+            title: Text(l10n.systemDictionary),
+            subtitle: Text(l10n.systemDictionaryHint),
+            value: systemDictionaryEnabled!,
+            onChanged: onSystemDictionaryChanged,
+            contentPadding: EdgeInsets.zero,
+          ),
         const SizedBox(height: AppConstants.spacingS),
         Container(
           padding: const EdgeInsets.all(AppConstants.spacingM),

@@ -910,6 +910,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showRomanizationHint => 'Display pronunciation guide';
 
   @override
+  String get systemDictionary => 'System Dictionary';
+
+  @override
+  String get systemDictionaryHint =>
+      'Look up words in the dictionaries installed on this device';
+
+  @override
+  String get systemDictionaryFailed => 'Could not open the System Dictionary';
+
+  @override
   String get splitByCharacter => 'Split by Character';
 
   @override

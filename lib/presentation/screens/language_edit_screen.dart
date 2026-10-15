@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../data/services/system_dictionary_service.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/value_objects/text_parsing_defaults.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../service_locator.dart';
 import '../../utils/language_utils.dart';
 import '../../utils/snackbar_helpers.dart';
 import '../widgets/languages/language_advanced_tab.dart';
@@ -28,6 +30,11 @@ class _LanguageEditScreenState extends State<LanguageEditScreen>
   late bool _showRomanization;
   late bool _splitByCharacter;
   late bool _useWordSegmentation;
+  bool _systemDictionaryEnabled = true;
+
+  /// The switch only applies on Apple platforms, to an existing language.
+  bool get _showSystemDictionarySwitch =>
+      SystemDictionaryService.isSupported && widget.language?.id != null;
 
   @override
   void initState() {
@@ -51,6 +58,11 @@ class _LanguageEditScreenState extends State<LanguageEditScreen>
       text: TextParsingDefaults.effectiveSentencePattern(
           lang?.regexpSplitSentences ?? ''),
     );
+    if (_showSystemDictionarySwitch) {
+      settings.getSystemDictionaryEnabled(lang!.id!).then((v) {
+        if (mounted) setState(() => _systemDictionaryEnabled = v);
+      });
+    }
   }
 
   @override
@@ -76,7 +88,7 @@ class _LanguageEditScreenState extends State<LanguageEditScreen>
     return v.isEmpty ? fallback : v;
   }
 
-  void _save() {
+  Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) {
       // The Form validates every tab; jump to Advanced if that is where it failed.
@@ -111,6 +123,11 @@ class _LanguageEditScreenState extends State<LanguageEditScreen>
           _sentenceController, TextParsingDefaults.sentencePattern),
       exceptionsSplitSentences: existing?.exceptionsSplitSentences ?? '',
     );
+    if (_showSystemDictionarySwitch) {
+      await settings.setSystemDictionaryEnabled(
+          existing!.id!, _systemDictionaryEnabled);
+    }
+    if (!mounted) return;
     Navigator.pop(context, lang);
   }
 
@@ -152,6 +169,11 @@ class _LanguageEditScreenState extends State<LanguageEditScreen>
               }),
               onWordSegmentationChanged: (v) =>
                   setState(() => _useWordSegmentation = v),
+              systemDictionaryEnabled:
+                  _showSystemDictionarySwitch ? _systemDictionaryEnabled : null,
+              onSystemDictionaryChanged: _showSystemDictionarySwitch
+                  ? (v) => setState(() => _systemDictionaryEnabled = v)
+                  : null,
             ),
             LanguageAdvancedTab(
               wordController: _wordController,

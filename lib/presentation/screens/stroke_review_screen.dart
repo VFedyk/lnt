@@ -9,6 +9,7 @@ import '../widgets/shared/review_session_app_bar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/term.dart';
 import '../../service_locator.dart';
+import '../../services/dictionary_service.dart';
 import '../../utils/constants.dart';
 import '../widgets/shared/app_empty_state.dart';
 import '../widgets/shared/reread_suggestion_card.dart';
@@ -69,9 +70,8 @@ class _StrokeReviewBodyState extends State<_StrokeReviewBody> {
     FlashcardReviewController controller,
     Term term,
   ) async {
-    final dictionaries = await db.dictionaries.getAll(
-      languageId: controller.language.id!,
-    );
+    final dictionaries = await DictionaryService()
+        .getActiveDictionaries(controller.language.id!);
     if (!mounted) return;
 
     final result = await TermEditScreen.open(

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,9 +6,12 @@ import 'package:language_nerd_tools/domain/entities/language.dart';
 import 'package:language_nerd_tools/domain/value_objects/text_parsing_defaults.dart';
 import 'package:language_nerd_tools/l10n/generated/app_localizations.dart';
 import 'package:language_nerd_tools/presentation/screens/language_edit_screen.dart';
+import 'package:language_nerd_tools/service_locator.dart';
+import 'package:language_nerd_tools/services/settings_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> _pump(WidgetTester tester, Language? lang,
-    {required void Function(Language?) onPop}) async {
+    {required void Function(Language?) onPop, bool openAdvanced = true}) async {
   await tester.pumpWidget(MaterialApp(
     localizationsDelegates: const [
       AppLocalizations.delegate,
@@ -30,7 +34,7 @@ Future<void> _pump(WidgetTester tester, Language? lang,
   ));
   await tester.tap(find.text('open'));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Advanced'));
+  if (openAdvanced) await tester.tap(find.text('Advanced'));
   await tester.pumpAndSettle();
 }
 
@@ -66,6 +70,51 @@ void main() {
     await tester.tap(find.byTooltip('Reset to default').last);
     await tester.pump();
     expect(find.text(TextParsingDefaults.sentencePattern), findsOneWidget);
+  });
+
+  group('System Dictionary switch', () {
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      await sl.reset();
+      sl.registerSingleton<SettingsService>(SettingsService());
+    });
+    tearDown(() async {
+      debugDefaultTargetPlatformOverride = null;
+      await sl.reset();
+    });
+
+    testWidgets('hidden for a new language on iOS', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      await _pump(tester, null, onPop: (_) {}, openAdvanced: false);
+      expect(find.text('System Dictionary'), findsNothing);
+      debugDefaultTargetPlatformOverride = null; // checked before tearDown
+    });
+
+    testWidgets('hidden on Android when editing', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      await _pump(tester, _english, onPop: (_) {}, openAdvanced: false);
+      expect(find.text('System Dictionary'), findsNothing);
+      debugDefaultTargetPlatformOverride = null; // checked before tearDown
+    });
+
+    testWidgets('shown on iOS when editing; off + Save stores false',
+        (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      Language? popped;
+      await _pump(tester, _english,
+          onPop: (l) => popped = l, openAdvanced: false);
+      expect(find.text('System Dictionary'), findsOneWidget);
+
+      await tester.tap(find.text('System Dictionary'));
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      debugDefaultTargetPlatformOverride = null; // checked before tearDown
+
+      expect(popped, isNotNull);
+      expect(await sl<SettingsService>().getSystemDictionaryEnabled('l1'),
+          isFalse);
+    });
   });
 
   testWidgets('word field is disabled when splitting by character',

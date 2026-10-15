@@ -10,6 +10,23 @@ void main() {
     settings = SettingsService();
   });
 
+  group('systemDictionaryEnabled', () {
+    test('defaults to true for an unknown language', () async {
+      expect(await settings.getSystemDictionaryEnabled('nope'), isTrue);
+    });
+
+    test('round-trips false', () async {
+      await settings.setSystemDictionaryEnabled('l1', false);
+      expect(await settings.getSystemDictionaryEnabled('l1'), isFalse);
+    });
+
+    test('is per language', () async {
+      await settings.setSystemDictionaryEnabled('a', false);
+      expect(await settings.getSystemDictionaryEnabled('a'), isFalse);
+      expect(await settings.getSystemDictionaryEnabled('b'), isTrue);
+    });
+  });
+
   group('bookProgressLimit', () {
     test('returns default when nothing is stored', () async {
       expect(
