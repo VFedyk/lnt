@@ -88,6 +88,26 @@ void main() {
     });
   });
 
+  group('dictionary page settings', () {
+    test('both default to false', () async {
+      expect(await settings.getDictionaryDarkenPages(), isFalse);
+      expect(await settings.getDictionaryCoverNavigation(), isFalse);
+    });
+
+    test('round-trip independently', () async {
+      await settings.setDictionaryDarkenPages(true);
+      expect(await settings.getDictionaryDarkenPages(), isTrue);
+      expect(await settings.getDictionaryCoverNavigation(), isFalse);
+
+      await settings.setDictionaryCoverNavigation(true);
+      expect(await settings.getDictionaryCoverNavigation(), isTrue);
+
+      await settings.setDictionaryDarkenPages(false);
+      expect(await settings.getDictionaryDarkenPages(), isFalse);
+      expect(await settings.getDictionaryCoverNavigation(), isTrue);
+    });
+  });
+
   group('readerFontSize', () {
     test('returns default when nothing is stored', () async {
       expect(

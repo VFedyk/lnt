@@ -177,6 +177,24 @@ class AppLocalizationsUk extends AppLocalizations {
   String get dashboardSettings => 'Головна';
 
   @override
+  String get dictionarySettingsTitle => 'Сторінки словників';
+
+  @override
+  String get dictionaryDarkenPages => 'Затемнювати сторінки в темному режимі';
+
+  @override
+  String get dictionaryDarkenPagesHint =>
+      'Інвертує кольори сторінки, коли застосунок використовує темну тему. Словники з власним CSS не змінюються.';
+
+  @override
+  String get dictionaryCoverNavigation =>
+      'Ховати сторінки під час завантаження';
+
+  @override
+  String get dictionaryCoverNavigationHint =>
+      'Також закриває сторінку під час переходу за посиланнями всередині словника, а не лише при першому відкритті.';
+
+  @override
   String get readingProgressItems => 'Книг у «Прогресі читання»';
 
   @override

@@ -177,6 +177,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardSettings => 'Home screen';
 
   @override
+  String get dictionarySettingsTitle => 'Dictionary pages';
+
+  @override
+  String get dictionaryDarkenPages => 'Darken pages in dark mode';
+
+  @override
+  String get dictionaryDarkenPagesHint =>
+      'Inverts page colors while the app uses a dark theme. Dictionaries with custom CSS are left unchanged.';
+
+  @override
+  String get dictionaryCoverNavigation => 'Hide pages while they load';
+
+  @override
+  String get dictionaryCoverNavigationHint =>
+      'Also covers the page when following links inside a dictionary, not just on first open.';
+
+  @override
   String get readingProgressItems => 'Books in Reading progress';
 
   @override

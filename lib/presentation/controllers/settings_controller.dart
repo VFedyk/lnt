@@ -15,6 +15,8 @@ class SettingsController extends BaseController {
   int _savedBookProgressLimit = SettingsService.defaultBookProgressLimit;
   bool aiAutoFetchIpa = false;
   bool aiAutoTranslate = false;
+  bool dictionaryDarkenPages = false;
+  bool dictionaryCoverNavigation = false;
   DeepLUsage? usage;
   bool isLoadingUsage = false;
   String? dbPath;
@@ -51,6 +53,8 @@ class SettingsController extends BaseController {
     final aiProvider = await settings.getAiProvider();
     final autoFetchIpa = await settings.getAiAutoFetchIpa();
     final autoTranslate = await settings.getAiAutoTranslate();
+    final darkenPages = await settings.getDictionaryDarkenPages();
+    final coverNavigation = await settings.getDictionaryCoverNavigation();
     final retention = await settings.getDesiredRetention();
     final newCards = await settings.getNewCardsPerDay();
     final sessionLimit = await settings.getSessionCardLimit();
@@ -75,6 +79,8 @@ class SettingsController extends BaseController {
     initialAiProvider = aiProvider;
     aiAutoFetchIpa = autoFetchIpa;
     aiAutoTranslate = autoTranslate;
+    dictionaryDarkenPages = darkenPages;
+    dictionaryCoverNavigation = coverNavigation;
     isApiFree = isFree;
     targetLang = tgtLang;
     desiredRetention = retention;
@@ -123,6 +129,8 @@ class SettingsController extends BaseController {
     await settings.setAiProvider(aiProvider.trim());
     await settings.setAiAutoFetchIpa(aiAutoFetchIpa);
     await settings.setAiAutoTranslate(aiAutoTranslate);
+    await settings.setDictionaryDarkenPages(dictionaryDarkenPages);
+    await settings.setDictionaryCoverNavigation(dictionaryCoverNavigation);
     await settings.setDesiredRetention(desiredRetention);
     await settings.setNewCardsPerDay(newCardsPerDay);
     await settings.setSessionCardLimit(sessionCardLimit);
@@ -243,6 +251,16 @@ class SettingsController extends BaseController {
 
   void setAiAutoTranslate(bool value) {
     aiAutoTranslate = value;
+    safeNotify();
+  }
+
+  void setDictionaryDarkenPages(bool value) {
+    dictionaryDarkenPages = value;
+    safeNotify();
+  }
+
+  void setDictionaryCoverNavigation(bool value) {
+    dictionaryCoverNavigation = value;
     safeNotify();
   }
 

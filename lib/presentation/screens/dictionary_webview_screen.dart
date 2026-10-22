@@ -1,14 +1,21 @@
 // FILE: lib/screens/dictionary_webview_screen.dart
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../utils/async_helpers.dart';
 import '../../utils/constants.dart';
+import '../../utils/dictionary_page_style.dart';
 
 abstract class _WebViewConstants {
   static const int frameLoadInterruptedError = 2;
+  static const Duration revealFallback = Duration(seconds: 8);
+  static const Duration coverFade = Duration(milliseconds: 180);
+  static const String darkSheetMarker = '__lntDarkSheet';
 }
 
 class DictionaryWebViewScreen extends StatefulWidget {
@@ -16,11 +23,20 @@ class DictionaryWebViewScreen extends StatefulWidget {
   final String word;
   final String? customCss;
 
+  /// Invert page colours while the app's effective theme is dark. Ignored when
+  /// [customCss] is non-empty.
+  final bool darkenPages;
+
+  /// Also cover the page on in-page navigation, not only on the first load.
+  final bool coverOnNavigation;
+
   const DictionaryWebViewScreen({
     super.key,
     required this.url,
     required this.word,
     this.customCss,
+    this.darkenPages = false,
+    this.coverOnNavigation = false,
   });
 
   @override
@@ -32,12 +48,45 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
   late String _currentUrl;
+  bool _contentVisible = false;
+  bool _firstLoadDone = false;
+  Timer? _revealTimer;
+  Color? _appliedBackground;
+  Brightness _brightness = Brightness.light;
+  Color _surface = Colors.white;
 
   @override
   void initState() {
     super.initState();
     _currentUrl = widget.url;
     _initializeWebView();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final theme = Theme.of(context);
+    _brightness = theme.brightness;
+    _surface = theme.colorScheme.surface;
+    // setBackgroundColor uses setOpaque, which isn't implemented on macOS; the
+    // cover overlay handles it there.
+    if (_surface != _appliedBackground &&
+        !kIsWeb &&
+        defaultTargetPlatform != TargetPlatform.macOS) {
+      _appliedBackground = _surface;
+      _controller.setBackgroundColor(_surface);
+    }
+  }
+
+  @override
+  void dispose() {
+    _revealTimer?.cancel();
+    super.dispose();
+  }
+
+  void _reveal() {
+    _revealTimer?.cancel();
+    if (mounted) setState(() => _contentVisible = true);
   }
 
   void _initializeWebView() {
@@ -49,20 +98,40 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
+            // Fallback for pages whose onPageFinished arrives very late.
+            _revealTimer?.cancel();
+            _revealTimer = Timer(_WebViewConstants.revealFallback, _reveal);
+            if (!mounted) return;
             setState(() {
               _isLoading = true;
               _currentUrl = url;
+              if (widget.coverOnNavigation && _firstLoadDone) {
+                _contentVisible = false;
+              }
             });
           },
-          onPageFinished: (url) {
-            setState(() {
-              _isLoading = false;
-              _currentUrl = url;
-            });
-            _injectCustomCss();
+          onPageFinished: (url) async {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                _currentUrl = url;
+              });
+            }
+            _firstLoadDone = true;
+            try {
+              await _injectStyles();
+            } catch (_) {
+              // A JS failure must never leave the page covered.
+            } finally {
+              _reveal();
+            }
           },
           onWebResourceError: (error) {
-            setState(() => _isLoading = false);
+            // A failed ad or font must not clear the loading state early.
+            if (error.isForMainFrame != false) {
+              if (mounted) setState(() => _isLoading = false);
+              _reveal();
+            }
 
             // WKErrorDomain error 2 = frame load interrupted
             if (error.errorCode ==
@@ -94,25 +163,49 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
 
   }
 
-  Future<void> _injectCustomCss() async {
-    final css = widget.customCss;
-    if (css == null || css.isEmpty) return;
+  Future<void> _injectStyles() async {
+    final custom = widget.customCss;
+    if (custom != null && custom.isNotEmpty) {
+      // The dictionary's own CSS wins; darkening it too would double-invert.
+      await _injectCss(custom, forceImportant: true);
+    } else if (widget.darkenPages && _brightness == Brightness.dark) {
+      await _injectCss(
+        buildDarkenCss(_surface),
+        forceImportant: false,
+        marker: _WebViewConstants.darkSheetMarker,
+      );
+    }
+  }
+
+  Future<void> _injectCss(
+    String css, {
+    required bool forceImportant,
+    String? marker,
+  }) async {
     final cssJson = jsonEncode(css);
     // Constructable Stylesheets (new CSSStyleSheet()) bypass CSP style-src
     // restrictions that block <style> element injection. Adding !important to
     // all declarations makes our rules win over inline styles set by React and
     // other frameworks, since author !important > normal inline styles in the
     // CSS cascade.
+    final important = forceImportant
+        ? 'css=css.replace(/([\\w-]+\\s*:\\s*[^;!{}]+?)\\s*(;|})/g,'
+              'function(m,d,e){return d+" !important"+e;});'
+        : '';
+    // The marker stops a re-run on the same document adding a duplicate sheet.
+    final guard = marker == null ? '' : 'if(window.$marker)return;';
+    final store = marker == null ? '' : 'window.$marker=sheet;';
     await _controller.runJavaScript(
       '(function(){'
-      'var raw=$cssJson;'
-      'var css=raw.replace(/([\\w-]+\\s*:\\s*[^;!{}]+?)\\s*(;|})/g,'
-      'function(m,d,e){return d+" !important"+e;});'
+      '$guard'
+      'var css=$cssJson;'
+      '$important'
       'try{'
       'var sheet=new CSSStyleSheet();'
       'sheet.replaceSync(css);'
       'document.adoptedStyleSheets='
       '(document.adoptedStyleSheets||[]).concat([sheet]);'
+      '$store'
       '}catch(e){}'
       '})()',
     );
@@ -121,6 +214,7 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -134,7 +228,7 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
               l10n.dictionaryLookup,
               style: TextStyle(
                 fontSize: AppConstants.fontSizeCaption,
-                color: Colors.grey[300],
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -149,9 +243,11 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
                 child: SizedBox(
                   width: AppConstants.progressIndicatorSize,
                   height: AppConstants.progressIndicatorSize,
-                  child: const CircularProgressIndicator(
+                  child: CircularProgressIndicator(
                     strokeWidth: AppConstants.progressStrokeWidth,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    color:
+                        Theme.of(context).appBarTheme.foregroundColor ??
+                        colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -217,7 +313,14 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
       body: Column(
         children: [
           if (_isLoading) const LinearProgressIndicator(),
-          Expanded(child: WebViewWidget(controller: _controller)),
+          Expanded(
+            child: Stack(
+              children: [
+                WebViewWidget(controller: _controller),
+                _LoadingCover(visible: !_contentVisible),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -235,6 +338,30 @@ class _DictionaryWebViewScreenState extends State<DictionaryWebViewScreen> {
         }
       },
       errorMessageBuilder: (e) => l10n.errorOpeningBrowser(e.toString()),
+    );
+  }
+}
+
+/// Opaque theme-coloured overlay that hides the native view's white flash.
+class _LoadingCover extends StatelessWidget {
+  final bool visible;
+
+  const _LoadingCover({required this.visible});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        ignoring: !visible,
+        child: AnimatedOpacity(
+          opacity: visible ? 1 : 0,
+          duration: _WebViewConstants.coverFade,
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.surface,
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+        ),
+      ),
     );
   }
 }

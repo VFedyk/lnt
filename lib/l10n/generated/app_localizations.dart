@@ -428,6 +428,36 @@ abstract class AppLocalizations {
   /// **'Home screen'**
   String get dashboardSettings;
 
+  /// No description provided for @dictionarySettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictionary pages'**
+  String get dictionarySettingsTitle;
+
+  /// No description provided for @dictionaryDarkenPages.
+  ///
+  /// In en, this message translates to:
+  /// **'Darken pages in dark mode'**
+  String get dictionaryDarkenPages;
+
+  /// No description provided for @dictionaryDarkenPagesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Inverts page colors while the app uses a dark theme. Dictionaries with custom CSS are left unchanged.'**
+  String get dictionaryDarkenPagesHint;
+
+  /// No description provided for @dictionaryCoverNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide pages while they load'**
+  String get dictionaryCoverNavigation;
+
+  /// No description provided for @dictionaryCoverNavigationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Also covers the page when following links inside a dictionary, not just on first open.'**
+  String get dictionaryCoverNavigationHint;
+
   /// No description provided for @readingProgressItems.
   ///
   /// In en, this message translates to:

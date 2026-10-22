@@ -71,6 +71,11 @@ class SettingsService {
   static const String _aiAutoFetchIpaKey = 'ai_auto_fetch_ipa';
   static const String _aiAutoTranslateKey = 'ai_auto_translate';
 
+  // Dictionary WebView theming
+  static const String _dictionaryDarkenPagesKey = 'dictionary_darken_pages';
+  static const String _dictionaryCoverNavigationKey =
+      'dictionary_cover_navigation';
+
   // Custom database path
   static const String _customDbPathKey = 'custom_db_path';
 
@@ -345,6 +350,26 @@ class SettingsService {
   Future<void> setAiAutoTranslate(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_aiAutoTranslateKey, value);
+  }
+
+  Future<bool> getDictionaryDarkenPages() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_dictionaryDarkenPagesKey) ?? false;
+  }
+
+  Future<void> setDictionaryDarkenPages(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_dictionaryDarkenPagesKey, value);
+  }
+
+  Future<bool> getDictionaryCoverNavigation() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_dictionaryCoverNavigationKey) ?? false;
+  }
+
+  Future<void> setDictionaryCoverNavigation(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_dictionaryCoverNavigationKey, value);
   }
 
   // Custom database path

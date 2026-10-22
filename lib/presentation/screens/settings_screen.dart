@@ -18,6 +18,7 @@ import '../widgets/settings/ai_settings_section.dart';
 import '../widgets/settings/app_language_section.dart';
 import '../widgets/settings/backup_section.dart';
 import '../widgets/settings/dashboard_settings_section.dart';
+import '../widgets/settings/dictionary_settings_section.dart';
 import '../widgets/settings/database_section.dart';
 import '../widgets/settings/deepl_settings_section.dart';
 import '../widgets/settings/deepl_usage_section.dart';
@@ -258,6 +259,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         l10n: AppLocalizations.of(context),
                         bookProgressLimit: ctrl.bookProgressLimit,
                         onBookProgressLimitChanged: ctrl.setBookProgressLimit,
+                      ),
+                      const SizedBox(height: AppConstants.spacingL),
+                      DictionarySettingsSection(
+                        l10n: AppLocalizations.of(context),
+                        darkenPages: ctrl.dictionaryDarkenPages,
+                        onDarkenPagesChanged: ctrl.setDictionaryDarkenPages,
+                        coverOnNavigation: ctrl.dictionaryCoverNavigation,
+                        onCoverOnNavigationChanged:
+                            ctrl.setDictionaryCoverNavigation,
                       ),
                       if (PlatformHelper.isDesktop) ...[
                         const SizedBox(height: AppConstants.spacingL),
