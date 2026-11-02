@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../domain/entities/term.dart';
 import '../../../utils/constants.dart';
+import 'reader_word_popup.dart';
+import 'word_tooltip.dart';
 
 class ReaderTranslationDialog extends StatelessWidget {
   final Term term;
@@ -14,6 +16,7 @@ class ReaderTranslationDialog extends StatelessWidget {
   final AppLocalizations l10n;
   final VoidCallback onEdit;
   final VoidCallback onPronounce;
+  final int sentenceCount;
 
   const ReaderTranslationDialog({
     super.key,
@@ -25,15 +28,15 @@ class ReaderTranslationDialog extends StatelessWidget {
     required this.l10n,
     required this.onEdit,
     required this.onPronounce,
+    required this.sentenceCount,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: IntrinsicWidth(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 280, maxWidth: 480),
-          child: Padding(
+    return ReaderWordPopupCard(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 280, maxWidth: 480),
+        child: Padding(
           padding: const EdgeInsets.all(AppConstants.spacingL),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -135,9 +138,12 @@ class ReaderTranslationDialog extends StatelessWidget {
                   ),
                 ),
               ),
+              if (sentenceCount > 0) ...[
+                const SizedBox(height: AppConstants.spacingXS),
+                WordExampleCountLine(count: sentenceCount, l10n: l10n),
+              ],
             ],
           ),
-        ),
         ),
       ),
     );

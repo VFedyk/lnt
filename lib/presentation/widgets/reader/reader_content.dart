@@ -20,7 +20,12 @@ class ReaderContent extends StatelessWidget {
   final Map<String, Translation> translationsById;
   final Map<String, int> sentenceCounts;
   final Map<String, Term> termsById;
-  final void Function(String word, int position, int globalIndex) onWordTap;
+  final void Function(
+    String word,
+    int position,
+    int globalIndex,
+    Rect? anchorRect,
+  ) onWordTap;
   final void Function(int globalIndex) onWordLongPress;
   final void Function(String word, int position, int globalIndex, Offset globalPosition)? onWordRightClick;
   final void Function(int globalIndex)? onWordDragStart;

@@ -19,7 +19,12 @@ class ParagraphRichText extends StatelessWidget {
   final Map<String, Translation> translationsById;
   final Map<String, int> sentenceCounts;
   final Map<String, Term> termsById;
-  final void Function(String word, int position, int globalIndex) onWordTap;
+  final void Function(
+    String word,
+    int position,
+    int globalIndex,
+    Rect? anchorRect,
+  ) onWordTap;
   final void Function(int globalIndex) onWordLongPress;
   final void Function(String word, int position, int globalIndex, Offset globalPosition)? onWordRightClick;
   final void Function(int globalIndex)? onWordDragStart;
@@ -155,8 +160,15 @@ class ParagraphRichText extends StatelessWidget {
       final tooltipSpan =
           tooltipData == null ? null : buildWordTooltipSpan(tooltipData, l10n);
 
-      Widget wordContainer = GestureDetector(
-        onTap: () => onWordTap(token.text, token.position, globalIndex),
+      Widget wordContainer = Builder(builder: (wordContext) => GestureDetector(
+        onTap: () {
+          Rect? anchorRect;
+          final box = wordContext.findRenderObject();
+          if (box is RenderBox && box.attached && box.hasSize) {
+            anchorRect = box.localToGlobal(Offset.zero) & box.size;
+          }
+          onWordTap(token.text, token.position, globalIndex, anchorRect);
+        },
         onLongPress: () => onWordLongPress(globalIndex),
         onSecondaryTapUp: onWordRightClick != null
             ? (details) => onWordRightClick!(
@@ -186,7 +198,7 @@ class ParagraphRichText extends StatelessWidget {
             ),
           ),
         ),
-      );
+      ));
 
       if (tooltipSpan != null) {
         wordContainer = Tooltip(

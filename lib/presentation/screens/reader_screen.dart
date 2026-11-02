@@ -23,6 +23,7 @@ import '../widgets/reader/reader_foreign_word_dialog.dart';
 import '../widgets/reader/reader_language_picker_dialog.dart';
 import '../widgets/reader/reader_mark_all_known_dialog.dart';
 import '../widgets/reader/reader_translation_dialog.dart';
+import '../widgets/reader/reader_word_popup.dart';
 import 'term_edit_screen.dart';
 import '../widgets/shared/text_review_sheet.dart';
 import '../widgets/reader/word_list_drawer.dart';
@@ -105,7 +106,12 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
   // --- Word interaction ---
 
-  Future<void> _handleWordTap(String word, int position, int tokenIndex) async {
+  Future<void> _handleWordTap(
+    String word,
+    int position,
+    int tokenIndex,
+    Rect? anchorRect,
+  ) async {
     final ctrl = context.read<ReaderController>();
 
     if (ctrl.isSelectionMode) {
@@ -118,7 +124,11 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
 
     final foreignInfo = ctrl.otherLanguageTerms[lowerWord];
     if (foreignInfo != null) {
-      final shouldRemove = await _showForeignWordPopup(lowerWord, foreignInfo);
+      final shouldRemove = await _showForeignWordPopup(
+        lowerWord,
+        foreignInfo,
+        anchorRect,
+      );
       if (shouldRemove == true) {
         await ctrl.removeForeignMarking(lowerWord);
       }
@@ -128,7 +138,11 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     final existingTerm = ctrl.termsMap[lowerWord];
 
     if (existingTerm != null && ctrl.hasTranslations(existingTerm)) {
-      final shouldEdit = await _showTranslationPopup(ctrl, existingTerm);
+      final shouldEdit = await _showTranslationPopup(
+        ctrl,
+        existingTerm,
+        anchorRect,
+      );
       if (shouldEdit == true) {
         await _openTermDialog(ctrl, word, position, existingTerm);
       }
@@ -138,7 +152,11 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
     await _openTermDialog(ctrl, word, position, existingTerm);
   }
 
-  Future<bool?> _showTranslationPopup(ReaderController ctrl, Term term) async {
+  Future<bool?> _showTranslationPopup(
+    ReaderController ctrl,
+    Term term,
+    Rect? anchorRect,
+  ) async {
     final l10n = AppLocalizations.of(context);
     List<Translation> translations = [];
     if (term.id != null) {
@@ -150,9 +168,12 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
       ];
     }
 
-    return showDialog<bool>(
+    return showReaderWordPopup<bool>(
       context: context,
+      anchorRect: anchorRect,
       builder: (context) => ReaderTranslationDialog(
+        sentenceCount:
+            term.id != null ? (ctrl.sentenceCounts[term.id!] ?? 0) : 0,
         term: term,
         translations: translations,
         translationsById: ctrl.translationsById,
@@ -169,10 +190,12 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
   Future<bool?> _showForeignWordPopup(
     String lowerWord,
     ForeignTermInfo info,
+    Rect? anchorRect,
   ) async {
     final l10n = AppLocalizations.of(context);
-    return showDialog<bool>(
+    return showReaderWordPopup<bool>(
       context: context,
+      anchorRect: anchorRect,
       builder: (context) => ReaderForeignWordDialog(
         lowerWord: lowerWord,
         info: info,
@@ -757,7 +780,8 @@ class _ReaderScreenBodyState extends State<_ReaderScreenBody> {
             ? null
             : WordListDrawer(
                 wordTokens: ctrl.wordTokens,
-                onWordTap: _handleWordTap,
+                onWordTap: (word, position, index) =>
+                    _handleWordTap(word, position, index, null),
               ),
         appBar: ReaderAppBar(
           title: ctrl.text.title,

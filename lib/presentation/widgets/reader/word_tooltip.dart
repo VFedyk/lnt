@@ -121,7 +121,7 @@ InlineSpan? buildWordTooltipSpan(WordTooltipData data, AppLocalizations l10n) {
         children: [
           const WidgetSpan(
             alignment: PlaceholderAlignment.middle,
-            child: _DimmedIcon(),
+            child: WordExampleCountIcon(),
           ),
           TextSpan(
             text: ' ${l10n.tooltipExampleCount(data.sentenceCount)}',
@@ -140,8 +140,10 @@ InlineSpan? buildWordTooltipSpan(WordTooltipData data, AppLocalizations l10n) {
   return TextSpan(children: children);
 }
 
-class _DimmedIcon extends StatelessWidget {
-  const _DimmedIcon();
+/// The dimmed quote icon that prefixes the example count; sized and colored
+/// from the ambient [DefaultTextStyle].
+class WordExampleCountIcon extends StatelessWidget {
+  const WordExampleCountIcon({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -150,6 +152,40 @@ class _DimmedIcon extends StatelessWidget {
       Icons.format_quote,
       size: style.fontSize,
       color: style.color?.withValues(alpha: 0.75),
+    );
+  }
+}
+
+/// "N examples" line shown in the reader's word popups.
+class WordExampleCountLine extends StatelessWidget {
+  final int count;
+  final AppLocalizations l10n;
+
+  const WordExampleCountLine({
+    super.key,
+    required this.count,
+    required this.l10n,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+      fontStyle: FontStyle.italic,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
+    return DefaultTextStyle.merge(
+      style: style,
+      child: Text.rich(
+        TextSpan(
+          children: [
+            const WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: WordExampleCountIcon(),
+            ),
+            TextSpan(text: ' ${l10n.tooltipExampleCount(count)}'),
+          ],
+        ),
+      ),
     );
   }
 }

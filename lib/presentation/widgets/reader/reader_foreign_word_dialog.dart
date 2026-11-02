@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../controllers/reader_controller.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../utils/constants.dart';
+import 'reader_word_popup.dart';
+import 'word_tooltip.dart';
 
 class ReaderForeignWordDialog extends StatelessWidget {
   final String lowerWord;
@@ -23,9 +25,9 @@ class ReaderForeignWordDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return ReaderWordPopupCard(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: AppConstants.dialogWidth),
+        constraints: const BoxConstraints(maxWidth: 480),
         child: Padding(
           padding: const EdgeInsets.all(AppConstants.spacingL),
           child: Column(
@@ -107,6 +109,10 @@ class ReaderForeignWordDialog extends StatelessWidget {
                   info.term!.translation,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
+              ],
+              if (info.sentenceCount > 0) ...[
+                const SizedBox(height: AppConstants.spacingXS),
+                WordExampleCountLine(count: info.sentenceCount, l10n: l10n),
               ],
               const SizedBox(height: AppConstants.spacingL),
               Align(
