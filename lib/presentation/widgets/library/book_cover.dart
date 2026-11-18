@@ -50,7 +50,6 @@ class BookCover extends StatelessWidget {
   final bool isFolder;
   final bool isCompleted;
   final VoidCallback? onTap;
-  final VoidCallback? onLongPress;
 
   const BookCover({
     super.key,
@@ -60,14 +59,12 @@ class BookCover extends StatelessWidget {
     this.isFolder = false,
     this.isCompleted = false,
     this.onTap,
-    this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      onLongPress: onLongPress,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

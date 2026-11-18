@@ -7,6 +7,7 @@ import '../../../domain/entities/language.dart';
 import '../../../domain/entities/text_document.dart';
 import '../../theme/app_theme.dart';
 import '../../../utils/constants.dart';
+import 'library_draggable.dart';
 
 abstract class _LibraryListContentConstants {
   static const double finishedBackgroundAlpha = 0.2;
@@ -217,6 +218,7 @@ class _FolderListItemState extends State<_FolderListItem> {
           child: Icon(collection.isContinuous ? Icons.menu_book : Icons.folder),
         ),
         title: Tooltip(
+          triggerMode: TooltipTriggerMode.manual,
           message: collection.name,
           child: Text(collection.name, overflow: TextOverflow.ellipsis),
         ),
@@ -318,7 +320,7 @@ class _FolderListItemState extends State<_FolderListItem> {
                         BorderRadius.circular(AppConstants.spacingS + 4),
                   )
                 : null,
-            child: Draggable<Object>(
+            child: LibraryDraggable(
               data: collection,
               feedback: feedback,
               childWhenDragging: Opacity(
@@ -398,6 +400,7 @@ class _TextListItemState extends State<_TextListItem> {
           ),
         ),
         title: Tooltip(
+          triggerMode: TooltipTriggerMode.manual,
           message: text.title,
           child: Text(text.title, overflow: TextOverflow.ellipsis),
         ),
@@ -503,7 +506,7 @@ class _TextListItemState extends State<_TextListItem> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: Draggable<Object>(
+      child: LibraryDraggable(
         data: text,
         feedback: feedback,
         childWhenDragging: Opacity(

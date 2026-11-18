@@ -6,6 +6,7 @@ import '../../../domain/entities/collection.dart';
 import '../../../domain/entities/text_document.dart';
 import '../../../utils/constants.dart';
 import 'book_cover.dart';
+import 'library_draggable.dart';
 
 abstract class _LibraryGridContentConstants {
   static const double maxCrossAxisExtent = 140.0;
@@ -86,7 +87,6 @@ class LibraryGridContent extends StatelessWidget {
                   imagePath: collection.coverImage,
                   isFolder: true,
                   onTap: () => onOpenCollection(collection),
-                  onLongPress: () => onShowCollectionOptions(collection),
                 );
 
                 final feedback = Opacity(
@@ -122,8 +122,10 @@ class LibraryGridContent extends StatelessWidget {
                               ),
                             )
                           : null,
-                      child: Draggable<Object>(
+                      child: LibraryDraggable(
                         data: collection,
+                        onShowOptions: () =>
+                            onShowCollectionOptions(collection),
                         feedback: feedback,
                         childWhenDragging: Opacity(
                           opacity:
@@ -149,7 +151,6 @@ class LibraryGridContent extends StatelessWidget {
                 imagePath: text.coverImage,
                 isCompleted: text.status == TextStatus.finished,
                 onTap: () => onOpenText(text),
-                onLongPress: () => onShowTextOptions(text),
               );
 
               final feedback = Opacity(
@@ -164,8 +165,9 @@ class LibraryGridContent extends StatelessWidget {
                 ),
               );
 
-              return Draggable<Object>(
+              return LibraryDraggable(
                 data: text,
+                onShowOptions: () => onShowTextOptions(text),
                 feedback: feedback,
                 childWhenDragging: Opacity(
                   opacity: _LibraryGridContentConstants.draggingOpacity,
