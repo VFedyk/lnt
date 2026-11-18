@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../domain/entities/day_activity.dart';

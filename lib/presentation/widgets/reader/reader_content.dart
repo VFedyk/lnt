@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../controllers/reader_controller.dart';
 import '../../../domain/entities/term.dart';

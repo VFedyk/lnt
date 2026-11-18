@@ -1,5 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../domain/entities/term.dart';
 import '../../controllers/term_edit_controller.dart';

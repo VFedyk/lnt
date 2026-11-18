@@ -1,5 +1,5 @@
 import '../theme/term_status_ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import '../controllers/flashcard_review_controller.dart';

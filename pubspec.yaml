@@ -75,6 +75,8 @@ dependencies:
   receive_sharing_intent: ^1.8.1
   flutter_markdown_plus: ^1.0.7
 
+  cupertino_ui: any
+  material_ui: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

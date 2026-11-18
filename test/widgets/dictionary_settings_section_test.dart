@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:language_nerd_tools/l10n/generated/app_localizations.dart';
 import 'package:language_nerd_tools/presentation/widgets/settings/dictionary_settings_section.dart';

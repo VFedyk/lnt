@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../domain/entities/term.dart';
 import '../../../domain/value_objects/part_of_speech.dart';

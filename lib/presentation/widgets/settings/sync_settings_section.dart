@@ -1,7 +1,7 @@
 import 'dart:async' show TimeoutException;
 import 'dart:io' show SocketException;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../data/services/sync_api.dart' show SyncApiException;
 import '../../../service_locator.dart';

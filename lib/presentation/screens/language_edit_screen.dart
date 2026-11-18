@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../data/services/system_dictionary_service.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/value_objects/text_parsing_defaults.dart';

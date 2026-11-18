@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../models/review_session_spec.dart';
 import 'practice_mode_banner.dart';

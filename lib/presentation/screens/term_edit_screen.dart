@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../data/services/deepl_service.dart';
 import '../../data/services/libretranslate_service.dart';

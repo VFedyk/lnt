@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../application/use_cases/translation/translate_term.dart';
 import '../../../domain/entities/translation_result.dart';
 import '../../../domain/value_objects/translation_provider.dart';

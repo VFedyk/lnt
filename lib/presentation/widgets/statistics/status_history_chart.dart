@@ -1,6 +1,6 @@
 import '../../theme/term_status_ui.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../models/chart_data.dart';

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Data model for daily activity bar chart.
 /// Holds counts for reviews, words added, and texts finished for a single day.

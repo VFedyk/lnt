@@ -1,5 +1,5 @@
 // FILE: lib/screens/dictionaries_screen.dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/entities/dictionary.dart';
