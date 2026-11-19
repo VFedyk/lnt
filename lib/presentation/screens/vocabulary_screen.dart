@@ -78,18 +78,18 @@ class _VocabularyViewState extends State<_VocabularyView> {
     VocabularyController controller,
   ) async {
     final l10n = AppLocalizations.of(context);
-    final result = await FilePicker.pickFiles(
+    final path = (await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['csv', 'txt'],
-    );
+    ))?.path;
 
-    if (result != null && result.files.single.path != null && context.mounted) {
+    if (path != null && context.mounted) {
       int importedCount = 0;
       await AsyncHelpers.run(
         context,
         operation: () async {
           importedCount = await controller.importTermsFromFile(
-            File(result.files.single.path!),
+            File(path),
           );
         },
         errorMessageBuilder: (e) => l10n.importFailed(e.toString()),

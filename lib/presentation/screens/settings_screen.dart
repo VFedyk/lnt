@@ -138,9 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _changeDatabase(SettingsController ctrl) async {
-    final result = await FilePicker.pickFiles(type: FileType.any);
-    if (result == null || result.files.isEmpty) return;
-    final newPath = result.files.single.path;
+    final newPath = (await FilePicker.pickFile(type: FileType.any))?.path;
     if (newPath == null) return;
 
     await ctrl.setCustomDbPath(newPath);

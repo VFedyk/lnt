@@ -169,23 +169,21 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _setCoverImage(LibraryController ctrl, TextDocument text) async {
-    final result = await FilePicker.pickFiles(type: FileType.image);
-    if (result != null && result.files.single.path != null) {
-      await ctrl.setCoverImage(text, result.files.single.path!);
-    }
+    final path = (await FilePicker.pickFile(type: FileType.image))?.path;
+    if (path != null) await ctrl.setCoverImage(text, path);
   }
 
   // ── Import ──
 
   Future<void> _importFromTextFile(LibraryController ctrl) async {
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['txt'],
     );
+    final path = file?.path;
 
-    if (result != null && result.files.single.path != null) {
-      final file = result.files.single;
-      final content = await _importService.readTextFile(File(file.path!));
+    if (file != null && path != null) {
+      final content = await _importService.readTextFile(File(path));
 
       final text = TextDocument(
         languageId: widget.language.id!,
@@ -198,16 +196,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _importFromEpub(LibraryController ctrl) async {
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['epub'],
-      withData: true,
     );
 
-    if (result == null || result.files.single.bytes == null) return;
+    if (file == null) return;
     if (!mounted) return;
 
-    final file = result.files.single;
     final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
@@ -226,7 +222,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     try {
       final epubService = EpubImportService();
       final importResult = await epubService.importEpub(
-        epubBytes: file.bytes!,
+        epubBytes: await file.readAsBytes(),
         languageId: widget.language.id!,
         parentCollectionId: ctrl.currentCollection?.id,
       );

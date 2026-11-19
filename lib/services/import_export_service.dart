@@ -1,5 +1,7 @@
 // FILE: lib/services/import_export_service.dart
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 // import 'dart:convert';
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
@@ -137,14 +139,13 @@ class ImportExportService {
     String mimeType,
   ) async {
     if (PlatformHelper.isDesktop) {
-      final result = await FilePicker.saveFile(
+      // file_picker 12+ writes the bytes itself.
+      await FilePicker.saveFile(
         dialogTitle: 'Save export',
         fileName: fileName,
+        bytes: Uint8List.fromList(utf8.encode(content)),
+        mimeType: mimeType,
       );
-      if (result != null) {
-        final file = File(result);
-        await file.writeAsString(content);
-      }
     } else {
       final directory = await getTemporaryDirectory();
       if (!await directory.exists()) {

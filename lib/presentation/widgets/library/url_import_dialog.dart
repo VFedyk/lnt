@@ -4,9 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
-import 'package:super_clipboard/super_clipboard.dart';
+import '../../../utils/clipboard_image.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../domain/entities/text_document.dart';
 import '../../../services/url_import_service.dart';
@@ -106,39 +104,19 @@ class _UrlImportDialogState extends State<UrlImportDialog> {
   }
 
   Future<void> _pickCoverImage() async {
-    final result = await FilePicker.pickFiles(
+    final sourcePath = (await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
-    );
+    ))?.path;
+    if (sourcePath == null) return;
 
-    if (result != null && result.files.single.path != null) {
-      final sourcePath = result.files.single.path!;
-      final sourceFile = File(sourcePath);
-
-      final appDir = await getApplicationDocumentsDirectory();
-      final coversDir = Directory(p.join(appDir.path, 'covers'));
-      if (!await coversDir.exists()) {
-        await coversDir.create(recursive: true);
-      }
-
-      final extension = p.extension(sourcePath);
-      final newFileName = '${DateTime.now().millisecondsSinceEpoch}$extension';
-      final newPath = p.join(coversDir.path, newFileName);
-
-      await sourceFile.copy(newPath);
-
-      setState(() {
-        _coverImagePath = newPath;
-      });
-    }
+    final newPath = await CoverImageHelper.importFile(sourcePath);
+    if (mounted) setState(() => _coverImagePath = newPath);
   }
 
   Future<void> _pasteFromClipboard() async {
-    final clipboard = SystemClipboard.instance;
-    if (clipboard == null) return;
-
-    final clipboardReader = await clipboard.read();
-    if (clipboardReader.items.isEmpty) {
+    final image = await readClipboardImage();
+    if (image == null) {
       if (mounted) {
         SnackbarHelpers.showError(
           context,
@@ -148,50 +126,8 @@ class _UrlImportDialogState extends State<UrlImportDialog> {
       return;
     }
 
-    final item = clipboardReader.items.first;
-    FileFormat? format;
-    String extension = 'png';
-    if (item.canProvide(Formats.png)) {
-      format = Formats.png;
-      extension = 'png';
-    } else if (item.canProvide(Formats.jpeg)) {
-      format = Formats.jpeg;
-      extension = 'jpg';
-    }
-
-    if (format == null) {
-      if (mounted) {
-        SnackbarHelpers.showError(
-          context,
-          AppLocalizations.of(context).noImageInClipboard,
-        );
-      }
-      return;
-    }
-
-    final completer = Completer<Uint8List?>();
-    item.getFile(format, (file) async {
-      completer.complete(await file.readAll());
-    }, onError: (_) => completer.complete(null));
-    final imageBytes = await completer.future;
-
-    if (imageBytes == null) {
-      if (mounted) {
-        SnackbarHelpers.showError(
-          context,
-          AppLocalizations.of(context).noImageInClipboard,
-        );
-      }
-      return;
-    }
-
-    final appDir = await getApplicationDocumentsDirectory();
-    final coversDir = Directory(p.join(appDir.path, 'covers'));
-    if (!await coversDir.exists()) await coversDir.create(recursive: true);
-
-    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$extension';
-    final newPath = p.join(coversDir.path, fileName);
-    await File(newPath).writeAsBytes(imageBytes);
+    final newPath =
+        await CoverImageHelper.saveBytes(image.bytes, image.extension);
 
     if (mounted) setState(() => _coverImagePath = newPath);
   }

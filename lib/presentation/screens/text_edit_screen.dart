@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:super_clipboard/super_clipboard.dart';
+import '../../utils/clipboard_image.dart';
 
 import '../../domain/entities/language.dart';
 import '../../domain/entities/text_document.dart';
@@ -93,11 +93,10 @@ class _TextEditScreenState extends State<TextEditScreen> {
   }
 
   Future<void> _pickCoverImage() async {
-    final result = await FilePicker.pickFiles(
+    final sourcePath = (await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
-    );
-    final sourcePath = result?.files.single.path;
+    ))?.path;
     if (sourcePath == null) return;
     final newPath = await CoverImageHelper.importFile(sourcePath);
     _controller.setCoverImagePath(newPath);
@@ -112,31 +111,11 @@ class _TextEditScreenState extends State<TextEditScreen> {
   }
 
   Future<void> _pasteFromClipboard() async {
-    final clipboard = SystemClipboard.instance;
-    if (clipboard == null) return;
+    final image = await readClipboardImage();
+    if (image == null) return _showNoImage();
 
-    final reader = await clipboard.read();
-    if (reader.items.isEmpty) return _showNoImage();
-
-    final item = reader.items.first;
-    FileFormat? format;
-    String extension = 'png';
-    if (item.canProvide(Formats.png)) {
-      format = Formats.png;
-    } else if (item.canProvide(Formats.jpeg)) {
-      format = Formats.jpeg;
-      extension = 'jpg';
-    }
-    if (format == null) return _showNoImage();
-
-    final completer = Completer<Uint8List?>();
-    item.getFile(format, (file) async {
-      completer.complete(await file.readAll());
-    }, onError: (_) => completer.complete(null));
-    final bytes = await completer.future;
-    if (bytes == null) return _showNoImage();
-
-    final newPath = await CoverImageHelper.saveBytes(bytes, extension);
+    final newPath =
+        await CoverImageHelper.saveBytes(image.bytes, image.extension);
     _controller.setCoverImagePath(newPath);
   }
 

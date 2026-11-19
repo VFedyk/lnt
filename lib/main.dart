@@ -35,28 +35,19 @@ void main() async {
   await db.database;
   await CoverImageHelper.initialize();
 
-  if (PlatformHelper.isDesktop) {
-    await windowManager.ensureInitialized();
-
+  final window = PlatformHelper.isDesktop
+      ? WindowManager.instance.getCurrent()
+      : null;
+  if (window != null) {
     final width = await settings.getWindowWidth();
     final height = await settings.getWindowHeight();
     final maximized = await settings.getWindowMaximized();
 
-    const minSize = Size(400, 300);
-
-    await windowManager.waitUntilReadyToShow(
-      WindowOptions(
-        size: Size(width, height),
-        minimumSize: minSize,
-        center: true,
-      ),
-      () async {
-        if (maximized) {
-          await windowManager.maximize();
-        }
-        await windowManager.show();
-      },
-    );
+    window.setSize(Size(width, height).toNative(), false);
+    window.minimumSize = const Size(400, 300).toNative();
+    window.center();
+    if (maximized) window.maximize();
+    window.show();
   }
 
   runApp(const LNTApp());
@@ -69,53 +60,55 @@ class LNTApp extends StatefulWidget {
   State<LNTApp> createState() => _LNTAppState();
 }
 
-class _LNTAppState extends State<LNTApp> with WindowListener {
+class _LNTAppState extends State<LNTApp> {
   Timer? _resizeDebounce;
+  Window? _window;
+  ListenerId? _windowListener;
 
   @override
   void initState() {
     super.initState();
     if (PlatformHelper.isDesktop) {
-      windowManager.addListener(this);
+      _window = WindowManager.instance.getCurrent();
+      _windowListener = _window?.addListener(_onWindowEvent);
     }
   }
 
   @override
   void dispose() {
-    if (PlatformHelper.isDesktop) {
-      windowManager.removeListener(this);
-    }
+    final listener = _windowListener;
+    if (listener != null) _window?.removeListener(listener);
     _resizeDebounce?.cancel();
     super.dispose();
   }
 
-  @override
-  void onWindowResize() {
-    _resizeDebounce?.cancel();
-    _resizeDebounce = Timer(const Duration(milliseconds: 500), () async {
-      if (await windowManager.isMaximized()) return;
-      final size = await windowManager.getSize();
-      await settings.saveWindowState(
-        width: size.width,
-        height: size.height,
-        isMaximized: false,
-      );
-    });
+  void _onWindowEvent(WindowEvent event) {
+    final window = _window;
+    if (window == null) return;
+    switch (event) {
+      case WindowResizedEvent():
+        _resizeDebounce?.cancel();
+        _resizeDebounce = Timer(const Duration(milliseconds: 500), () {
+          if (!window.isMaximized) _saveWindowSize(window);
+        });
+      case WindowMaximizedEvent():
+        settings.saveWindowState(
+          width: SettingsService.defaultWindowWidth,
+          height: SettingsService.defaultWindowHeight,
+          isMaximized: true,
+        );
+      // Also fires when leaving minimized; the window is then not maximized
+      // either, so saving its size is still correct.
+      case WindowRestoredEvent():
+        if (!window.isMaximized) _saveWindowSize(window);
+      default:
+        break;
+    }
   }
 
-  @override
-  void onWindowMaximize() {
-    settings.saveWindowState(
-      width: SettingsService.defaultWindowWidth,
-      height: SettingsService.defaultWindowHeight,
-      isMaximized: true,
-    );
-  }
-
-  @override
-  void onWindowUnmaximize() async {
-    final size = await windowManager.getSize();
-    await settings.saveWindowState(
+  Future<void> _saveWindowSize(Window window) {
+    final size = window.size.toSize();
+    return settings.saveWindowState(
       width: size.width,
       height: size.height,
       isMaximized: false,
